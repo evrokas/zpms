@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zeus | Patient Managment System</title>
+    
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/boxicons.min.css" class="css">
+`</head>
+<body>
+    <div class="wrapper">
+        <div class="header">
+            <div class="title">Project Zeus</div>
+
+            <div class="breadcrumps">
+                <ul>
+                    <li>:</li>
+                    <li>Login</li>
+                    <!-- <li><i class="bx bx-chevron-right"></i></li> -->
+                    <!-- <li>Patient</li> -->
+                </ul>
+            </div>
+        </div>
+
+        <div class="inner-wrapper">
+            <div class="title">
+                Enter your credentials to login
+            </div>    
+            <form action="#">
+                <div class="field">
+                    <label for="username">Username</label>
+                    <input type="text" name="username" id="username">
+                </div>
+
+                <div class="field">
+                    <label for="password">Password</label>
+                    <input type="password" name="password" id="password">
+                </div>
+
+                <div class="buttons">
+                    <button type="submit">Login</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="inner-wrapper">
+            <div class="title">
+                Patient List
+            </div>
+
+
+            <div class="patient-table">
+                <table>
+                    <thead>
+                        <th>Name</th>
+                        <th>Age</th>
+                        <th>AMKA</th>
+                        <th>Last App</th>
+                        <th>Actions</th>
+                    </thead>
+                    <tbody>
+
+                        <tr>
+                            <td>George Georgakis</td>
+                            <td>32</td>
+                            <td>29082302398</td>
+                            <td>15/11/23</td>
+                            <td>
+                                <div class="action-list">
+                                    <ul>
+                                        <li><i class="bx bx-pencil"></i></li>
+                                        <li><i class="bx bx-trash"></i></li>
+                                        <li><i class="bx bx-dots-horizontal-rounded"></i></li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td>George Georgakis</td>
+                            <td>32</td>
+                            <td>29082302398</td>
+                            <td>15/11/23</td>
+                            <td>
+                                <div class="action-list">
+                                    <ul>
+                                        <li><i class="bx bx-pencil"></i></li>
+                                        <li><i class="bx bx-trash"></i></li>
+                                        <li><i class="bx bx-dots-horizontal-rounded"></i></li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <tr>
+                            <td>George Georgakis</td>
+                            <td>32</td>
+                            <td>29082302398</td>
+                            <td>15/11/23</td>
+                            <td>
+                                <div class="action-list">
+                                    <ul>
+                                        <li><i class="bx bx-pencil"></i></li>
+                                        <li><i class="bx bx-trash"></i></li>
+                                        <li><i class="bx bx-dots-horizontal-rounded"></i></li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+
+                    </tbody>
+                </table>
+            </div>
+        </div>      <!-- innder-wrapper -->
+
+
+        <div class="inner-wrapper">
+            <div class="title">
+                Patient Card
+            </div>
+
+            <form class="patient-form" action="#">
+                <div class="field">
+                    <label for="name">Name</label>
+                    <input type="text" name="name" id="name">
+                </div>
+                <div class="field">
+                    <label for="Age">Age</label>
+                    <input type="text" name="age" id="age">
+                </div>
+                <div class="field">
+                    <label for="name">AMKA</label>
+                    <input type="text" name="amka" id="amka">
+                </div>
+                <div class="field">
+                    <label for="name">Telephone</label>
+                    <input type="text" name="telephone" id="telephone">
+                </div>
+                
+                <div class="field">
+                    <label for="name">Address</label>
+                    <input type="text" name="address" id="address">
+                </div>
+                <div class="field">
+                    <label for="name">Email</label>
+                    <input type="text" name="email" id="email">
+                </div>
+
+                <div class="buttons">
+                    <button type="submit">Save</button>
+                    <button type="submit">Cancel</button>
+                </div>
+            </form>
+        </div>      <!-- innder-wrapper -->
+
+
+        <div class="inner-wrapper">
+            <div class="title">
+                Appointment
+            </div>
+
+            <form action="#" class="patient-appointment">
+                <div class="field">
+                    <label for="date">Date of appointment</label>
+                    <input type="datetime-local" name="date" id="date">
+                </div>
+
+                <div class="field notes">
+                    <label for="notes">Notes</label>
+                    <textarea name="notes" id="notes" rows="10">
+
+                    </textarea>
+                </div>
+
+                <div class="buttons">
+                    <button type="submit">Save</button>
+                </div>
+            </form>
+        </div>      <!-- inner-wrapper -->
+
+        <div class="inner-wrapper">
+            <div class="title">
+                Attachments
+            </div>
+
+            <div class="attachments-table">
+                <table>
+                    <thead>
+                        <th>Type</th>
+                        <th>Filename</th>
+                        <th>Descrpiption</th>
+                        <th>Date</th>
+                        <th>Actions</th>
+                    </thead>
+
+                    <tbody>
+                        <tr>
+                            <td>DOC</td>
+                            <td>surgery.pdf</td>
+                            <td>Surgery report</td>
+                            <td>08-03-2023</td>
+                            <td>
+                                <div class="action-list">
+                                    <ul>
+                                        <li><i class="bx bx-download"></i></li>
+                                        <li><i class="bx bx-pencil"></i></li>
+                                        <li><i class="bx bx-trash"></i></li>
+                                        <li><i class="bx bx-dots-horizontal-rounded"></i></li>
+                                    </ul>
+                                </div>
+                            </td>
+
+                        </tr>
+                        
+                        <tr>
+                            <td>PDF</td>
+                            <td>histology.pdf</td>
+                            <td>Histology report</td>
+                            <td>14-03-2023</td>
+                            <td>
+                                <div class="action-list">
+                                    <ul>
+                                        <li><i class="bx bx-download"></i></li>
+                                        <li><i class="bx bx-pencil"></i></li>
+                                        <li><i class="bx bx-trash"></i></li>
+                                        <li><i class="bx bx-dots-horizontal-rounded"></i></li>
+                                    </ul>
+                                </div>
+                            </td>
+
+                        </tr>
+                    </tbody>
+                </table>
+
+            </div>
+            <div class="buttons">
+                <button type="submit">New</button>
+            </div>
+        </div>      <!-- inner-wrapper -->
+    </div>
+</body>
+</html>

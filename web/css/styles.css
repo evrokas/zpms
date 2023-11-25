@@ -1,0 +1,87 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    text-decoration: none;
+    font-family: 'Roboto Slab', sans-serif;
+    font-size: 14px;
+}
+
+.wrapper {
+    width: 100dvw;
+    background-color: antiquewhite;
+}
+
+.wrapper .header {
+    border: 1px solid black;
+}
+
+.breadcrumps {
+    background-color: white;
+}
+
+.breadcrumps ul {
+    display: flex;
+    flex-direction: row;
+    list-style: none;
+}
+
+.breadcrumps ul li {
+    padding: 0 4px;
+}
+
+.patient-table tbody td {
+    padding: 0 8px;
+}
+
+.inner-wrapper {
+    margin: 4px;
+    border: 1px solid black;
+    padding: 4px;
+}
+
+.inner-wrapper .title {
+    text-align: center;
+    font-weight: 600;
+    font-size: 1.2rem;
+}
+.patient-table .action-list ul {
+    list-style: none;
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+}
+
+.patient-table .action-list ul li:hover {
+    color: red;
+}
+
+.inner-wrapper  .patient-form {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.inner-wrapper .patient-appointment .field {
+    flex-direction: column;
+    
+}
+
+.inner-wrapper .patient-appointment .field.notes {
+    display: flex;
+}
+
+.attachments-table .action-list ul {
+    list-style: none;
+    display: flex;
+    flex-direction: row;
+    gap: 4px;
+}
+
+.attachments-table .action-list ul li:hover {
+    color: red;
+}
+
+.attachments-table tbody td {
+    padding: 0 8px;
+}
