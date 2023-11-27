@@ -20,3 +20,41 @@ CREATE TABLE patients (
     PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+DROP TABLE IF EXISTS users;
+CREATE TABLE users (
+    id		INTEGER NOT NULL AUTO_INCREMENT UNIQUE,
+    
+    cdate	TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    active	BOOLEAN DEFAULT FALSE,
+    expired	BOOLEAN DEFAULT TRUE,
+    
+    username	VARCHAR(32) NOT NULL,
+    password	VARCHAR(64) NOT NULL,
+    
+    fullname	VARCHAR(64) NOT NULL,
+    email	VARCHAR(64) NOT NULL,
+
+    perms	CHAR(36) NOT NULL,
+    
+    PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS permissions;
+CREATE TABLE permissions (
+    id		INTEGER NOT NULL AUTO_INCREMENT UNIQUE,
+    guid	CHAR(36) NOT NULL UNIQUE,
+    
+    name	CHAR(32),		/* permission name */
+ 
+    PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+DROP TABLE IF EXISTS permissions_list;
+CREATE TABLE permissions_list (
+    id		INTEGER NOT NULL AUTO_INCREMENT UNIQUE,
+    user	CHAR(36) NOT NULL,		/* user identifier */
+    perm	CHAR(36) NOT NULL,		/* permission identifier */
+
+    PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    

@@ -1,0 +1,4 @@
+
+# select username,fullname with specific permssions,
+# you add test for username in the end, its returns all permissions of a user
+select username,fullname,permissions.name from users,permissions,permissions_list where users.perms = permissions_list.user and (permissions_list.perm = permissions.guid);                                                           
