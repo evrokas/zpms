@@ -1,0 +1,23 @@
+RewriteEngine on
+#RewriteRule ^about$ about.html [NC]
+
+# RewriteRule . index.php [QSA]
+# RewriteRule ^([A-Za-z0-9]+) index.php?pagee=$1 [QSA]
+# RewriteRule ^([0-9a-zA-Z\_\-]+)$ index.php?id=$1 [QSA]
+
+
+RewriteEngine on
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteRule ^([^/]*)/(.*)$ index.php?page=$1&second=$2 [L,QSA]
+# RewriteRule ^([^/]*)(.*)$ index.php?page=$1 [L,QSA]
+
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteCond %{REQUEST_FILENAME} !-f
+# RewriteRule ^([^/]*)/(.*)$ index.php?page=$1&second=$2 [L,QSA]
+RewriteRule ^([^/]*)(.*)$ index.php?page=$1 [L,QSA]
+
+
+# RewriteRule ^([^/]*)(.*)$ index.php?first=$1&second=$2 [L,QSA]
+
+#RewriteRule . index.php [L]
