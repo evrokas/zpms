@@ -1,4 +1,0 @@
-CREATE USER IF NOT EXISTS 'zeususer'@'localhost' IDENTIFIED BY 'Vangelis88!';
-CREATE DATABASE IF NOT EXISTS zeusdb;
-GRANT ALL PRIVILEGES ON zeusdb.* TO 'zeususer'@'localhost';
-FLUSH PRIVILEGES;
