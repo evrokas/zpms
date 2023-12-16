@@ -1,5 +1,9 @@
-
 <?php
+
+#//    phpinfo();
+
+#//    include "templates/header.php";
+
     if(isset($_POST)) {
         // the user has posted the form
         if(isset($_POST['username']) && isset($_POST['password'])) {
@@ -14,8 +18,7 @@
     <div class="title">
         Enter your credentials to login
     </div>    
-    <form action="#
-    " method="post">
+    <form action="#" method="post">
         <div class="field">
             <label for="username">Username</label>
             <input type="text" name="username" id="username">

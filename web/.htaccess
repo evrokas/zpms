@@ -1,23 +1,30 @@
-RewriteEngine on
-#RewriteRule ^about$ about.html [NC]
+#<IfModule mod_rewrite.c>    
+    # <IfModule mod_negotiation.c>
+    Options +FollowSymLinks
+    Options -Indexes
+    # </IfModule>     
+#    Loglevel rewrite:trace8
+    
+    DirectoryIndex index.php
 
-# RewriteRule . index.php [QSA]
-# RewriteRule ^([A-Za-z0-9]+) index.php?pagee=$1 [QSA]
-# RewriteRule ^([0-9a-zA-Z\_\-]+)$ index.php?id=$1 [QSA]
+    RewriteEngine On
+    # RewriteLogLevel trace8  
+    # RewriteBase /apps/zeus/web/
+
+    # ErrorDocument 404 error.php
+    
+    # RewriteCond %{REQUEST_FILENAME} !-d
+    # RewriteCond %{REQUEST_FILENAME} !-f
+    # RewriteRule ^(.*)/$ index2.php?q=$1 [QSA,L,PT]
 
 
-RewriteEngine on
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{REQUEST_FILENAME} !-f
-RewriteRule ^([^/]*)/(.*)$ index.php?page=$1&second=$2 [L,QSA]
-# RewriteRule ^([^/]*)(.*)$ index.php?page=$1 [L,QSA]
-
-RewriteCond %{REQUEST_FILENAME} !-d
-RewriteCond %{REQUEST_FILENAME} !-f
-# RewriteRule ^([^/]*)/(.*)$ index.php?page=$1&second=$2 [L,QSA]
-RewriteRule ^([^/]*)(.*)$ index.php?page=$1 [L,QSA]
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteRule ^(.*)$ index.php?$1 [QSA,L,PT]
+    
+    
 
 
-# RewriteRule ^([^/]*)(.*)$ index.php?first=$1&second=$2 [L,QSA]
 
-#RewriteRule . index.php [L]
+
+#</IfModule>
