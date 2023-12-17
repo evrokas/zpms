@@ -2,3 +2,10 @@ css:
   - 'css/styles.css'
   - 'css/boxicons.min.css'
 
+routes:
+  homepage:
+    name: homepage
+    url: "/"
+  admin:
+    name : admin
+    url: "/admin"
