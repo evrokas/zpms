@@ -49,6 +49,13 @@
     font-weight: 600;
     font-size: 1.2rem;
 }
+
+.inner-wrapper .message {
+    background-color: beige;
+    color: red;
+}
+
+
 .patient-table .action-list ul {
     list-style: none;
     display: flex;

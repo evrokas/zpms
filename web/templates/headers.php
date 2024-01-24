@@ -8,7 +8,7 @@
 
 <?php
     foreach($info['css'] as $css) {
-        echo '<link rel="stylesheet" href="' . $rootpath . $css . '">';
+        echo '<link rel="stylesheet" href="' . rurl($css) . '">';
     }
 ?>
 

@@ -9,7 +9,7 @@
 
 
 <p>
-    This is the home page of Project Zeus
+    This is the info page of Project Zeus
 </p>
 <br/>
 <p>
