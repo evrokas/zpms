@@ -4,8 +4,22 @@ css:
 
 routes:
   homepage:
+    title: "Homepage"
     name: homepage
     url: "/"
   admin:
+    title: "Administration"
     name : admin
     url: "/admin"
+  info:
+    title: Information
+    name: info
+    url: "/info/due"
+  info3:
+    title: Information3
+    name: info3
+    url: "/info/data/{name}/edit"
+  info2:
+    title: Information2
+    name: info
+    url: "/info/data/{id}/{no}"
