@@ -9,9 +9,9 @@
 
     RewriteEngine On
     # RewriteLogLevel trace8  
-    # RewriteBase /apps/zeus/web/
+    RewriteBase /apps/zeus/web/
 
-    # ErrorDocument 404 error.php
+    ErrorDocument 404 error.php
     
     # RewriteCond %{REQUEST_FILENAME} !-d
     # RewriteCond %{REQUEST_FILENAME} !-f

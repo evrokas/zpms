@@ -6,5 +6,5 @@ db=`head -2 admin.sql | gawk '/DATABASE/  { print $6 }' - | cut -d\; -f1 -`
 #echo pass $password
 #echo db $db
 
-mysql -u $user -p$password $db
+mysql -u $user -p$password $db  $1
 
