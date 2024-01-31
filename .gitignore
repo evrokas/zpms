@@ -1,2 +1,5 @@
 sql/admin.sql
 config/db.php
+fw/classes/sql/*
+fw/classes/*.php
+fw/test
