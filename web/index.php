@@ -76,9 +76,8 @@
                     kernel_debug('parameter');
                 }
                 if($rexpld[ $hcnt ] != $ahndlr[ $hcnt ]) {
-                    unset( $collectroutes[ $routename] );  
+                    unset( $collectroutes[ $routename ] );  
                     break;   // remove route from array
-                    // break;
                 }
             }
         }
@@ -93,12 +92,12 @@
             // kernel_debug( print_r( $collectroutes, 1 ));
     }
     
-    kernel_debug('start');
-    kernel_debug($rootpath);
-    kernel_debug('q:/'.$_SERVER['QUERY_STRING']);
-    kernel_debug( print_r( $info, 1) );
+    // kernel_debug('start');
+    // kernel_debug($rootpath);
+    // kernel_debug('q:/'.$_SERVER['QUERY_STRING']);
+    // kernel_debug( print_r( $info, 1) );
 
-    dump_routes();
+    // dump_routes();
 
     session_start();
 
