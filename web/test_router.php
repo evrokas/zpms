@@ -15,7 +15,40 @@ $Router = new RouterClass( $info['routes'] );
 // print_r( $Router->getRoute('info2'));
 
 // $params = array();
-$match = $Router->matchRoute('/info/data/evangelos/editt');
+$route = '/';
+if($argc>1)
+    $route = $argv[1];
+echo 'Testing route: ' . $route . "\n";
 
-// if($match)
-    print_r( $match );
+$match = $Router->matchRoute($route);
+
+if(!$match) {
+    echo "No route found!\n";
+    exit;
+}
+
+function info_due($params) {
+    echo "handler execution info_due()\n";
+    foreach($params as $p => $pp) {
+        echo "[".$p."] => " . $pp . "\n";
+    }
+}
+function info_data_id_no($params) {
+    echo "handler execution info_data_id_no()\n";
+    foreach($params as $p => $pp) {
+        echo "[".$p."] => " . $pp . "\n";
+    }
+}
+function info_data_id_edit($params) {
+    echo "handler execution info_data_id_edit()\n";
+    foreach($params as $p => $pp) {
+        echo "[".$p."] => " . $pp . "\n";
+    }
+}
+
+
+echo "Route found!\nRoute name: " . $match['_routename'] . "\nHandler: " . $match['_routedata']['handler']."\n";
+$fexe = $match['_routedata']['handler'];
+$params = $match['_params'];
+
+call_user_func($fexe, $params);
