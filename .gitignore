@@ -3,3 +3,4 @@ config/db.php
 fw/classes/sql/*
 fw/classes/*.php
 fw/test
+fw/classes/bootstrap_classes.php
