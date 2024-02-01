@@ -15,11 +15,14 @@ routes:
     title: Information
     name: info
     url: "/info/due"
+    handler: info_due
   info3:
     title: Information3
     name: info3
     url: "/info/data/{name}/edit"
+    handler: info_data_id_edit
   info2:
     title: Information2
     name: info
     url: "/info/data/{id}/{no}"
+    handler: info_data_id_no
