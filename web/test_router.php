@@ -46,8 +46,15 @@ function info_data_id_edit($params) {
     }
 }
 
+function homepage($params) {
+    echo "<h1>Homepage</h1>";
+}
 
-echo "Route found!\nRoute name: " . $match['_routename'] . "\nHandler: " . $match['_routedata']['handler']."\n";
+function admin($params) {
+    echo "<h1>Admin page</h1>";
+}
+
+// echo "Route found!\nRoute name: " . $match['_routename'] . "\nHandler: " . $match['_routedata']['handler']."\n";
 $fexe = $match['_routedata']['handler'];
 $params = $match['_params'];
 

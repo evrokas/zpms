@@ -1,4 +1,7 @@
 <?php
+
+require_once('../fw/bootstrap.php');
+
     // Project Zeus - Patient Registration System
     global $rootpath;
     
@@ -106,10 +109,15 @@
 
     $handlers = explode('/', '/'.$_SERVER['QUERY_STRING']);
     $handlers[0] = $_SERVER['QUERY_STRING'];
-    
-    $path = kernel_decoderoute( $handlers );
+    // print_r( $handlers );
+    // $path = kernel_decoderoute( $handlers );
 
+    $router = new RouterClass( $info['routes']);
+    // print_r( $router->getAllRoutes() );
 
+    print_r( 'test');
+    $match = $router->matchRoute( $handlers[0] );
+    print_r( $match );
 
     if(strlen($handlers[1])) {
         $page = $handlers[1];

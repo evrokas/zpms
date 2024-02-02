@@ -7,10 +7,12 @@ routes:
     title: "Homepage"
     name: homepage
     url: "/"
+    handler: homepage
   admin:
     title: "Administration"
     name : admin
     url: "/admin"
+    handler: admin
   info:
     title: Information
     name: info
