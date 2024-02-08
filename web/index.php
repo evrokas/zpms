@@ -117,6 +117,7 @@ require_once('../fw/bootstrap.php');
 
     print_r( 'test');
     $match = $router->matchRoute( $handlers[0] );
+    kernel_debug( print_r( $match, 1 ) );
     print_r( $match );
 
     if(strlen($handlers[1])) {
@@ -125,17 +126,25 @@ require_once('../fw/bootstrap.php');
         $page = 'homepage';
     }
 
-    require('templates/header.php');
+    require( 'templates/header.php' );
+
+    if(!$match) {
+        error_404();
+        // exit;
+    } else {
+
+    
     if(/*false &&*/ !isset($_SESSION['username'])) {
         // header('Location: index.php/login' );
         require('pages/login.php');
     } else {
         require('pages/' . $page . '.php');
     }
-
+    print_r( $match);
+    $router->routerCallFunction($match);
+}
 
     include('templates/footer.php');
-
 
     ob_end_flush();
 

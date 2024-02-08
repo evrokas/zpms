@@ -28,3 +28,8 @@ routes:
     name: info
     url: "/info/data/{id}/{no}"
     handler: info_data_id_no
+  error404:
+    title: Page Not Found
+    name: error404
+    url: "/404"
+    handler: error_404

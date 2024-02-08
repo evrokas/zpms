@@ -13,9 +13,9 @@ INSERT INTO `patients` (guid, cuser, pname, pdob, pamka, ptel, paddr, pemail, fi
         "3, Themistokleous, Str, 18233, Ag. I. Rentis", "evrokas@gmail.com", "2023-11-23 14:00");
 
 TRUNCATE TABLE `users`;
-INSERT INTO users (active,expired,username,password,fullname,email,perms) VALUES 
+INSERT INTO users (active,expired,uname, upass, name,email,perms) VALUES 
         (true,false,'evrokas',SHA2('vangelis88',256),'Evangelos Rokas', 'evrokas@gmail.com', 'e762f3f8-08f0-4b3f-bf8b-623d28280a18');
-INSERT INTO users (active,expired,username,password,fullname,email,perms) VALUES 
+INSERT INTO users (active,expired,uname, upass, name,email,perms) VALUES 
         (true,false,'guest',SHA2('guest',256),'Guest user', 'evrokas@hotmail.com', 'e6056ff3-b593-4366-afd7-d3e207c11e6f');
 
 TRUNCATE TABLE `permissions`;
