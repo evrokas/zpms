@@ -11,24 +11,10 @@ require_once('../fw/bootstrap.php');
     $info = yaml_parse_file('info.yaml');
     // print_r( $info );
 
-    function kernel_getrootpath() {
-        global $rootpath;
-        return ($rootpath);
-    }
 
     global $footer_message;
     $footer_message = '';
 
-    function kernel_debug($dbg) {
-        global $footer_message;
-        $footer_message .= '<br/>' . $dbg;
-    }
-
-    function rurl($apath) {      
-        if($apath =='/')
-            $apath = '';
-        return ( kernel_getrootpath()  . $apath);
-    }
 
     function dump_routes() {
         global $info;
