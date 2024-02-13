@@ -33,3 +33,4 @@ routes:
     name: error404
     url: "/404"
     handler: error_404
+  

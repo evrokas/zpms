@@ -2,7 +2,7 @@
     <?php
         if(isset($_SESSION['username'])) {
             echo "Logged in user: " . $_SESSION['username'] . " ";
-            echo '<a href="' . rurl('logout') .'">Logout</a>';
+            echo '<a href="' . $kernel->relative_url('logout') .'">Logout</a>';
         }
     ?>
 </p>
