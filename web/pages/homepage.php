@@ -8,9 +8,10 @@
 </p>
 
 
-<p>
+<h1>
     This is the home page of Project Zeus
-</p>
+</h1>
+
 <br/>
 <p>
     Lorem ipsum dolor sit amet consectetur adipisicing elit. Odio quisquam praesentium repellendus temporibus
