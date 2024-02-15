@@ -29,57 +29,67 @@ function dump_routes() {
     $router = new RouterClass( $info['routes']);
     // print_r( $router->getAllRoutes() );
 
-    $template = new ZETEMTemplate('templates/', false, true);
+    $Renderer = new ZETEMTemplate('templates/', false, true);
 
 
     $req = new RequestClass($_SERVER);
     $handlers = $req->getQueryRoute();
+
+    // echo "<pre>" . print_r( $_SERVER, 1 ) . "</pre>";
+    // echo( "Method: " . $req->getMethod() . '  string: ' . $req->getQueryString() . "<br/>" );
+    // print_r( $handlers );
+
+
+    $match = $router->matchRoute( $handlers[0] );
 
 
  
     session_start();
 
     ob_start();
-    require( 'templates/headers.php' );
 
-    // $handlers = explode('/', '/'.$_SERVER['QUERY_STRING']);
-    // $handlers[0] = $_SERVER['QUERY_STRING'];
-    // echo "<pre>" . print_r( $_SERVER, 1 ) . "</pre>";
-
-    echo( "Method: " . $req->getMethod() . '  string: ' . $req->getQueryString() . "<br/>" );
-    // print_r( $handlers );
-    // $path = kernel_decoderoute( $handlers );
-
-
-    print_r( 'test');
-    $match = $router->matchRoute( $handlers[0] );
-    kernel_debug( print_r( $match, 1 ) );
-    print_r( $match );
-
-    if(strlen($handlers[1])) {
-        $page = $handlers[1];
-    } else {
-        $page = 'homepage';
-    }
-
-    require( 'templates/header.php' );
+    require_once('modules.php');
+    registerModules();
 
     if(!$match) {
         error_404();
         // exit;
     } else {
 
-    
-    if(/*false &&*/ !isset($_SESSION['username'])) {
-        // header('Location: index.php/login' );
-        require('pages/login.php');
-    } else {
-        require('pages/' . $page . '.php');
-    }
-    print_r($match);
-    $router->routerCallFunction($match);
-}
+        if (false) {
+            if(/* false && */ !isset($_SESSION['username'])) {
+                // header('Location: index.php/login' );
+                require('pages/login.php');
+            } else {
+                require('pages/' . $page . '.php');
+            }
+        }
 
-    include('templates/footer.php');
+        // $Renderer->view("main.zetem", $kernel->getConfig() );
+        registerModules();
+        $region_resp = array();
+
+        foreach($kernel->getConfig()['regions'] as $region) {
+            echo "<pre>Region " . print_r( $region, 1 ) . "</pre>";
+            $blocks = $kernel->getBlocksInRegion( $region );
+            print_r( $blocks );
+            $blk_resp = '';
+            foreach($blocks as $block) {
+                $blk = $kernel->getModule( $block );
+                // echo("Calling module->render() for block " . print_r( $blk, 1). "<br/>");
+                if($blk)
+                    $blk_resp .= $blk->render();
+            }
+            echo "Region response text " . $blk_resp;
+            $regions_resp[ $region ] = $blk_resp;
+        }
+
+        $Renderer->view('region.zetem', ['region_name' => $region, 'blocks' => $regions_resp[ $region ]]);
+    
+        // print_r($match);
+        // $router->routerCallFunction($match);
+    }
+
+    // include('templates/footer.php');
 
     ob_end_flush();
