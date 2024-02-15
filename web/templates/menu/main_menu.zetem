@@ -1,0 +1,28 @@
+<ul>
+    {# traverse the $info['menu']['mainmenu'] tree for 
+     # all menus and submenus and display them #}
+    {% foreach($info['menu']['mainmenu'] as $mitem0): %}
+        {% if(isset($mitem0['submenu'])): %}
+            <li class="drop-down">{{ $mitem0['text'] }}
+                <ul class="drop-menu">
+                    {% foreach($mitem0['submenu'] as $mitem1):%}
+                        {% if(isset($mitem1['submenu'])): %}
+                            <li class="drop-drop-down">{{ $mitem1['text'] }}
+                                <ul class="drop-drop-menu">
+                                    {% foreach($mitem1['submenu'] as $mitem2): %}
+                                        <li>{{ $mitem2['text'] }}</li>
+                                    {% endforeach %}
+                                </ul>
+                            </li>
+                        {% else: %}
+                            <li>{{ $mitem1['text'] }}</li>
+                        {% endif %}
+                    {% endforeach %}
+                </ul>
+            </li>
+        {% else: %}
+            <li>{{ $mitem0['text'] }}</li>
+        {% endif %}
+
+    {% endforeach; %}
+</ul>

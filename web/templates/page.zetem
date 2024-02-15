@@ -1,0 +1,9 @@
+<div class="wrapper">
+
+    {% include top_bar.zetem %}
+
+    {% include hero.zetem %}
+
+    {% include main_navigation.zetem %}
+
+</div>

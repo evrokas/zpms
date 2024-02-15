@@ -1,0 +1,2 @@
+
+<h3>This is block <span styles="color: blue;">{{ $block_name }}</span></h3>

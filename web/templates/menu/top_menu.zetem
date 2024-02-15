@@ -1,0 +1,7 @@
+<div class="topnavigation">
+    <ul class="topnavigation-menulist">
+        {% foreach($menu as $menuitem): %}
+        <li><a href="{{$menuitem['url']}}" class="topnavigation-menuitem">{{$menuitem['text']}}</a></li>
+        {% endforeach %}
+    </ul>
+</div>
