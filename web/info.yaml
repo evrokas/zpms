@@ -1,6 +1,9 @@
 css:
   - 'css/styles.css'
   - 'css/boxicons.min.css'
+  - 'css/breadcrumbs.css'
+
+title: This is a test website
 
 routes:
   homepage:
@@ -34,3 +37,44 @@ routes:
     url: "/404"
     handler: error_404
   
+
+regions:
+  - header
+  - main_navigation
+  - main_content
+  - footer
+
+blocks:
+  - header: header
+  - breacrumbs: header
+  - mainnavigation: main_navigation
+  - maincontent: main_content
+  - footer: footer
+
+
+structure:
+  header:
+    - header
+    - breadcrumbs
+  main_navigation:
+    - mainnavigation
+  main_content:
+    - maincontent
+  footer:
+    - footer
+
+
+menu:
+  topnavigation:
+    - home:
+      text: 'Αρχική'
+      url: '#'
+    - doctor:
+      text: 'O Ιατρός'
+      url: '#'
+    - news:
+      text: 'Νέα'
+      url: '#'
+    - contact:
+      text: 'Επικοινωνία'
+      url: '#'
