@@ -5,6 +5,6 @@
     
 #}
 
-<h2>Region: <span> {{ $region_name }}</span></h2>
+<!-- <h2>Region: <span> {{ $region_name }}</span></h2> -->
 
 {{ $blocks }}

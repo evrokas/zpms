@@ -39,13 +39,26 @@ class topbarModule extends moduleClass {
     }
 }
 
+class htmltextModule extends moduleClass {
+    static protected $htmltext;
+
+    function __construct($amodule, $atemplate, $text) {
+        parent::__construct($amodule, $atemplate);
+        self::$htmltext = $text;
+    }
+
+    function render($params = null) {
+        global $Renderer;
+        return($Renderer->render($this->getTemplate(), ['text' =>self::$htmltext, 'params' => $params]));
+    }
+}
 
 class header extends moduleClass {
     function render($params = null) {
       global $kernel;
       global $Renderer;
         $tit = $kernel->getConfig()['title'];
-        echo "header module: param title = " . $tit . "\n";
+        // echo "header module: param title = " . $tit . "\n";
         return ($Renderer->render("header.zetem", ["title" => $kernel->getConfig()['title'] ]));
     }
 }
@@ -66,6 +79,16 @@ class mainnavigationModule extends moduleClass {
         return($Renderer->render(self::getTemplate(), ['menu' => $kernel->getConfig()['menu']['topnavigation']]));
     }
 }
+
+class contentModule extends moduleClass {
+    function render($params = null) {
+        global $Renderer;
+        global $kernel;
+        global $Request;
+
+            return ("<p>Content for route: " . $Request->getQueryRoute()[0]. "</p>");
+    }
+}
 function registerModules() {
     global $kernel;
 
@@ -75,4 +98,6 @@ function registerModules() {
     $kernel->registerModule( new mainnavigationModule('mainnavigation', 'top_menu.zetem'));
     // $kernel->registerModule( new moduleClass('topbar', 'topbar.zetem') );
     // $kernel->registerModule( new moduleClass('content', 'content.zetem') );
+    $kernel->registerModule( new htmltextModule('copyright', 'htmltext.zetem', '(c) by Evangelos M. Rokas'));
+    $kernel->registerModule( new contentModule('content', 'content.zetem'));
 }

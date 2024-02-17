@@ -2,22 +2,21 @@
 <html lang="en">
 
 <head>
-    {% global $info; %}
-    {% foreach($info['meta'] as $meta): %}
-        <meta {{ $meta }}>
+    {% if(isset($meta))foreach($meta as $metaline): %}
+        <meta {{ $metaline }}>
     {% endforeach; %}
 
     {# check to see if there is title defined in yaml #}
-    {% if(isset($info['title'])): %}
-        <title>{{ $info['title'] }}</title>
+    {% if(isset($head_title)): %}
+        <title>{{ $head_title }}</title>
     {% endif %}
 
 
-    {% foreach($info['css'] as $css): %}
+    {% if(isset($css))foreach($css as $css): %}
         <link rel="stylesheet" href="{{$css}}">
     {% endforeach %}
 
-    {% foreach($info['script'] as $scrpt): %}
+    {% if(isset($head_script))foreach($head_script as $scrpt): %}
         <script {{ $scrpt }}></script>
     {% endforeach; %}
 
@@ -26,3 +25,7 @@
 <body>
     {% include page.zetem %}
 </body>
+
+    {% if(isset($foot_script))foreach($foot_script as $scrpt): %}
+        <script {{ $scrpt }}></script>
+    {% endforeach; %}

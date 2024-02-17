@@ -32,8 +32,8 @@ function dump_routes() {
     $Renderer = new ZETEMTemplate('templates/', false, true);
 
 
-    $req = new RequestClass($_SERVER);
-    $handlers = $req->getQueryRoute();
+    $Request = new RequestClass($_SERVER);
+    $handlers = $Request->getQueryRoute();
 
     // echo "<pre>" . print_r( $_SERVER, 1 ) . "</pre>";
     // echo( "Method: " . $req->getMethod() . '  string: ' . $req->getQueryString() . "<br/>" );
@@ -53,8 +53,9 @@ function dump_routes() {
 
     if(!$match) {
         error_404();
-        // exit;
-    } else {
+        exit;
+    } else 
+    {
 
         if (false) {
             if(/* false && */ !isset($_SESSION['username'])) {
@@ -70,9 +71,9 @@ function dump_routes() {
         $region_resp = array();
 
         foreach($kernel->getConfig()['regions'] as $region) {
-            echo "<pre>Region " . print_r( $region, 1 ) . "</pre>";
+            // echo "<pre>Region " . print_r( $region, 1 ) . "</pre>";
             $blocks = $kernel->getBlocksInRegion( $region );
-            print_r( $blocks );
+            // print_r( $blocks );
             $blk_resp = '';
             foreach($blocks as $block) {
                 $blk = $kernel->getModule( $block );
@@ -80,11 +81,21 @@ function dump_routes() {
                 if($blk)
                     $blk_resp .= $blk->render();
             }
-            echo "Region response text " . $blk_resp;
+            // echo "Region response text " . $blk_resp;
             $regions_resp[ $region ] = $blk_resp;
+
+//            $Renderer->view('region.zetem', ['region_name' => $region, 'blocks' => $regions_resp[ $region ]]);
         }
 
-        $Renderer->view('region.zetem', ['region_name' => $region, 'blocks' => $regions_resp[ $region ]]);
+        $Renderer->view('main.zetem', 
+        [
+            'title' => $kernel->getConfig('title'),
+            'meta' => $kernel->getConfig('meta'),
+            'css' => $kernel->getConfig('css'),
+            'head_script' => $kernel->getConfig('head_script'),
+            'foot_script' => $kernel->getConfig('foot_script'),
+            'regions' => $regions_resp
+        ]);
     
         // print_r($match);
         // $router->routerCallFunction($match);
