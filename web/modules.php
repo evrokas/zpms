@@ -116,12 +116,15 @@ class contentModule extends moduleClass {
 class notificationsModule extends moduleClass {
     function render($params = array()) {
         global $kernel;
-
+        global $_SESSION;
+        
+            print_r( $_SESSION );
             $prms = array();
             if(($s=$kernel->ifelseStatus('notify_message', '', true)))$prms['notice'] = $s;
             if(($s=$kernel->ifelseStatus('error_message', '', true)))$prms['error'] = $s;
             if(($s=$kernel->ifelseStatus('warning_message', '', true)))$prms['warning'] = $s;
-        
+            echo "Notifications module<br>".print_r($prms)."<br>";
+
         return $this->RenderTemplate($prms);
     }
 }
