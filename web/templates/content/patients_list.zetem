@@ -1,0 +1,36 @@
+<h2>Welcome to the Patients List</h2>
+
+<div class="patients-list">
+
+    {% if($notice!=''): %}
+        <div class="notice">
+            {{$notice}}
+        </div>
+    {% endif %}
+
+    <table>
+        <thead>
+            <th>#</th>
+            <th>Name</th>
+            <th>AMKA</th>
+            <th>Actions</th>
+        </thead>
+        {% $loop=0; %}
+        <tbody>
+            {% foreach($pat_list as $pat): %}
+            <tr>
+                {% $loop++ %}
+                <td>{{$loop}}</td>
+                <td data-column="name">{{$pat['pname']}}</td>
+                <td data-column="amka">{{$pat['pamka']}}</td>
+                <td class="actions">
+                    <a href="{{rel_url('/patient/'.$loop.'/edit')}}">edit</a>
+                    <a href="{{rel_url('/patient/'.$loop.'/delete')}}">delete</a>
+                </td>
+            </tr>
+            {% endforeach %}
+        </tbody>
+    </table>
+</div>
+
+

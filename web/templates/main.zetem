@@ -12,12 +12,12 @@
     {% endif %}
 
 
-    {% if(isset($css))foreach($css as $css): %}
-        <link rel="stylesheet" href="{{$css}}">
+    {% if(isset($css))foreach($css as $csss): %}
+        <link rel="stylesheet" href="{{rel_url($csss['src'])}}">
     {% endforeach %}
 
     {% if(isset($head_script))foreach($head_script as $scrpt): %}
-        <script {{ $scrpt }}></script>
+        <script type="{{$scrpt['type']}}" src="{{$scrpt['src']}}"></script>
     {% endforeach; %}
 
 </head>

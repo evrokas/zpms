@@ -3,13 +3,24 @@ meta:
   - http-equiv="X-UA-Compatible" content="IE=edge"
   - name="viewport" content="width=device-width, initial-scale=1.0"
 
+title: Patient Management System
 
 css:
-  - 'css/styles.css'
-  - 'css/boxicons.min.css'
-  - 'css/breadcrumbs.css'
+  - styles:
+    src: 'css/styles.css'
+  - boxicons:
+    src: 'css/boxicons.min.css'
+  - breacrumbs:
+    src: 'css/breadcrumbs.css'
 
-title: This is a test website
+head_script:
+  - ionicons_module:
+    type: "module"
+    src: "https://unpkg.com/ionicons@latest/dist/ionicons/ionicons.esm.js"
+  - ionicons_nomodule:
+    type: "nomodule"
+    src: "https://unpkg.com/ionicons@latest/dist/ionicons/ionicons.js"
+
 
 routes:
   homepage:
@@ -23,31 +34,33 @@ routes:
     url: "/admin"
     handler: admin
     permissions: authenticated
-  info:
-    title: Information
-    name: info
-    url: "/info/due"
-    handler: info_due
-  info3:
-    title: Information3
-    name: info3
-    url: "/info/data/{name}/edit"
-    handler: info_data_id_edit
-  info2:
-    title: Information2
-    name: info
-    url: "/info/data/{id}/{no}"
-    handler: info_data_id_no
-  error404:
-    title: Page Not Found
-    name: error404
-    url: "/404"
-    handler: error_404
-  
+  patients:
+    title: "Patients"  
+    url: "/patients"
+    handler: patients_list
+  patient_edit:
+    title: "Patient edit"
+    url: "/patient/{id}/edit"
+    handler: patient_edit
+    method: get
+  patient_edit_post:
+    title: "Patient edit"
+    url: "/patient/{id}/edit"
+    handler: patient_edit_post
+    method: post
+  patient_delete:
+    title: "Patient delete"
+    url: "/patient/{id}/delete"
+    handler: patient_delete
+  appointments:
+    title: "Appointments"
+    url: /appointments
+    handler: appointments_list
 
 regions:
   - header
   - main_navigation
+  - notification
   - main_content
   - footer
 
@@ -58,13 +71,14 @@ blocks:
   - maincontent: main_content
   - footer: footer
 
-
 structure:
   header:
     - header
     - breadcrumbs
   main_navigation:
     - mainnavigation
+  notification:
+    - notifications
   main_content:
     - content
   footer:
@@ -73,16 +87,16 @@ structure:
 
 
 menu:
-  topnavigation:
+  main:
     - home:
-      text: 'Αρχική'
-      url: '#'
-    - doctor:
-      text: 'O Ιατρός'
-      url: '#'
-    - news:
-      text: 'Νέα'
-      url: '#'
+      text: 'Home'
+      url: '/'
+    - patients:
+      text: 'Patient List'
+      url: '/patients'
+    - appointments:
+      text: 'Appointment List'
+      url: '/appointments'
     - contact:
-      text: 'Επικοινωνία'
+      text: 'Contact'
       url: '#'

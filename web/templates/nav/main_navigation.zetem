@@ -1,5 +1,3 @@
 <div class="main-navigation">
-    <div class="titlename">{{$info['title'][0]}}</div>
-
-    {% include main_menu.zetem %}
+    {% include menu.zetem %}
 </div>

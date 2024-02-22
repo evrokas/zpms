@@ -1,7 +1,19 @@
+{#
+  this displays a menu
+    menu structure:
+    menu:
+      menu_name:
+        - link1:
+          text: link_name
+          url: link_url
+          permissions: access_permissions
+#}
+
+
 <ul>
-    {# traverse the $info['menu']['mainmenu'] tree for 
+    {# traverse the $menu tree for 
      # all menus and submenus and display them #}
-    {% foreach($info['menu']['mainmenu'] as $mitem0): %}
+    {% foreach($menu as $mitem0): %}
         {% if(isset($mitem0['submenu'])): %}
             <li class="drop-down">{{ $mitem0['text'] }}
                 <ul class="drop-menu">
@@ -10,18 +22,18 @@
                             <li class="drop-drop-down">{{ $mitem1['text'] }}
                                 <ul class="drop-drop-menu">
                                     {% foreach($mitem1['submenu'] as $mitem2): %}
-                                        <li>{{ $mitem2['text'] }}</li>
+                                        <li><a href="{{$mitem2['url']}}">{{ $mitem2['text'] }}</a></li>
                                     {% endforeach %}
                                 </ul>
                             </li>
                         {% else: %}
-                            <li>{{ $mitem1['text'] }}</li>
+                            <li><a href="{{$mitem1['url']}}">{{ $mitem1['text'] }}</a></li>
                         {% endif %}
                     {% endforeach %}
                 </ul>
             </li>
         {% else: %}
-            <li>{{ $mitem0['text'] }}</li>
+            <li><a href="{{rel_url($mitem0['url'])}}">{{ $mitem0['text'] }}</a></li>
         {% endif %}
 
     {% endforeach; %}

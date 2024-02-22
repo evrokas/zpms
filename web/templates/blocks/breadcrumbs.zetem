@@ -1,5 +1,9 @@
-<ul class="breadcrumbs">
-    {% foreach($path as $element): %}
-        <li>{{$element}}</li>
-    {% endforeach %}
-</ul>
+<div class="breadcrumbs">
+
+    <ul>
+        {% foreach($path as $element): %}
+            <li>{{$element}}</li>
+        {% endforeach %}
+    </ul>
+
+</div>

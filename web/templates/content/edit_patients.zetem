@@ -1,0 +1,41 @@
+
+
+
+<div class="edit-patient">    
+    <form action="edit" method="post">
+        <div class="input-div">
+            <label for="patient-name">Όνομα ασθενή</label>
+            <input type="text" name="patient-name" id="" value="{{$patient->getpname()}}">
+        </div>
+
+        <div class="input-div">
+            <label for="patient-dob">Ημ/νια Γεννήσεως</label>
+            <input type="datetime-local" name="patient-dob" id="" value="{{$patient->getpdob()}}">
+        </div>
+
+        <div class="input-div">
+            <label for="patient-amka">ΑΜΚΑ</label>
+            <input type="number" name="patient-amka" id=""  value="{{$patient->getpamka()}}">
+        </div>
+
+        <div class="input-div">
+            <label for="patient-telephone">Τηλέφωνο</label>
+            <input type="text" name="patient-telephone" id=""  value="{{$patient->getptel()}}">
+        </div>
+
+        <div class="input-div">
+            <label for="patient-email">Email</label>
+            <input type="text" name="patient-email" id=""  value="{{$patient->getpemail()}}">
+        </div>
+
+        <div class="input-div">
+            <label for="patient-address">Διεύθυνση</label>
+            <input type="text" name="patient-address" id=""  value="{{$patient->getpaddr()}}">
+        </div>
+
+        <div class="buttons">
+            <input type="submit" value="submit">
+            <input type="button" value="cancel">
+        </div>
+    </form>
+</div>

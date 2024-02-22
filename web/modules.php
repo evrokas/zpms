@@ -4,57 +4,67 @@
 
 
 class moduleClass {
-    static private $modulename;     // module name
-    static private $template;       // template associateed wi
+    private $modulename;     // module name
+    private $template;       // template associateed wi
 
     function __construct($amodule, $atemplate) {
-        self::$modulename = $amodule;
-        self::$template = $atemplate;
+        $this->modulename = $amodule;
+        $this->template = $atemplate;
 
     }
-    function render($params = null) {
-        $params[] = ['module' => self::$template];
+    function render($params = array()) {
+        $params[] = ['module' => $this->template];
 
-        echo "render module " . self::$modulename;
+        // echo "render module " . $this->modulename;
         global $Renderer;
-        return $Renderer->render( self::$template, $params ); 
+        return $this->renderTemplate( $params );
+
+        // return $Renderer->render( $this->template, $params ); 
     }
 
     function getName() {
-        return (self::$modulename);
+        return ($this->modulename);
     }
 
     function getTemplate() {
-        return (self::$template);
+        return ($this->template);
     }
 
     function setTemplate($atemplate) {
-        self::$template = $atemplate;
+        $this->template = $atemplate;
+    }
+
+    function renderTemplate($aparms = array()) {
+        global $Renderer;
+
+        return (
+            // $this->modulename . ": renderTemplate(): " . $this->template . ": " .
+            $Renderer->render($this->template, $aparms));
     }
 }
 
 class topbarModule extends moduleClass {
-    function render($params = null) {
+    function render($params = array()) {
         return("topbarModule: " . print_r($params, 1));
     }
 }
 
 class htmltextModule extends moduleClass {
-    static protected $htmltext;
+    protected $htmltext;
 
     function __construct($amodule, $atemplate, $text) {
         parent::__construct($amodule, $atemplate);
-        self::$htmltext = $text;
+        $this->htmltext = $text;
     }
 
-    function render($params = null) {
+    function render($params = array()) {
         global $Renderer;
-        return($Renderer->render($this->getTemplate(), ['text' =>self::$htmltext, 'params' => $params]));
+        return($Renderer->render($this->getTemplate(), ['text' =>$this->htmltext, 'params' => $params]));
     }
 }
 
 class header extends moduleClass {
-    function render($params = null) {
+    function render($params = array()) {
       global $kernel;
       global $Renderer;
         $tit = $kernel->getConfig()['title'];
@@ -64,29 +74,55 @@ class header extends moduleClass {
 }
 
 class breadcrumbsModule extends moduleClass {
-    function render($params = null) {
+    function render($params = array()) {
         global $Renderer;
 
-        return ($Renderer->render("breadcrumbs.zetem", ["path" => ["home", "view", "test"]]));
+        return ($this->renderTemplate( ["path" => ["home", "view", "test"]] ));
+        // return ($Renderer->render("breadcrumbs.zetem", ["path" => ["home", "view", "test"]]));
     }
 }
 
 class mainnavigationModule extends moduleClass {
-    function render($params = null) {
-        global $Renderer;
-        global $kernel;
+    protected $menu;
 
-        return($Renderer->render(self::getTemplate(), ['menu' => $kernel->getConfig()['menu']['topnavigation']]));
+    function __construct($amodule, $atemplate, $amenu) {
+        parent::__construct($amodule, $atemplate);
+        $this->menu = $amenu;
+        // echo "<pre>";
+        // print_r($this->menu);
+        // echo "</pre>";
+    }
+    
+    function render($params = array()) {
+        global $Renderer;
+
+        return(
+            // "main navigation module<br>" .
+            $this->RenderTemplate(['menu' => $this->menu]));
     }
 }
 
 class contentModule extends moduleClass {
-    function render($params = null) {
+    function render($params = array()) {
         global $Renderer;
         global $kernel;
         global $Request;
+        global $content_response;
 
-            return ("<p>Content for route: " . $Request->getQueryRoute()[0]. "</p>");
+            return ($content_response);
+    }
+}
+
+class notificationsModule extends moduleClass {
+    function render($params = array()) {
+        global $kernel;
+
+            $prms = array();
+            if(($s=$kernel->ifelseStatus('notify_message', '', true)))$prms['notice'] = $s;
+            if(($s=$kernel->ifelseStatus('error_message', '', true)))$prms['error'] = $s;
+            if(($s=$kernel->ifelseStatus('warning_message', '', true)))$prms['warning'] = $s;
+        
+        return $this->RenderTemplate($prms);
     }
 }
 function registerModules() {
@@ -95,9 +131,10 @@ function registerModules() {
 
     $kernel->registerModule( new header('header', 'header.zetem'));
     $kernel->registerModule( new breadcrumbsModule('breadcrumbs', 'breadcrumbs.zetem'));
-    $kernel->registerModule( new mainnavigationModule('mainnavigation', 'top_menu.zetem'));
+    $kernel->registerModule( new mainnavigationModule('mainnavigation', 'main_navigation.zetem', $kernel->getConfig('menu')['main']));
     // $kernel->registerModule( new moduleClass('topbar', 'topbar.zetem') );
     // $kernel->registerModule( new moduleClass('content', 'content.zetem') );
     $kernel->registerModule( new htmltextModule('copyright', 'htmltext.zetem', '(c) by Evangelos M. Rokas'));
     $kernel->registerModule( new contentModule('content', 'content.zetem'));
+    $kernel->registerModule( new notificationsModule('notifications', 'notifications.zetem'));
 }

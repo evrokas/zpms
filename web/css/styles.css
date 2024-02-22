@@ -4,95 +4,155 @@
     box-sizing: border-box;
     text-decoration: none;
     font-family: 'Roboto Slab', sans-serif;
+}
+body {
     font-size: 14px;
 }
 
 .wrapper {
-    width: 100dvw;
-    background-color: antiquewhite;
+    margin: auto;
+    width: 95%;
+    /* background-color: antiquewhite; */
 }
 
 .wrapper .header {
-    border: 1px solid black;
+    /* border: 1px solid black; */
 }
 
 .wrapper .title {
     font-size: 26px;
 }
 
-.breadcrumps {
+.region {
+    margin: 1rem 0;
+}
+
+.region-footer {
+    margin: 2rem 0;
+    padding: 1rem 0.5rem;
+    background-color: black;
+    color: white;
+}
+.breadcrumbs {
+    padding: 0.5rem 0;
     background-color: white;
 }
 
-.breadcrumps ul {
+.breadcrumbs ul {
     display: flex;
     flex-direction: row;
     list-style: none;
 }
 
-.breadcrumps ul li {
+.breadcrumbs ul li {
     padding: 0 4px;
 }
 
-.patient-table tbody td {
-    padding: 0 8px;
+.breadcrumbs ul li:hover {
+    color:rgb(118, 118, 247)
+}
+.breadcrumbs ul li::before {
+    content: '/ ';
+}
+.breadcrumbs ul li:first-of-type::before {
+    content: ':: ';
 }
 
-.inner-wrapper {
-    margin: 4px;
-    border: 1px solid black;
-    padding: 4px;
+
+.main-navigation {
+    background-color: white;
+    padding: 0.5rem 0;
 }
 
-.inner-wrapper .title {
+.main-navigation ul {
+    list-style: none;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+}
+
+.main-navigation ul li {
+    padding: 0.5rem 1rem;
+}
+
+.main-navigation ul li:hover {
+    color: blue;
+    background-color: rgb(191, 191, 243);
+}
+
+.patients-list {
+    padding: 1rem;
+}
+.patients-list table {
+    width: 90%;
+}
+.patients-list table thead {
+    background-color: rgb(85, 85, 85);
+    color: white;
+}
+.patients-list table tr {
+    height: 1.5rem;
+    line-height: 1.5rem;
+    justify-content: center;
+}
+
+.patients-list table tr:nth-child(even) {
+    background-color: rgb(170, 166, 166);
+}
+.patients-list table td {
+    padding: 0.2rem 0.4rem;
+}
+.patients-list table td.actions {
+    display: flex;
+    justify-content: space-evenly;
+}
+
+.patients-list table td[data-column="amka"] {
     text-align: center;
-    font-weight: 600;
-    font-size: 1.2rem;
-}
-
-.inner-wrapper .message {
-    background-color: beige;
-    color: red;
 }
 
 
-.patient-table .action-list ul {
-    list-style: none;
+.edit-patient form {
+    display: flex;
+    gap: 0.8rem;
+    flex-direction: column;
+}
+
+.edit-patient form .input-div {
+    background-color: aqua;
+    height: 2rem;
+    /* line-height: 2rem; */
     display: flex;
     flex-direction: row;
-    gap: 4px;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.1rem 0.4rem;    
+    /* justify-content: space-evenly; */
 }
 
-.patient-table .action-list ul li:hover {
-    color: red;
+.edit-patient form .input-div input {
+    flex-grow: 1;
+    padding: 1px 2px;
 }
 
-.inner-wrapper  .patient-form {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
+.edit-patient form .input-div label {
+    width: 10rem;
+    text-align: right;
 }
 
-.inner-wrapper .patient-appointment .field {
-    flex-direction: column;
-    
-}
 
-.inner-wrapper .patient-appointment .field.notes {
-    display: flex;
-}
-
-.attachments-table .action-list ul {
-    list-style: none;
+.edit-patient form .buttons {
     display: flex;
     flex-direction: row;
-    gap: 4px;
+
+    justify-content: space-evenly;
 }
 
-.attachments-table .action-list ul li:hover {
-    color: red;
-}
 
-.attachments-table tbody td {
-    padding: 0 8px;
+.notice {
+    margin: 1.5rem;
+    padding: 0.5rem;
+    background: lightblue;
+    border-radius: 5px;
+    border: 1px solid blue;
 }

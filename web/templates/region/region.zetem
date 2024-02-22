@@ -6,5 +6,6 @@
 #}
 
 <!-- <h2>Region: <span> {{ $region_name }}</span></h2> -->
-
-{{ $blocks }}
+<div class="region region-{{$region_name}}">
+    {{ $blocks }}
+</div>
