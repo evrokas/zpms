@@ -1,20 +1,18 @@
-<p>this is the notification area</p>
-
 
 {% if(isset($notice)): %}
-<div class="notice">
+<div class="notification notice">
     {{$notice}}
 </div>
 {% endif %}
 
 {% if(isset($error)): %}
-<div class="error">
+<div class="notification error">
     {{$error}}
 </div>
 {% endif %}
 
 {% if(isset($warning)): %}
-<div class="warning">
+<div class="notification warning">
     {{$warning}}
 </div>
 {% endif %}

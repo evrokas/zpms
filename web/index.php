@@ -148,14 +148,16 @@ function dump_routes() {
 
         return $Renderer->render("patients_list.zetem",
             ['pat_list' => $pp,
-                'notice' => $kernel->ifelseStatus('patient_edit', '', true)
+                // 'notice' => $kernel->ifelseStatus('patient_edit', '', true)
             ]);
     }
 
     function patient_edit($params) {
         global $Renderer;
-
+        global $kernel;
+        
         if(!isset($params['id'])) {
+            $kernel->setStatus('error_message', 'Ο φάκελος του ασθενή δεν βρέθηκε!');
             return ("patients doesn't exist");
         }
 
@@ -175,14 +177,10 @@ function dump_routes() {
         $pc = new patientsClass();
         $pat = $pc->getById($params['id']);
 
-        $kernel->setStatus('notify_message', 'ο φάκελος έχει αποθηκευτεί!');
-        $kernel->setStatus('error_message', 'αυτό είναι ένα λάθος!');
-        $kernel->setStatus('warning_message', 'αυτό είναι ένα warning');
-        
-        $kernel->setStatus('patient_edit', 'Ο φάκελος του ασθενή ' . $pat->getpname() . ' έχει αποθηκευτεί.');
+        $kernel->setStatus('notify_message', 'Ο φάκελος του ασθενή ' . $pat->getpname() . ' έχει αποθηκευτεί.');
         header('location: '.rel_url('/patients'));
-
-        return '';
+        exit();
+        // return '';
         // patients_list(['notice' => 'Ο φάκελος του ασθενή ' + $pat->getpname() . ' έχει αποθηκευτεί.']);
     
         // return ($Renderer->render("edit_patients.zetem", ['notice' => 'data were saved', 'id' => $params['id'], 'patient' => $pat]));

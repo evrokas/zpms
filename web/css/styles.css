@@ -149,10 +149,21 @@ body {
 }
 
 
-.notice {
+.notification  {
     margin: 1.5rem;
     padding: 0.5rem;
-    background: lightblue;
     border-radius: 5px;
+}
+
+.notification.notice {
+    background: lightblue;
     border: 1px solid blue;
+}
+.notification.error {
+    background: rgb(246, 184, 184);
+    border: 1px solid red;
+}
+.notification.notice {
+    background: lightcoral;
+    border: 1px solid coral;
 }
