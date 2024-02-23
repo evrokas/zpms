@@ -155,7 +155,7 @@ function dump_routes() {
     function patient_edit($params) {
         global $Renderer;
         global $kernel;
-        
+
         if(!isset($params['id'])) {
             $kernel->setStatus('error_message', 'Ο φάκελος του ασθενή δεν βρέθηκε!');
             return ("patients doesn't exist");
@@ -173,7 +173,7 @@ function dump_routes() {
             return ("patients doesn't exist");
         }
 
-        echo "this is the post version<br/>";
+        // echo "this is the post version<br/>";
         $pc = new patientsClass();
         $pat = $pc->getById($params['id']);
 
