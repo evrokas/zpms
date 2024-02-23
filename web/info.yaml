@@ -85,18 +85,28 @@ structure:
     - footer
     - copyright
 
-
 menu:
   main:
     - home:
       text: 'Home'
       url: '/'
+      path: home
     - patients:
       text: 'Patient List'
       url: '/patients'
+      path: home/patients
     - appointments:
       text: 'Appointment List'
       url: '/appointments'
     - contact:
       text: 'Contact'
       url: '#'
+    - links:
+      text: 'Test link menu'
+      submenu:
+        - link1:
+          text: 'Link 1'
+          url: '#'
+        - link2:
+          text: 'Link 2'
+          url: '/links/link2'

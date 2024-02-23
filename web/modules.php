@@ -96,6 +96,13 @@ class mainnavigationModule extends moduleClass {
     function render($params = array()) {
         global $Renderer;
 
+        $mmenu = $this->menu;
+        foreach($mmenu as $mitem) {
+            echo "make menu attributes";
+            exit;
+        }
+
+
         return(
             // "main navigation module<br>" .
             $this->RenderTemplate(['menu' => $this->menu]));

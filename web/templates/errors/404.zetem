@@ -1,0 +1,7 @@
+<h2>
+
+<p>404 - Page not found!</p>
+
+<p>Click <a href={{rel_url("/")}}>here</a> to redirect to home page</p>
+
+

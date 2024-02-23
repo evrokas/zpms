@@ -50,6 +50,19 @@ function dump_routes() {
     $content_response = $router->routerCallFunction($match);
     // print_r($content_response);
     
+    require("menutrail.php");
+    $pathtrail = new MenuTrail($kernel->getConfig('menu')['main']);
+
+    echo "<pre>";
+        // print_r($Request->getQueryString());
+        // echo "<br>";
+        // $pathtrail->getTrails();
+        // $mtrail = array();
+        $pathtrail->isInTrail( $Request->getQueryRoute(), 1, $kernel->getConfig('menu')['main'], $mtrail);
+    
+        // $pathtrail->isInRouteTrail($Reque)
+        print_r( $mtrail );    
+    echo "</pre>";
     
     
     require_once('modules.php');

@@ -22,12 +22,12 @@
                             <li class="drop-drop-down">{{ $mitem1['text'] }}
                                 <ul class="drop-drop-menu">
                                     {% foreach($mitem1['submenu'] as $mitem2): %}
-                                        <li><a href="{{$mitem2['url']}}">{{ $mitem2['text'] }}</a></li>
+                                        <li><a href="{{rel_url($mitem2['url'])}}">{{ $mitem2['text'] }}</a></li>
                                     {% endforeach %}
                                 </ul>
                             </li>
                         {% else: %}
-                            <li><a href="{{$mitem1['url']}}">{{ $mitem1['text'] }}</a></li>
+                            <li><a href="{{rel_url($mitem1['url'])}}">{{ $mitem1['text'] }}</a></li>
                         {% endif %}
                     {% endforeach %}
                 </ul>

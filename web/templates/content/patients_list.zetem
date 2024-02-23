@@ -2,12 +2,6 @@
 
 <div class="patients-list">
 
-    {% if($notice!=''): %}
-        <div class="notice">
-            {{$notice}}
-        </div>
-    {% endif %}
-
     <table>
         <thead>
             <th>#</th>
@@ -24,8 +18,8 @@
                 <td data-column="name">{{$pat['pname']}}</td>
                 <td data-column="amka">{{$pat['pamka']}}</td>
                 <td class="actions">
-                    <a href="{{rel_url('/patient/'.$loop.'/edit')}}">edit</a>
-                    <a href="{{rel_url('/patient/'.$loop.'/delete')}}">delete</a>
+                    <a href="{{rel_url('/patient/'.$pat['id'].'/edit')}}">edit</a>
+                    <a href="{{rel_url('/patient/'.$pat['id'].'/delete')}}">delete</a>
                 </td>
             </tr>
             {% endforeach %}

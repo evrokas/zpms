@@ -157,17 +157,17 @@ body {
 
 .notification.warning {
     background: lightcoral;
-    /* border: 1px solid coral; */
+    border: 1px solid coral;
 }
 
 .notification.error {
     background: rgb(246, 184, 184);
-    /* border: 1px solid red; */
+    border: 1px solid red;
 }
 
 .notification.notice {
     background: lightblue;
-    /* border: 1px solid blue; */
+    border: 1px solid blue;
 }
 
 .notification span {
