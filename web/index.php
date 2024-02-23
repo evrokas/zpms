@@ -157,7 +157,7 @@ function dump_routes() {
         global $kernel;
 
         if(!isset($params['id'])) {
-            $kernel->setStatus('error_message', 'Ο φάκελος του ασθενή δεν βρέθηκε!');
+            $kernel->addStatus('error', 'Ο φάκελος του ασθενή δεν βρέθηκε!');
             return ("patients doesn't exist");
         }
 
@@ -177,7 +177,7 @@ function dump_routes() {
         $pc = new patientsClass();
         $pat = $pc->getById($params['id']);
 
-        $kernel->setStatus('notify_message', 'Ο φάκελος του ασθενή ' . $pat->getpname() . ' έχει αποθηκευτεί.');
+        $kernel->addStatus('notice', 'Ο φάκελος του ασθενή <b>' . $pat->getpname() . '</b> έχει αποθηκευτεί.');
         header('location: '.rel_url('/patients'));
         exit();
         // return '';

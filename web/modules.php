@@ -116,14 +116,23 @@ class contentModule extends moduleClass {
 class notificationsModule extends moduleClass {
     function render($params = array()) {
         global $kernel;
-        global $_SESSION;
+        // global $_SESSION;
 
             // print_r( $_SESSION );
+            // $prms = array();
+            // $prms['notice'] = $kernel->getStatus('notice');
+            // $prms['error'] = $kernel->getStatus('error', true);
+            // $prms['warning'] = $kernel->getStatus('warning', true);
+
+            // if(!count($prms['notice']))unset($prms['notice']);else
+            // if(!count($prms['error']))unset($prms['error']);
+            // if(!count($prms['warning']))unset($prms['warning']);
+
             $prms = array();
-            if(($s=$kernel->ifelseStatus('notify_message', null, true)))$prms['notice'] = $s;
-            if(($s=$kernel->ifelseStatus('error_message', null, true)))$prms['error'] = $s;
-            if(($s=$kernel->ifelseStatus('warning_message', null, true)))$prms['warning'] = $s;
-            // echo "Notifications module<br>".print_r($prms)."<br>";
+            foreach(['notice', 'error', 'warning'] as $level) {
+                $s = $kernel->getStatus('notice', true);
+                if(count($s))$prms[ $level ] = implode('<br>', $s);
+            }
 
         return $this->RenderTemplate($prms);
     }

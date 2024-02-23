@@ -1,7 +1,7 @@
 
 {% if(isset($notice)): %}
 <div class="notification notice">
-    {{$notice}}
+        {{$notice}}
 </div>
 {% endif %}
 
@@ -11,7 +11,7 @@
 </div>
 {% endif %}
 
-{% if(isset($warning)): %}
+{% if(isset($warning) && count($warning)): %}
 <div class="notification warning">
     {{$warning}}
 </div>
