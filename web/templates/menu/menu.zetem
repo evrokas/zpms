@@ -7,34 +7,29 @@
           text: link_name
           url: link_url
           permissions: access_permissions
+          attributes: div attributes
 #}
 
+    {% function show_menu($aamenu, $aalevel) { %}
+        {% foreach($aamenu as $menuitem): %}
+            {% if(isset($menuitem['submenu'])): %}
+                <li {{attributes($menuitem)}}>
+                    {{$menuitem['text']}}
+                    <ul class="drop-menu-{{$aalevel}}">
+                        {% show_menu($menuitem['submenu'], $aalevel+1) %}
+                    </ul>
+                </li>
+            {% else: %}
+                <li {{attributes($menuitem)}}>
+                    <a href="{{rel_url($menuitem['url'])}}">{{$menuitem['text']}}</a>
+                </li>
+            {% endif %}
+        {% endforeach %}
+    {% } %}
+
+<!-- { {attributes($menu->addAttribute('menu-level-0'))}} -->
 
 <ul>
-    {# traverse the $menu tree for 
-     # all menus and submenus and display them #}
-    {% foreach($menu as $mitem0): %}
-        {% if(isset($mitem0['submenu'])): %}
-            <li class="drop-down">{{ $mitem0['text'] }}
-                <ul class="drop-menu">
-                    {% foreach($mitem0['submenu'] as $mitem1):%}
-                        {% if(isset($mitem1['submenu'])): %}
-                            <li class="drop-drop-down">{{ $mitem1['text'] }}
-                                <ul class="drop-drop-menu">
-                                    {% foreach($mitem1['submenu'] as $mitem2): %}
-                                        <li><a href="{{rel_url($mitem2['url'])}}">{{ $mitem2['text'] }}</a></li>
-                                    {% endforeach %}
-                                </ul>
-                            </li>
-                        {% else: %}
-                            <li><a href="{{rel_url($mitem1['url'])}}">{{ $mitem1['text'] }}</a></li>
-                        {% endif %}
-                    {% endforeach %}
-                </ul>
-            </li>
-        {% else: %}
-            <li><a href="{{rel_url($mitem0['url'])}}">{{ $mitem0['text'] }}</a></li>
-        {% endif %}
-
-    {% endforeach; %}
+    {% show_menu($menu, 1) %}
 </ul>
+
