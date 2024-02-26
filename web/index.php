@@ -44,28 +44,28 @@ function dump_routes() {
 
     // $match = $router->matchRoute( $handlers[0] );
     $match = $router->matchRoute( $Request );
-
-    
     // print_r($match);
+
     $content_response = $router->routerCallFunction($match);
     // print_r($content_response);
-    
-    require("menutrail.php");
-    $pathtrail = new MenuTrail($kernel->getConfig('menu')['main']);
 
-    echo "<pre>";
+    require_once('Modules.php');
+    require_once("Attributes.php");
+    require_once("Menutrail.php");
+    require_once('Routetrail.php');
+    $pathtrail = new Menutrail($Request->getQueryRoute(), $kernel->getConfig('menu')['main']);
+
+    // echo "<pre>";
         // print_r($Request->getQueryString());
         // echo "<br>";
         // $pathtrail->getTrails();
-        // $mtrail = array();
-        $pathtrail->isInTrail( $Request->getQueryRoute(), 1, $kernel->getConfig('menu')['main'], $mtrail);
+    // $mtrail = array();
+    // $pathtrail->getTrail($mtrail);
     
         // $pathtrail->isInRouteTrail($Reque)
-        print_r( $mtrail );    
-    echo "</pre>";
+        // print_r( $mtrail );    
+    // echo "</pre>";
     
-    
-    require_once('modules.php');
     registerModules();
 
 

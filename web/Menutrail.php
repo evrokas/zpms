@@ -2,15 +2,18 @@
 
 // provide menu tail interface
 
-class MenuTrail {
+class Menutrail {
     private $menu;
-    function __construct($amenu) {
+    private $path;
+
+    function __construct($apath, $amenu) {
+        $this->path = $apath;
         $this->menu = $amenu;
     }
 
-    function isInTrail($apath, $level, $amenu, &$amenutrail) {
+    function getTrail(&$amenutrail, $amenu = null, $level = 1) {
         // $path = explode('/', $apath);
-
+        if(!$amenu)$amenu = $this->menu;
         // echo "<pre>";
         // echo "Testing trail in " . $apath[ $level ] . "  for token " . 
         // print_r( $apath ); echo "<br>" . "level: $level<br>";
@@ -19,13 +22,13 @@ class MenuTrail {
 
         foreach($amenu as $menuitem) {
             // echo "test trail: " . array_key_first($menuitem) . " === " . $apath[ $level ] . "<br>";
-            if(array_key_first($menuitem) == $apath[ $level ]) {
+            if(array_key_first($menuitem) == $this->path[ $level ]) {
                 // echo "found trail " . $menuitem['text'] . "<br>" . print_r( $menuitem, 1) . "<br>";
 
                 $amenutrail[] = $menuitem['text'];
                 if(isset($menuitem['submenu'])) {
                     // echo "Has submenu<br>";
-                    $this->isInTrail($apath, $level+1, $menuitem['submenu'], $amenutrail);
+                    $this->getTrail($amenutrail, $menuitem['submenu'], $level+1);
                 }
             }
         }

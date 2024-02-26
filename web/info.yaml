@@ -101,12 +101,21 @@ menu:
     - contact:
       text: 'Contact'
       url: '#'
-    - links:
-      text: 'Test link menu'
-      submenu:
-        - link1:
-          text: 'Link 1'
-          url: '#'
-        - link2:
-          text: 'Link 2'
-          url: '/links/link2'
+    # - links:
+    #   text: 'Test link menu'
+    #   submenu:
+    #     - link1:
+    #       text: 'Link 1'
+    #       url: '#'
+    #     - link2:
+    #       text: 'Link 2'
+    #       url: '/links/link2'
+    #     - link3:
+    #       text: 'Link 3'
+    #       submenu:
+    #         - link_link1:
+    #           text: link3-1
+    #           url: '#'
+    #         - link_link2:
+    #           text: 'link3-2 test'
+    #           url: 'links/link3/link_link2'

@@ -73,10 +73,22 @@ body {
 
 .main-navigation ul li {
     padding: 0.5rem 1rem;
+    font-weight: normal;
 }
 
 .main-navigation ul li:hover {
     color: blue;
+    background-color: rgb(191, 191, 243);
+}
+
+.main-navigation li.menu-item.in-menu-trail {
+    font-weight: 600;
+    /* background-color: greenyellow; */
+    background-color: rgb(191, 191, 243);
+}
+
+.main-navigation li.submenu-item.in-menu-trail {
+    font-weight: 600;
     background-color: rgb(191, 191, 243);
 }
 

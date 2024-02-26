@@ -76,36 +76,91 @@ class header extends moduleClass {
 class breadcrumbsModule extends moduleClass {
     function render($params = array()) {
         global $Renderer;
+        global $Request;
+        global $kernel;
 
-        return ($this->renderTemplate( ["path" => ["home", "view", "test"]] ));
+        $ptrail = new Menutrail($Request->getQueryRoute(), $kernel->getConfig('menu')['main']);
+        $path = array();
+        $ptrail->getTrail($path);
+        // print_r( $path );
+        if(!count($path)) {
+            // menu trail could not get a path
+            // try router instead, to get the current route
+            $rtrail = new Routetrail();
+            $rtrail->getTrail($path);
+            // print_r( $path );
+        }
+        return ($this->renderTemplate( ["path" => array_merge(["Home"], $path)] ));
+        // return ($this->renderTemplate( ["path" => ["home", "view", "test"]] ));
         // return ($Renderer->render("breadcrumbs.zetem", ["path" => ["home", "view", "test"]]));
     }
 }
 
 class mainnavigationModule extends moduleClass {
     protected $menu;
+    protected $trail = array();
 
     function __construct($amodule, $atemplate, $amenu) {
+        global $Request;
+
         parent::__construct($amodule, $atemplate);
         $this->menu = $amenu;
+        $pathtrail = new Menutrail($Request->getQueryRoute(), $amenu);
+        $pathtrail->getTrail($this->trail);
         // echo "<pre>";
         // print_r($this->menu);
+        // print_r($this->trail);
         // echo "</pre>";
     }
     
+    function setupMenuAttributes(&$amenu, $alevel) {
+        // $amenu['attributes'] = new Attributes();
+        // $amenu['attributes']->addClass('menu');
+        // $amenu['attributes']->addClass('menu-level-'.$alevel);
+        // if(!count($amenu))return;
+
+        foreach($amenu as $mitem => $mdata) {
+            // $at = new Attributes();
+            $amenu[ $mitem ]['attributes'] = new Attributes();
+
+            if(!isset($amenu[$mitem]['submenu']))
+                $amenu[$mitem]['attributes']->addClass('menu-item');
+            else {
+                $amenu[$mitem]['attributes']->addClass('submenu-item');
+                $amenu[$mitem]['attributes']->addClass('submenu-item-level-' . $alevel+1);
+            }
+                // $at->addClass('submenu-item-level-' . $alevel+1);
+
+            // $amenu[ $mitem ]['attributes'] = $at;
+            
+            // echo "<pre>" . $amenu[$mitem]['text'] . ' <> ' . $this->trail[$alevel] . " {" . $alevel . "}<br/></pre>";
+            if($alevel && ($amenu[$mitem]['text'] == $this->trail[$alevel])
+            
+            )
+                $amenu[$mitem]['attributes']->addClass('in-menu-trail');
+
+
+            // echo "mdata ($alevel):" . $amenu[$mitem]['text'];
+            if(isset($amenu[$mitem]['submenu'])) {  
+                // $amenu[$mitem]['submenu']['attributes'] = new Attributes('class', 'submenu');
+                // ($amenu[$mitem]['submenu']['attributes'])->addClass('submenu');
+
+                $this->setupMenuAttributes($amenu[ $mitem ]['submenu'], $alevel+1);
+            }
+            // echo "<pre>"; print_r( $amenu ); echo "</pre>";
+            // echo "attrs: " . $amenu[$mitem]['attributes']->getAttributes() . "<br>";
+        }
+    }
     function render($params = array()) {
         global $Renderer;
 
         $mmenu = $this->menu;
-        foreach($mmenu as $mitem) {
-            echo "make menu attributes";
-            exit;
-        }
-
+        $this->setupMenuAttributes($mmenu, 0);
+        // echo "<pre>"; print_r( $mmenu ); echo "</pre>";
 
         return(
             // "main navigation module<br>" .
-            $this->RenderTemplate(['menu' => $this->menu]));
+            $this->RenderTemplate(['menu' => $mmenu]));
     }
 }
 
@@ -123,17 +178,6 @@ class contentModule extends moduleClass {
 class notificationsModule extends moduleClass {
     function render($params = array()) {
         global $kernel;
-        // global $_SESSION;
-
-            // print_r( $_SESSION );
-            // $prms = array();
-            // $prms['notice'] = $kernel->getStatus('notice');
-            // $prms['error'] = $kernel->getStatus('error', true);
-            // $prms['warning'] = $kernel->getStatus('warning', true);
-
-            // if(!count($prms['notice']))unset($prms['notice']);else
-            // if(!count($prms['error']))unset($prms['error']);
-            // if(!count($prms['warning']))unset($prms['warning']);
 
             $prms = array();
             foreach(['notice', 'error', 'warning'] as $level) {
