@@ -44,19 +44,26 @@ body {
     list-style: none;
 }
 
-.breadcrumbs ul li {
+.breadcrumbs ul li.breadcrumb-item {
     padding: 0 4px;
 }
+.breadcrumbs ul li.breadcrumb-separator {
+    padding: 0 6px;
+}
 
-.breadcrumbs ul li:hover {
-    color:rgb(118, 118, 247)
+.breadcrumbs ul li.breadcrumb-item:hover {
+    color:rgb(118, 118, 247);
+    text-decoration: underline;
+    cursor: pointer;
 }
-.breadcrumbs ul li::before {
-    content: '/ ';
-}
-.breadcrumbs ul li:first-of-type::before {
-    content: ':: ';
-}
+
+/* .breadcrumbs ul li::before { */
+    /* content: ' > '; */
+/* } */
+
+/* .breadcrumbs ul li:first-of-type::before { */
+    /* content: ':: '; */
+/* } */
 
 
 .main-navigation {
@@ -92,6 +99,18 @@ body {
     background-color: rgb(191, 191, 243);
 }
 
+
+/* patients forms */
+
+.page-title {
+    text-align: center;
+}
+
+.patient-list-actions ul {
+    padding: 1rem 2rem 0.2rem;
+    list-style: none;
+}
+
 .patients-list {
     padding: 1rem;
 }
@@ -110,6 +129,7 @@ body {
 
 .patients-list table tr:nth-child(even) {
     background-color: rgb(170, 166, 166);
+    color: rgb(47, 47, 47);;
 }
 .patients-list table td {
     padding: 0.2rem 0.4rem;
@@ -118,6 +138,13 @@ body {
     display: flex;
     justify-content: space-evenly;
 }
+
+.patients-list table td.actions a,
+.patients-list table td.actions a:visited {
+    color: red;
+    text-decoration: inherit;
+}
+
 
 .patients-list table td[data-column="amka"] {
     text-align: center;
@@ -154,6 +181,83 @@ body {
 
 
 .edit-patient form .buttons {
+    display: flex;
+    flex-direction: row;
+
+    justify-content: space-evenly;
+}
+
+
+/* appointments forms */
+
+.appointment-list-actions ul {
+    padding: 1rem 2rem 0.2rem;
+    list-style: none;
+}
+
+.appointments-list {
+    padding: 1rem;
+}
+.appointments-list table {
+    width: 90%;
+}
+.appointments-list table thead {
+    background-color: rgb(85, 85, 85);
+    color: white;
+}
+.appointments-list table tr {
+    height: 1.5rem;
+    line-height: 1.5rem;
+    justify-content: center;
+}
+
+.appointments-list table tr:nth-child(even) {
+    background-color: rgb(170, 166, 166);
+    color: rgb(47, 47, 47);;
+}
+.appointments-list table td {
+    padding: 0.2rem 0.4rem;
+}
+.appointments-list table td.actions {
+    display: flex;
+    justify-content: space-evenly;
+}
+
+.appointments-list table td[data-column="place"] {
+    text-align: center;
+}
+
+
+.edit-appointment form {
+    display: flex;
+    gap: 0.8rem;
+    flex-direction: column;
+}
+
+.edit-appointment form .input-div {
+    background-color: aqua;
+    height: 2rem;
+    /* line-height: 2rem; */
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.1rem 0.4rem;    
+    /* justify-content: space-evenly; */
+}
+
+.edit-appointment form .input-div input {
+    flex-grow: 1;
+    padding: 1px 2px;
+}
+
+.edit-appointment form .input-div label {
+    width: 10rem;
+    text-align: right;
+}
+
+
+.edit-appointment form .buttons {
     display: flex;
     flex-direction: row;
 

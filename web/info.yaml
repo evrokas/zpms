@@ -48,6 +48,16 @@ routes:
     url: "/patient/{id}/edit"
     handler: patient_edit_post
     method: post
+  patient_new:
+    title: "New Patient"
+    url: /patient/new
+    handler: patient_new
+    method: get
+  patient_new_post:
+    title: "New Patient"
+    url: /patient/new
+    handler: patient_new_post
+    method: post
   patient_delete:
     title: "Patient delete"
     url: "/patient/{id}/delete"
@@ -56,6 +66,30 @@ routes:
     title: "Appointments"
     url: /appointments
     handler: appointments_list
+  appointment_edit:
+    title: "Appointment edit"
+    url: "/appointment/{id}/edit"
+    handler: appointment_edit
+    method: get
+  appointment_edit_post:
+    title: "Appointment edit"
+    url: "/appointment/{id}/edit"
+    handler: appointment_edit_post
+    method: post
+  appointment_new:
+    title: "New appointment"
+    url: "/appointment/new"
+    handler: appointment_new
+    method: get
+  appointment_new_post:
+    title: "New appointment"
+    url: "/appointment/new"
+    handler: appointment_new_post
+    method: post
+  appointment_delete:
+    title: "Appointment delete"
+    url: "/appointment/{id}/delete"
+    handler: appointment_delete
 
 regions:
   - header

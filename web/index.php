@@ -49,11 +49,11 @@ function dump_routes() {
     $content_response = $router->routerCallFunction($match);
     // print_r($content_response);
 
-    require_once('Modules.php');
-    require_once("Attributes.php");
-    require_once("Menutrail.php");
-    require_once('Routetrail.php');
-    $pathtrail = new Menutrail($Request->getQueryRoute(), $kernel->getConfig('menu')['main']);
+    // require_once('Modules.php');
+    // require_once("Attributes.php");
+    // require_once("Menutrail.php");
+    // require_once('Routetrail.php');
+    // $pathtrail = new Menutrail($Request->getQueryRoute(), $kernel->getConfig('menu')['main']);
 
     // echo "<pre>";
         // print_r($Request->getQueryString());
@@ -144,8 +144,10 @@ function dump_routes() {
         global $Renderer;
         global $kernel;
 
-        $pc = new patientsClass();
-        $pat = $pc->getAll();
+        // $pc = new patientsClass();
+        // $pat = $pc->getAll();
+
+        $pat = patientsClass::sgetAll();
         // echo "<pre>";
         // print_r( $pat );
         // echo "</pre>";
@@ -174,13 +176,21 @@ function dump_routes() {
             return ("patients doesn't exist");
         }
 
-        $pc = new patientsClass();
-        $pat = $pc->getById($params['id']);
-        return ($Renderer->render("edit_patients.zetem", ['id' => $params['id'], 'patient' => $pat]));
+        // $pc = new patientsClass();
+        // $pat = $pc->getById($params['id']);
+
+        $pat = patientsClass::sgetById( $params['id'] );
+        return ($Renderer->render("edit_patient.zetem", ['action' => 'edit', 'id' => $params['id'], 'patient' => $pat]));
     }
     function patient_edit_post($params) {
         global $Renderer;
         global $kernel;
+
+        if(isset($_POST['cancel'])) {
+            $kernel->addStatus('warning', 'Η επεξεργασία του φακέλου ακυρώθηκε.');
+            header('location: '.rel_url('/patients'));
+
+        }            
 
         if(!isset($params['id'])) {
             return ("patients doesn't exist");
@@ -190,8 +200,12 @@ function dump_routes() {
         $pc = new patientsClass();
         $pat = $pc->getById($params['id']);
 
-        $kernel->addStatus('notice', 'Ο φάκελος του ασθενή <b>' . $pat->getpname() . '</b> έχει αποθηκευτεί.');
-        header('location: '.rel_url('/patients'));
+
+        if(isset($_POST['submit'])) {
+            $kernel->addStatus('notice', 'Ο φάκελος του ασθενή <b>' . $pat->getpname() . '</b> έχει αποθηκευτεί.');
+            header('location: '.rel_url('/patients'));
+        }
+
         exit();
         // return '';
         // patients_list(['notice' => 'Ο φάκελος του ασθενή ' + $pat->getpname() . ' έχει αποθηκευτεί.']);
@@ -199,12 +213,167 @@ function dump_routes() {
         // return ($Renderer->render("edit_patients.zetem", ['notice' => 'data were saved', 'id' => $params['id'], 'patient' => $pat]));
     }
 
+
+    function patient_new($params) {
+        global $Renderer;
+        global $kernel;
+
+        $pc = new patientsClass([
+            'pname' => 'rokas rokas',
+            'pdob' => '1977-07-29T00:00',
+            'pamka' => '29097704978',
+            'ptel' => '7548347829',
+            'paddr' => 'themisotcleous, 3',
+            'pemail' => 'evrokas@hotmail.com'
+        ]);
+        
+        // $pat = $pc->getById($params['id']);
+        return ($Renderer->render("edit_patient.zetem", ['action' => 'new', 'id' => null, 'patient' => $pc]));
+    }
+
     function patient_delete($params) {
-        return ("<p>Patient delete no: " . $params['id'] . "</p>");
+        global $kernel;
+
+        $pc = new patientsClass();
+        $pat = $pc->getById($params['id']);
+        $pat->delete();
+
+        $kernel->addStatus('warning', 'Ο φάκελος διαγράφθηκε με τπιτυχία.');
+        header('location: '.rel_url('/patients'));
+        exit();
+    }
+
+    function patient_new_post($params) {
+        global $Renderer;
+        global $kernel;
+
+        // echo "this is the post version<br/>";
+        $pc = new patientsClass([
+            // 'guid' => 
+            'id' => null,
+            'cuser' => 'admin',
+            'cdate' => '1977-07-29 00:00:00',
+            'pname' => $_POST['patient-name'],
+            'pdob' => $_POST['patient-dob'],
+            'pamka' => $_POST['patient-amka'],
+            'ptel' => $_POST['patient-telephone'],
+            'paddr' => $_POST['patient-address'],
+            'pemail' => $_POST['patient-email'],
+            'guid' => guid()
+        ]);
+        // print_r( $pc );
+
+        $pc->insert();
+
+        $kernel->addStatus('notice', 'Δημιουργήθηκε νέος φάκελος για τον ασθενή <b>' . $pc->getpname() . '</b>.');
+        header('location: '.rel_url('/patients'));
     }
 
     function appointments_list($params) {
         global $Renderer;
-        return $Renderer->render("appointments_list.zetem", []);
+        global $kernel;
+
+        $app = new appointmentsClass();
+        $ap = $app->getAll();
+        // $apnt = $ap->getAll();
+        // echo "<pre>";
+        // print_r( $pat );
+        // echo "</pre>";
+        $pp = array();
+        foreach($ap as $appoint) {
+            $pp[] = ['id' => $appoint->getid(),
+                    'adate' => $appoint->getadate(),
+                    'aplace' => $appoint->getaplace()
+                ];
+
+                    // echo "<pre>";
+                    // echo "Place: " . $appoint->getaplace() . "<br>";
+                    // echo "</pre>";
+            // $ppp = array();
+            // $ppp['id'] = $p->getid();
+            // $ppp['pname'] = $p->getpname();
+            // $ppp['pamka'] = $p->getpamka();
+
+            // $pp[] = $ppp;
+        }
+
+        return $Renderer->render("appointments_list.zetem",
+            ['app_list' => $pp,
+                // 'notice' => $kernel->ifelseStatus('patient_edit', '', true)
+            ]);
     }
 
+
+    function appointment_edit($params) {
+        global $Renderer;
+        global $kernel;
+
+        if(!isset($params['id'])) {
+            $kernel->addStatus('error', 'Το ραντεβού δεν βρέθηκε!');
+            return ("patients doesn't exist");
+        }
+
+        $ap = new appointmentsClass();
+        $app = $ap->getById($params['id']);
+        return ($Renderer->render("edit_appointment.zetem", ['action' => 'edit', 'id' => $params['id'], 'appointment' => $app]));
+        
+    }
+    function appointment_edit_post($params) {
+        
+    }
+    function appointment_new($params) {
+        global $Renderer;
+        global $kernel;
+
+        $ap = new appointmentsClass([
+            'adate' => '1977-07-29 00:00:00',
+            'aplace' => 'Mandra'
+        ]);
+        
+        // $pat = $pc->getById($params['id']);
+        return ($Renderer->render("edit_appointment.zetem", ['action' => 'new', 'id' => null, 'appointment' => $ap]));
+    }
+
+    function appointment_new_post($params) {
+        global $Renderer;
+        global $kernel;
+
+
+        if(isset($_POST['cancel'])) {
+            $kernel->addStatus('warning', 'Η επεξεργασία του ραντεβού ακυρώθηκε.');
+            header('location: '.rel_url('/appointments'));
+            exit();
+        }            
+
+
+        // echo "this is the post version<br/>";
+        $app = new appointmentsClass([
+            // 'guid' => 
+            'id' => null,
+            'cuser' => 'admin',
+            'cdate' => '1977-07-29 00:00:00',
+            'adate' => $_POST['appointment-date'],
+            'aplace' => $_POST['appointment-place'],
+            'guid' => guid(),
+            'pguid' => guid()
+        ]);
+        // print_r( $pc );
+
+        $app->insert();
+
+        $kernel->addStatus('notice', 'Δημιουργήθηκε νέο ραντεβού.');
+        header('location: '.rel_url('/appointments'));
+    }
+
+    function appointment_delete($params) {
+        global $kernel;
+
+        $ap = new appointmentsClass();
+        $app = $ap->getById($params['id']);
+        $app->delete();
+
+        $kernel->addStatus('warning', 'Το ραντεβού διαγράφθηκε με τπιτυχία.');
+        header('location: '.rel_url('/appointments'));
+        exit();
+
+    }
