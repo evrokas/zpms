@@ -11,7 +11,7 @@
 </div>
 {% endif %}
 
-{% if(isset($warning) && count($warning)): %}
+{% if(isset($warning)): %}
 <div class="notification warning">
     {{$warning}}
 </div>

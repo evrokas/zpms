@@ -1,7 +1,13 @@
-<h2>Welcome to the Patients List</h2>
+<div class="page-title">
+    <h2>Patients</h2>
+</div>
 
+<div class="patient-list-actions">
+    <ul>
+        <li><a href="{{rel_url('/patient/new')}}"">Add new patient</a></li>
+    </ul>
+</div>
 <div class="patients-list">
-
     <table>
         <thead>
             <th>#</th>

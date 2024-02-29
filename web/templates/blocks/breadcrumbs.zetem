@@ -1,8 +1,17 @@
 <div class="breadcrumbs">
 
+{#
+    {% $temp = implode(' \\/\\ ', $path) %}
+    {% $path = explode('\\', $temp) %}
+    <pre>
+        {{print_r($path)}}
+    </pre>
+#}
+    
+
     <ul>
         {% foreach($path as $element): %}
-            <li>{{$element}}</li>
+            <li {{attributes($element)}}>{{$element['text']}}</li>
         {% endforeach %}
     </ul>
 

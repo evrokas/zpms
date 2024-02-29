@@ -1,0 +1,20 @@
+<h2>Επεξεραγσία ραντεβού</h2>
+
+<div class="edit-appointment">    
+    <form action="{{$action}}" method="post">
+        <div class="input-div">
+            <label for="patient-date">Ημ/νια & Ώρα ραντεβού</label>
+            <input type="datetime-local" name="appointment-date" id="" value="{{$appointment->getadate()}}">
+        </div>
+
+        <div class="input-div">
+            <label for="appointment-place">Περιοχή</label>
+            <input type="text" name="appointment-place" id=""  value="{{$appointment->getaplace()}}">
+        </div>
+
+        <div class="buttons">
+            <input type="submit" name="submit" value="submit">
+            <input type="submit" name="cancel" value="cancel">
+        </div>
+    </form>
+</div>
