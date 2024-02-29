@@ -5,3 +5,4 @@ fw/classes/*.php
 fw/test
 fw/classes/bootstrap_classes.php
 web/cache
+sql/zeusdb.sql
