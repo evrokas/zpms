@@ -25,12 +25,12 @@ function dump_routes() {
     // echo "</pre>";
 
     $kernel = new Kernel($_SERVER, "info.yaml");
+    SecurityClass::init($kernel->getConfig('roles') );
 
     $router = new RouterClass( $kernel->getConfig('routes') );
     // print_r( $router->getAllRoutes() );
 
     $Renderer = new ZETEMTemplate('templates/', false, true);
-
 
     $Request = new RequestClass($_SERVER);
     // $handlers = $Request->getQueryRoute();
@@ -41,6 +41,8 @@ function dump_routes() {
  
     session_start();
     ob_start();
+
+    $kernel->loginUser('evrokas', 'user');
 
     // $match = $router->matchRoute( $handlers[0] );
     $match = $router->matchRoute( $Request );
@@ -66,7 +68,7 @@ function dump_routes() {
         // print_r( $mtrail );    
     // echo "</pre>";
     
-    registerModules();
+    // registerModules();
 
 
     // if(!$match) {
@@ -144,6 +146,8 @@ function dump_routes() {
         global $Renderer;
         global $kernel;
 
+        SecurityClass::require('patients-view-list');
+
         // $pc = new patientsClass();
         // $pat = $pc->getAll();
 
@@ -170,6 +174,8 @@ function dump_routes() {
     function patient_edit($params) {
         global $Renderer;
         global $kernel;
+
+        SecurityClass::require('patients-edit-patient');
 
         if(!isset($params['id'])) {
             $kernel->addStatus('error', 'Ο φάκελος του ασθενή δεν βρέθηκε!');
@@ -272,6 +278,8 @@ function dump_routes() {
     function appointments_list($params) {
         global $Renderer;
         global $kernel;
+
+        SecurityClass::require('appointments-view-list');
 
         $app = new appointmentsClass();
         $ap = $app->getAll();

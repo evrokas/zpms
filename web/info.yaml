@@ -22,6 +22,12 @@ head_script:
     src: "https://unpkg.com/ionicons@latest/dist/ionicons/ionicons.js"
 
 
+roles:
+  anonymous: anonymous
+  administrator: all
+  authenticated: authenticated_content
+  user: [patients-view-list, appointments-view-list]
+
 routes:
   homepage:
     title: "Homepage"
@@ -33,11 +39,12 @@ routes:
     name : admin
     url: "/admin"
     handler: admin
-    permissions: authenticated
+    access: administrator
   patients:
     title: "Patients"  
     url: "/patients"
     handler: patients_list
+    access: authenticated user
   patient_edit:
     title: "Patient edit"
     url: "/patient/{id}/edit"
@@ -66,6 +73,7 @@ routes:
     title: "Appointments"
     url: /appointments
     handler: appointments_list
+    access: authenticated
   appointment_edit:
     title: "Appointment edit"
     url: "/appointment/{id}/edit"
