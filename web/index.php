@@ -385,3 +385,15 @@ function dump_routes() {
         exit();
 
     }
+
+    function login($params) {
+        echo "Login user<br>";
+    }
+
+    function login_post($params) {
+        echo "Login user post<br>";
+    }
+
+    function logout($params) {
+        echo "Logout user<br>";
+    }

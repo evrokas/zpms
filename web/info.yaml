@@ -40,6 +40,20 @@ routes:
     url: "/admin"
     handler: admin
     access: administrator
+  login:
+    title: "User login"
+    url: "/login"
+    handler: login
+    method: get
+  login_post:
+    title: "User login"
+    url: "/login"
+    handler: login_post
+    method: post
+  logout:
+    title: "User logout"
+    url: "/logout"
+    handler: logout
   patients:
     title: "Patients"  
     url: "/patients"
