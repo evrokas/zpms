@@ -27,6 +27,8 @@ roles:
   administrator: all
   authenticated: authenticated_content
   user: [patients-view-list, appointments-view-list]
+  power-user: [patients-view-list, patients-new-patient, patients-delete-patient, patients-edit-patient]
+
 
 routes:
   homepage:
@@ -87,7 +89,7 @@ routes:
     title: "Appointments"
     url: /appointments
     handler: appointments_list
-    access: authenticated
+    access: authenticated user
   appointment_edit:
     title: "Appointment edit"
     url: "/appointment/{id}/edit"
@@ -130,6 +132,7 @@ blocks:
 structure:
   header:
     - header
+    - userblock
     - breadcrumbs
   main_navigation:
     - mainnavigation

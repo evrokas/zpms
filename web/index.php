@@ -42,7 +42,7 @@ function dump_routes() {
     session_start();
     ob_start();
 
-    $kernel->loginUser('evrokas', 'user');
+    // $kernel->loginUser('evrokas', 'user');
 
     // $match = $router->matchRoute( $handlers[0] );
     $match = $router->matchRoute( $Request );
@@ -192,6 +192,8 @@ function dump_routes() {
         global $Renderer;
         global $kernel;
 
+        SecurityClass::require('patients-edit-patient');
+
         if(isset($_POST['cancel'])) {
             $kernel->addStatus('warning', 'Η επεξεργασία του φακέλου ακυρώθηκε.');
             header('location: '.rel_url('/patients'));
@@ -224,6 +226,8 @@ function dump_routes() {
         global $Renderer;
         global $kernel;
 
+        SecurityClass::require('patients-new-patient');
+
         $pc = new patientsClass([
             'pname' => 'rokas rokas',
             'pdob' => '1977-07-29T00:00',
@@ -240,6 +244,8 @@ function dump_routes() {
     function patient_delete($params) {
         global $kernel;
 
+        SecurityClass::require('patients-delete-patient');
+
         $pc = new patientsClass();
         $pat = $pc->getById($params['id']);
         $pat->delete();
@@ -252,6 +258,9 @@ function dump_routes() {
     function patient_new_post($params) {
         global $Renderer;
         global $kernel;
+
+
+        SecurityClass::require('patients-new-patient');
 
         // echo "this is the post version<br/>";
         $pc = new patientsClass([
@@ -387,13 +396,37 @@ function dump_routes() {
     }
 
     function login($params) {
+        global $Renderer;
+
         echo "Login user<br>";
+
+        return ($Renderer->render("login.zetem", ['action' => 'login']));
     }
 
     function login_post($params) {
+        global $kernel;
+
         echo "Login user post<br>";
+
+        echo "Trying to login user: " . $_POST['username'] . " with password: " . $_POST['password'] . "<br>";
+
+        $us = UsersClassEx::getUser($_POST['username'], hash('sha256', $_POST['password']));
+        echo "<pre>User: " . print_r( $us, 1 ) . "</pre>";
+        if($us) {
+            $kernel->loginUser($us->getuname(), $us->getroles());
+        }
     }
 
     function logout($params) {
+        global $kernel;
+
         echo "Logout user<br>";
+
+        $us = $kernel->getUserName();
+        if($us) {
+            $kernel->logoutUser();
+        }
+        header('location: '.rel_url('/'));
+        exit();
+
     }

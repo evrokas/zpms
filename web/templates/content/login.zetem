@@ -1,0 +1,21 @@
+<div class="login-page">
+    <div class="title">
+        Enter your credentials to login
+    </div>    
+
+    <form action="{{$action}}" method="post">    
+        <div class="field">
+            <label for="username">Username</label>
+            <input type="text" name="username" id="username">
+        </div>
+
+        <div class="field">
+            <label for="password">Password</label>
+            <input type="password" name="password" id="password">
+        </div>
+
+        <div class="buttons">
+            <button type="submit">Login</button>
+        </div>
+    </form>
+</div>

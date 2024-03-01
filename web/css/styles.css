@@ -289,3 +289,11 @@ body {
 .notification span {
     font-weight: 600;
 }
+
+.user-block {
+    margin-top: 1rem;
+}
+
+.user-block span {
+    color: red;
+}
