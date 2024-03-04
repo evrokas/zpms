@@ -1,5 +1,10 @@
-<h2>Επεξεραγσία ραντεβού</h2>
+<h2>Επεξεργασία ραντεβού</h2>
 
+{% if(isset($patient)):%}
+    <div class="appointment-patient-name">
+        <h4>Ασθενής: <span>{{$patient->getpname()}}</span> </h4>
+    </div>
+{% endif %}
 <div class="edit-appointment">    
     <form action="{{$action}}" method="post">
         <div class="input-div">
@@ -10,6 +15,11 @@
         <div class="input-div">
             <label for="appointment-place">Περιοχή</label>
             <input type="text" name="appointment-place" id=""  value="{{$appointment->getaplace()}}">
+        </div>
+
+        <div class="input-div">
+            <label for="appointment-notes">Σημειώσεις</label>
+            <textarea name="appointment-notes" id="" cols="" rows="5">{{$appointment->getanote()}}</textarea>
         </div>
 
         <div class="buttons">

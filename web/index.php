@@ -184,9 +184,32 @@ function dump_routes() {
 
         // $pc = new patientsClass();
         // $pat = $pc->getById($params['id']);
-
+        // error_log("\n$params: " .print_r($params, 1)."\n");
         $pat = patientsClass::sgetById( $params['id'] );
-        return ($Renderer->render("edit_patient.zetem", ['action' => 'edit', 'id' => $params['id'], 'patient' => $pat]));
+
+        // echo "<pre>patient: " . print_r($pat, 1) . "</pre>";
+        $app_list = appointmentsClassEx::getAppointmentsForPatient($pat->getguid());
+
+        $apprender = array();;
+        foreach($app_list as $ap) {
+            $apprender[] = [
+                'index' => count($apprender),
+                'markup' => $Renderer->render('view_appointment.zetem', [
+                                                'action' => rel_url('/appointment/' . $ap->getid() . '/edit'),
+                                                'index' => count($apprender)+1,
+                                                'id' => $params['id'], 
+                                                'patient' => $pat,
+                                                'appointment' => $ap]),
+                'attributes' => new Attributes()
+            ];
+        }
+
+        return ($Renderer->render("edit_patient.zetem", [
+            'action' => 'edit', 
+            'id' => $params['id'], 
+            'patient' => $pat,
+            'appointments' => $apprender
+        ]));
     }
     function patient_edit_post($params) {
         global $Renderer;
@@ -211,8 +234,10 @@ function dump_routes() {
 
         if(isset($_POST['submit'])) {
             $kernel->addStatus('notice', 'Ο φάκελος του ασθενή <b>' . $pat->getpname() . '</b> έχει αποθηκευτεί.');
-            header('location: '.rel_url('/patients'));
+            header('location: '.rel_url('/patient/'.$pat->getid().'/edit'));
         }
+
+        error_log('\nREFERER: '. $_SERVER['HTTP_REFERER']."\n");
 
         exit();
         // return '';
@@ -255,6 +280,7 @@ function dump_routes() {
         exit();
     }
 
+
     function patient_new_post($params) {
         global $Renderer;
         global $kernel;
@@ -266,8 +292,8 @@ function dump_routes() {
         $pc = new patientsClass([
             // 'guid' => 
             'id' => null,
-            'cuser' => 'admin',
-            'cdate' => '1977-07-29 00:00:00',
+            'cuser' => $kernel->getUserName(),
+            'cdate' => getDBtime( time() ),
             'pname' => $_POST['patient-name'],
             'pdob' => $_POST['patient-dob'],
             'pamka' => $_POST['patient-amka'],
@@ -336,17 +362,41 @@ function dump_routes() {
         
     }
     function appointment_edit_post($params) {
-        
+        SecurityClass::require('appointment-edit');
+
+        if(isset($_POST['cancel'])) {
+            $kernel->addStatus('warning', 'Η επεξεργασία του φακέλου ακυρώθηκε.');
+            header('location: '.rel_url('/patients'));
+
+        }            
+
+        if(!isset($params['id'])) {
+            return ("patients doesn't exist");
+        }
+
+        $ap = appointmentsClass::sgetById($params['id']);
+        error_log("\bFound appointment: " . print_r($ap, 1) . "\n");
+        $ap->setaplace($_POST['appointment-place']);
+        $ap->setadate($_POST['appointment-date']);
+        $ap->setanote($_POST['appointment-notes']);
+
+        $ap->update();
+
+        error_log('\nREFERER: '. $_SERVER['HTTP_REFERER']."\n");
+        header('location: '. $_SERVER['HTTP_REFERER']);
+
     }
     function appointment_new($params) {
         global $Renderer;
         global $kernel;
 
         $ap = new appointmentsClass([
-            'adate' => '1977-07-29 00:00:00',
+            'adate' => getDBtime(),
             'aplace' => 'Mandra'
         ]);
         
+        error_log('\nREFERER: '. $_SERVER['HTTP_REFERER']."\n");
+
         // $pat = $pc->getById($params['id']);
         return ($Renderer->render("edit_appointment.zetem", ['action' => 'new', 'id' => null, 'appointment' => $ap]));
     }
@@ -367,8 +417,8 @@ function dump_routes() {
         $app = new appointmentsClass([
             // 'guid' => 
             'id' => null,
-            'cuser' => 'admin',
-            'cdate' => '1977-07-29 00:00:00',
+            'cuser' => $kernel->getUserName(),
+            'cdate' => getDBtime(),
             'adate' => $_POST['appointment-date'],
             'aplace' => $_POST['appointment-place'],
             'guid' => guid(),
@@ -395,6 +445,68 @@ function dump_routes() {
 
     }
 
+
+
+
+    function patient_appointment_new($params) {
+        global $Renderer;
+        global $kernel;
+
+        if(!isset($params['id'])) {
+            return ("User could not be found");
+        }
+        error_log("\npatient_appointment_new: ".print_r($params, 1)."\n");
+        $p = patientsClass::sgetById( $params['id'] );
+        // echo "<pre>" . print_r( $p ) . "</pre>";
+
+        $ap = new appointmentsClass([
+            'adate' => getDBtime(),
+            'aplace' => 'Mandra',
+        'anote' => print_r( $_SERVER, 1) /*'notes'*/]);
+        // $kernel->setS
+        // $pat = $pc->getById($params['id']);
+        return ($Renderer->render("edit_appointment.zetem", ['action' => 'newappointment', 'id' => null, 'appointment' => $ap, 'patient' => $p]));
+    }
+
+    function patient_appointment_new_post($params) {
+        global $Renderer;
+        global $kernel;
+
+        error_log("<pre>patient_appointment_new_post: ".print_r($params, 1)."</pre>");
+        error_log("\nPatient id: " );
+        if(isset($_POST['cancel'])) {
+            $kernel->addStatus('warning', 'Η επεξεργασία του ραντεβού ακυρώθηκε.');
+            header('location: '.rel_url('/patient/'.$params['id'].'/edit'));
+            exit();
+        }            
+             
+        $pat = patientsClass::sgetById( $params['id'] );
+        if(!$pat) {
+            echo "User " . $params['id'] . "cannot be found!\n";
+            exit();
+        }
+        // echo "this is the post version<br/>";
+        $app = new appointmentsClass([
+            // 'guid' => 
+            'id' => null,
+            'cuser' => 'admin',
+            'cdate' => getDBtime(),
+            'adate' => $_POST['appointment-date'],
+            'aplace' => $_POST['appointment-place'],
+            'guid' => guid(),
+            'pguid' => $pat->getguid()
+        ]);
+        // print_r( $pc );
+
+        $app->insert();
+
+        error_log('\nREFERER: '. $_SERVER['HTTP_REFERER']."\n");
+
+        $kernel->addStatus('notice', 'Δημιουργήθηκε νέο ραντεβού.');
+        header('location: '.rel_url('/patient/'.$pat->getid().'/edit'));
+    }
+
+
     function login($params) {
         global $Renderer;
 
@@ -406,12 +518,8 @@ function dump_routes() {
     function login_post($params) {
         global $kernel;
 
-        echo "Login user post<br>";
-
-        echo "Trying to login user: " . $_POST['username'] . " with password: " . $_POST['password'] . "<br>";
-
         $us = UsersClassEx::getUser($_POST['username'], hash('sha256', $_POST['password']));
-        echo "<pre>User: " . print_r( $us, 1 ) . "</pre>";
+        // echo "<pre>User: " . print_r( $us, 1 ) . "</pre>";
         if($us) {
             $kernel->loginUser($us->getuname(), $us->getroles());
         }

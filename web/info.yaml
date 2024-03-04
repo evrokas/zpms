@@ -27,7 +27,7 @@ roles:
   administrator: all
   authenticated: authenticated_content
   user: [patients-view-list, appointments-view-list]
-  power-user: [patients-view-list, patients-new-patient, patients-delete-patient, patients-edit-patient]
+  power-user: [patients-view-list, patients-new-patient, patients-delete-patient, patients-edit-patient, appointment-edit]
 
 
 routes:
@@ -114,6 +114,16 @@ routes:
     title: "Appointment delete"
     url: "/appointment/{id}/delete"
     handler: appointment_delete
+  patient_appointment_new:
+    title: "New patient appointment"
+    url: "/appointment/{id}/newappointment"
+    handler: patient_appointment_new
+    method: get
+  patient_appointment_new_post:
+    title: "New patient appointment"
+    url: "/appointment/{id}/newappointment"
+    handler: patient_appointment_new_post
+    method: post
 
 regions:
   - header

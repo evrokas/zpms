@@ -100,6 +100,52 @@ body {
 }
 
 
+/* forms */
+form .buttons {
+    display: flex;
+    flex-direction: row;
+
+    justify-content: space-evenly;
+}
+
+.edit-patient form .buttons {
+    padding: 0.5rem;
+}
+
+form .buttons input[type="submit"] {
+    padding: 4px 8px;
+}
+
+form {
+    display: flex;
+    gap: 0.8rem;
+    flex-direction: column;
+}
+
+form .input-div {
+    background-color: aqua;
+    /* height: 2rem; */
+    /* line-height: 2rem; */
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.1rem 0.4rem;    
+    /* justify-content: space-evenly; */
+}
+
+form .input-div input,
+form .input-div textarea {
+    flex-grow: 1;
+    padding: 1px 2px;
+    width: 100%;
+}
+form .input-div label {
+    width: 10rem;
+    text-align: right;
+}
+
+
 /* patients forms */
 
 .page-title {
@@ -157,39 +203,65 @@ body {
     flex-direction: column;
 }
 
-.edit-patient form .input-div {
-    background-color: aqua;
-    height: 2rem;
-    /* line-height: 2rem; */
+
+.patient-appointments {
+	padding: 1rem;
+	text-align: center;
+	/* border: 1px solid black; */
+}
+.patient-appointments .new-appointment {
+	border: 1px solid black;
+	width: 50%;
+	margin: auto;
+	padding: 0.3rem;
+	border-radius: 5px;
+}
+
+.patient-appointments .new-appointment:hover {
+    /* color: white; */
+    background-color: darkslategrey;
+}
+
+.patient-appointments .new-appointment:hover a{
+    color: white;
+}
+
+form .input-header {
     display: flex;
     flex-direction: row;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.1rem 0.4rem;    
-    /* justify-content: space-evenly; */
 }
 
-.edit-patient form .input-div input {
+form .input-div input,
+form .input-div textarea {
     flex-grow: 1;
     padding: 1px 2px;
+    width: 100%;
 }
-
-.edit-patient form .input-div label {
+form .input-div label {
     width: 10rem;
     text-align: right;
 }
 
 
-.edit-patient form .buttons {
+/* appointments forms */
+.appointment-patient-name {
+    margin: 8px 0 4px;
     display: flex;
-    flex-direction: row;
-
-    justify-content: space-evenly;
+    gap: 4px;
 }
 
+.appointment-patient-name i {
+    color: red;
 
-/* appointments forms */
+}
 
+.appointment-patient-name i:hover {
+    text-decoration: underline;
+}
+
+.appointment-patient-name span {
+    color: red;
+}
 .appointment-list-actions ul {
     padding: 1rem 2rem 0.2rem;
     list-style: none;
@@ -211,6 +283,7 @@ body {
     justify-content: center;
 }
 
+
 .appointments-list table tr:nth-child(even) {
     background-color: rgb(170, 166, 166);
     color: rgb(47, 47, 47);;
@@ -225,43 +298,6 @@ body {
 
 .appointments-list table td[data-column="place"] {
     text-align: center;
-}
-
-
-.edit-appointment form {
-    display: flex;
-    gap: 0.8rem;
-    flex-direction: column;
-}
-
-.edit-appointment form .input-div {
-    background-color: aqua;
-    height: 2rem;
-    /* line-height: 2rem; */
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.1rem 0.4rem;    
-    /* justify-content: space-evenly; */
-}
-
-.edit-appointment form .input-div input {
-    flex-grow: 1;
-    padding: 1px 2px;
-}
-
-.edit-appointment form .input-div label {
-    width: 10rem;
-    text-align: right;
-}
-
-
-.edit-appointment form .buttons {
-    display: flex;
-    flex-direction: row;
-
-    justify-content: space-evenly;
 }
 
 
@@ -296,4 +332,55 @@ body {
 
 .user-block span {
     color: red;
+}
+
+ul.patient-appointments-list {
+    list-style: none;
+    /* margin: 1rem; */
+    padding: 0.5rem;
+    border: 1px solid rgb(109, 109, 109)    
+}
+
+
+.appointment-entry {
+    padding: 0.8rem 0;
+}
+.appointment-entry label {
+    color: red;
+    /* display: flex; */
+
+}
+
+
+
+.appointment-entry input[type="checkbox"] {
+    padding: 4px;
+    background-color: aqua;
+    color: blue;
+    display: none;
+}
+
+.appointment-entry input[type="checkbox"] ~ label i:nth-of-type(1) {
+    display: inline-block;
+}
+
+
+.appointment-entry input[type="checkbox"] ~ label i:nth-of-type(2) {
+    display: none;
+}
+
+.appointment-entry input[type="checkbox"]:checked ~ label i:nth-of-type(1) {
+    display: none;
+}
+
+.appointment-entry input[type="checkbox"]:checked ~ label i:nth-of-type(2) {
+    display: inline-block;
+}
+
+
+.appointment-entry input[type="checkbox"] ~ .edit-appointment {
+    display: none;
+}
+.appointment-entry input[type="checkbox"]:checked ~ .edit-appointment {
+    display: block;
 }

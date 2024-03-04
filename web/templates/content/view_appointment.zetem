@@ -1,0 +1,39 @@
+<hr>
+<div class="appointment-entry">
+    <input type="checkbox" name="expand-app" id="expand-app-{{$index}}">
+    <label for="expand-app-{{$index}}">
+        <i name="exp-arrow" class='bx bxs-right-arrow'></i>
+        <i name="cmp-arrow" class='bx bxs-down-arrow'></i>
+        <!-- <div class="title"> -->
+            {% if(isset($index)): %}
+            {{$index}}
+            {% endif %}
+            Ραντεβού
+            <!-- </div> -->
+    </label>
+    <div class="edit-appointment">    
+        <form action="{{$action}}" method="post">
+            <div class="input-header">
+                <div class="input-div">
+                    <label for="patient-date">Ημ/νια & Ώρα ραντεβού</label>
+                    <input type="datetime-local" name="appointment-date" id="" value="{{$appointment->getadate()}}">
+                </div>
+    
+                <div class="input-div">
+                    <label for="appointment-place">Περιοχή</label>
+                    <input type="text" name="appointment-place" id=""  value="{{$appointment->getaplace()}}">
+                </div>
+            </div>
+
+            <div class="input-div">
+                <label for="appointment-notes">Σημειώσεις</label>
+                <textarea name="appointment-notes" id="" cols="" rows="5">{{$appointment->getanote()}}</textarea>
+            </div>
+
+            <div class="buttons">
+                <input type="submit" name="submit" value="submit">
+                <!-- <input type="submit" name="cancel" value="cancel"> -->
+            </div>
+        </form>
+    </div>
+</div>

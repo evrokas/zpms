@@ -7,8 +7,8 @@
     {% endforeach; %}
 
     {# check to see if there is title defined in yaml #}
-    {% if(isset($head_title)): %}
-        <title>{{ $head_title }}</title>
+    {% if(isset($title)): %}
+        <title>{{ $title }}</title>
     {% endif %}
 
 

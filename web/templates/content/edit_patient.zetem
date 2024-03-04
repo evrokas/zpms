@@ -3,6 +3,13 @@
 
 <div class="edit-patient">    
     <form action="{{$action}}" method="post">
+
+        <div class="input-di">
+            <p>Patient GUID:<br>
+                {{$patient->getguid()}}
+            </p>
+            
+        </div>
         <div class="input-div">
             <label for="patient-name">Όνομα ασθενή</label>
             <input type="text" name="patient-name" id="" value="{{$patient->getpname()}}">
@@ -38,4 +45,21 @@
             <input type="submit" name="cancel" value="cancel">
         </div>
     </form>
+
+    <hr>
+    <div class="patient-appointments">
+        <div class="new-appointment">
+            <a href="{{rel_url('/appointment/'.$id.'/newappointment')}}">Νέο Ραντεβού</a>
+        </div>
+    </div>
+
+
+    {% if($appointments): %}
+        <ul class="patient-appointments-list">
+            {#<!-- {{$appointments}} -->#}
+            {% foreach($appointments as $ap): %}
+                <li data-index="{{$ap['index']}}">{{$ap['markup']}}</li>
+            {% endforeach %}
+        </ul`>
+    {% endif %}
 </div>
