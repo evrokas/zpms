@@ -2,14 +2,20 @@
 
 
 <div class="edit-patient">    
+    <div class="header">
+        <h4>Επεξεργασία στοιχείων ασθενή</h4>
+    </div>
     <form action="{{$action}}" method="post">
 
-        <div class="input-di">
-            <p>Patient GUID:<br>
-                {{$patient->getguid()}}
-            </p>
-            
-        </div>
+        {#
+            <div class="input-div">
+            {% if($action != 'new'): %}
+                <p>Patient GUID: {{$patient->getguid()}}
+                </p>
+            {% endif %}
+            </div>
+        #}
+
         <div class="input-div">
             <label for="patient-name">Όνομα ασθενή</label>
             <input type="text" name="patient-name" id="" value="{{$patient->getpname()}}">
@@ -46,15 +52,17 @@
         </div>
     </form>
 
-    <hr>
-    <div class="patient-appointments">
-        <div class="new-appointment">
-            <a href="{{rel_url('/appointment/'.$id.'/newappointment')}}">Νέο Ραντεβού</a>
+    {% if($action != 'new'): %}
+        <hr>
+        <div class="patient-appointments">
+            <div class="new-appointment">
+                <a href="{{rel_url('/appointment/'.$id.'/newappointment')}}">Νέο Ραντεβού</a>
+            </div>
         </div>
-    </div>
-
+    {% endif %}
 
     {% if($appointments): %}
+
         <ul class="patient-appointments-list">
             {#<!-- {{$appointments}} -->#}
             {% foreach($appointments as $ap): %}

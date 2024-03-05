@@ -1,14 +1,17 @@
 <hr>
 <div class="appointment-entry">
-    <input type="checkbox" name="expand-app" id="expand-app-{{$index}}">
+    <input type="checkbox" name="expand-app" id="expand-app-{{$index}}" {{$checked}}>
     <label for="expand-app-{{$index}}">
         <i name="exp-arrow" class='bx bxs-right-arrow'></i>
         <i name="cmp-arrow" class='bx bxs-down-arrow'></i>
         <!-- <div class="title"> -->
-            {% if(isset($index)): %}
+            <!-- {% if(isset($index)): %} -->
             {{$index}}
-            {% endif %}
-            Ραντεβού
+            <!-- {% endif %} -->
+            <span>
+                Ραντεβού <b>{{formatDate($appointment->getadate())}}</b>
+            </span>
+
             <!-- </div> -->
     </label>
     <div class="edit-appointment">    
@@ -25,13 +28,13 @@
                 </div>
             </div>
 
-            <div class="input-div">
+            <div class="input-div input-notes">
                 <label for="appointment-notes">Σημειώσεις</label>
                 <textarea name="appointment-notes" id="" cols="" rows="5">{{$appointment->getanote()}}</textarea>
             </div>
 
             <div class="buttons">
-                <input type="submit" name="submit" value="submit">
+                <input type="submit" name="submit" value="Αποθήκευση">
                 <!-- <input type="submit" name="cancel" value="cancel"> -->
             </div>
         </form>

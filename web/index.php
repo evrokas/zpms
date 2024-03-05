@@ -40,6 +40,8 @@ function dump_routes() {
     // print_r( $handlers );
  
     session_start();
+    // echo "<pre>Session: " . print_r( $_SESSION, 1) . "</pre>";
+
     ob_start();
 
     // $kernel->loginUser('evrokas', 'user');
@@ -197,6 +199,7 @@ function dump_routes() {
                 'markup' => $Renderer->render('view_appointment.zetem', [
                                                 'action' => rel_url('/appointment/' . $ap->getid() . '/edit'),
                                                 'index' => count($apprender)+1,
+                                                'checked' => (!count($apprender)?"checked":""),
                                                 'id' => $params['id'], 
                                                 'patient' => $pat,
                                                 'appointment' => $ap]),
@@ -254,12 +257,12 @@ function dump_routes() {
         SecurityClass::require('patients-new-patient');
 
         $pc = new patientsClass([
-            'pname' => 'rokas rokas',
-            'pdob' => '1977-07-29T00:00',
-            'pamka' => '29097704978',
-            'ptel' => '7548347829',
-            'paddr' => 'themisotcleous, 3',
-            'pemail' => 'evrokas@hotmail.com'
+            'pname' => randomAlpha(12, 2),
+            'pdob' => '1977-07-29 00:00:00',
+            'pamka' => randomNumber(11),
+            'ptel' => randomNumber(10),
+            'pemail' => randomEmail(),
+            'paddr' => randomAlnum(12, 3),
         ]);
         
         // $pat = $pc->getById($params['id']);
@@ -275,7 +278,7 @@ function dump_routes() {
         $pat = $pc->getById($params['id']);
         $pat->delete();
 
-        $kernel->addStatus('warning', 'Ο φάκελος διαγράφθηκε με τπιτυχία.');
+        $kernel->addStatus('warning', 'Ο φάκελος του ασθενή <b>'.$pat->getpname() . '</b> διαγράφθηκε με επιτυχία.');
         header('location: '.rel_url('/patients'));
         exit();
     }
@@ -293,7 +296,7 @@ function dump_routes() {
             // 'guid' => 
             'id' => null,
             'cuser' => $kernel->getUserName(),
-            'cdate' => getDBtime( time() ),
+            'cdate' => getDBtime(),
             'pname' => $_POST['patient-name'],
             'pdob' => $_POST['patient-dob'],
             'pamka' => $_POST['patient-amka'],
@@ -306,8 +309,9 @@ function dump_routes() {
 
         $pc->insert();
 
-        $kernel->addStatus('notice', 'Δημιουργήθηκε νέος φάκελος για τον ασθενή <b>' . $pc->getpname() . '</b>.');
+        $kernel->addStatus('notice', 'Δημιουργήθηκε νέος φάκελος για τον ασθενή <b>' . $pc->getpname() . '</b>');
         header('location: '.rel_url('/patients'));
+        exit();
     }
 
     function appointments_list($params) {
@@ -406,30 +410,8 @@ function dump_routes() {
         global $kernel;
 
 
-        if(isset($_POST['cancel'])) {
-            $kernel->addStatus('warning', 'Η επεξεργασία του ραντεβού ακυρώθηκε.');
-            header('location: '.rel_url('/appointments'));
-            exit();
-        }            
-
-
-        // echo "this is the post version<br/>";
-        $app = new appointmentsClass([
-            // 'guid' => 
-            'id' => null,
-            'cuser' => $kernel->getUserName(),
-            'cdate' => getDBtime(),
-            'adate' => $_POST['appointment-date'],
-            'aplace' => $_POST['appointment-place'],
-            'guid' => guid(),
-            'pguid' => guid()
-        ]);
-        // print_r( $pc );
-
-        $app->insert();
-
-        $kernel->addStatus('notice', 'Δημιουργήθηκε νέο ραντεβού.');
-        header('location: '.rel_url('/appointments'));
+        $kernel->addStatus('warning', 'Η επεξεργασία του ραντεβού ακυρώθηκε.');
+        header('location: '.rel_url($_SERVER['HTTP_REFERER']));
     }
 
     function appointment_delete($params) {
@@ -493,6 +475,7 @@ function dump_routes() {
             'cdate' => getDBtime(),
             'adate' => $_POST['appointment-date'],
             'aplace' => $_POST['appointment-place'],
+            'anote' => $_POST['appointment-notes'],
             'guid' => guid(),
             'pguid' => $pat->getguid()
         ]);
@@ -509,8 +492,6 @@ function dump_routes() {
 
     function login($params) {
         global $Renderer;
-
-        echo "Login user<br>";
 
         return ($Renderer->render("login.zetem", ['action' => 'login']));
     }
