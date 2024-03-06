@@ -429,7 +429,7 @@ input[type="date"]::-moz-calendar-picker-indicator {
 }
 
 .login-page .title {
-    font-size: 1.4rem;
+    font-size: 1.2rem;
     font-weight: 600;
     margin-bottom: 1rem;
 }
@@ -437,7 +437,7 @@ input[type="date"]::-moz-calendar-picker-indicator {
 .login-page form .field {
     display: flex;
     justify-content: center;
-    font-size: 1.2rem;
+    font-size: 1rem;
 
 }
 .login-page form .field label {

@@ -43,58 +43,21 @@ function dump_routes() {
     // echo "<pre>Session: " . print_r( $_SESSION, 1) . "</pre>";
 
     ob_start();
-
-    // $kernel->loginUser('evrokas', 'user');
+    registerModules();
 
     // $match = $router->matchRoute( $handlers[0] );
     $match = $router->matchRoute( $Request );
-    // print_r($match);
+    // echo "<pre>Match route: " . print_r($match, 1) . "</pre>";
 
     $content_response = $router->routerCallFunction($match);
     // print_r($content_response);
 
-    // require_once('Modules.php');
-    // require_once("Attributes.php");
-    // require_once("Menutrail.php");
-    // require_once('Routetrail.php');
-    // $pathtrail = new Menutrail($Request->getQueryRoute(), $kernel->getConfig('menu')['main']);
-
-    // echo "<pre>";
-        // print_r($Request->getQueryString());
-        // echo "<br>";
-        // $pathtrail->getTrails();
-    // $mtrail = array();
-    // $pathtrail->getTrail($mtrail);
-    
-        // $pathtrail->isInRouteTrail($Reque)
-        // print_r( $mtrail );    
-    // echo "</pre>";
-    
-    // registerModules();
-
-
-    // if(!$match) {
-    //     error_404();
-    //     exit;
-    // } else 
     {
-
-        // if (false) {
-        //     if(/* false && */ !isset($_SESSION['username'])) {
-        //         // header('Location: index.php/login' );
-        //         require('pages/login.php');
-        //     } else {
-        //         require('pages/' . $page . '.php');
-        //     }
-        // }
-
         // $Renderer->view("main.zetem", $kernel->getConfig() );
-        registerModules();
+        // registerModules();
         $region_resp = array();
 
         // $cont = new ContentClass('content/homepage.html');
-
-
 
         foreach($kernel->getConfig()['regions'] as $region) {
             // echo "<pre>Region " . print_r( $region, 1 ) . "</pre>";
@@ -503,7 +466,11 @@ function dump_routes() {
         // echo "<pre>User: " . print_r( $us, 1 ) . "</pre>";
         if($us) {
             $kernel->loginUser($us->getuname(), $us->getroles());
+            header('location: '.rel_url('/profile'));
+            exit();
         }
+
+
     }
 
     function logout($params) {
@@ -519,3 +486,4 @@ function dump_routes() {
         exit();
 
     }
+
