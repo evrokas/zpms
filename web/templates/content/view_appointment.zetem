@@ -30,7 +30,7 @@
 
             <div class="input-div input-notes">
                 <label for="appointment-notes">Σημειώσεις</label>
-                <textarea name="appointment-notes" id="" cols="" rows="5">{{$appointment->getanote()}}</textarea>
+                <textarea name="appointment-notes" id="" cols="" rows="15">{{$appointment->getanote()}}</textarea>
             </div>
 
             <div class="buttons">

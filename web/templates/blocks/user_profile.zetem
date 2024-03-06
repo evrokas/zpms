@@ -11,8 +11,8 @@
             <input type="checkbox" name="userexpired" disabled {{$userexpired}}>
         </div>
         <div class="fields">
-            <label for="username">User name</label>
-            <input type="text" name="username" id="" value="{{$user->getuname()}}">
+            <label for="username">Name</label>
+            <input type="text" name="username" id="" value="{{$user->getname()}}">
         </div>
         <div class="fields">
             <label for="password">Password</label>

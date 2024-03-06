@@ -153,7 +153,7 @@ function dump_routes() {
         $pat = patientsClass::sgetById( $params['id'] );
 
         // echo "<pre>patient: " . print_r($pat, 1) . "</pre>";
-        $app_list = appointmentsClassEx::getAppointmentsForPatient($pat->getguid());
+        $app_list = appointmentsClassEx::getAppointmentsForPatient($pat->getguid(), 'DESC');
 
         $apprender = array();;
         foreach($app_list as $ap) {
@@ -329,6 +329,8 @@ function dump_routes() {
         
     }
     function appointment_edit_post($params) {
+        global $kernel;
+
         SecurityClass::require('appointment-edit');
 
         if(isset($_POST['cancel'])) {
