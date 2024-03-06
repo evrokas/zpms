@@ -1,0 +1,25 @@
+<div class="user-profile">
+    Userid: {{$user->getuname()}}
+
+    <form action="#" method="post">
+        <div class="fields">
+            <label for="useractive">User account active</label>
+            <input type="checkbox" name="useractive" disabled {{$useractive}}>
+        </div>
+        <div class="fields">
+            <label for="userexpired">User account expired</label>
+            <input type="checkbox" name="userexpired" disabled {{$userexpired}}>
+        </div>
+        <div class="fields">
+            <label for="username">User name</label>
+            <input type="text" name="username" id="" value="{{$user->getuname()}}">
+        </div>
+        <div class="fields">
+            <label for="password">Password</label>
+            <input type="password" name="username" id="" value="{{$user->getuname()}}"">
+        </div>
+        <div class="buttons">
+            <button type="submit" name="submit">Αποθήκευση</button>
+        </div>
+    </form>
+</div>
