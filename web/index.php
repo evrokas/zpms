@@ -95,12 +95,6 @@ function dump_routes() {
     ob_end_flush();
 
 
-
-    function patient_list($params) {
-        echo "Patient list handler";
-    }
-
-
     function homepage($params) {
         global $Renderer;
         return $Renderer->render("homepage.zetem", []);
@@ -136,6 +130,54 @@ function dump_routes() {
             ]);
     }
 
+    function patients_search_post($params) {
+        SecurityClass::require('patients-view-list');
+
+        header('location: '.rel_url('/patients/search/'.urlencode($_POST['search-term'])));
+        exit();
+    }
+
+    function patients_list_search($params) {
+        SecurityClass::require('patients-view-list');
+
+        $pat = patientsClassEx::search(urldecode($params['term']));
+
+        
+        $s = '';
+        foreach($pat as $p) {
+            $s .= "<pre>name: " . $p->getpname() . "</pre>";
+        }   
+
+        return ($s);
+    }
+
+    function patients_list_search_ajax($params) {
+        SecurityClass::require('patients-view-list');
+
+        $arg = $_POST['sterm'];
+        // error_log("\nAjax request: ". print_r($arg, 1) . "\n");;
+        // error_log("\nurldecode: " . urldecode($arg));
+        $pat = patientsClassEx::search($arg);
+
+        $list = array();
+        foreach($pat as $p) {
+            // error_log('dob ->' . $p->getpdob());
+            $list[] = [
+                    'name' => $p->getpname(),
+                    'amka' => $p->getpamka(),
+                    'age' => DateTime::createFromFormat('Y-m-d h:m:s', $p->getpdob())->diff(new DateTime('now'))->y
+                    // date('Y', date_diff(date(), time($p->getpdob)))
+                ];
+        }
+
+        error_log("\nSearch response: " . print_r($list, 1));
+
+        $json = json_encode($list);
+        // echopre("ajax search: " . $json);
+        echo $json;
+        exit();
+
+    }
     function patient_edit($params) {
         global $Renderer;
         global $kernel;
@@ -183,23 +225,37 @@ function dump_routes() {
 
         SecurityClass::require('patients-edit-patient');
 
-        if(isset($_POST['cancel'])) {
+        if(isset($_POST['delete'])) {
             $kernel->addStatus('warning', 'Η επεξεργασία του φακέλου ακυρώθηκε.');
             header('location: '.rel_url('/patients'));
-
+            exit();
         }            
 
         if(!isset($params['id'])) {
-            return ("patients doesn't exist");
+            return ("patient doesn't exist");
         }
 
+        error_log("Get patient: " . print_r($params, 1 ));
         // echo "this is the post version<br/>";
-        $pc = new patientsClass();
-        $pat = $pc->getById($params['id']);
-
+        $pat = patientsClass::sgetById($params['id']);
+        error_log("Patient: " . print_r($pat, 1)."\n");
 
         if(isset($_POST['submit'])) {
             $kernel->addStatus('notice', 'Ο φάκελος του ασθενή <b>' . $pat->getpname() . '</b> έχει αποθηκευτεί.');
+            
+            
+            $pat->loadFields([
+                'cuser' => $kernel->getUserName(),
+                'cdate' => getDBtime(),
+                'pname' => $_POST['patient-name'],
+                'pdob' => $_POST['patient-dob'],
+                'pamka' => $_POST['patient-amka'],
+                'ptel' => $_POST['patient-telephone'],
+                'paddr' => $_POST['patient-address'],
+                'pemail' => $_POST['patient-email']
+            ]);
+            
+            $pat->update();
             header('location: '.rel_url('/patient/'.$pat->getid().'/edit'));
         }
 
@@ -237,8 +293,15 @@ function dump_routes() {
 
         SecurityClass::require('patients-delete-patient');
 
-        $pc = new patientsClass();
-        $pat = $pc->getById($params['id']);
+        $pat = patientsClass::sgetById($params['id']);
+
+        // also delete all records of appointments for this patient
+        $app_list = appointmentsClassEx::getAppointmentsForPatient($pat->getguid());
+        foreach($app_list as $ap) {
+            $ap->delete();
+        }
+
+
         $pat->delete();
 
         $kernel->addStatus('warning', 'Ο φάκελος του ασθενή <b>'.$pat->getpname() . '</b> διαγράφθηκε με επιτυχία.');
@@ -333,10 +396,12 @@ function dump_routes() {
 
         SecurityClass::require('appointment-edit');
 
-        if(isset($_POST['cancel'])) {
-            $kernel->addStatus('warning', 'Η επεξεργασία του φακέλου ακυρώθηκε.');
-            header('location: '.rel_url('/patients'));
-
+        if(isset($_POST['delete'])) {
+            // $kernel->addStatus('warning', 'Η επεξεργασία του φακέλου ακυρώθηκε.');
+            $kernel->pushRouteHistory($_SERVER['HTTP_REFERER']);
+            $kernel->addStatus('warning', 'Ο αποστολέας της εντολής είναι: '.$_SERVER['HTTP_REFERER']);
+            header('location: '.rel_url('/appointment/'.$params['id'].'/delete'));
+            exit();
         }            
 
         if(!isset($params['id'])) {
@@ -387,7 +452,13 @@ function dump_routes() {
         $app->delete();
 
         $kernel->addStatus('warning', 'Το ραντεβού διαγράφθηκε με τπιτυχία.');
-        header('location: '.rel_url('/appointments'));
+
+
+        $s = $kernel->popRouteHistory();
+        $kernel->addStatus('warning', 'History route: ' . print_r($s, 1));
+
+        if(!$s)$s = rel_url('/appointments');
+        header('location: '.$s);
         exit();
 
     }

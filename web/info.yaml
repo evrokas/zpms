@@ -13,14 +13,18 @@ css:
   - breacrumbs:
     src: 'css/breadcrumbs.css'
 
-head_script:
-  - ionicons_module:
-    type: "module"
-    src: "https://unpkg.com/ionicons@latest/dist/ionicons/ionicons.esm.js"
-  - ionicons_nomodule:
-    type: "nomodule"
-    src: "https://unpkg.com/ionicons@latest/dist/ionicons/ionicons.js"
-
+foot_script:
+  - scripts:
+    type: ""
+    src: "js/scripts.js"
+  
+# head_script:
+#   - ionicons_module:
+#     type: "module"
+#     src: "https://unpkg.com/ionicons@latest/dist/ionicons/ionicons.esm.js"
+#   - ionicons_nomodule:
+#     type: "nomodule"
+#     src: "https://unpkg.com/ionicons@latest/dist/ionicons/ionicons.js"
 
 roles:
   anonymous: anonymous
@@ -28,7 +32,6 @@ roles:
   authenticated: authenticated_content
   user: [patients-view-list, appointments-view-list]
   power-user: [patients-view-list, patients-new-patient, patients-delete-patient, patients-edit-patient, appointment-edit]
-
 
 routes:
   homepage:
@@ -57,10 +60,25 @@ routes:
     url: "/logout"
     handler: logout
   patients:
-    title: "Patients"  
+    title: "Patients"
     url: "/patients"
     handler: patients_list
     access: authenticated user
+  patients_search:
+    title: "Patients"
+    url: "/patients/search/{term}"
+    handler: patients_list_search
+    access: authenticated user
+  patients_search_ajax:
+    title: "Patients"
+    url: "/patients/searchajax/{term}"
+    handler: patients_list_search_ajax
+    access: authenticated user
+  patients_search_post:
+    title: "Patients search"
+    url: "/patients/search"
+    handler: patients_search_post
+    method: post
   patient_edit:
     title: "Patient edit"
     url: "/patient/{id}/edit"

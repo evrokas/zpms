@@ -35,6 +35,7 @@
 
             <div class="buttons">
                 <input type="submit" name="submit" value="Αποθήκευση">
+                <input type="submit" name="delete" value="Διαγραφή">
                 <!-- <input type="submit" name="cancel" value="cancel"> -->
             </div>
         </form>

@@ -17,7 +17,7 @@
     {% endforeach %}
 
     {% if(isset($head_script))foreach($head_script as $scrpt): %}
-        <script type="{{$scrpt['type']}}" src="{{$scrpt['src']}}"></script>
+        <script type="{{$scrpt['type']}}" src="{{rel_url($scrpt['src'])}}"></script>
     {% endforeach; %}
 
 </head>
@@ -27,5 +27,5 @@
 </body>
 
     {% if(isset($foot_script))foreach($foot_script as $scrpt): %}
-        <script {{ $scrpt }}></script>
+        <script type="{{$scrpt['type']}}" src="{{rel_url($scrpt['src'])}}"></script>
     {% endforeach; %}

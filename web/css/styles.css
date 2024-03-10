@@ -459,3 +459,47 @@ input[type="date"]::-moz-calendar-picker-indicator {
     border-radius: 5px;
     margin-top: 1rem;
 }
+
+
+
+/* ******** list box select2 ******* */
+.select-container {
+    margin: 0.2rem;
+    background-color: antiquewhite;
+    position: relative;
+    width: 100%;
+}
+ul.select-box {
+    background-color: antiquewhite;
+    width: 100%;
+    position: absolute;
+    border: 1px solid black;
+    list-style: none;
+    padding: 0.2rem;
+    display: none;
+}
+
+ul.select-box li {
+    height: 1.2rem;
+    background-color: antiquewhite;
+    display: flex;
+    flex-direction: row;
+}
+
+ul.select-box li span.name {
+    width: 70%;
+    flex: 3 1 0;
+}
+ul.select-box li span.age {
+    width: 20%;
+    flex: 1 1 0;
+}
+ul.select-box li span.name {
+    flex: 2 1 0;
+    width: 30%;
+}
+
+ul.select-box li:hover {
+    background-color: black;
+    color: antiquewhite;
+}

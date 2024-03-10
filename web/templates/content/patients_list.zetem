@@ -2,6 +2,26 @@
     <h2>Patients</h2>
 </div>
 
+<div class="search">
+    <form action="{{rel_url('patients/search')}}" method="post">
+        <label for="search-term">Search</label>
+        <input type="text" class="select2" name="search-term" id="" autocomplete="off">
+        <div class="select-container">
+            <ul class="select-box" id="select-box">
+                <li>Opt 1</li>
+                <li>Opt 2</li>
+                <li>Opt 3</li>
+            </div>
+        </div>
+        <div class="buttons">
+            <button type="submit" name="search" value="search">Search</button>
+        </div>
+
+        <p>
+            <textarea name="search-response" id="search-response" cols="30" rows="10"></textarea>
+        </p>
+    </form>
+</div>
 <div class="patient-list-actions">
     <ul>
         <li><a href="{{rel_url('/patient/new')}}"">Add new patient</a></li>
