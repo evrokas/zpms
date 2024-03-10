@@ -5,13 +5,12 @@ search = document.querySelectorAll('.select2');
 console.log( search );
 
 var xhr = new XMLHttpRequest(),
-    box = document.getElementById('search-response'),
     box2 = document.getElementById('select-box');
 var timeout;
 
 if(search.length > 0) {
     var el = search[0];
-    console.log( 'attach event for select2 node change');
+    // console.log( 'attach event for select2 node change');
     el.addEventListener('keyup', (ev) => {
         if(ev.key == "Escape") {
             box2.style.display = 'none';
@@ -19,16 +18,13 @@ if(search.length > 0) {
         }
         if(el.value.length>0) {
             box2.style.display = 'block';
-            console.log(el.value);
-            // box.value = 'Hello world';
-            box.value = '';
+            // console.log(el.value);
 
             xhr.onreadystatechange = function() {
                 if((this.readyState == 4) && (this.status == 200)) {
                     var list = JSON.parse(this.responseText);
                     // console.log("AJAX response: ");
                     // console.log( $list);
-                    // box.value = this.responseText;
                     box2.innerHTML = '';
 
                     list.forEach(el => {
@@ -58,7 +54,7 @@ if(search.length > 0) {
 }
 
 function selectclick(e){ 
-    console.log( "Clicked "  + e.innerHTML);
+    // console.log( "Clicked "  + e.innerHTML);
     search[0].value = e.dataset.name;    //innerHTML;
     // document.getElementById();
     box2.style.display = 'none';

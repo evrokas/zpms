@@ -17,9 +17,9 @@
             <button type="submit" name="search" value="search">Search</button>
         </div>
 
-        <p>
+        <!-- <p>
             <textarea name="search-response" id="search-response" cols="30" rows="10"></textarea>
-        </p>
+        </p> -->
     </form>
 </div>
 <div class="patient-list-actions">

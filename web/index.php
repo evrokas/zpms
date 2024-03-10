@@ -138,17 +138,36 @@ function dump_routes() {
     }
 
     function patients_list_search($params) {
+        global $Renderer;
+        
         SecurityClass::require('patients-view-list');
 
         $pat = patientsClassEx::search(urldecode($params['term']));
 
         
-        $s = '';
-        foreach($pat as $p) {
-            $s .= "<pre>name: " . $p->getpname() . "</pre>";
-        }   
+        // $s = '';
+        // foreach($pat as $p) {
+        //     $s .= "<pre>name: " . $p->getpname() . "</pre>";
+        // }   
+        // return ($s);
 
-        return ($s);
+        $pp = array();
+        foreach($pat as $p) {
+            $ppp = array();
+            $ppp['id'] = $p->getid();
+            $ppp['pname'] = $p->getpname();
+            $ppp['pamka'] = $p->getpamka();
+
+            $pp[] = $ppp;
+        }
+
+        return $Renderer->render("patients_list.zetem",
+            ['pat_list' => $pp,
+                // 'notice' => $kernel->ifelseStatus('patient_edit', '', true)
+            ]);
+
+
+
     }
 
     function patients_list_search_ajax($params) {
