@@ -1,11 +1,16 @@
+title: Patient Management System
+
+tz: "Europe/Athens"
+
 meta:
   - charset="UTF-8"
   - http-equiv="X-UA-Compatible" content="IE=edge"
   - name="viewport" content="width=device-width, initial-scale=1.0"
 
-title: Patient Management System
 
 css:
+  - normilize:
+    src: 'css/normalize.css'
   - styles:
     src: 'css/styles.css'
   - boxicons:
