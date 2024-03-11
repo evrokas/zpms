@@ -430,7 +430,7 @@ function dump_routes() {
         if(isset($_POST['delete'])) {
             // $kernel->addStatus('warning', 'Η επεξεργασία του φακέλου ακυρώθηκε.');
             $kernel->pushRouteHistory($_SERVER['HTTP_REFERER']);
-            $kernel->addStatus('warning', 'Ο αποστολέας της εντολής είναι: '.$_SERVER['HTTP_REFERER']);
+            // $kernel->addStatus('warning', 'Ο αποστολέας της εντολής είναι: '.$_SERVER['HTTP_REFERER']);
             header('location: '.rel_url('/appointment/'.$params['id'].'/delete'));
             exit();
         }            
@@ -482,11 +482,11 @@ function dump_routes() {
         $app = $ap->getById($params['id']);
         $app->delete();
 
-        $kernel->addStatus('warning', 'Το ραντεβού διαγράφθηκε με τπιτυχία.');
+        $kernel->addStatus('warning', 'Το ραντεβού διαγράφθηκε με επιτυχία.');
 
 
         $s = $kernel->popRouteHistory();
-        $kernel->addStatus('warning', 'History route: ' . print_r($s, 1));
+        // $kernel->addStatus('warning', 'History route: ' . print_r($s, 1));
 
         if(!$s)$s = rel_url('/appointments');
         header('location: '.$s);

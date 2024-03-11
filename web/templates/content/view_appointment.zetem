@@ -1,4 +1,4 @@
-<hr>
+<!-- <hr> -->
 <div class="appointment-entry">
     <input type="checkbox" name="expand-app" id="expand-app-{{$index}}" {{$checked}}>
     <label for="expand-app-{{$index}}">
@@ -6,7 +6,7 @@
         <i name="cmp-arrow" class='bx bxs-down-arrow'></i>
         <!-- <div class="title"> -->
             <!-- {% if(isset($index)): %} -->
-            {{$index}}
+            <!-- {{$index}} -->
             <!-- {% endif %} -->
             <span>
                 Ραντεβού <b>{{formatDate($appointment->getadate())}}</b>

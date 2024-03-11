@@ -132,7 +132,7 @@ form {
 }
 
 form .input-div {
-    background-color: aqua;
+    /* background-color: aqua; */
     /* height: 2rem; */
     /* line-height: 2rem; */
     display: flex;
@@ -285,6 +285,12 @@ form .input-div label {
     padding: 1rem 2rem 0.2rem;
     list-style: none;
 }
+.patient-appointments-list li {
+    padding: 0.2rem;
+}
+.patient-appointments-list li:nth-child(odd) {
+    background-color: lightgray;
+}
 
 .appointments-list {
     padding: 1rem;
@@ -375,7 +381,10 @@ ul.patient-appointments-list {
 
 }
 
-
+.appointment-entry label span {
+    font-size: 1.2rem;
+    color: red;
+}
 
 .appointment-entry input[type="checkbox"] {
     padding: 4px;
