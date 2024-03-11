@@ -24,6 +24,7 @@
         <div class="input-div">
             <label for="patient-dob">Ημ/νια Γεννήσεως</label>
             <input type="datetime-local" name="patient-dob" id="" value="{{$patient->getpdob()}}">
+            <!-- <input type="text" name="patient-dob" id="datepicker" value="{{$patient->getpdob()}}"> -->
         </div>
 
         <div class="input-div">
@@ -71,10 +72,16 @@
         </div>
     {% endif %}
 
-    {% if($appointments): %}
+    {% if(isset($appointments)): %}
 
         <ul class="patient-appointments-list">
-            {#<!-- {{$appointments}} -->#}
+            <div class="appointments-header">
+                <div class="buttons">
+                    <button type="button" onclick="appointmentsExpandAll()">Expand all</button>
+                    <button type="button" onclick="appointmentsCollapseAll()">Collapse all</button>
+                </div>
+            </div>
+            <!-- {#{{$appointments}}#} -->
             {% foreach($appointments as $ap): %}
                 <li data-index="{{$ap['index']}}">{{$ap['markup']}}</li>
             {% endforeach %}

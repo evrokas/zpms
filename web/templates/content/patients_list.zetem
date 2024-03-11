@@ -8,9 +8,9 @@
         <input type="text" class="select2" name="search-term" id="" autocomplete="off">
         <div class="select-container">
             <ul class="select-box" id="select-box">
-                <li>Opt 1</li>
-                <li>Opt 2</li>
-                <li>Opt 3</li>
+                <!-- <li>Opt 1</li> -->
+                <!-- <li>Opt 2</li> -->
+                <!-- <li>Opt 3</li> -->
             </div>
         </div>
         <div class="buttons">

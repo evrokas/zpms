@@ -1,4 +1,15 @@
 
+// var field = document.getElementById('datepicker');
+//     if(field != null) {
+
+//         var picker = new Pikaday({
+//         onSelect: function(date) {
+//                 field.value = picker.toString();
+//             }
+//         });
+//         field.parentNode.insertBefore(picker.el, field.nextSibling);
+//     }
+
 console.log('scripts.js is loaded!');
 
 search = document.querySelectorAll('.select2');
@@ -44,10 +55,10 @@ if(search.length > 0) {
 
             clearTimeout(timeout);
             timeout = setTimeout(function () {
-                xhr.open("POST", '/apps/zeus/web/patients/searchajax/a');
+                xhr.open("POST", '/apps/zeus/web/patients/searchajax/term');
                 xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
                 xhr.send("sterm=" + el.value);
-            }, 200);
+            }, (el.value.length<2)?0:200);  /* if length is less than 2 send request immediately */
         } else {
             box2.style.display = 'none';
         }
@@ -59,4 +70,24 @@ function selectclick(e){
     search[0].value = e.dataset.name;    //innerHTML;
     // document.getElementById();
     box2.style.display = 'none';
+}
+
+function appointmentsExpandAll() {
+    lis = document.querySelectorAll('ul.patient-appointments-list li');
+    lis.forEach(el => {
+        // console.log(el.querySelectorAll('.appointment-entry input[type="checkbox"]'));
+        el.querySelectorAll('.appointment-entry input[type="checkbox"]')[0].checked = true;
+    });
+    
+    // console.log(lis);
+}
+
+function appointmentsCollapseAll() {
+    lis = document.querySelectorAll('ul.patient-appointments-list li');
+    lis.forEach(el => {
+        // console.log(el.querySelectorAll('.appointment-entry input[type="checkbox"]'));
+        el.querySelectorAll('.appointment-entry input[type="checkbox"]')[0].checked = false;
+    });
+    
+    // console.log(lis);
 }
