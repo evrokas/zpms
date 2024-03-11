@@ -139,7 +139,7 @@ function dump_routes() {
 
     function patients_list_search($params) {
         global $Renderer;
-        
+
         SecurityClass::require('patients-view-list');
 
         $pat = patientsClassEx::search(urldecode($params['term']));
@@ -157,6 +157,7 @@ function dump_routes() {
             $ppp['id'] = $p->getid();
             $ppp['pname'] = $p->getpname();
             $ppp['pamka'] = $p->getpamka();
+            $ppp['tel'] = $p->getptel();
 
             $pp[] = $ppp;
         }
@@ -165,9 +166,6 @@ function dump_routes() {
             ['pat_list' => $pp,
                 // 'notice' => $kernel->ifelseStatus('patient_edit', '', true)
             ]);
-
-
-
     }
 
     function patients_list_search_ajax($params) {
@@ -176,7 +174,9 @@ function dump_routes() {
         $arg = $_POST['sterm'];
         // error_log("\nAjax request: ". print_r($arg, 1) . "\n");;
         // error_log("\nurldecode: " . urldecode($arg));
-        $pat = patientsClassEx::search($arg);
+        $pat = patientsClassEx::search($arg);   //, ['pname', 'pamka', 'ptel']);
+
+        error_log("\nSearch response: " . print_r($pat, 1));
 
         $list = array();
         foreach($pat as $p) {
@@ -184,12 +184,13 @@ function dump_routes() {
             $list[] = [
                     'name' => $p->getpname(),
                     'amka' => $p->getpamka(),
-                    'age' => DateTime::createFromFormat('Y-m-d h:m:s', $p->getpdob())->diff(new DateTime('now'))->y
+                    // 'age' => DateTime::createFromFormat('Y-m-d h:m:s', $p->getpdob())->diff(new DateTime('now'))->y,
+                    'tel' => $p->getptel()
                     // date('Y', date_diff(date(), time($p->getpdob)))
                 ];
         }
 
-        error_log("\nSearch response: " . print_r($list, 1));
+        // error_log("\nSearch response: " . print_r($list, 1));
 
         $json = json_encode($list);
         // echopre("ajax search: " . $json);
@@ -254,10 +255,10 @@ function dump_routes() {
             return ("patient doesn't exist");
         }
 
-        error_log("Get patient: " . print_r($params, 1 ));
+        // error_log("Get patient: " . print_r($params, 1 ));
         // echo "this is the post version<br/>";
         $pat = patientsClass::sgetById($params['id']);
-        error_log("Patient: " . print_r($pat, 1)."\n");
+        // error_log("Patient: " . print_r($pat, 1)."\n");
 
         if(isset($_POST['submit'])) {
             $kernel->addStatus('notice', 'Ο φάκελος του ασθενή <b>' . $pat->getpname() . '</b> έχει αποθηκευτεί.');
@@ -271,14 +272,18 @@ function dump_routes() {
                 'pamka' => $_POST['patient-amka'],
                 'ptel' => $_POST['patient-telephone'],
                 'paddr' => $_POST['patient-address'],
-                'pemail' => $_POST['patient-email']
+                'pemail' => $_POST['patient-email'],
+                'pnote' => $_POST['patient-note']
             ]);
             
             $pat->update();
+
+
+            
             header('location: '.rel_url('/patient/'.$pat->getid().'/edit'));
         }
 
-        error_log('\nREFERER: '. $_SERVER['HTTP_REFERER']."\n");
+        // error_log('\nREFERER: '. $_SERVER['HTTP_REFERER']."\n");
 
         exit();
         // return '';
@@ -301,6 +306,7 @@ function dump_routes() {
             'ptel' => randomNumber(10),
             'pemail' => randomEmail(),
             'paddr' => randomAlnum(12, 3),
+            'pnote' => randomALnum(20,10)
         ]);
         
         // $pat = $pc->getById($params['id']);
@@ -348,6 +354,7 @@ function dump_routes() {
             'ptel' => $_POST['patient-telephone'],
             'paddr' => $_POST['patient-address'],
             'pemail' => $_POST['patient-email'],
+            'pnote' => $_POST['patient-note'],
             'guid' => guid()
         ]);
         // print_r( $pc );
@@ -355,7 +362,12 @@ function dump_routes() {
         $pc->insert();
 
         $kernel->addStatus('notice', 'Δημιουργήθηκε νέος φάκελος για τον ασθενή <b>' . $pc->getpname() . '</b>');
-        header('location: '.rel_url('/patients'));
+
+        if(isset($_POST['submitedit']))
+            header('location: '.rel_url('/patient/'.$pc->getid().'/edit'));
+        else
+            header('location: '.rel_url('/patients'));
+
         exit();
     }
 
@@ -428,14 +440,14 @@ function dump_routes() {
         }
 
         $ap = appointmentsClass::sgetById($params['id']);
-        error_log("\bFound appointment: " . print_r($ap, 1) . "\n");
+        // error_log("\bFound appointment: " . print_r($ap, 1) . "\n");
         $ap->setaplace($_POST['appointment-place']);
         $ap->setadate($_POST['appointment-date']);
         $ap->setanote($_POST['appointment-notes']);
 
         $ap->update();
 
-        error_log('\nREFERER: '. $_SERVER['HTTP_REFERER']."\n");
+        // error_log('\nREFERER: '. $_SERVER['HTTP_REFERER']."\n");
         header('location: '. $_SERVER['HTTP_REFERER']);
 
     }
@@ -448,7 +460,7 @@ function dump_routes() {
             'aplace' => 'Mandra'
         ]);
         
-        error_log('\nREFERER: '. $_SERVER['HTTP_REFERER']."\n");
+        // error_log('\nREFERER: '. $_SERVER['HTTP_REFERER']."\n");
 
         // $pat = $pc->getById($params['id']);
         return ($Renderer->render("edit_appointment.zetem", ['action' => 'new', 'id' => null, 'appointment' => $ap]));
@@ -492,7 +504,7 @@ function dump_routes() {
         if(!isset($params['id'])) {
             return ("User could not be found");
         }
-        error_log("\npatient_appointment_new: ".print_r($params, 1)."\n");
+        // error_log("\npatient_appointment_new: ".print_r($params, 1)."\n");
         $p = patientsClass::sgetById( $params['id'] );
         // echo "<pre>" . print_r( $p ) . "</pre>";
 
@@ -509,7 +521,7 @@ function dump_routes() {
         global $Renderer;
         global $kernel;
 
-        error_log("<pre>patient_appointment_new_post: ".print_r($params, 1)."</pre>");
+        // error_log("<pre>patient_appointment_new_post: ".print_r($params, 1)."</pre>");
         error_log("\nPatient id: " );
         if(isset($_POST['cancel'])) {
             $kernel->addStatus('warning', 'Η επεξεργασία του ραντεβού ακυρώθηκε.');

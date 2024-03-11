@@ -46,9 +46,19 @@
             <input type="text" name="patient-address" id=""  value="{{$patient->getpaddr()}}">
         </div>
 
+        <div class="input-div">
+            <label for="patient-note">Σημειώσεις</label>
+            <textarea name="patient-note" id="" rows="5" placeholder="σημειώσεις">{{$patient->getpnote()}}</textarea>
+        </div>
         <div class="buttons">
             <input type="submit" name="submit" value="Αποθήκευση">
-            <input type="submit" name="delete" value="Διαγραφή">
+
+            {% if($action == 'new'): %}
+                <input type="submit" name="submitedit" value="Αποθήκευση & Επεξεργασία">
+            {% else: %}
+                <input type="submit" name="delete" value="Ακύρωση">
+            {% endif %}
+
         </div>
     </form>
 

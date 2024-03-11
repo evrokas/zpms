@@ -36,6 +36,11 @@ body {
     background-color: black;
     color: white;
 }
+
+.region-footer i {
+    color: white;
+}
+
 .breadcrumbs {
     padding: 0.5rem 0;
     background-color: white;
@@ -491,6 +496,10 @@ ul.select-box li span.name {
     flex: 3 1 0;
 }
 ul.select-box li span.age {
+    width: 20%;
+    flex: 1 1 0;
+}
+ul.select-box li span.tel {
     width: 20%;
     flex: 1 1 0;
 }

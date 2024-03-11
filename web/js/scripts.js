@@ -30,7 +30,8 @@ if(search.length > 0) {
                     list.forEach(el => {
                         box2.innerHTML += "<li onclick=\"selectclick(this)\" data-name=\""+el['name']+"\">"+
                         "<span class=\"name\">"+el['name']+"</span>"+
-                        "<span class=\"age\">"+"["+el['age']+" έτη]"+"</span>"+
+                        // "<span class=\"age\">"+"["+el['age']+" έτη]"+"</span>"+
+                        "<span class=\"tel\">"+"{Τηλ:"+el['tel']+"}"+"</span>"+
                         "<span class=\"amka\">"+"ΑΜΚΑ: "+el['amka']+"</span>"+
                         "</li>";
                     })
