@@ -15,10 +15,10 @@ css:
     src: 'css/styles.css'
   - boxicons:
     src: 'css/boxicons.min.css'
-  - breacrumbs:
+  - breadcrumbs:
     src: 'css/breadcrumbs.css'
-  - pikaday:
-    src: "https://cdn.jsdelivr.net/npm/pikaday/css/pikaday.css"
+  # - pikaday:
+    # src: "https://cdn.jsdelivr.net/npm/pikaday/css/pikaday.css"
 
 
 # head_script:
@@ -26,12 +26,12 @@ foot_script:
   - scripts:
     type: 
     src: "js/scripts.js"
-  - pikaday:
-    type: 
-    src: "https://cdn.jsdelivr.net/npm/pikaday/pikaday.js"
-  - moment:
-    type:  
-    src: "https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment-with-locales.min.js"
+  # - pikaday:
+    # type: 
+    # src: "https://cdn.jsdelivr.net/npm/pikaday/pikaday.js"
+  # - moment:
+    # type:  
+    # src: "https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment-with-locales.min.js"
   
 roles:
   anonymous: anonymous
@@ -76,6 +76,11 @@ routes:
     url: "/patients/search/{term}"
     handler: patients_list_search
     access: authenticated user
+  # patients_search0:
+    # title: "Patients"
+    # url: "/patients/search"
+    # handler: patients_list
+    # access: authenticated user
   patients_search_ajax:
     title: "Patients"
     url: "/patients/searchajax/{term}"

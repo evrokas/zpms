@@ -5,7 +5,7 @@
 <div class="search">
     <form action="{{rel_url('patients/search')}}" method="post">
         <label for="search-term">Search</label>
-        <input type="text" class="select2" name="search-term" id="" autocomplete="off">
+        <input type="text" class="select2" name="search-term" id="" autocomplete="off" value="{% if(isset($search_term))echo $search_term; %}">
         <div class="select-container">
             <ul class="select-box" id="select-box">
                 <!-- <li>Opt 1</li> -->

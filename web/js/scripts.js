@@ -18,6 +18,7 @@ console.log( search );
 var xhr = new XMLHttpRequest(),
     box2 = document.getElementById('select-box');
 var timeout;
+var basepath = '';
 
 if(search.length > 0) {
     var el = search[0];
@@ -33,13 +34,17 @@ if(search.length > 0) {
 
             xhr.onreadystatechange = function() {
                 if((this.readyState == 4) && (this.status == 200)) {
-                    var list = JSON.parse(this.responseText);
-                    // console.log("AJAX response: ");
+                    var response = JSON.parse(this.responseText);
+                    var list = response['list'];
+
+                    console.log("AJAX response: ");
                     // console.log( $list);
+                    console.log( response );
                     box2.innerHTML = '';
+                    basepath = response['referer'];
 
                     list.forEach(el => {
-                        box2.innerHTML += "<li onclick=\"selectclick(this)\" data-name=\""+el['name']+"\">"+
+                        box2.innerHTML += "<li onclick=\"selectclick(this)\" data-url=\""+el['link']+"\"data-id=\""+el['id']+"\" data-name=\""+el['name']+"\">"+
                         "<span class=\"name\">"+el['name']+"</span>"+
                         // "<span class=\"age\">"+"["+el['age']+" έτη]"+"</span>"+
                         "<span class=\"tel\">"+"{Τηλ:"+el['tel']+"}"+"</span>"+
@@ -70,6 +75,11 @@ function selectclick(e){
     search[0].value = e.dataset.name;    //innerHTML;
     // document.getElementById();
     box2.style.display = 'none';
+
+    // console.log( window.location.href);
+    // console.log( basepath );
+    // console.log( basepath + e.dataset.url);
+    window.location.replace( basepath + e.dataset.url );
 }
 
 function appointmentsExpandAll() {
@@ -91,3 +101,17 @@ function appointmentsCollapseAll() {
     
     // console.log(lis);
 }
+
+var elementTimeout;
+
+function saveTimeout(element) {
+    console.log( element );
+}
+
+function startTimeout() {
+    clearTimeout(elementTimeout);
+    elementTimeout = timeout(document.querySelector('.appointment-entry')[0], 2000);
+}
+
+textAreas = document.querySelectorAll('textarea');
+console.log(textAreas);

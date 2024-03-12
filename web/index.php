@@ -133,7 +133,12 @@ function dump_routes() {
     function patients_search_post($params) {
         SecurityClass::require('patients-view-list');
 
-        header('location: '.rel_url('/patients/search/'.urlencode($_POST['search-term'])));
+        if(strlen($_POST['search-term'])>0) {
+            header('location: '.rel_url('/patients/search/'.urlencode($_POST['search-term'])));
+        } else {
+            header('location: '.rel_url('/patients'));
+        }
+
         exit();
     }
 
@@ -163,7 +168,8 @@ function dump_routes() {
         }
 
         return $Renderer->render("patients_list.zetem",
-            ['pat_list' => $pp,
+            [   'search_term' => $params['term'],
+                'pat_list' => $pp,
                 // 'notice' => $kernel->ifelseStatus('patient_edit', '', true)
             ]);
     }
@@ -182,17 +188,26 @@ function dump_routes() {
         foreach($pat as $p) {
             // error_log('dob ->' . $p->getpdob());
             $list[] = [
+                    'id' => $p->getid(),
                     'name' => $p->getpname(),
                     'amka' => $p->getpamka(),
                     // 'age' => DateTime::createFromFormat('Y-m-d h:m:s', $p->getpdob())->diff(new DateTime('now'))->y,
-                    'tel' => $p->getptel()
+                    'tel' => $p->getptel(),
+                    'link' => rel_url('/patient/' . $p->getid() . '/edit')
                     // date('Y', date_diff(date(), time($p->getpdob)))
                 ];
         }
 
+        $base = explode('index.php', $_SERVER['PHP_SELF'])[0];
+        $response = [
+            'base' => $base,
+            'referer' => explode($base, $_SERVER['HTTP_REFERER'])[0],
+            'list' => $list
+        ];
         // error_log("\nSearch response: " . print_r($list, 1));
 
-        $json = json_encode($list);
+        // $json = json_encode($list);
+        $json = json_encode($response);
         // echopre("ajax search: " . $json);
         echo $json;
         exit();
@@ -385,8 +400,11 @@ function dump_routes() {
         // echo "</pre>";
         $pp = array();
         foreach($ap as $appoint) {
+            $pat = patientsClassEx::sgetByGuid( $appoint->getpguid());
+
             $pp[] = ['id' => $appoint->getid(),
                     'adate' => $appoint->getadate(),
+                    'pname' => $pat->getpname(),
                     'aplace' => $appoint->getaplace()
                 ];
 

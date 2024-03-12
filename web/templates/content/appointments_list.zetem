@@ -25,6 +25,7 @@
         <thead>
             <th>#</th>
             <th>Date</th>
+            <th>Name</th>
             <th>Place</th>
             <th>Actions</th>
         </thead>
@@ -35,6 +36,7 @@
                 {% $loop++ %}
                 <td>{{$loop}}</td>
                 <td data-column="date">{{$app['adate']}}</td>
+                <td data-column="name">{{$app['pname']}}</td>
                 <td data-column="place">{{$app['aplace']}}</td>
                 <td class="actions">
                     <a href="{{rel_url('/appointment/'.$app['id'].'/edit')}}">edit</a>
