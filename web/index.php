@@ -283,7 +283,7 @@ function dump_routes() {
                 'cuser' => $kernel->getUserName(),
                 'cdate' => getDBtime(),
                 'pname' => $_POST['patient-name'],
-                'pdob' => $_POST['patient-dob'],
+                'pdob' => getDBformattime($_POST['patient-dob']),
                 'pamka' => $_POST['patient-amka'],
                 'ptel' => $_POST['patient-telephone'],
                 'paddr' => $_POST['patient-address'],
