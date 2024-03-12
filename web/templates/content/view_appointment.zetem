@@ -26,6 +26,13 @@
                     <label for="appointment-place">Περιοχή</label>
                     <input type="text" name="appointment-place" id=""  value="{{$appointment->getaplace()}}">
                 </div>
+
+                <div class="input-div input-attachments">
+                    <label for="attachments">Attachments</label>
+                    <!-- <i name="exp-arrow" class='bx bxs-right-arrow'></i> -->
+                    <i name="cmp-arrow" class='bx bxs-down-arrow'></i>
+
+                </div>
             </div>
 
             <div class="input-div input-notes">

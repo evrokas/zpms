@@ -1,0 +1,51 @@
+{#
+    template parameters
+        app_list    list of appointments
+#}
+
+
+<div class="page-title">
+    <h2>Appointments</h2>
+</div>
+
+<div class="appointment-list-actions">
+    <ul>
+        <li><a href="{{rel_url('/appointment/new')}}"">Add new appointment</a></li>
+    </ul>
+</div>
+
+{#
+<pre>
+    {{print_r($app_list)}}
+</pre>
+#}
+
+<div class="appointments-list">
+    <table>
+        <thead>
+            <th>#</th>
+            <th>Date</th>
+            <th>Name</th>
+            <th>Place</th>
+            <th>Actions</th>
+        </thead>
+        {% $loop=0; %}
+        <tbody>
+            {% foreach($app_list as $app): %}
+            <tr>
+                {% $loop++ %}
+                <td>{{$loop}}</td>
+                <td data-column="date">{{$app['adate']}}</td>
+                <td data-column="name">{{$app['pname']}}</td>
+                <td data-column="place">{{$app['aplace']}}</td>
+                <td class="actions">
+                    <a href="{{rel_url('/appointment/'.$app['id'].'/edit')}}">edit</a>
+                    <a href="{{rel_url('/appointment/'.$app['id'].'/delete')}}">delete</a>
+                </td>
+            </tr>
+            {% endforeach %}
+        </tbody>
+    </table>
+</div>
+
+
