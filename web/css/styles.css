@@ -491,6 +491,7 @@ ul.select-box li {
     background-color: antiquewhite;
     display: flex;
     flex-direction: row;
+    cursor: pointer;
 }
 
 ul.select-box li span.name {
