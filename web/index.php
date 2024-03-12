@@ -364,7 +364,7 @@ function dump_routes() {
             'cuser' => $kernel->getUserName(),
             'cdate' => getDBtime(),
             'pname' => $_POST['patient-name'],
-            'pdob' => $_POST['patient-dob'],
+            'pdob' => getDBformattime($_POST['patient-dob']),
             'pamka' => $_POST['patient-amka'],
             'ptel' => $_POST['patient-telephone'],
             'paddr' => $_POST['patient-address'],
@@ -460,7 +460,7 @@ function dump_routes() {
         $ap = appointmentsClass::sgetById($params['id']);
         // error_log("\bFound appointment: " . print_r($ap, 1) . "\n");
         $ap->setaplace($_POST['appointment-place']);
-        $ap->setadate($_POST['appointment-date']);
+        $ap->setadate(getDBformattime($_POST['appointment-date']));
         $ap->setanote($_POST['appointment-notes']);
 
         $ap->update();
@@ -558,7 +558,7 @@ function dump_routes() {
             'id' => null,
             'cuser' => 'admin',
             'cdate' => getDBtime(),
-            'adate' => $_POST['appointment-date'],
+            'adate' => getDBformattime($_POST['appointment-date']),
             'aplace' => $_POST['appointment-place'],
             'anote' => $_POST['appointment-notes'],
             'guid' => guid(),
