@@ -286,14 +286,14 @@ form .input-div label {
 .appointment-patient-name span {
     color: red;
 }
-.appointment-list-actions ul {
+.appointment-list-actions > ul {
     padding: 1rem 2rem 0.2rem;
     list-style: none;
 }
-.patient-appointments-list li {
+.patient-appointments-list > li {
     padding: 0.2rem;
 }
-.patient-appointments-list li:nth-child(odd) {
+.patient-appointments-list > li:nth-child(odd) {
     background-color: lightgray;
 }
 
@@ -426,6 +426,23 @@ ul.patient-appointments-list {
     display: block;
 }
 
+.appointment-entry .edit-appointment .input-header {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.appointment-entry .edit-appointment .input-header > .input-div:nth-child(1) {
+    width: 50%;
+}
+.appointment-entry .edit-appointment .input-header> .input-div:nth-child(2) {
+    width: 20%;
+}
+.appointment-entry .edit-appointment .input-header > .input-div:nth-child(3) {
+    width: 30%;
+}
+/* .appointment-entry .edit-appointment .input-div:nth-child(4) { */
+    /* width: 100%; */
+/* } */
 
 /* login page */
 
@@ -544,4 +561,75 @@ ul.select-box li span.name {
 ul.select-box li:hover {
     background-color: black;
     color: antiquewhite;
+}
+
+
+
+/* .loader {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    color: blue;
+    background-color: whitesmoke;
+}
+
+.loader::before {
+    content: ''
+} */
+
+
+
+.input-attachments {
+    position: relative;
+}
+
+.attachments-box {
+    background-color: white;
+    position: absolute;
+    top: 100%;
+    right: 10%;
+    z-index: 99;
+    padding: 0.3rem;
+}
+
+.attachments-box ul {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    list-style: none;
+    margin: 0.2rem;
+    padding: 0.5rem;
+    border: 2px solid black;
+
+    -webkit-box-shadow: 10px 10px 5px -6px rgba(0,0,0,0.5);
+    -moz-box-shadow: 10px 10px 5px -6px rgba(0,0,0,0.5);
+    box-shadow: 10px 10px 5px -6px rgba(0,0,0,0.5);
+}
+
+.attachments-box ul li {
+    padding: 0.4rem 0.4rem;
+    display: flex;
+    flex-direction: row;
+    gap: 1rem;
+    cursor: pointer;
+}
+
+.attachments-box ul li:hover {
+    background-color: rgb(199, 147, 249);
+    color: whitesmoke;
+
+}
+
+.attachments-box ul li .actions {
+    display: flex;
+    gap: 0.5rem;
+
+}
+
+.attachments-box ul li .actions i {
+    color: red;
+}
+
+.attachments-box ul li .actions i:hover {
+    color: white;
 }
