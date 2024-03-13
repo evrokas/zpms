@@ -21,7 +21,7 @@
                     <label for="patient-date">Ημ/νια & Ώρα ραντεβού</label>
                     <input type="datetime-local" loader="app-loader-{{$index}}" name="appointment-date" id="" value="{{$appointment->getadate()}}">
                 </div>
-    
+                    
                 <div class="input-div">
                     <label for="appointment-place">Περιοχή</label>
                     <!-- <input type="text" name="appointment-place" id=""  value="{{$appointment->getaplace()}}"> -->
@@ -36,11 +36,15 @@
                 </div>
 
                 <div class="input-div input-attachments">
-                    <label for="attachments">Attach</label>
-                    <!-- <i name="exp-arrow" class='bx bxs-right-arrow'></i> -->
+                    <label for="attachments">Attachments
+                        <!-- <i name="exp-arrow" class='bx bxs-right-arrow'></i> -->
+                    </label>
+                    <input type="checkbox" name="attachments" id="attachments">
                     <i name="cmp-arrow" class='bx bxs-down-arrow'></i>
+
                     <div class="attachments-box">
                         <ul>
+                            <li>New</li>
                             <li>
                                 <i class="bx bx-notepad"></i>
                                 <div class="attach-name">image.png</div>
