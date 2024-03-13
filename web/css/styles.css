@@ -582,8 +582,6 @@ ul.select-box li:hover {
     position: relative;
 }
 
-
-
 .attachments-box {
     background-color: white;
     position: absolute;
@@ -592,16 +590,6 @@ ul.select-box li:hover {
     z-index: 99;
     padding: 0.3rem;
     display: none;
-}
-
-.input-div.input-attachments.attachments-box-show .attachments-box {
-    display: block;
-}
-
-.input-div.input-attachments.attachments-box-show label i {
-    -webkit-transform: rotate(180deg);
-    transform: rotate(180deg);
-    color: green;
 }
 
 .input-div.input-attachments.attachments-box-show .attachments-box {
