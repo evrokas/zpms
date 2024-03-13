@@ -89,7 +89,7 @@ function appointmentsExpandAll() {
         // console.log(el.querySelectorAll('.appointment-entry input[type="checkbox"]'));
         el.querySelectorAll('.appointment-entry input[type="checkbox"]')[0].checked = true;
     });
-    
+
     // console.log(lis);
 }
 
@@ -116,3 +116,12 @@ function startTimeout() {
 
 textAreas = document.querySelectorAll('textarea');
 console.log(textAreas);
+
+
+
+function toggleAttachmentsBox(el) {
+    // console.log( el );
+    p = el.parentNode;
+    p.classList.toggle('attachments-box-show');
+    console.log( p );
+}
