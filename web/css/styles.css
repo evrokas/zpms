@@ -435,30 +435,10 @@ ul.patient-appointments-list {
     width: 50%;
 }
 .appointment-entry .edit-appointment .input-header> .input-div:nth-child(2) {
-    width: 30%;
-}
-.appointment-entry .edit-appointment .input-header > .input-div:nth-child(3) {
     width: 20%;
 }
-/* .appointment-entry .edit-appointment .input-div:nth-child(4) { */
-    /* width: 100%; */
-/* } */
-.appointment-entry .edit-appointment .input-header {
-    display: flex;
-    flex-wrap: wrap;
-}
-
-.appointment-entry .edit-appointment .input-header > .input-div:nth-child(1) {
-    width: 50%;
-}
-.appointment-entry .edit-appointment .input-header> .input-div:nth-child(2) {
-    width: 30%;
-}
 .appointment-entry .edit-appointment .input-header > .input-div:nth-child(3) {
     width: 30%;
-}
-.appointment-entry .edit-appointment .input-header > .input-div:nth-child(3) {
-    width: 20%;
 }
 /* .appointment-entry .edit-appointment .input-div:nth-child(4) { */
     /* width: 100%; */
