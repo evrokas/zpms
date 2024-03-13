@@ -577,6 +577,8 @@ ul.select-box li:hover {
     content: ''
 }
 
+
+
 .input-attachments {
     position: relative;
 }
@@ -584,24 +586,13 @@ ul.select-box li:hover {
 .attachments-box {
     background-color: white;
     position: absolute;
-    top: 80%;
+    top: 100%;
     right: 10%;
     z-index: 99;
     padding: 0.3rem;
-    display: none;
 }
 
-.input-div.input-attachments.attachments-box-show .attachments-box {
-    display: block;
-}
-
-.input-div.input-attachments.attachments-box-show label i {
-    -webkit-transform: rotate(180deg);
-    transform: rotate(180deg);
-    color: green;
-}
-
-.appointment-entry  .input-div.input-attachments > .attachments-box ul {
+.attachments-box ul {
     display: flex;
     flex-direction: column;
     gap: 0.2rem;
@@ -615,7 +606,7 @@ ul.select-box li:hover {
     box-shadow: 10px 10px 5px -6px rgba(0,0,0,0.5);
 }
 
-.appointment-entry .input-div.input-attachments > .attachments-box ul li {
+.attachments-box ul li {
     padding: 0.4rem 0.4rem;
     display: flex;
     flex-direction: row;
@@ -623,21 +614,22 @@ ul.select-box li:hover {
     cursor: pointer;
 }
 
-.appointment-entry .attachments-box ul li:hover {
+.attachments-box ul li:hover {
     background-color: rgb(199, 147, 249);
     color: whitesmoke;
 
 }
 
-.appointment-entry .attachments-box ul li .actions {
+.attachments-box ul li .actions {
     display: flex;
     gap: 0.5rem;
+
 }
 
-.appointment-entry .attachments-box ul li .actions i {
+.attachments-box ul li .actions i {
     color: red;
 }
 
-.appointment-entry .attachments-box ul li .actions i:hover {
+.attachments-box ul li .actions i:hover {
     color: white;
 }
