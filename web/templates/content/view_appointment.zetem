@@ -36,16 +36,11 @@
                 </div>
 
                 <div class="input-div input-attachments">
-                    <label onclick="toggleAttachmentsBox(this)"" for="attachments">Attachments
-                        <!-- <i name="exp-arrow" class='bx bxs-right-arrow'></i> -->
-                        <i name="cmp-arrow" class='bx bxs-down-arrow'></i>
-                    </label>
-
-                    <!-- <input type="checkbox" name="attachments" id="attachments"> -->
-                    
+                    <label for="attachments">Attachments</label>
+                    <!-- <i name="exp-arrow" class='bx bxs-right-arrow'></i> -->
+                    <i name="cmp-arrow" class='bx bxs-down-arrow'></i>
                     <div class="attachments-box">
                         <ul>
-                            <li>New</li>
                             <li>
                                 <i class="bx bx-notepad"></i>
                                 <div class="attach-name">image.png</div>
