@@ -642,22 +642,22 @@ ul.select-box li:hover {
     justify-content: center;
 }
 
-.attachments-box ul li:hover {
+.appointment-entry  .attachments-box ul li:hover {
     background-color: rgb(199, 147, 249);
     color: whitesmoke;
 
 }
 
-.attachments-box ul li .actions {
+.appointment-entry  .attachments-box ul li .actions {
     display: flex;
     gap: 0.5rem;
 
 }
 
-.attachments-box ul li .actions i {
+.appointment-entry  .attachments-box ul li .actions i {
     color: red;
 }
 
-.attachments-box ul li .actions i:hover {
+.appointment-entry  .attachments-box ul li .actions i:hover {
     color: white;
 }
