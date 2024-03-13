@@ -594,15 +594,15 @@ ul.select-box li:hover {
     display: none;
 }
 
-.input-div.input-attachments > input[type="checkbox"] {
+.appointment-entry  .input-div.input-attachments > input[type="checkbox"] {
     display: none;
 }
 
-.input-div.input-attachments > input[type="checkbox"]:checked ~ .attachments-box {
+.appointment-entry  .input-div.input-attachments > input[type="checkbox"]:checked ~ .attachments-box {
     display: block;
 }
 
-.input-div.input-attachments > input[type="checkbox"]:checked ~ i {
+.appointment-entry   .input-div.input-attachments > input[type="checkbox"]:checked ~ i {
     -webkit-transform: rotate(180deg);
     transform: rotate(180deg);
     color: green;
