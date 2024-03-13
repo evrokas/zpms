@@ -435,10 +435,10 @@ ul.patient-appointments-list {
     width: 50%;
 }
 .appointment-entry .edit-appointment .input-header> .input-div:nth-child(2) {
-    width: 30%;
+    width: 20%;
 }
 .appointment-entry .edit-appointment .input-header > .input-div:nth-child(3) {
-    width: 20%;
+    width: 30%;
 }
 /* .appointment-entry .edit-appointment .input-div:nth-child(4) { */
     /* width: 100%; */
