@@ -85,6 +85,7 @@ function selectclick(e){
 
 function appointmentsExpandAll() {
     lis = document.querySelectorAll('ul.patient-appointments-list > li');
+    // console.log( lis );
     lis.forEach(el => {
         // console.log(el.querySelectorAll('.appointment-entry input[type="checkbox"]'));
         el.querySelectorAll('.appointment-entry input[type="checkbox"]')[0].checked = true;

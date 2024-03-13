@@ -581,8 +581,6 @@ ul.select-box li:hover {
     position: relative;
 }
 
-
-
 .attachments-box {
     background-color: white;
     position: absolute;
@@ -617,7 +615,7 @@ ul.select-box li:hover {
     box-shadow: 10px 10px 5px -6px rgba(0,0,0,0.5);
 }
 
-.appointment-entry  .input-div.input-attachments > .attachments-box ul li {
+.appointment-entry .input-div.input-attachments > .attachments-box ul li {
     padding: 0.4rem 0.4rem;
     display: flex;
     flex-direction: row;
@@ -625,22 +623,21 @@ ul.select-box li:hover {
     cursor: pointer;
 }
 
-.appointment-entry  .attachments-box ul li:hover {
+.appointment-entry .attachments-box ul li:hover {
     background-color: rgb(199, 147, 249);
     color: whitesmoke;
 
 }
 
-.appointment-entry  .attachments-box ul li .actions {
+.appointment-entry .attachments-box ul li .actions {
     display: flex;
     gap: 0.5rem;
-
 }
 
-.appointment-entry  .attachments-box ul li .actions i {
+.appointment-entry .attachments-box ul li .actions i {
     color: red;
 }
 
-.appointment-entry  .attachments-box ul li .actions i:hover {
+.appointment-entry .attachments-box ul li .actions i:hover {
     color: white;
 }
