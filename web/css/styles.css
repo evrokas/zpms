@@ -582,8 +582,6 @@ ul.select-box li:hover {
     position: relative;
 }
 
-
-
 .attachments-box {
     background-color: white;
     position: absolute;
@@ -594,15 +592,11 @@ ul.select-box li:hover {
     display: none;
 }
 
-.appointment-entry  .input-div.input-attachments > input[type="checkbox"] {
-    display: none;
-}
-
-.appointment-entry  .input-div.input-attachments > input[type="checkbox"]:checked ~ .attachments-box {
+.input-div.input-attachments.attachments-box-show .attachments-box {
     display: block;
 }
 
-.appointment-entry   .input-div.input-attachments > input[type="checkbox"]:checked ~ i {
+.input-div.input-attachments.attachments-box-show label i {
     -webkit-transform: rotate(180deg);
     transform: rotate(180deg);
     color: green;
