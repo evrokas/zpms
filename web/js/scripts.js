@@ -83,7 +83,7 @@ function selectclick(e){
 }
 
 function appointmentsExpandAll() {
-    lis = document.querySelectorAll('ul.patient-appointments-list li');
+    lis = document.querySelectorAll('ul.patient-appointments-list > li');
     lis.forEach(el => {
         // console.log(el.querySelectorAll('.appointment-entry input[type="checkbox"]'));
         el.querySelectorAll('.appointment-entry input[type="checkbox"]')[0].checked = true;
@@ -93,7 +93,7 @@ function appointmentsExpandAll() {
 }
 
 function appointmentsCollapseAll() {
-    lis = document.querySelectorAll('ul.patient-appointments-list li');
+    lis = document.querySelectorAll('ul.patient-appointments-list > li');
     lis.forEach(el => {
         // console.log(el.querySelectorAll('.appointment-entry input[type="checkbox"]'));
         el.querySelectorAll('.appointment-entry input[type="checkbox"]')[0].checked = false;

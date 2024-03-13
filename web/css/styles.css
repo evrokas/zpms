@@ -16,10 +16,21 @@ body {
 }
 
 .wrapper .header {
+    display: flex;
+    /* height: 4rem; */
+    align-items: center;
+    justify-items: center;
+    gap: 2rem;
     padding: 1rem;
     background-color: #7547d0;
     color: white;
     /* border: 1px solid black; */
+}
+
+.header img {
+    background-color: white;
+    padding: 0.5rem;
+    height: 3rem;
 }
 
 .wrapper .title {
