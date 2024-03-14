@@ -60,7 +60,8 @@ if(search.length > 0) {
 
             clearTimeout(timeout);
             timeout = setTimeout(function () {
-                xhr.open("POST", '/apps/zeus/web/patients/searchajax/term');
+                // xhr.open("POST", '/apps/zeus/web/patients/searchajax/term');
+                xhr.open("POST", 'patients/searchajax/term');
                 xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
                 xhr.send("sterm=" + el.value);
             }, (el.value.length<2)?0:200);  /* if length is less than 2 send request immediately */

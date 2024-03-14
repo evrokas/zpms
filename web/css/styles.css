@@ -24,11 +24,12 @@ body {
     padding: 1rem;
     background-color: #7547d0;
     color: white;
+    justify-content: space-evenly;
     /* border: 1px solid black; */
 }
 
 .header img {
-    background-color: white;
+    /* background-color: white; */
     padding: 0.5rem;
     height: 3rem;
 }
