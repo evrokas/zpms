@@ -5,15 +5,20 @@
     text-decoration: none;
     font-family: 'Roboto Slab', sans-serif;
 }
-body {
-    font-size: 14px;
+
+html {  
+    font-size: 16px; 
+}    
+    /* you can chose any size here 16 is default */
+    @media screen and (max-width: 991px) { html {   font-size: 62.5%;  }}
+    @media screen and (max-width: 767px) { html {   font-size: 75%;  }}  
+    @media screen and (max-width: 600px) { html {   font-size: 70%;  }}
 }
 
-.wrapper {
-    margin: auto;
-    width: 95%;
-    /* background-color: antiquewhite; */
+body {
+/*    font-size: 14px; */
 }
+
 
 .wrapper .header {
     display: flex;
@@ -459,6 +464,8 @@ ul.patient-appointments-list {
     font-size: 1rem;
 
 }
+
+
 .login-page form .field label {
     width: 7rem;
     text-align: right;
@@ -466,6 +473,21 @@ ul.patient-appointments-list {
     /* background-color: aqua; */
     padding: 0.5rem;
 }
+
+
+@media screen and (max-width: 500px) {
+    .login-page form .field {
+        flex-direction: column;
+    }
+
+.login-page form .field label {
+        text-align: left
+    }
+
+
+}
+
+
 
 .login-page form input {
     /* flex-grow: 1; */
