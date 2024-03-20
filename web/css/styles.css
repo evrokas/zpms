@@ -10,23 +10,26 @@ html {
     font-size: 16px; 
 }    
 /* you can chose any size here 16 is default */
-@media screen and (max-width: 991px) { html {   font-size: 62.5%;  }}
-@media screen and (max-width: 767px) { html {   font-size: 75%;  }}  
+@media screen and (max-width: 800px) { html {   font-size: 90%;  }}
+@media screen and (max-width: 700px) { html {   font-size: 80%;  }}  
 @media screen and (max-width: 600px) { html {   font-size: 70%;  }}
 
 body {
+    margin: 0 0.5rem;
 /*    font-size: 14px; */
 }
 
 .git-hash {
-    /* top: -2px; */
-    /* right:16px; */
-    /* position: absolute; */
+    /* top: 0px; */
+    right: 8px;
+    position: absolute;
     /* margin: -16px 8px; */
     /* margin-top: 12px; */
     /* color: white; */
     /* top: -16px; */
-    padding: 8px 8px;   
+    color: gray;
+    font-size: 12px;
+    /* padding: 8px 8px;    */
     text-align: right;
 }
 
@@ -55,6 +58,11 @@ body {
 
 .region {
     margin: 1rem 0;
+}
+
+.region-header {
+    margin: unset;
+
 }
 
 .region-footer {
