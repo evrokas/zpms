@@ -183,6 +183,7 @@ structure:
   footer:
     - footer
     - copyright
+    - githash
 
 menu:
   main:
