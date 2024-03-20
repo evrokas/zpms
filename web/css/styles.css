@@ -19,8 +19,14 @@ body {
 }
 
 .git-hash {
-    margin-top: 0.5rem;
-    /* color: red; */
+    /* top: -2px; */
+    /* right:16px; */
+    /* position: absolute; */
+    /* margin: -16px 8px; */
+    /* margin-top: 12px; */
+    /* color: white; */
+    /* top: -16px; */
+    padding: 8px 8px;   
     text-align: right;
 }
 
@@ -33,7 +39,7 @@ body {
     padding: 1rem;
     background-color: #7547d0;
     color: white;
-    justify-content: space-evenly;
+    justify-content: left;
     /* border: 1px solid black; */
 }
 

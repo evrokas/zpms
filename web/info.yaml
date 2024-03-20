@@ -172,6 +172,7 @@ blocks:
 structure:
   header:
     - header
+    - githash
     - userblock
     - breadcrumbs
   main_navigation:
@@ -183,7 +184,6 @@ structure:
   footer:
     - footer
     - copyright
-    - githash
 
 menu:
   main:
