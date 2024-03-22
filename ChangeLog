@@ -1,2 +1,4 @@
+* Rebased 'stage' branch to 'devel' branch, works seems ok
+
 * Completed reorganization of modules, plan is to separate the core fw/ folder from site
   development, so same fw/ code can be used in multiple sites
