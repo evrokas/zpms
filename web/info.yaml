@@ -9,7 +9,7 @@ meta:
 
 
 css:
-  - normilize:
+  - normalize:
     src: 'css/normalize.css'
   - styles:
     src: 'css/styles.css'
@@ -162,12 +162,12 @@ regions:
   - main_content
   - footer
 
-blocks:
-  - header: header
-  - breacrumbs: header
-  - mainnavigation: main_navigation
-  - maincontent: main_content
-  - footer: footer
+# blocks:
+#   - header: header
+#   - breacrumbs: header
+#   - mainnavigation: main_navigation
+#   - maincontent: main_content
+#   - footer: footer
 
 structure:
   header:
@@ -219,3 +219,20 @@ menu:
     #         - link_link2:
     #           text: 'link3-2 test'
     #           url: 'links/link3/link_link2'
+
+modules:
+  path:
+    - "/fw/modules/"
+    - "/src/modules/"
+  modules:
+    - mainnavigation
+    - notifications
+    - header
+    - breadcrumbs
+    - userblock
+    - userprofile
+    - htmltext
+    - githash
+    - copyright
+    - content
+  # - topbar
