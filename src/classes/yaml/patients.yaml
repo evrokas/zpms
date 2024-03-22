@@ -1,0 +1,15 @@
+- table: patients
+  class: patientsClass
+  fields:
+    - guid: char(36) not null
+    - cdate: datetime default current_timestamp
+    - cuser: char(32) not null
+    - pname: varchar(64) not null
+    - pdob: datetime
+    - pamka: char(11)
+    - ptel: varchar(32)
+    - paddr: varchar(256)
+    - pemail: varchar(128)
+    - firstapp: datetime
+    - pnote: text
+  

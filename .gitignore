@@ -1,8 +1,8 @@
 sql/admin.sql
 config/db.php
-fw/classes/sql/*
-fw/classes/*.php
+src/classes/sql/*
+src/classes/*.php
 fw/test
-fw/classes/bootstrap_classes.php
+src/classes/bootstrap_classes.php
 web/cache
 sql/zeusdb.sql

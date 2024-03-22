@@ -1,0 +1,18 @@
+- table: appointments
+  class: appointmentsClass
+  fields:
+    - guid: char(36) not null
+    - cdate: datetime default current_timestamp
+    - cuser: char(32) not null
+    - pguid: char(36) not null
+    - adate: datetime default current_timestamp
+    - aplace: text
+    - anote: text
+
+# - guid appointment guid
+# - cdate appointment creation date
+# - cuser appointment creation user
+# - pguid patient guid
+# - adata appointment date/time
+# - aplace appointment place
+# - anote appointment notes
