@@ -278,13 +278,13 @@ function dump_routes() {
         SecurityClass::require('patients-new-patient');
 
         $pc = new patientsClass([
-            'pname' => randomAlpha(12, 2),
-            'pdob' => '1977-07-29 00:00:00',
-            'pamka' => randomNumber(11),
-            'ptel' => randomNumber(10),
-            'pemail' => randomEmail(),
-            'paddr' => randomAlnum(12, 3),
-            'pnote' => randomALnum(20,10)
+            'pname' => '', //randomAlpha(12, 2),
+            'pdob' => getDBtime(),  //'1977-07-29 00:00:00',
+            'pamka' => '', //randomNumber(11),
+            'ptel' => '', //randomNumber(10),
+            'pemail' => '', //randomEmail(),
+            'paddr' => '', //randomAlnum(12, 3),
+            'pnote' => '', //randomALnum(20,10)
         ]);
         
         // $pat = $pc->getById($params['id']);
@@ -492,7 +492,8 @@ function dump_routes() {
         $ap = new appointmentsClass([
             'adate' => getDBtime(),
             'aplace' => 'Mandra',
-        'anote' => print_r( $_SERVER, 1) /*'notes'*/]);
+            'anote' => '', //print_r( $_SERVER, 1) /*'notes'*/
+        ]);
         // $kernel->setS
         // $pat = $pc->getById($params['id']);
         return ($Renderer->render("edit_appointment.zetem", ['action' => 'newappointment', 'id' => null, 'appointment' => $ap, 'patient' => $p]));
