@@ -194,6 +194,7 @@ function dump_routes() {
 
         // echo "<pre>patient: " . print_r($pat, 1) . "</pre>";
         $app_list = appointmentsClassEx::getAppointmentsForPatient($pat->getguid(), 'DESC');
+        $loc = locationsClass::sgetAll();
 
         $apprender = array();;
         foreach($app_list as $ap) {
@@ -205,7 +206,9 @@ function dump_routes() {
                                                 'checked' => (!count($apprender)?"checked":""),
                                                 'id' => $params['id'], 
                                                 'patient' => $pat,
-                                                'appointment' => $ap]),
+                                                'appointment' => $ap,
+                                                'locations' => $loc
+                                            ]),
                 'attributes' => new Attributes()
             ];
         }
@@ -398,9 +401,11 @@ function dump_routes() {
             return ("patients doesn't exist");
         }
 
+        $loc = locationsClass::sgetAll();
+
         $ap = new appointmentsClass();
         $app = $ap->getById($params['id']);
-        return ($Renderer->render("edit_appointment.zetem", ['action' => 'edit', 'id' => $params['id'], 'appointment' => $app]));
+        return ($Renderer->render("edit_appointment.zetem", ['action' => 'edit', 'id' => $params['id'], 'appointment' => $app, 'locations' => $loc]));
         
     }
     function appointment_edit_post($params) {
@@ -422,7 +427,8 @@ function dump_routes() {
 
         $ap = appointmentsClass::sgetById($params['id']);
         // error_log("\bFound appointment: " . print_r($ap, 1) . "\n");
-        $ap->setaplace($_POST['appointment-place']);
+        // $ap->setaplace($_POST['appointment-place']);
+        $ap->setaplace((locationsClassEx::getbyMachineName($_POST['appointment-place']))->getname());
         $ap->setadate(getDBformattime($_POST['appointment-date']));
         $ap->setanote($_POST['appointment-notes']);
 
@@ -436,15 +442,18 @@ function dump_routes() {
         global $Renderer;
         global $kernel;
 
+
+        $loc = locationsClass::sgetAll();
+
         $ap = new appointmentsClass([
             'adate' => getDBtime(),
-            'aplace' => 'Mandra'
+            'aplace' => ''
         ]);
         
         // error_log('\nREFERER: '. $_SERVER['HTTP_REFERER']."\n");
 
         // $pat = $pc->getById($params['id']);
-        return ($Renderer->render("edit_appointment.zetem", ['action' => 'new', 'id' => null, 'appointment' => $ap]));
+        return ($Renderer->render("edit_appointment.zetem", ['action' => 'new', 'id' => null, 'appointment' => $ap, 'locations' => $loc]));
     }
 
     function appointment_new_post($params) {
@@ -489,6 +498,7 @@ function dump_routes() {
         $p = patientsClass::sgetById( $params['id'] );
         // echo "<pre>" . print_r( $p ) . "</pre>";
 
+        $loc = locationsClass::sgetAll();
         $ap = new appointmentsClass([
             'adate' => getDBtime(),
             'aplace' => 'Mandra',
@@ -496,7 +506,7 @@ function dump_routes() {
         ]);
         // $kernel->setS
         // $pat = $pc->getById($params['id']);
-        return ($Renderer->render("edit_appointment.zetem", ['action' => 'newappointment', 'id' => null, 'appointment' => $ap, 'patient' => $p]));
+        return ($Renderer->render("edit_appointment.zetem", ['action' => 'newappointment', 'id' => null, 'appointment' => $ap, 'patient' => $p, 'locations' => $loc]));
     }
 
     function patient_appointment_new_post($params) {
@@ -516,6 +526,10 @@ function dump_routes() {
             echo "User " . $params['id'] . "cannot be found!\n";
             exit();
         }
+
+        $loc = locationsClassEx::getbyMachineName($_POST['appointment-place']);
+
+
         // echo "this is the post version<br/>";
         $app = new appointmentsClass([
             // 'guid' => 
@@ -523,7 +537,7 @@ function dump_routes() {
             'cuser' => 'admin',
             'cdate' => getDBtime(),
             'adate' => getDBformattime($_POST['appointment-date']),
-            'aplace' => $_POST['appointment-place'],
+            'aplace' => $loc,   //$_POST['appointment-place'],
             'anote' => $_POST['appointment-notes'],
             'guid' => guid(),
             'pguid' => $pat->getguid()

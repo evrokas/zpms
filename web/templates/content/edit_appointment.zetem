@@ -14,7 +14,15 @@
 
         <div class="input-div">
             <label for="appointment-place">Περιοχή</label>
-            <input type="text" name="appointment-place" id=""  value="{{$appointment->getaplace()}}">
+            <!-- <input type="text" name="appointment-place" id=""  value="{{$appointment->getaplace()}}"> -->
+                    <!-- {% if(isset($locations)): %} -->
+                    <select name="appointment-place">
+                        {% foreach($locations as $loc): %}
+                            <option value="{{$loc->getmachinename()}}"{{($loc->getname() == $appointment->getaplace())?"selected":""}}>{{$loc->getname()}}</option>
+                        {% endforeach %}
+                    </select>
+                <!-- {% endif %} -->
+
         </div>
 
         <div class="input-div">

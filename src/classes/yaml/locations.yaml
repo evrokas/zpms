@@ -1,0 +1,8 @@
+- table: locations
+  class: locationsClass
+  fields:
+    - cdate: datetime default current_timestamp
+    - cuser: varchar(32)
+    - name: varchar(64)
+    - machinename: varchar(64)
+    - address: text

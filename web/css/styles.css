@@ -178,6 +178,7 @@ form .input-div {
     /* justify-content: space-evenly; */
 }
 
+form .input-div select,
 form .input-div input,
 form .input-div textarea {
     flex-grow: 1;

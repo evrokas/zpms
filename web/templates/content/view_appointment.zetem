@@ -24,11 +24,19 @@
     
                 <div class="input-div">
                     <label for="appointment-place">Περιοχή</label>
-                    <input type="text" name="appointment-place" id=""  value="{{$appointment->getaplace()}}">
+                    <!-- <input type="text" name="appointment-place" id=""  value="{{$appointment->getaplace()}}"> -->
+
+                    <!-- {% if(isset($locations)): %} -->
+                        <select name="appointment-place">
+                            {% foreach($locations as $loc): %}
+                            <option value="{{$loc->getmachinename()}}"{{($loc->getname() == $appointment->getaplace())?"selected":""}}>{{$loc->getname()}}</option>
+                        {% endforeach %}
+                        </select>
+                    <!-- {% endif %} -->
                 </div>
 
                 <div class="input-div input-attachments">
-                    <label for="attachments">Attachments</label>
+                    <label for="attachments">Attach</label>
                     <!-- <i name="exp-arrow" class='bx bxs-right-arrow'></i> -->
                     <i name="cmp-arrow" class='bx bxs-down-arrow'></i>
 
