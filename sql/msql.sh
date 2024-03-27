@@ -8,5 +8,5 @@ db=`head -2 $dir/admin.sql | gawk '/DATABASE/  { print $6 }' - | cut -d\; -f1 -`
 #echo pass $password
 #echo db $db
 
-mysql -u $user -p$password $db  $1
+mysql -u $user -p$password $db $@
 
