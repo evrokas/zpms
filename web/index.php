@@ -501,7 +501,7 @@ function dump_routes() {
         $loc = locationsClass::sgetAll();
         $ap = new appointmentsClass([
             'adate' => getDBtime(),
-            'aplace' => 'Mandra',
+            'aplace' => '',
             'anote' => '', //print_r( $_SERVER, 1) /*'notes'*/
         ]);
         // $kernel->setS
@@ -537,7 +537,7 @@ function dump_routes() {
             'cuser' => 'admin',
             'cdate' => getDBtime(),
             'adate' => getDBformattime($_POST['appointment-date']),
-            'aplace' => $loc,   //$_POST['appointment-place'],
+            'aplace' => ($loc)?$loc->getname():'',   //$_POST['appointment-place'],
             'anote' => $_POST['appointment-notes'],
             'guid' => guid(),
             'pguid' => $pat->getguid()
@@ -546,7 +546,7 @@ function dump_routes() {
 
         $app->insert();
 
-        error_log('\nREFERER: '. $_SERVER['HTTP_REFERER']."\n");
+        // error_log('\nREFERER: '. $_SERVER['HTTP_REFERER']."\n");
 
         $kernel->addStatus('notice', 'Δημιουργήθηκε νέο ραντεβού.');
         header('location: '.rel_url('/patient/'.$pat->getid().'/edit'));
