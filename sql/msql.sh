@@ -10,3 +10,4 @@ db=`head -2 $dir/admin.sql | gawk '/DATABASE/  { print $6 }' - | cut -d\; -f1 -`
 
 mysql -u $user -p$password $db $@
 
+#mysql --defaults-extra-file=<(echo $'[client]\npassword='"$password") -u $user $db $@

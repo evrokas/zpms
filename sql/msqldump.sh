@@ -8,5 +8,5 @@ db=`head -2 $dir/admin.sql | gawk '/DATABASE/  { print $6 }' - | cut -d\; -f1 -`
 #echo pass $password
 #echo db $db
 
-mysqldump -u $user -p$password $db $@
-
+#mysqldump -u $user -p$password $db $@
+mysqldump --defaults-extra-file=<(echo $'[client]\npassword='"$password") -u $user $db $@
