@@ -33,6 +33,10 @@
         <div class="buttons">
             <input type="submit" name="Αποθήκευση" value="submit">
             <input type="submit" name="cancel" value="cancel">
+
+            <!-- <button type="button" loader="info-loader" onclick="field_update(this)">Update</button> -->
+            <!-- <div id="info-loader" class="loader0"></div> -->
+
         </div>
     </form>
 </div>
