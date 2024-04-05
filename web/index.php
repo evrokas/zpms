@@ -587,3 +587,39 @@ function dump_routes() {
 
     }
 
+    function settings($params) {
+        global $kernel;
+        global $Renderer;
+
+
+            return $Renderer->render('settings.zetem', []);
+    }
+
+
+    // AJAX callback for updating patient info data
+    function ajax_update_patient_info($params) {
+        global $Render;
+        global $kernel;
+
+        SecurityClass::require('patients-edit-patient');
+
+        $pat = patientsClass::sgetById($params['id']);
+
+        $pat->loadFields([
+            'cuser' => $kernel->getUserName(),
+            'cdate' => getDBtime(),
+            'pname' => $_POST['patient-name'],
+            'pdob' => getDBformattime($_POST['patient-dob']),
+            'pamka' => $_POST['patient-amka'],
+            'ptel' => $_POST['patient-telephone'],
+            'paddr' => $_POST['patient-address'],
+            'pemail' => $_POST['patient-email'],
+            'pnote' => $_POST['patient-note']
+        ]);
+
+        // save this final request for after debugging
+        // $pat->update();
+
+        error_log('\najax update_patient_info: note: ' . $_POST['patients-note']);
+        return ("OK");
+    }

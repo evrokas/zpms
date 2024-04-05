@@ -52,7 +52,9 @@
                 <input type="submit" name="submit" value="Αποθήκευση">
                 <input type="submit" name="delete" value="Διαγραφή">
                 <!-- <input type="submit" name="cancel" value="cancel"> -->
-            </div>
+                <button type="button" loader="app-loader-{{$index}}" onclick="field_update(this)">Update</button>
+                <div id="app-loader-{{$index}}" class="loader0"></div>
+                </div>
         </form>
     </div>
 </div>

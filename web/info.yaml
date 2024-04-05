@@ -17,6 +17,8 @@ css:
     src: 'css/boxicons.min.css'
   - breadcrumbs:
     src: 'css/breadcrumbs.css'
+  - utils:
+    src: 'css/utils.css'
   # - pikaday:
     # src: "https://cdn.jsdelivr.net/npm/pikaday/css/pikaday.css"
 
@@ -66,6 +68,10 @@ routes:
     title: "User logout"
     url: "/logout"
     handler: logout
+  settings:
+    title: "Settings"
+    url: "/settings"
+    handler: settings
   patients:
     title: "Patients"
     url: "/patients"
@@ -198,6 +204,9 @@ menu:
     - appointments:
       text: 'Appointment List'
       url: '/appointments'
+    - settings:
+      text: "Settings"
+      url: '/settings'
     - contact:
       text: 'Contact'
       url: '#'

@@ -116,3 +116,47 @@ function startTimeout() {
 
 textAreas = document.querySelectorAll('textarea');
 console.log(textAreas);
+
+var loaderTimeouts = [];
+
+function enableLoader(loader) {
+    console.log('enabling loader', loader);
+    
+    clearTimeout(loaderTimeouts[loader.id]);
+    loaderTimeouts[loader.id] = setTimeout( function () {
+        console.log('loader timeout');
+        loader.classList.toggle('active');
+    }, 1000);
+
+
+}
+
+function field_update(e) {
+    // e.preventDefault();
+    console.log('clicked ', e);
+    // console.log('target: ', e.attributes.loader);
+    // console.log('parent: ', e.parentElement);
+    loader = document.getElementById(e.attributes.loader.value);
+    console.log('loader: ', loader);
+    loader.classList.toggle('active');
+    // console.log(loaderTimeouts[loader.id]);
+
+    enableLoader(loader);
+}
+
+window.addEventListener('load', (e) => {
+    console.log('page loaded');
+
+    // loaders = document.querySelectorAll('button[loader]');
+    loaders = document.querySelectorAll('.loader0');
+    console.log( loaders );
+  
+    loaders.forEach(l => {
+        console.log( l );
+        loaderTimeouts[l.id] = 0;
+
+        // loaderTimeouts.push({[l.attributes.loader.value]:0});
+    })
+
+    console.log(loaderTimeouts);
+})
