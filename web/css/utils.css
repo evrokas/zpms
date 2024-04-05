@@ -1,0 +1,31 @@
+.input-div {
+    position: relative;
+}
+
+.loader0 {
+    --loader-radius: 5px;
+    --loader-height: 20px;
+    position: absolute;
+    right: calc(var(--loader-height)/2);
+    /* bottom: 2px; */
+    background-color: white;
+    border: var(--loader-radius) solid #f3f3f3; /* Light grey */
+    border-top: var(--loader-radius) solid #3498db; /* Blue */
+    border-radius: 50%;
+    height: var(--loader-height);
+    aspect-ratio: 1;
+    /* width: 50px; */
+    /* height: 50px; */
+    /* visibility: hidden; */
+
+    &.active {
+        visibility: visible;
+        animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  }
+  
