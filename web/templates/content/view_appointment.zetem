@@ -8,9 +8,9 @@
             <!-- {% if(isset($index)): %} -->
             <!-- {{$index}} -->
             <!-- {% endif %} -->
-            <span>
-                Ραντεβού <b>{{formatDate($appointment->getadate())}}</b>
-            </span>
+            <span>Ραντεβού <b>{{formatDate($appointment->getadate())}}</b></span>
+            
+        <div id="app-loader-{{$index}}" class="loader0"></div>
 
             <!-- </div> -->
     </label>
@@ -53,7 +53,6 @@
                 <input type="submit" name="delete" value="Διαγραφή">
                 <!-- <input type="submit" name="cancel" value="cancel"> -->
                 <button type="button" loader="app-loader-{{$index}}" onclick="field_update(this)">Update</button>
-                <div id="app-loader-{{$index}}" class="loader0"></div>
                 </div>
         </form>
     </div>

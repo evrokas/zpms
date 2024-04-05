@@ -4,7 +4,7 @@
 
 .loader0 {
     --loader-radius: 5px;
-    --loader-height: 20px;
+    --loader-height: 18px;
     position: absolute;
     right: calc(var(--loader-height)/2);
     /* bottom: 2px; */
@@ -29,3 +29,6 @@
     }
   }
   
+.appointment-entry .loader0 {
+  bottom: 0px;
+}
