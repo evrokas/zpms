@@ -21,6 +21,19 @@ css:
     # src: "https://cdn.jsdelivr.net/npm/pikaday/css/pikaday.css"
 
 
+# use libraries concept to attach different css/js to different pages
+libraries:
+  - loader-library:
+    - css:
+      - loader:
+        src: 'css/loader.css'
+    - foot_script:
+      - loader:
+        type:
+        src: 'js/loader.js'
+    # - head_script:
+
+
 # head_script:
 foot_script:
   - scripts:
