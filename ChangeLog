@@ -1,3 +1,5 @@
+* [7/4/24] using AJAX requests to on-the-fly update input data, so it is not necessery
+  to save the form
 * [5/4/24] rebased with devel, after enabling libraries in devel repo
 * Completed reorganization of modules, plan is to separate the core fw/ folder from site
   development, so same fw/ code can be used in multiple sites

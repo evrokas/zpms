@@ -241,31 +241,32 @@ function dump_routes() {
         $pat = patientsClass::sgetById($params['id']);
         // error_log("Patient: " . print_r($pat, 1)."\n");
 
-        if(isset($_POST['submit'])) {
-            $kernel->addStatus('notice', 'Ο φάκελος του ασθενή <b>' . $pat->getpname() . '</b> έχει αποθηκευτεί.');
-            
-            
-            $pat->loadFields([
-                'cuser' => $kernel->getUserName(),
-                'cdate' => getDBtime(),
-                'pname' => $_POST['patient-name'],
-                'pdob' => getDBformattime($_POST['patient-dob']),
-                'pamka' => $_POST['patient-amka'],
-                'ptel' => $_POST['patient-telephone'],
-                'paddr' => $_POST['patient-address'],
-                'pemail' => $_POST['patient-email'],
-                'pnote' => $_POST['patient-note']
-            ]);
-            
-            $pat->update();
+        // if(isset($_POST['submit'])) {
+        
+        
+        $pat->loadFields([
+            'cuser' => $kernel->getUserName(),
+            'cdate' => getDBtime(),
+            'pname' => $_POST['patient-name'],
+            'pdob' => getDBformattime($_POST['patient-dob']),
+            'pamka' => $_POST['patient-amka'],
+            'ptel' => $_POST['patient-telephone'],
+            'paddr' => $_POST['patient-address'],
+            'pemail' => $_POST['patient-email'],
+            'pnote' => $_POST['patient-note']
+        ]);
+        
+        $pat->update();
 
-
-            
-            header('location: '.rel_url('/patient/'.$pat->getid().'/edit'));
+        // error_log("patient record saved\n");
+        
+        if(isset($_POST['use_ajax'])) {
+            echo "OK";
+            exit();
         }
 
-        // error_log('\nREFERER: '. $_SERVER['HTTP_REFERER']."\n");
-
+        $kernel->addStatus('notice', 'Ο φάκελος του ασθενή <b>' . $pat->getpname() . '</b> έχει αποθηκευτεί.');
+        header('location: '.rel_url('/patient/'.$pat->getid().'/edit'));
         exit();
         // return '';
         // patients_list(['notice' => 'Ο φάκελος του ασθενή ' + $pat->getpname() . ' έχει αποθηκευτεί.']);
@@ -434,10 +435,18 @@ function dump_routes() {
 
         $ap->update();
 
+
+        // error_log('patient appointment saved');
+        if($_POST['use_ajax']) {
+            // error_log("\nused AJAX\n");
+            echo "OK";
+            exit();
+        }
         // error_log('\nREFERER: '. $_SERVER['HTTP_REFERER']."\n");
         header('location: '. $_SERVER['HTTP_REFERER']);
-
     }
+
+
     function appointment_new($params) {
         global $Renderer;
         global $kernel;

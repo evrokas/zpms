@@ -1,0 +1,64 @@
+.input-div {
+    position: relative;
+}
+
+.loader0 {
+    --loader-radius: 3px;
+    --loader-height: 18px;
+    --loader-active-color: #f3f3f3;
+    --loader-active-color-top: #3498db;
+    --loader-success-color: green;
+    --loader-error-color: red;
+    --loader-pending-color: orange;
+
+    position: absolute;
+    right: calc(var(--loader-height)/2);
+    /* bottom: 2px; */
+    background-color: white;
+    border: var(--loader-radius) solid #f3f3f3; /* Light grey */
+    border-top: var(--loader-radius) solid #3498db; /* Blue */
+    border-radius: 50%;
+    height: var(--loader-height);
+    aspect-ratio: 1;
+    /* width: 50px; */
+    /* height: 50px; */
+    visibility: hidden;
+
+    &.active {
+        visibility: visible;
+        animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+
+    &.success {
+      border: var(--loader-radius) solid var(--loader-success-color); /*#f3f3f3;  Light grey */
+      /* border-top: var(--loader-radius) solid #3498db; Blue */  
+      visibility: visible;
+      opacity: 0;
+      transition: visibility 0s 2s, opacity 2s linear;
+    }
+
+    @keyframes fadeout {
+      0%: { opacity: 1; }
+      100%: { opacity: 0; }
+    }
+
+    &.error {
+      border: var(--loader-radius) solid var(--loader-error-color); /*#f3f3f3;  Light grey */
+      visibility: visible;
+    }
+
+    &.pending {
+      border: var(--loader-radius) solid var(--loader-pending-color); /*#f3f3f3;  Light grey */
+      visibility: visible;
+    }
+  }
+  
+.appointment-entry .loader0 {
+  bottom: 0px;
+}

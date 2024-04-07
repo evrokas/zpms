@@ -18,7 +18,7 @@
 
         <div class="input-div">
             <label for="patient-name">Όνομα ασθενή</label>
-            <input type="text" name="patient-name" id="" value="{{$patient->getpname()}}">
+            <input type="text" name="patient-name" loader="info-loader" id="" value="{{$patient->getpname()}}">
         </div>
 
         <div class="input-div">
@@ -29,27 +29,27 @@
 
         <div class="input-div">
             <label for="patient-amka">ΑΜΚΑ</label>
-            <input type="number" name="patient-amka" id=""  value="{{$patient->getpamka()}}">
+            <input type="number" name="patient-amka" loader="info-loader" id=""  value="{{$patient->getpamka()}}">
         </div>
 
         <div class="input-div">
             <label for="patient-telephone">Τηλέφωνο</label>
-            <input type="text" name="patient-telephone" id=""  value="{{$patient->getptel()}}">
+            <input type="text" name="patient-telephone" loader="info-loader" id=""  value="{{$patient->getptel()}}">
         </div>
 
         <div class="input-div">
             <label for="patient-email">Email</label>
-            <input type="text" name="patient-email" id=""  value="{{$patient->getpemail()}}">
+            <input type="text" name="patient-email" loader="info-loader" id=""  value="{{$patient->getpemail()}}">
         </div>
 
         <div class="input-div">
             <label for="patient-address">Διεύθυνση</label>
-            <input type="text" name="patient-address" id=""  value="{{$patient->getpaddr()}}">
+            <input type="text" name="patient-address" loader="info-loader" id=""  value="{{$patient->getpaddr()}}">
         </div>
 
         <div class="input-div">
             <label for="patient-note">Σημειώσεις</label>
-            <textarea name="patient-note" id="" rows="5" placeholder="σημειώσεις">{{$patient->getpnote()}}</textarea>
+            <textarea name="patient-note" loader="info-loader" id="" rows="5" placeholder="σημειώσεις">{{$patient->getpnote()}}</textarea>
         </div>
         <div class="buttons">
             <input type="submit" name="submit" value="Αποθήκευση">
@@ -60,7 +60,7 @@
                 <input type="submit" name="delete" value="Ακύρωση">
             {% endif %}
 
-            <button type="button" loader="info-loader" onclick="field_update(this)">Update</button>
+            <button hidden type="button" loader="info-loader" onclick="field_update(this)">Update</button>
             <div id="info-loader" class="loader0"></div>
         </div>
     </form>

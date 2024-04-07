@@ -18,7 +18,7 @@ css:
   - breadcrumbs:
     src: 'css/breadcrumbs.css'
   - utils:
-    src: 'css/utils.css'
+    src: 'css/loader.css'
   # - pikaday:
     # src: "https://cdn.jsdelivr.net/npm/pikaday/css/pikaday.css"
 
@@ -41,6 +41,9 @@ foot_script:
   - scripts:
     type: 
     src: "js/scripts.js"
+  - loader:
+    type:
+    src: "js/loader.js"
   # - pikaday:
     # type: 
     # src: "https://cdn.jsdelivr.net/npm/pikaday/pikaday.js"
