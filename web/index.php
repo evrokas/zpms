@@ -324,6 +324,12 @@ function dump_routes() {
 
         SecurityClass::require('patients-new-patient');
 
+
+        if(isset($_POST['use_ajax'])) {
+            echo "REJECTED";
+            exit();
+        }
+
         // echo "this is the post version<br/>";
         $pc = new patientsClass([
             // 'guid' => 
