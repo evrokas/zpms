@@ -5,27 +5,10 @@ class UserProfileModule extends moduleClass {
     function __construct($amodule, $atemplate) {
         parent::__construct($amodule, $atemplate);
 
-        //add route definitions
-        $profile_yaml="
-        routes:
-            userprofile:
-                title: 'User profile'
-                name: userprofile
-                url: /profile
-                module: userprofile
-                # handler: module
-                method: get
-            userprofile_post:
-                title: 'User profile'
-                name: userprofile_post
-                url: /profile
-                module: userprofile
-                # handler: module
-                method: post          
-        ";
-
+        $rt = yaml_parse_file(__DIR__ . '/userprofile.yaml');
+        
         global $kernel;
-        $kernel->addConfig( $profile_yaml );
+        $kernel->addConfig( $rt );
 
 
         // $region_yaml="
@@ -35,6 +18,8 @@ class UserProfileModule extends moduleClass {
         //     ";
 
         // $kernel->addConfig($region_yaml);
+
+        // re-initialize routes
         global $router;
         $router->initRouteTable($kernel->getConfig('routes'));
         // echo "<pre>Router routes: " . print_r( $router->getAllRoutes(), 1) . "</pre>";

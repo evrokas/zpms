@@ -1,0 +1,15 @@
+routes:
+    userprofile:
+        title: 'User profile'
+        name: userprofile
+        url: /profile
+        module: userprofile
+        # handler: module
+        method: get
+    userprofile_post:
+        title: 'User profile'
+        name: userprofile_post
+        url: /profile
+        module: userprofile
+        # handler: module
+        method: post          

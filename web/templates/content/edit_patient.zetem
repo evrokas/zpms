@@ -1,4 +1,5 @@
 
+{% attach_library('loader-library'); %}
 
 
 <div class="edit-patient">    
