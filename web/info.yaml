@@ -15,8 +15,8 @@ css:
     src: 'css/styles.css'
   - boxicons:
     src: 'css/boxicons.min.css'
-  - breadcrumbs:
-    src: 'css/breadcrumbs.css'
+  # - breadcrumbs:
+    # src: 'css/breadcrumbs.css'
   # - utils:
     # src: 'css/loader.css'
   # - pikaday:
@@ -34,6 +34,10 @@ libraries:
         type:
         src: 'js/loader.js'
     # - head_script:
+  # breadcrumbs-library:
+    # css:
+      # - breadcrumbs:
+        # src: 'css/breadcrumbs.css'
 
 
 # head_script:
@@ -248,7 +252,7 @@ menu:
 modules:
   path:
     - "/fw/modules/"
-    - "/src/modules/"
+    - "/modules/"
   modules:
     - mainnavigation
     - notifications

@@ -1,10 +1,33 @@
-ul.breadcrumbs {
-    display: flex;
-    flex-direction: row;
-    gap: 12px;
-    list-style: none;
+
+.breadcrumbs {
+    padding: 0.5rem 0;
+    background-color: white;
 }
 
-ul.breadcrumbs li {
-    color: red;
+.breadcrumbs ul {
+    display: flex;
+    flex-direction: row;
+    list-style: none;
+    /* gap: 12px; */
 }
+
+.breadcrumbs ul li.breadcrumb-item {
+    padding: 0 4px;
+}
+.breadcrumbs ul li.breadcrumb-separator {
+    padding: 0 6px;
+}
+
+.breadcrumbs ul li.breadcrumb-item:hover {
+    color:rgb(118, 118, 247);
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+/* .breadcrumbs ul li::before { */
+    /* content: ' > '; */
+/* } */
+
+/* .breadcrumbs ul li:first-of-type::before { */
+    /* content: ':: '; */
+/* } */
