@@ -509,6 +509,13 @@ function dump_routes() {
         if(!isset($params['id'])) {
             return ("User could not be found");
         }
+
+        if(isset($_POST['use_ajax'])) {
+            // if this is an AJAX request, then do nothing, because the record doesn't exist yet!
+            echo "REJECTED";
+            exit();
+        }
+
         // error_log("\npatient_appointment_new: ".print_r($params, 1)."\n");
         $p = patientsClass::sgetById( $params['id'] );
         // echo "<pre>" . print_r( $p ) . "</pre>";
