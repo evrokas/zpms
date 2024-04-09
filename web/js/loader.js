@@ -34,11 +34,15 @@ function enableLoader(loader, form) {
         // send form with fetch()...
         loader.classList.add('active');
 
+        // set X-Requested-With header
+        // test for header with, HTTP_X_REQUESTED_WITH
+        // value XMLHttpRequest
         fetch(form.action, {
             'method': 'post',
             body: new URLSearchParams( fdata ),
             headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-Requested-With': 'XMLHttpRequest'
             },
         }).then((response) => {
             console.log(response);

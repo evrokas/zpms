@@ -324,11 +324,14 @@ function dump_routes() {
 
         SecurityClass::require('patients-new-patient');
 
-
+        error_log('\nAjax request: '. $kernel->isAjaxRequest()?"true":"false" . "\n");
+        
         if(isset($_POST['use_ajax'])) {
             echo "REJECTED";
             exit();
         }
+
+        if(!isset($_POST['submit']) && !isset($_POST['submitedit']))exit();
 
         // echo "this is the post version<br/>";
         $pc = new patientsClass([
@@ -510,12 +513,14 @@ function dump_routes() {
             return ("User could not be found");
         }
 
+        // error_log('\nSERVER: ' . print_r($_SERVER, 1));
+
         if(isset($_POST['use_ajax'])) {
             // if this is an AJAX request, then do nothing, because the record doesn't exist yet!
             echo "REJECTED";
             exit();
         }
-
+        
         // error_log("\npatient_appointment_new: ".print_r($params, 1)."\n");
         $p = patientsClass::sgetById( $params['id'] );
         // echo "<pre>" . print_r( $p ) . "</pre>";
@@ -536,12 +541,16 @@ function dump_routes() {
         global $kernel;
 
         // error_log("<pre>patient_appointment_new_post: ".print_r($params, 1)."</pre>");
-        error_log("\nPatient id: " );
+        // error_log("\nPatient id: " );
         if(isset($_POST['cancel'])) {
             $kernel->addStatus('warning', 'Η επεξεργασία του ραντεβού ακυρώθηκε.');
             header('location: '.rel_url('/patient/'.$params['id'].'/edit'));
             exit();
         }            
+
+        if(!isset($_POST['submit'])) {
+
+        }
              
         $pat = patientsClass::sgetById( $params['id'] );
         if(!$pat) {
