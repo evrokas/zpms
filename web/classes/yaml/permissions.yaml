@@ -1,8 +1,0 @@
-- table: permissions
-  class: permissionsClass
-  fields:
-    - guid: char(36) not null
-    - text: char(32) not null
-
-# guid is the GUID of the permission
-# text is the name of the permission
