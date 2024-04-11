@@ -463,6 +463,13 @@ ul.patient-appointments-list {
     padding: 0.5rem;
 }
 
+.login-page form .field label[for="rememberme"] {
+    width: unset;
+}
+
+.login-page form .field.justify-right {
+    margin-left: auto;
+}
 
 @media screen and (max-width: 500px) {
     .login-page form .field {
