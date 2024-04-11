@@ -584,40 +584,6 @@ function dump_routes() {
     }
 
 
-    function login($params) {
-        global $Renderer;
-
-        return ($Renderer->render("login.zetem", ['action' => 'login']));
-    }
-
-    function login_post($params) {
-        global $kernel;
-
-        $us = UsersClassEx::getUser($_POST['username'], hash('sha256', $_POST['password']));
-        // error_log("<pre>User: " . print_r( $us, 1 ) . "</pre>");
-        if($us) {
-            $kernel->loginUser($us->getuname(), $us->getroles());
-            // $kernel->addStatus('notice', 'User  ' . $us->getuname() . ' has been logged in');
-            // error_log("<pre>SESSION #1: " .print_r($_SESSION, 1) . '</pre>');
-
-            header('location: '.rel_url('/profile'));
-            exit();
-        }
-    }
-
-    function logout($params) {
-        global $kernel;
-
-        echo "Logout user<br>";
-
-        $us = $kernel->getUserName();
-        if($us) {
-            $kernel->logoutUser();
-        }
-        header('location: '.rel_url('/'));
-        exit();
-
-    }
 
     function settings($params) {
         global $kernel;
