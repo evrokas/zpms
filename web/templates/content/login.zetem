@@ -14,6 +14,11 @@
             <input type="password" name="password" id="password">
         </div>
 
+        <div class="field justify-right">
+            <input type="checkbox" name="rememberme" id="rememberme">
+            <label for="rememberme">Remember me on this computer</label>
+        </div>
+
         <div class="buttons">
             <button type="submit">Login</button>
         </div>
