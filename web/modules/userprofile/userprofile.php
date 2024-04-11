@@ -10,6 +10,8 @@ class UserProfileModule extends moduleClass {
         global $kernel;
         $kernel->addConfig( $rt );
 
+        // echo "<pre>";print_r($kernel->getConfig());echo "</pre>";
+        // exit();
 
         // $region_yaml="
         //     structure:
