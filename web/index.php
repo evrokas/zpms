@@ -2,23 +2,6 @@
 
 require_once('../fw/bootstrap.php');
 
-function dump_routes() {
-    global $info;
-    foreach($info as $key => $val )
-        if($key == "routes") {
-            foreach($val as $rname => $rdest) {
-                // kernel_debug("route: " . $rname . " ==> " . $rdest . " url: " . $rdest['url'] . " Title: " . $rdest['title']);
-                if(isset($rdest['arg'])) {
-                    foreach($rdest['arg'] as $arg) {
-                        kernel_debug(" -  arg: " . $arg );
-                    }
-                }
-            }
-        }
-}
-
-
-
     // Project Zeus - Patient Registration System
     // echo "<pre>";
     // print_r( $info['menu']['main'] );
@@ -40,7 +23,12 @@ function dump_routes() {
     // print_r( $handlers );
  
     session_start();
-    // echo "<pre>Session: " . print_r( $_SESSION, 1) . "</pre>";
+    if($kernel->isUserLoggedin()) {
+        echo "<pre>User has been logged in!</pre>";
+    } else {
+        echo "<pre>User has *NOT* been logged in!</pre>";
+    }
+    echo "<pre>Session: " . print_r( $_SESSION, 1) . "</pre>";
 
     ob_start();
     registerModules();
@@ -52,7 +40,6 @@ function dump_routes() {
     $content_response = $router->routerCallFunction($match);
     // print_r($content_response);
 
-    // replace with kernel->renderPage();
     $kernel->renderPage();
 
     ob_end_flush();
@@ -499,11 +486,7 @@ function dump_routes() {
         if(!$s)$s = rel_url('/appointments');
         header('location: '.$s);
         exit();
-
     }
-
-
-
 
     function patient_appointment_new($params) {
         global $Renderer;
