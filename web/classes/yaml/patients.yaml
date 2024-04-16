@@ -12,4 +12,5 @@
     - pemail: varchar(128)
     - firstapp: datetime
     - pnote: text
+    - deleted: datetime default null
   

@@ -8,6 +8,7 @@
     - adate: datetime default current_timestamp
     - aplace: text
     - anote: text
+    - deleted: datetime default null
 
 # - guid appointment guid
 # - cdate appointment creation date

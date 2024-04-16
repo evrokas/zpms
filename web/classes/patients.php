@@ -14,6 +14,7 @@ class patientsClass extends dbAbstractEntityClass {
   private $pemail;
   private $firstapp;
   private $pnote;
+  private $deleted;
   function __construct($adata = array() ) {
       parent::__construct('patients', $adata);
       $this->loadFields( $adata );
@@ -78,6 +79,7 @@ class patientsClass extends dbAbstractEntityClass {
       if(isset($adata['pemail']))$this->pemail = $adata['pemail'];
       if(isset($adata['firstapp']))$this->firstapp = $adata['firstapp'];
       if(isset($adata['pnote']))$this->pnote = $adata['pnote'];
+      if(isset($adata['deleted']))$this->deleted = $adata['deleted'];
   }
   function setguid( $aguid ) { $this->guid = $aguid; }
   function getguid() { return ( $this->guid); }
@@ -101,6 +103,8 @@ class patientsClass extends dbAbstractEntityClass {
   function getfirstapp() { return ( $this->firstapp); }
   function setpnote( $apnote ) { $this->pnote = $apnote; }
   function getpnote() { return ( $this->pnote); }
+  function setdeleted( $adeleted ) { $this->deleted = $adeleted; }
+  function getdeleted() { return ( $this->deleted); }
     function insert() {
         if($this->id != null) {
             echo 'Trying to insert() a record that already exists';
@@ -114,7 +118,7 @@ class patientsClass extends dbAbstractEntityClass {
             }
         }
         
-$sql = "INSERT INTO patients ( guid,cdate,cuser,pname,pdob,pamka,ptel,paddr,pemail,firstapp,pnote ) VALUES ( :guid,:cdate,:cuser,:pname,:pdob,:pamka,:ptel,:paddr,:pemail,:firstapp,:pnote );";
+$sql = "INSERT INTO patients ( guid,cdate,cuser,pname,pdob,pamka,ptel,paddr,pemail,firstapp,pnote,deleted ) VALUES ( :guid,:cdate,:cuser,:pname,:pdob,:pamka,:ptel,:paddr,:pemail,:firstapp,:pnote,:deleted );";
 $st = $this->getConnection()->getConnection()->prepare ( $sql );
 $st->bindValue( ":guid", $this->guid, PDO::PARAM_STR );
 $st->bindValue( ":cdate", $this->cdate, PDO::PARAM_STR );
@@ -127,6 +131,7 @@ $st->bindValue( ":paddr", $this->paddr, PDO::PARAM_STR );
 $st->bindValue( ":pemail", $this->pemail, PDO::PARAM_STR );
 $st->bindValue( ":firstapp", $this->firstapp, PDO::PARAM_STR );
 $st->bindValue( ":pnote", $this->pnote, PDO::PARAM_STR );
+$st->bindValue( ":deleted", $this->deleted, PDO::PARAM_STR );
 $st->execute();
 $this->setid( $this->getConnection()->getConnection()->lastInsertId() );
 }
@@ -144,7 +149,7 @@ $this->setid( $this->getConnection()->getConnection()->lastInsertId() );
                 }
             }
                 
-            $sql = "UPDATE patients SET guid=:guid,cdate=:cdate,cuser=:cuser,pname=:pname,pdob=:pdob,pamka=:pamka,ptel=:ptel,paddr=:paddr,pemail=:pemail,firstapp=:firstapp,pnote=:pnote WHERE id=:id";
+            $sql = "UPDATE patients SET guid=:guid,cdate=:cdate,cuser=:cuser,pname=:pname,pdob=:pdob,pamka=:pamka,ptel=:ptel,paddr=:paddr,pemail=:pemail,firstapp=:firstapp,pnote=:pnote,deleted=:deleted WHERE id=:id";
 
             $st = $this->getConnection()->getConnection()->prepare ( $sql );
             
@@ -159,6 +164,7 @@ $this->setid( $this->getConnection()->getConnection()->lastInsertId() );
           $st->bindValue( ":pemail", $this->pemail, PDO::PARAM_STR );
           $st->bindValue( ":firstapp", $this->firstapp, PDO::PARAM_STR );
           $st->bindValue( ":pnote", $this->pnote, PDO::PARAM_STR );
+          $st->bindValue( ":deleted", $this->deleted, PDO::PARAM_STR );
           $st->bindValue( ":id", $this->id, PDO::PARAM_INT );
           $st->execute();
         }

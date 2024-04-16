@@ -10,6 +10,7 @@ class appointmentsClass extends dbAbstractEntityClass {
   private $adate;
   private $aplace;
   private $anote;
+  private $deleted;
   function __construct($adata = array() ) {
       parent::__construct('appointments', $adata);
       $this->loadFields( $adata );
@@ -70,6 +71,7 @@ class appointmentsClass extends dbAbstractEntityClass {
       if(isset($adata['adate']))$this->adate = $adata['adate'];
       if(isset($adata['aplace']))$this->aplace = $adata['aplace'];
       if(isset($adata['anote']))$this->anote = $adata['anote'];
+      if(isset($adata['deleted']))$this->deleted = $adata['deleted'];
   }
   function setguid( $aguid ) { $this->guid = $aguid; }
   function getguid() { return ( $this->guid); }
@@ -85,6 +87,8 @@ class appointmentsClass extends dbAbstractEntityClass {
   function getaplace() { return ( $this->aplace); }
   function setanote( $aanote ) { $this->anote = $aanote; }
   function getanote() { return ( $this->anote); }
+  function setdeleted( $adeleted ) { $this->deleted = $adeleted; }
+  function getdeleted() { return ( $this->deleted); }
     function insert() {
         if($this->id != null) {
             echo 'Trying to insert() a record that already exists';
@@ -98,7 +102,7 @@ class appointmentsClass extends dbAbstractEntityClass {
             }
         }
         
-$sql = "INSERT INTO appointments ( guid,cdate,cuser,pguid,adate,aplace,anote ) VALUES ( :guid,:cdate,:cuser,:pguid,:adate,:aplace,:anote );";
+$sql = "INSERT INTO appointments ( guid,cdate,cuser,pguid,adate,aplace,anote,deleted ) VALUES ( :guid,:cdate,:cuser,:pguid,:adate,:aplace,:anote,:deleted );";
 $st = $this->getConnection()->getConnection()->prepare ( $sql );
 $st->bindValue( ":guid", $this->guid, PDO::PARAM_STR );
 $st->bindValue( ":cdate", $this->cdate, PDO::PARAM_STR );
@@ -107,6 +111,7 @@ $st->bindValue( ":pguid", $this->pguid, PDO::PARAM_STR );
 $st->bindValue( ":adate", $this->adate, PDO::PARAM_STR );
 $st->bindValue( ":aplace", $this->aplace, PDO::PARAM_STR );
 $st->bindValue( ":anote", $this->anote, PDO::PARAM_STR );
+$st->bindValue( ":deleted", $this->deleted, PDO::PARAM_STR );
 $st->execute();
 $this->setid( $this->getConnection()->getConnection()->lastInsertId() );
 }
@@ -124,7 +129,7 @@ $this->setid( $this->getConnection()->getConnection()->lastInsertId() );
                 }
             }
                 
-            $sql = "UPDATE appointments SET guid=:guid,cdate=:cdate,cuser=:cuser,pguid=:pguid,adate=:adate,aplace=:aplace,anote=:anote WHERE id=:id";
+            $sql = "UPDATE appointments SET guid=:guid,cdate=:cdate,cuser=:cuser,pguid=:pguid,adate=:adate,aplace=:aplace,anote=:anote,deleted=:deleted WHERE id=:id";
 
             $st = $this->getConnection()->getConnection()->prepare ( $sql );
             
@@ -135,6 +140,7 @@ $this->setid( $this->getConnection()->getConnection()->lastInsertId() );
           $st->bindValue( ":adate", $this->adate, PDO::PARAM_STR );
           $st->bindValue( ":aplace", $this->aplace, PDO::PARAM_STR );
           $st->bindValue( ":anote", $this->anote, PDO::PARAM_STR );
+          $st->bindValue( ":deleted", $this->deleted, PDO::PARAM_STR );
           $st->bindValue( ":id", $this->id, PDO::PARAM_INT );
           $st->execute();
         }

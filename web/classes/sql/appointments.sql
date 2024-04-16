@@ -6,6 +6,7 @@
 /* DBAL_FIELD adate|datetime default current_timestamp */
 /* DBAL_FIELD aplace|text */
 /* DBAL_FIELD anote|text */
+/* DBAL_FIELD deleted|datetime default null */
 /* DBAL_TABLENAME_END */
 DROP TABLE IF EXISTS appointments;
 CREATE TABLE appointments (
@@ -17,5 +18,6 @@ CREATE TABLE appointments (
   adate datetime default current_timestamp,
   aplace text,
   anote text,
+  deleted datetime default null,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

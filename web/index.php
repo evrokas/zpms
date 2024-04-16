@@ -66,12 +66,13 @@ require_once('../fw/bootstrap.php');
         // echo "</pre>";
         $pp = array();
         foreach($pat as $p) {
-            $ppp = array();
-            $ppp['id'] = $p->getid();
-            $ppp['pname'] = $p->getpname();
-            $ppp['pamka'] = $p->getpamka();
+            if($p->getdeleted() == null) {
 
-            $pp[] = $ppp;
+                $pp[] = ['id' => $p->getid(),
+                        'pname' => $p->getpname(),
+                        'pamka' => $p->getpamka()
+                    ];
+            }
         }
 
         return $Renderer->render("patients_list.zetem",
@@ -185,19 +186,22 @@ require_once('../fw/bootstrap.php');
 
         $apprender = array();;
         foreach($app_list as $ap) {
-            $apprender[] = [
-                'index' => count($apprender),
-                'markup' => $Renderer->render('view_appointment.zetem', [
-                                                'action' => rel_url('/appointment/' . $ap->getid() . '/edit'),
-                                                'index' => count($apprender)+1,
-                                                'checked' => (!count($apprender)?"checked":""),
-                                                'id' => $params['id'], 
-                                                'patient' => $pat,
-                                                'appointment' => $ap,
-                                                'locations' => $loc
-                                            ]),
-                'attributes' => new Attributes()
-            ];
+            
+            if($ap->getdeleted() == null) {
+                $apprender[] = [
+                    'index' => count($apprender),
+                    'markup' => $Renderer->render('view_appointment.zetem', [
+                                                    'action' => rel_url('/appointment/' . $ap->getid() . '/edit'),
+                                                    'index' => count($apprender)+1,
+                                                    'checked' => (!count($apprender)?"checked":""),
+                                                    'id' => $params['id'], 
+                                                    'patient' => $pat,
+                                                    'appointment' => $ap,
+                                                    'locations' => $loc
+                                                ]),
+                    'attributes' => new Attributes()
+                ];
+            }
         }
 
         return ($Renderer->render("edit_patient.zetem", [
@@ -289,14 +293,21 @@ require_once('../fw/bootstrap.php');
 
         $pat = patientsClass::sgetById($params['id']);
 
+        $dtime = time();    // make delete time same for patient and appointments
+                            // so to be able to recover them later
+
         // also delete all records of appointments for this patient
         $app_list = appointmentsClassEx::getAppointmentsForPatient($pat->getguid());
         foreach($app_list as $ap) {
-            $ap->delete();
+            $ap->setdeleted( $dtime );
+            $ap->update();
+            // $ap->delete();
         }
 
+        $pat->setdeleted( $dtime );
+        $pat->update();
 
-        $pat->delete();
+        // $pat->delete();
 
         $kernel->addStatus('warning', 'Ο φάκελος του ασθενή <b>'.$pat->getpname() . '</b> διαγράφθηκε με επιτυχία.');
         header('location: '.rel_url('/patients'));
@@ -365,21 +376,17 @@ require_once('../fw/bootstrap.php');
         foreach($ap as $appoint) {
             $pat = patientsClassEx::sgetByGuid( $appoint->getpguid());
 
-            $pp[] = ['id' => $appoint->getid(),
-                    'adate' => $appoint->getadate(),
-                    'pname' => $pat->getpname(),
-                    'aplace' => $appoint->getaplace()
-                ];
+            if(($appoint->getdeleted() == null) &&
+                ($pat->getdeleted() == null)) 
+                {
 
-                    // echo "<pre>";
-                    // echo "Place: " . $appoint->getaplace() . "<br>";
-                    // echo "</pre>";
-            // $ppp = array();
-            // $ppp['id'] = $p->getid();
-            // $ppp['pname'] = $p->getpname();
-            // $ppp['pamka'] = $p->getpamka();
 
-            // $pp[] = $ppp;
+                $pp[] = ['id' => $appoint->getid(),
+                        'adate' => $appoint->getadate(),
+                        'pname' => $pat->getpname(),
+                        'aplace' => $appoint->getaplace()
+                    ];
+            }
         }
 
         return $Renderer->render("appointments_list.zetem",
@@ -475,9 +482,15 @@ require_once('../fw/bootstrap.php');
 
         $ap = new appointmentsClass();
         $app = $ap->getById($params['id']);
-        $app->delete();
+        $app->setdeleted( getDBtime() );
+        $app->update();
+
+        // $app->delete();
 
         $kernel->addStatus('warning', 'Το ραντεβού διαγράφθηκε με επιτυχία.');
+        $kernel->addStatus('warning', 'Εάν θέλετε να ακυρώσετε την διαγραφή, κάντε κλικ ' .
+                            '<a href="#">εδώ</a>.'
+                                );
 
 
         $s = $kernel->popRouteHistory();

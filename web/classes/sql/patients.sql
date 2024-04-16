@@ -10,6 +10,7 @@
 /* DBAL_FIELD pemail|varchar(128) */
 /* DBAL_FIELD firstapp|datetime */
 /* DBAL_FIELD pnote|text */
+/* DBAL_FIELD deleted|datetime default null */
 /* DBAL_TABLENAME_END */
 DROP TABLE IF EXISTS patients;
 CREATE TABLE patients (
@@ -25,5 +26,6 @@ CREATE TABLE patients (
   pemail varchar(128),
   firstapp datetime,
   pnote text,
+  deleted datetime default null,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
