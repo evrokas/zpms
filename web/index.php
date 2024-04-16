@@ -489,7 +489,7 @@ require_once('../fw/bootstrap.php');
 
         $kernel->addStatus('warning', 'Το ραντεβού διαγράφθηκε με επιτυχία.');
         $kernel->addStatus('warning', 'Εάν θέλετε να ακυρώσετε την διαγραφή, κάντε κλικ ' .
-                            '<a href="#">εδώ</a>.'
+                            '<a href="'.rel_url('/appointment/'.$params['id'].'/recover').'">εδώ</a>.'
                                 );
 
 
@@ -499,6 +499,10 @@ require_once('../fw/bootstrap.php');
         if(!$s)$s = rel_url('/appointments');
         header('location: '.$s);
         exit();
+    }
+
+    function appointment_recover($params) {
+        return 'recover appointment ' . $params['id'];
     }
 
     function patient_appointment_new($params) {
