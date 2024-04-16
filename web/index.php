@@ -24,11 +24,11 @@ require_once('../fw/bootstrap.php');
  
     session_start();
     if($kernel->isUserLoggedin()) {
-        echo "<pre>User has been logged in!</pre>";
+        // echo "<pre>User has been logged in!</pre>";
     } else {
-        echo "<pre>User has *NOT* been logged in!</pre>";
+        // echo "<pre>User has *NOT* been logged in!</pre>";
     }
-    echo "<pre>Session: " . print_r( $_SESSION, 1) . "</pre>";
+    // echo "<pre>Session: " . print_r( $_SESSION, 1) . "</pre>";
 
     ob_start();
     registerModules();
