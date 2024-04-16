@@ -11,13 +11,13 @@
             <input type="checkbox" name="userexpired" disabled {{$userexpired}}>
         </div>
         <div class="fields">
-            <label for="username">Name</label>
-            <input type="text" name="username" id="" disabled value="{{$user->getname()}}">
+            <label for="user_name">Name</label>
+            <input type="text" name="user_name" id="" disabled value="{{$user->getname()}}">
         </div>
-        <div class="fields">
-            <label for="password">Password</label>
-            <input type="password" name="username" id="" disabled value="{{$user->getuname()}}"">
-        </div>
+        <!-- <div class="fields"> -->
+            <!-- <label for="pass_word">Password</label> -->
+            <!-- <input type="password" name="pass_word" id="" disabled value="{{$user->getupass()}}""> -->
+        <!-- </div> -->
         <div class="buttons">
             <button type="submit" name="submit">Αποθήκευση</button>
         </div>

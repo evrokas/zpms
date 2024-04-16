@@ -252,7 +252,7 @@ menu:
 modules:
   path:
     - "/fw/modules/"
-    - "/modules/"
+    - "/web/modules/"
   modules:
     - mainnavigation
     - notifications

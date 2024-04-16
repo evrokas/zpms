@@ -594,14 +594,15 @@ function dump_routes() {
         global $kernel;
 
         $us = UsersClassEx::getUser($_POST['username'], hash('sha256', $_POST['password']));
-        // echo "<pre>User: " . print_r( $us, 1 ) . "</pre>";
+        // error_log("<pre>User: " . print_r( $us, 1 ) . "</pre>");
         if($us) {
             $kernel->loginUser($us->getuname(), $us->getroles());
+            // $kernel->addStatus('notice', 'User  ' . $us->getuname() . ' has been logged in');
+            // error_log("<pre>SESSION #1: " .print_r($_SESSION, 1) . '</pre>');
+
             header('location: '.rel_url('/profile'));
             exit();
         }
-
-
     }
 
     function logout($params) {
