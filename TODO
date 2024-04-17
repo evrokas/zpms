@@ -1,3 +1,7 @@
+* [WIP] make modules self contained with their own .yaml file etc
+* [WIP] attachments
+* implement 'Operations' menu item
+* make login safer with challenge question
 * add Google ReCaptcha v3
-* make modules self contained with their own .yaml file etc
-* use AJAX to periodically save data entered on patient form and appointment forms
+* [completed] implement remember-me functionality using cookies
+* [completed] use AJAX to periodically save data entered on patient form and appointment forms
