@@ -596,6 +596,7 @@ ul.select-box li:hover {
 .loader::before {
     content: ''
 }
+*/
 
 .input-attachments {
     position: relative;
