@@ -2,8 +2,8 @@ sql/admin.sql
 config/db.php
 fw/classes/sql/*
 fw/classes/*.php
-src/classes/sql/*
-src/classes/*.php
+web/classes/sql/*
+web/classes/*.php
 fw/test
 src/classes/bootstrap_classes.php
 web/cache
