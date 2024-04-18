@@ -589,8 +589,11 @@ require_once('../fw/bootstrap.php');
         global $kernel;
         global $Renderer;
 
+            $cnt = new ContentClass('content/homepage.html');
+            $resp = $cnt->render();
 
-            return $Renderer->render('settings.zetem', []);
+            // return $Renderer->render('settings.zetem', ['text' => $resp]);
+            return $Renderer->render('content.zetem', ['text' => $resp]);
     }
 
 
