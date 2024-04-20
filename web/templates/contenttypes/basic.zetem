@@ -1,0 +1,19 @@
+<!-- this baseic contenttype template -->
+
+<div class="content">
+
+    <h2>Basic template</h2>
+    
+    <pre>
+        guid: {{$guid}}
+        author: {{$author}}
+        date: {{$date}}
+        
+        title: <h4>{{$title}}</h4>
+        
+        description: {{$description}}
+        
+        viewmode: {{$viewmode}}
+    </pre>
+    
+</div>

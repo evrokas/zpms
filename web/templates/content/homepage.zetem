@@ -1,4 +1,7 @@
 <h2>Welcome to the Patient Mangement System</h2>
+<h4>homepage.zetem</h4>
+
+<p>{{$author}}</p>
 
 
 
