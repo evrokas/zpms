@@ -35,14 +35,14 @@ require_once('../fw/bootstrap.php');
 
     // $match = $router->matchRoute( $handlers[0] );
     $match = $router->matchRoute( $Request );
-    echo "<pre>Match route: " . print_r($match, 1) . "</pre>";
+    // echo "<pre>Match route: " . print_r($match, 1) . "</pre>";
 
     $content_response = $router->routerCallFunction($match);
     // print_r($content_response);
     $_SESSION['route_match'] = $match;
     $_SESSION['request'] = $Request->getQueryRoute();
 
-    echopre(print_r($_SESSION, 1));
+    // echopre(print_r($_SESSION, 1));
     $kernel->renderPage();
 
     ob_end_flush();
