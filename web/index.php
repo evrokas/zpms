@@ -13,7 +13,7 @@ require_once('../fw/bootstrap.php');
     $router = new RouterClass( $kernel->getConfig('routes') );
     // print_r( $router->getAllRoutes() );
 
-    $Renderer = new ZETEMTemplate(['templates/','../fw/templates/'], false, true);
+    $Renderer = new ZETEMTemplate($kernel->getConfig('templates')/*  ['templates/','../fw/templates/'] */, false, true);
 
     $Request = new RequestClass($_SERVER);
     // $handlers = $Request->getQueryRoute();
@@ -35,7 +35,7 @@ require_once('../fw/bootstrap.php');
 
     // $match = $router->matchRoute( $handlers[0] );
     $match = $router->matchRoute( $Request );
-    // echo "<pre>Match route: " . print_r($match, 1) . "</pre>";
+    echo "<pre>Match route: " . print_r($match, 1) . "</pre>";
 
     $content_response = $router->routerCallFunction($match);
     // print_r($content_response);
