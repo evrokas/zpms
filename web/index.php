@@ -13,7 +13,7 @@ require_once('../fw/bootstrap.php');
     $router = new RouterClass( $kernel->getConfig('routes') );
     // print_r( $router->getAllRoutes() );
 
-    $Renderer = new ZETEMTemplate('templates/', false, true);
+    $Renderer = new ZETEMTemplate(['templates/','../fw/templates/'], false, true);
 
     $Request = new RequestClass($_SERVER);
     // $handlers = $Request->getQueryRoute();
