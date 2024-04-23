@@ -36,6 +36,14 @@ libraries:
         type:
         src: 'js/loader.js'
     # - head_script:
+  location-places:
+    css:
+      - location:
+        src: 'css/location.css'
+    foot_script:
+      - location:
+        type:
+        src: 'js/location.js'
   # breadcrumbs-library:
     # css:
       # - breadcrumbs:
@@ -206,6 +214,7 @@ structure:
     - header
     - githash
     - userblock
+    - location
     - breadcrumbs
   main_navigation:
     - mainnavigation
@@ -270,4 +279,5 @@ modules:
     - githash
     - copyright
     - content
+    - location
   # - topbar

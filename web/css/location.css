@@ -1,0 +1,8 @@
+.location-place {
+    width: 100%;
+    text-align: right;
+}
+
+.location-place select {
+    padding: 1px 12px;
+}

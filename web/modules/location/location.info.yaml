@@ -1,0 +1,3 @@
+name=location
+template=location_info.zetem
+class=locationModule
