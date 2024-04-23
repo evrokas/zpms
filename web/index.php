@@ -17,25 +17,25 @@ require_once('../fw/bootstrap.php');
 
     $Request = new RequestClass($_SERVER);
     // $handlers = $Request->getQueryRoute();
-
+    // prelog('Request: ', print_r($Request, 1));
     // echo "<pre>" . print_r( $_SERVER, 1 ) . "</pre>";
     // echo( "Method: " . $req->getMethod() . '  string: ' . $req->getQueryString() . "<br/>" );
     // print_r( $handlers );
- 
     session_start();
-    if($kernel->isUserLoggedin()) {
+    $kernel->isUserLoggedin();
+    // if($kernel->isUserLoggedin()) {
         // echo "<pre>User has been logged in!</pre>";
-    } else {
+    // } else {
         // echo "<pre>User has *NOT* been logged in!</pre>";
-    }
+    // }
     // echo "<pre>Session: " . print_r( $_SESSION, 1) . "</pre>";
-
     ob_start();
     registerModules();
 
     // $match = $router->matchRoute( $handlers[0] );
     $match = $router->matchRoute( $Request );
     // echo "<pre>Match route: " . print_r($match, 1) . "</pre>";
+    // prelog('Match route: ' . print_r($match, 1));
 
     $content_response = $router->routerCallFunction($match);
     // print_r($content_response);
