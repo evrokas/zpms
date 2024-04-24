@@ -1,10 +1,10 @@
-sql/admin.sql
 config/db.php
+sql/admin.sql
+sql/backup
 fw/classes/sql/*
 fw/classes/*.php
+fw/test
 web/classes/sql/*
 web/classes/*.php
-fw/test
-src/classes/bootstrap_classes.php
 web/cache
-sql/zeusdb.sql
+web/files
