@@ -1,9 +1,7 @@
+fw
 config/db.php
 sql/admin.sql
 sql/backup
-fw/classes/sql/*
-fw/classes/*.php
-fw/test
 web/classes/sql/*
 web/classes/*.php
 web/cache
