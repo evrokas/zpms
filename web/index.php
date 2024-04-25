@@ -1,6 +1,6 @@
 <?php
 
-require_once('../fw/bootstrap.php');
+require_once(__DIR__ . '/../fw/bootstrap.php');
 
     // Project Zeus - Patient Registration System
     // echo "<pre>";
