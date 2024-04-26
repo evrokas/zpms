@@ -1,6 +1,9 @@
 <?php
 
-require_once(__DIR__ . '/../fw/bootstrap.php');
+include_once(__DIR__ . "/../config/db.php");       // load database parameters
+// require_once(__DIR__ . '/../../config/db.php');
+
+require_once(__DIR__ . '/../../zeusfw/bootstrap.php');
 
     // Project Zeus - Patient Registration System
     // echo "<pre>";
