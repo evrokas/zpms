@@ -1,0 +1,30 @@
+title: location feeder
+schema: locations.yaml
+content_dir: '/web/content'
+# can read folder for .yml files
+source:
+  - locations
+
+# data can be inlined here after data:
+# data:
+  # mandra:
+  #   - '2024-03-26 14:12:36'
+  #   - 'guest'
+  #   - 'Mandra'
+  #   - 'mandra'
+  #   - 'Stratigou Nikolaou Rokka 30, 19200, Mandra'
+  # iatriko_peristeriou:
+  #   - '2024-03-26 14:13:01'
+  #   - 'guest'
+  #   - 'Iatriko Peristeriou'
+  #   - 'iatriko_peristeriou'
+  #   - 'Ethnarchou Makariou 60, Peristeri'
+  # metropolitan:
+  #   - '2024-03-26 14:13:32'
+  #   - 'guest'
+  #   - 'Metropolitan'
+  #   - 'metropolitran'
+  #   - 'Eleftheriou Venizelou 1 & Ethnarchou Makariou 9, 18547, Neo Faliro'
+
+# data can be ordered be keys
+order: [mandra, iatriko_peristeriou, metropolitan]

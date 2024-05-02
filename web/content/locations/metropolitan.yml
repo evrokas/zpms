@@ -1,0 +1,14 @@
+# generated with: ../../fw/maker/maker.php --name locations.feed.yaml --dir ../classes/yaml/ feed:gen:yaml
+# from directory: /var/www/html/apps/zpms/web/content
+# date: 28-04-2024 17:40:02
+
+schema: /var/www/html/apps/zpms/web/classes/yaml/locations.yaml
+data:
+  metropolitan:
+    guid: fa87a900-0fed-47fb-8a0e-4a7415330651
+    cdate: '2024-04-28 17:40:02'
+    cuser: 'guest'
+    name: 'Metropolitan Hospital'
+    machinename: 'metropolitran'
+    address: 'Ελευθερίου Βενιζέλου 1 & Εθνάρχου Μακαρίου 9, 18547, Νέο Φάληρο'
+#hash: 

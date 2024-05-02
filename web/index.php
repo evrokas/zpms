@@ -35,15 +35,18 @@ require_once(__FWDIR__ . '/bootstrap.php');
     ob_start();
     registerModules();
 
+    // $f1 = new Feeder('/content/locations.feeder.yaml');
+
     // $match = $router->matchRoute( $handlers[0] );
     $match = $router->matchRoute( $Request );
     // echo "<pre>Match route: " . print_r($match, 1) . "</pre>";
     // prelog('Match route: ' . print_r($match, 1));
+    
+    $_SESSION['route_match'] = $match;
+    $_SESSION['request'] = $Request->getQueryRoute();
 
     $content_response = $router->routerCallFunction($match);
     // print_r($content_response);
-    $_SESSION['route_match'] = $match;
-    $_SESSION['request'] = $Request->getQueryRoute();
 
     // echopre(print_r($_SESSION, 1));
     $kernel->renderPage();

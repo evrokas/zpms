@@ -1,0 +1,14 @@
+# generated with: ../../fw/maker/maker.php --name locations.feed.yaml --dir ../classes/yaml/ feed:gen:yaml
+# from directory: /var/www/html/apps/zpms/web/content
+# date: 28-04-2024 17:40:02
+
+schema: /var/www/html/apps/zpms/web/classes/yaml/locations.yaml
+data:
+  mandra:
+    guid: 7b2dc190-c979-497f-b0a0-3edcf92a87fd
+    cdate: '2024-04-28 17:40:02'
+    cuser: 'guest'
+    name: 'Μάνδρα'
+    machinename: 'mandra'
+    address: 'Στρ. Νικολάου Ρόκκα 30, 19200, Μάνδρα'
+#hash:

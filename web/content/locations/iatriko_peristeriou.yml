@@ -1,0 +1,14 @@
+# generated with: ../../fw/maker/maker.php --name locations.feed.yaml --dir ../classes/yaml/ feed:gen:yaml
+# from directory: /var/www/html/apps/zpms/web/content
+# date: 28-04-2024 17:40:02
+
+schema: /var/www/html/apps/zpms/web/classes/yaml/locations.yaml
+data:
+  iatriko_peristeriou:
+    guid: 192835a2-ca5b-4e7d-b27d-1dfa1b40b4eb
+    cdate: '2024-04-28 17:40:02'
+    cuser: 'guest'
+    name: 'Ιατρικό Περιστερίου'
+    machinename: 'iatriko_peristeriou'
+    address: 'Εθνάρχου Μακαρίου 60, 12132, Περιστέρι'
+#hash: 

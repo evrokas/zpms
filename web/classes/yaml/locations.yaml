@@ -1,6 +1,9 @@
 - table: locations
   class: locationsClass
+  # extends: feedClass
+  extention: __APPDIR__ . '/web/locationsClassEx.php'
   fields:
+    - guid: char(36) not null
     - cdate: datetime default current_timestamp
     - cuser: varchar(32)
     - name: varchar(64)
