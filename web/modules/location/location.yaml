@@ -6,3 +6,13 @@ routes:
         module: location
         # handler: module
         method: post          
+
+libraries:
+  location-places:
+    css:
+      - location:
+        src: '@/css/location.css'
+    foot_script:
+      - location:
+        type:
+        src: '@/js/location.js'
