@@ -10,5 +10,5 @@ class topbarModule extends moduleClass {
 function register_topbar_module() {
     global $kernel;
 
-    $kernel->registerModule( new moduleClass('topbar', 'topbar.zetem') );
+    $kernel->registerModule( new moduleClass(__DIR__, 'topbar', 'topbar.zetem') );
 }

@@ -1,8 +1,8 @@
 <?php
 class githashModule extends moduleClass {
-    function __construct($amodule, $atemplate) {
-        parent::__construct($amodule, $atemplate);
-    }
+    // function __construct($amodule, $atemplate) {
+        // parent::__construct($amodule, $atemplate);
+    // }
     
     function render($params = array()) {
         // $hash = __FUNCTION__;
@@ -22,5 +22,5 @@ class githashModule extends moduleClass {
 function register_githash_module() {
     global $kernel;
 
-    $kernel->registerModule( new githashModule('githash', 'githash.zetem'));
+    $kernel->registerModule( new githashModule(__DIR__, 'githash', 'githash.zetem'));
 }

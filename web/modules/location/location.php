@@ -1,14 +1,15 @@
 <?php
 
 class locationModule extends moduleClass {
-    function __construct($amodule, $atemplate) {
-        parent::__construct($amodule, $atemplate);
-
+    function __construct($adir, $amodule, $atemplate) {
+        parent::__construct($adir, $amodule, $atemplate);
         $rt = yaml_parse_file(__DIR__ . '/location.yaml');
 
-        // update kernel configuration
         global $kernel;
-        $kernel->addConfig( $rt );
+        $srt = $kernel->resolveModuleDir($rt, $adir, $amodule);
+
+        // update kernel configuration
+        $kernel->addConfig( $srt );
 
         // echopre(print_r($kernel->getConfig(),1));
 
@@ -48,5 +49,5 @@ class locationModule extends moduleClass {
 function register_location_module() {
     global $kernel;
 
-    $kernel->registerModule(new locationModule('location', 'location_info.zetem'));
+    $kernel->registerModule(new locationModule(__DIR__, 'location', 'location_info.zetem'));
 }

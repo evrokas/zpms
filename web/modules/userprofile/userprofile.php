@@ -2,8 +2,8 @@
 
 class UserProfileModule extends moduleClass {
 
-    function __construct($amodule, $atemplate) {
-        parent::__construct($amodule, $atemplate);
+    function __construct($adir, $amodule, $atemplate) {
+        parent::__construct($adir, $amodule, $atemplate);
 
         $rt = yaml_parse_file(__DIR__ . '/userprofile.yaml');
         
@@ -51,5 +51,5 @@ class UserProfileModule extends moduleClass {
 function register_userprofile_module() {
     global $kernel;
 
-    $kernel->registerModule( new UserProfileModule('userprofile', 'user_profile.zetem'));
+    $kernel->registerModule( new UserProfileModule(__DIR__, 'userprofile', 'user_profile.zetem'));
 }

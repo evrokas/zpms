@@ -14,5 +14,5 @@ class header extends moduleClass {
 function register_header_module() {
   global $kernel;
 
-  $kernel->registerModule( new header('header', 'header.zetem'));
+  $kernel->registerModule( new header(__DIR__, 'header', 'header.zetem'));
 }
