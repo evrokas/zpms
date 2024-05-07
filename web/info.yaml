@@ -37,13 +37,13 @@ libraries:
         src: 'js/loader.js'
     # - head_script:
   location-places:
-    css:
-      - location:
-        src: 'css/location.css'
-    foot_script:
-      - location:
-        type:
-        src: 'js/location.js'
+    # css:
+    #   - location:
+    #     src: 'css/location.css'
+    # foot_script:
+    #   - location:
+    #     type:
+    #     src: 'js/location.js'
   # breadcrumbs-library:
     # css:
       # - breadcrumbs:
