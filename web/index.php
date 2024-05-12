@@ -32,6 +32,13 @@ require_once(__FWDIR__ . '/bootstrap.php');
         // echo "<pre>User has *NOT* been logged in!</pre>";
     // }
     // echo "<pre>Session: " . print_r( $_SESSION, 1) . "</pre>";
+
+
+    $l = new locationsClass();
+
+    echopre('locations: ' . print_r($l->getFields(), 1));
+
+
     ob_start();
     registerModules();
 

@@ -5,6 +5,10 @@ content_dir: '/web/content'
 source:
   - locations
 
+key: 
+ name: lang
+ value: [en, gr]
+
 # data can be inlined here after data:
 # data:
   # mandra:

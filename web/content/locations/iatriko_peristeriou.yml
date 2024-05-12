@@ -1,14 +1,29 @@
-# generated with: ../../fw/maker/maker.php --name locations.feed.yaml --dir ../classes/yaml/ feed:gen:yaml
-# from directory: /var/www/html/apps/zpms/web/content
-# date: 28-04-2024 17:40:02
-
+---
+cmd: ../../fw/maker/maker.php --name locations.feeder.yaml --dir ../classes/yaml/
+  feed:gen:yaml
+directory: /var/www/html/apps/zpms/web/content
+createdate: 12-05-2024 16:15:06
 schema: /var/www/html/apps/zpms/web/classes/yaml/locations.yaml
+key:
+  name: lang
+  value:
+  - en
+  - gr
 data:
-  iatriko_peristeriou:
+  en:
+    guid: 7ebc2fda-ec12-473a-a9d9-0844830389c9
+    lang: en
+    cdate: "2024-04-28 17:40:02"
+    cuser: guest
+    name: Iatriko Peristeriou
+    machinename: iatriko_peristeriou
+    address: Ethnarchou Makariou 60, 12132, Peristeri
+  gr:
     guid: 192835a2-ca5b-4e7d-b27d-1dfa1b40b4eb
-    cdate: '2024-04-28 17:40:02'
-    cuser: 'guest'
-    name: 'Ιατρικό Περιστερίου'
-    machinename: 'iatriko_peristeriou'
-    address: 'Εθνάρχου Μακαρίου 60, 12132, Περιστέρι'
-#hash: 
+    lang: gr
+    cdate: "2024-04-28 17:40:02"
+    cuser: guest
+    name: Ιατρικό Περιστερίου
+    machinename: iatriko_peristeriou
+    address: Εθνάρχου Μακαρίου 60, 12132, Περιστέρι
+...

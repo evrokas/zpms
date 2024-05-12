@@ -231,11 +231,11 @@ menu:
     - home:
       text: 'Home'
       url: '/'
-      path: home
+      # path: home
     - patients:
       text: 'Patient List'
       url: '/patients'
-      path: home/patients
+      # path: '/patients'
     - appointments:
       text: 'Appointment List'
       url: '/appointments'
