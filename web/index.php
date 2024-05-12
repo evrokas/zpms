@@ -36,7 +36,7 @@ require_once(__FWDIR__ . '/bootstrap.php');
 
     $l = new locationsClass();
 
-    echopre('locations: ' . print_r($l->getFields(), 1));
+    // echopre('locations: ' . print_r($l->getFields(), 1));
 
 
     ob_start();

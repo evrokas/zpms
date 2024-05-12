@@ -25,6 +25,13 @@ css:
     # src: "https://cdn.jsdelivr.net/npm/pikaday/css/pikaday.css"
 
 
+# setup multiple language support
+multilingual: true
+
+languages:
+  - en
+  - gr
+
 # use libraries concept to attach different css/js to different pages
 libraries:
   loader-library:
