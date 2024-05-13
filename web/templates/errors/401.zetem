@@ -1,4 +1,0 @@
-<h2><p>401 - You don't have the neccessery credentials to access the page.</p></h2>
-
-<p>Please <a href="{{rel_url('/login')}}">login</a> to continue.</p>
-
