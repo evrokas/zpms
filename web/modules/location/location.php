@@ -19,9 +19,10 @@ class locationModule extends moduleClass {
     }
 
     function render($params = array()) {
+        global $kernel;
 
-        $loc = locationsClass::sgetAll();
-        $ln = array();;
+        $loc = locationsClassEx::sgetAll( $kernel->getCurrentLanguage() );
+        $ln = array();
         foreach($loc as $l)
             $ln[] = $l->getname();
 

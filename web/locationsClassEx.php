@@ -24,27 +24,16 @@ class locationsClassEx extends locationsClass {
         } else return (null);
     }
     
-    static function getbyMachineName($mname) {
-        global $AppDBConnection;
+    static function sgetAll($lang = null) {
+        $rows = parent::sgetAll();
+        if(!$lang)return $rows;
 
-        if(!$AppDBConnection->isConnected()) {
-            if(!$AppDBConnection->Connect()) {
-                echo 'Could not connect to database';
-                return (null);
-            }
+        $arr = array();
+        foreach($rows as $el) {
+            if($el->getlang() == $lang)
+                $arr[] = $el;
         }
-
-        $sql = "SELECT * FROM locations WHERE machinename=:machinename";
-        $st = $AppDBConnection->getConnection()->prepare( $sql );
-        $st->bindValue(":machinename", $mname, PDO::PARAM_STR);
-        $st->execute();
-        $row = $st->fetch();
-
-        if($row) {
-            $rclass = new locationsClass();
-            $rclass->loadFields( $row );
-            return $rclass;
-        } else return (null);
+        return ($arr);    
     }
 
     static function getbyGUID($guid) {
