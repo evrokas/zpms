@@ -34,10 +34,13 @@ require_once(__FWDIR__ . '/bootstrap.php');
     // echo "<pre>Session: " . print_r( $_SESSION, 1) . "</pre>";
 
 
-    // $l = new locationsClass();
+    $l = new locationsClass();
 
-    // echopre('locations: ' . print_r($l->getFields(), 1));
-        $kernel->setCurrentLanguage('gr');
+    echopre('locations: ' . print_r($l->getFields(), 1));
+    echopre('locations: ' . print_r(get_class_vars( 'locationsClass'),1) );
+
+
+    $kernel->setCurrentLanguage('gr');
 
     ob_start();
     registerModules();
