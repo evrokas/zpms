@@ -9,6 +9,20 @@ key:
  name: lang
  value: [en, gr]
 
+guid:
+  - guid
+  
+date:
+  - cdate
+
+name:
+  - machinename
+  - name
+
+prefeed:
+  - cuser: guest
+ 
+
 # data can be inlined here after data:
 # data:
   # mandra:
