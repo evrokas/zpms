@@ -40,7 +40,9 @@ body {
     justify-items: center;
     gap: 2rem;
     padding: 1rem;
-    background-color: #7547d0;
+/*    background-color: #7547d0;*/
+    background-color: #036379;
+
     color: white;
     justify-content: left;
     /* border: 1px solid black; */
