@@ -1,9 +1,9 @@
 <?php
 
-if(!defined('__APPDIR__')
+if(!defined('__APPDIR__'))
   define("__APPDIR__", dirname(__DIR__));
 
-if(!defined('__FWDIR__')
+if(!defined('__FWDIR__'))
   define("__FWDIR__", __APPDIR__ . "/fw");
 
 define('DB_HOST', '');
