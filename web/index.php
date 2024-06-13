@@ -201,7 +201,8 @@ require_once(__FWDIR__ . '/bootstrap.php');
 
         // echo "<pre>patient: " . print_r($pat, 1) . "</pre>";
         $app_list = appointmentsClassEx::getAppointmentsForPatient($pat->getguid(), 'DESC');
-        $loc = locationsClass::sgetAll();
+        // $loc = locationsClass::sgetAll();
+        $loc = locationsClassEx::sgetAll( $kernel->getCurrentLanguage() );
 
         $apprender = array();;
         foreach($app_list as $ap) {
@@ -424,7 +425,7 @@ require_once(__FWDIR__ . '/bootstrap.php');
             return ("patients doesn't exist");
         }
 
-        $loc = locationsClass::sgetAll();
+        $loc = locationsClassEx::sgetAll( $kernel->getCurrentLanguage() );
 
         $ap = new appointmentsClass();
         $app = $ap->getById($params['id']);
@@ -474,7 +475,8 @@ require_once(__FWDIR__ . '/bootstrap.php');
         global $kernel;
 
 
-        $loc = locationsClass::sgetAll();
+        // $loc = locationsClass::sgetAll();
+        $loc = locationsClassEx::sgetAll( $kernel->getCurrentLanguage() );
 
         $ap = new appointmentsClass([
             'adate' => getDBtime(),
@@ -544,7 +546,8 @@ require_once(__FWDIR__ . '/bootstrap.php');
         $p = patientsClass::sgetById( $params['id'] );
         // echo "<pre>" . print_r( $p ) . "</pre>";
 
-        $loc = locationsClass::sgetAll();
+        $loc = locationsClassEx::sgetAll( $kernel->getCurrentLanguage() );
+        // $loc = locationsClass::sgetAll();
         $ap = new appointmentsClass([
             'adate' => getDBtime(),
             'aplace' => '',

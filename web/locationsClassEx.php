@@ -30,7 +30,7 @@ class locationsClassEx extends locationsClass {
 
         $arr = array();
         foreach($rows as $el) {
-            if($el->getlang() == $lang)
+            if($el->getlang() === $lang)
                 $arr[] = $el;
         }
         return ($arr);    
