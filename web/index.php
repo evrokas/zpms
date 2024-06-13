@@ -458,9 +458,8 @@ require_once(__FWDIR__ . '/bootstrap.php');
 
         $ap->update();
 
-
         // error_log('patient appointment saved');
-        if($_POST['use_ajax']) {
+        if(key_exists('use_ajax', $_POST)) {
             // error_log("\nused AJAX\n");
             echo "OK";
             exit();
