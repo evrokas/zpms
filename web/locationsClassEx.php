@@ -36,7 +36,7 @@ class locationsClassEx extends locationsClass {
         return ($arr);    
     }
 
-    static function getbyMachineName($mname) {
+    static function getbyMachineName($mname, $lang) {
         global $AppDBConnection;
 
         if(!$AppDBConnection->isConnected()) {
@@ -46,9 +46,10 @@ class locationsClassEx extends locationsClass {
             }
         }
 
-        $sql = "SELECT * FROM locations WHERE machinename=:machinename";
+        $sql = "SELECT * FROM locations WHERE machinename=:machinename AND lang=:lang";
         $st = $AppDBConnection->getConnection()->prepare( $sql );
         $st->bindValue(":machinename", $mname, PDO::PARAM_STR);
+        $st->bindValue(":lang", $lang, PDO::PARAM_STR);
         $st->execute();
         $row = $st->fetch();
 
