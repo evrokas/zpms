@@ -635,3 +635,7 @@ ul.select-box li:hover {
 .appointment-entry .attachments-box ul li .actions i:hover {
     color: white;
 }
+
+.module-copyright {
+    text-align: center;
+}
