@@ -450,9 +450,9 @@ require_once(__FWDIR__ . '/bootstrap.php');
         }
 
         $ap = appointmentsClass::sgetById($params['id']);
-        error_log("\bFound appointment: " . print_r($ap, 1) . "\n");
+        // error_log("\bFound appointment: " . print_r($ap, 1) . "\n");
         // $ap->setaplace($_POST['appointment-place']);
-        $ap->setaplace((locationsClassEx::getbyMachineName($_POST['appointment-place']))->getname());
+        $ap->setaplace((locationsClassEx::getbyMachineName($_POST['appointment-place'], $kernel->getCurrentLanguage()))->getname());
         $ap->setadate(getDBformattime($_POST['appointment-date']));
         $ap->setanote($_POST['appointment-notes']);
 
@@ -579,7 +579,7 @@ require_once(__FWDIR__ . '/bootstrap.php');
             exit();
         }
 
-        $loc = locationsClassEx::getbyMachineName($_POST['appointment-place']);
+        $loc = locationsClassEx::getbyMachineName($_POST['appointment-place'], $kernel->getCurrentLanguage());
 
 
         // echo "this is the post version<br/>";

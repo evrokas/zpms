@@ -29,6 +29,7 @@
                     <!-- {% if(isset($locations)): %} -->
                         <select name="appointment-place" loader="app-loader-{{$index}}">
                             {% foreach($locations as $loc): %}
+                            <!-- {{ $loc->getname() }} - {{ $loc->getmachinename() }} {{$appointment->getaplace()}} -->
                             <option value="{{$loc->getmachinename()}}"{{($loc->getname() == $appointment->getaplace())?"selected":""}}>{{$loc->getname()}}</option>
                         {% endforeach %}
                         </select>
