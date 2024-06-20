@@ -220,6 +220,22 @@ form .input-div.input-notes label {
     text-align: center;
 }
 
+.patients-list table td[data-column="amka"] i {
+    margin: 0 0.5rem;
+    opacity: 0;
+    
+}
+.patients-list table td[data-column="amka"]:hover i {
+    /* position: relative; */
+    opacity: 1;
+}
+.patients-list table td[data-column="amka"] i:hover {
+    cursor: pointer;
+    color: red;
+    /* text-align: center; */
+}
+
+
 .edit-patient .header {
     text-align: center;
 }

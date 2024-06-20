@@ -1,3 +1,5 @@
+{% attach_library('boxicons') %}
+
 <div class="page-title">
     <h2>Patients</h2>
 </div>
@@ -42,7 +44,11 @@
                 {% $loop++ %}
                 <td>{{$loop}}</td>
                 <td data-column="name">{{$pat['pname']}}</td>
-                <td data-column="amka">{{$pat['pamka']}}</td>
+                <td data-column="amka">{{$pat['pamka']}} 
+                    {% if(strlen($pat['pamka'])>0): %}
+                        <i class='bx bx-copy' onclick="copyNumber({{$pat['pamka']}})"></i>
+                    {% endif %}
+                </td>
                 <td class="actions">
                     <a href="{{rel_url('/patient/'.$pat['id'].'/edit')}}">edit</a>
                     <a href="{{rel_url('/patient/'.$pat['id'].'/delete')}}">delete</a>

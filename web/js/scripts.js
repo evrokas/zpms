@@ -126,3 +126,9 @@ function toggleAttachmentsBox(el) {
     p.classList.toggle('attachments-box-show');
     console.log( p );
 }
+
+
+function copyNumber(num) {
+    console.log( num );
+    navigator.clipboard.writeText( num );
+}
