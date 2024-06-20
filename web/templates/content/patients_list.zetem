@@ -43,10 +43,17 @@
             <tr>
                 {% $loop++ %}
                 <td>{{$loop}}</td>
-                <td data-column="name">{{$pat['pname']}}</td>
-                <td data-column="amka">{{$pat['pamka']}} 
+                <td data-column="name">
+                    {{$pat['pname']}}
+                    {% if(strlen($pat['pname'])>0): %}
+                        <i class='bx bx-copy' onclick="copyStr('{{$pat['pname']}}')"></i>
+                    {% endif %}
+                </td>
+
+                <td data-column="amka">
+                    {{$pat['pamka']}} 
                     {% if(strlen($pat['pamka'])>0): %}
-                        <i class='bx bx-copy' onclick="copyNumber({{$pat['pamka']}})"></i>
+                        <i class='bx bx-copy' onclick="copyStr('{{$pat['pamka']}}')"></i>
                     {% endif %}
                 </td>
                 <td class="actions">

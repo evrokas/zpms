@@ -215,10 +215,34 @@ form .input-div.input-notes label {
     text-decoration: inherit;
 }
 
+.patients-list table td[data-column="name"] {
+    font-weight: 600;
+    /* text-align: center; */
+}
+
+.patients-list table td[data-column="name"]:hover {
+    text-decoration: underline;
+}
+.patients-list table td[data-column="name"] i {
+    margin: 0 0.5rem;
+    opacity: 0;
+}
+
+.patients-list table td[data-column="name"]:hover i {
+    opacity: 1;
+}
+
+.patients-list table td[data-column="name"] i:hover {
+    cursor: pointer;
+    color: red;
+    /* text-align: center; */
+}
+
 
 .patients-list table td[data-column="amka"] {
     text-align: center;
 }
+
 
 .patients-list table td[data-column="amka"] i {
     margin: 0 0.5rem;
@@ -229,6 +253,7 @@ form .input-div.input-notes label {
     /* position: relative; */
     opacity: 1;
 }
+
 .patients-list table td[data-column="amka"] i:hover {
     cursor: pointer;
     color: red;

@@ -128,7 +128,7 @@ function toggleAttachmentsBox(el) {
 }
 
 
-function copyNumber(num) {
-    console.log( num );
-    navigator.clipboard.writeText( num );
+function copyStr(astr) {
+    console.log( astr );
+    navigator.clipboard.writeText( astr );
 }
