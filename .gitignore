@@ -6,3 +6,4 @@ web/classes/sql/*
 web/classes/*.php
 web/cache
 web/files
+backup/
