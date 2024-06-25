@@ -1,8 +1,7 @@
 ---
 cmd: ../../fw/maker/maker.php --name locations.feeder.yaml --dir ../classes/yaml feed:gen:yaml
-directory: /var/www/html/apps/zpms/web/content
 createdate: 11-05-2024 23:22:17
-schema: /var/www/html/apps/zpms/web/classes/yaml/locations.yaml
+schema: ../classes/yaml/locations.yaml
 key:
   name: lang
   value:
