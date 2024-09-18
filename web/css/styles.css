@@ -680,3 +680,34 @@ ul.select-box li:hover {
 .module-copyright {
     text-align: center;
 }
+
+.shortcuts {
+    margin: auto;
+    padding: 2rem;
+    /* background-color: aquamarine; */
+    width: 100%;
+    display: block;
+    align-items: center;
+}
+
+.shortcuts ul {
+    /* margin: auto; */
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    
+}
+
+.shortcuts ul li {
+    padding: 1rem;
+    outline: 1px black solid;
+    border-radius: 5px;
+}
+
+.shortcuts ul li:hover,
+.shortcuts ul li:hover a {
+    background-color: black;
+    color: white;
+}
