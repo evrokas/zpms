@@ -44,7 +44,7 @@
                 {% $loop++ %}
                 <td>{{$loop}}</td>
                 <td data-column="name">
-                    {{$pat['pname']}}
+                    <a href="{{rel_url('/patient/'.$pat['id'].'/edit')}}">{{$pat['pname']}}</a>
                     {% if(strlen($pat['pname'])>0): %}
                         <i class='bx bx-copy' onclick="copyStr('{{$pat['pname']}}')"></i>
                     {% endif %}
@@ -57,7 +57,7 @@
                     {% endif %}
                 </td>
                 <td class="actions">
-                    <a href="{{rel_url('/patient/'.$pat['id'].'/edit')}}">edit</a>
+                    <!-- <a href="{{rel_url('/patient/'.$pat['id'].'/edit')}}">edit</a> -->
                     <a href="{{rel_url('/patient/'.$pat['id'].'/delete')}}">delete</a>
                 </td>
             </tr>

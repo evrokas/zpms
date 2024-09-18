@@ -260,6 +260,11 @@ form .input-div.input-notes label {
     /* text-align: center; */
 }
 
+.patients-list table tr td a,
+.patients-list table tr td a:visited {
+    color: black;
+}
+
 
 .edit-patient .header {
     text-align: center;
