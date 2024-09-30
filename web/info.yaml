@@ -241,7 +241,14 @@ menu:
       # path: home
     - patients:
       text: 'Patients'
-      url: '/patients'
+      # url: '/patients'
+      submenu:
+        - patient_list:
+          text: 'List'
+          url: '/patients'
+        - patient_add:
+          text: 'New'
+          url: /patient/new
       # path: '/patients'
     - appointments:
       text: 'Appointments'
