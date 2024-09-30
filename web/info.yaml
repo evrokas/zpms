@@ -240,11 +240,11 @@ menu:
       url: '/'
       # path: home
     - patients:
-      text: 'Patient List'
+      text: 'Patients'
       url: '/patients'
       # path: '/patients'
     - appointments:
-      text: 'Appointment List'
+      text: 'Appointments'
       url: '/appointments'
     - settings:
       text: "Settings"
