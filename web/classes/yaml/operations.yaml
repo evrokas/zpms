@@ -1,0 +1,18 @@
+- table: operations
+  class: operationsClass
+  fields:
+    - guid: char(36) not null
+    - cdate: datetime default current_timestamp
+    - cuser: char(32) not null
+    - opdate: datetime default current_timestamp
+    - pguid: char(36) not null
+    - pname: varchar(64) not null
+    - pdob: datetime
+    - opdiagnosis: text
+    - opprocedure: text
+    - clinic: text
+    - category: text
+    - surgeon1: varchar(64)
+    - surgeon2: varchar(64)
+    - anesthesiology: varchar(64)
+    
