@@ -18,7 +18,7 @@ css:
   - styles:
     src: 'css/styles.css'
   - boxicons:
-    src: 'css/boxicons.min.css'
+    src: 'css/bx/css/boxicons.min.css'
   # - breadcrumbs:
     # src: 'css/breadcrumbs.css'
   # - utils:

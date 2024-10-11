@@ -14,6 +14,34 @@ html {
 @media screen and (max-width: 700px) { html {   font-size: 80%;  }}  
 @media screen and (max-width: 600px) { html {   font-size: 70%;  }}
 
+
+:root {
+    --basic-dark-color: #131f8a;
+    --main-navigation-menu-level-0-background-color: var(--basic-dark-color);
+    --main-navigation-menu-level-0-link-color: #fff; 
+    --main-navigation-menu-level-0-hover-background-color: #d7d7f1;
+    --main-navigation-menu-level-0-hover-text-color: #000;
+
+    --main-navigation-menu-level-1-background-color: #131f8a;
+    /* --main-navigation-menu-level-1-background-color: #d7d7f1; */
+    --main-navigation-menu-level-1-link-color: #fff; 
+    --main-navigation-menu-level-1-hover-background-color: #d7d7f1;
+    --main-navigation-menu-level-1-hover-text-color: #131f8a;
+
+    /* --main-navigation-menu-level-2-background-color: #131f8a; */
+    --main-navigation-menu-level-2-background-color: #d7d7f1;
+    --main-navigation-menu-level-2-link-color: #fff; 
+    --main-navigation-menu-level-2-hover-background-color: #131f8a;
+    --main-navigation-menu-level-2-hover-text-color: #d7d7f1;
+}
+
+a,
+a:visited {
+    color: #393939 !important;
+}
+
+
+
 body {
     margin: 0 0.5rem;
 /*    font-size: 14px; */
@@ -79,7 +107,7 @@ body {
 }
 
 
-
+/* 
 .main-navigation {
     background-color: white;
     padding: 0.5rem 0;
@@ -105,14 +133,13 @@ body {
 
 .main-navigation li.menu-item.in-menu-trail {
     font-weight: 600;
-    /* background-color: greenyellow; */
     background-color: rgb(191, 191, 243);
 }
 
 .main-navigation li.submenu-item.in-menu-trail {
     font-weight: 600;
     background-color: rgb(191, 191, 243);
-}
+} */
 
 
 /* forms */
