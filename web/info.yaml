@@ -113,7 +113,11 @@ routes:
     handler: settings
   patients:
     title: "Patients"
-    url: "/patients"
+    url: [
+          "/patients",
+          "/patients/sort/{key}",
+          "/patients/sort/{key}/{order}"
+          ]
     handler: patients_list
     access: authenticated user
   patients_search:

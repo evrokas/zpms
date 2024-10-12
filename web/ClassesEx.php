@@ -139,12 +139,13 @@ class patientsClassEx extends patientsClass {
             }
         }
 
+        // sql statement extracted from ChatGPT (!!)
         $sql = "SELECT pat.*, app.adate FROM patients pat 
             LEFT JOIN ( 
                 SELECT pguid, adate, ROW_NUMBER() OVER (PARTITION BY pguid ORDER BY adate DESC) 
                     as rn FROM appointments ) app 
                 ON pat.guid = app.pguid AND app.rn = 1 
-                ORDER BY app.adate DESC;";
+                ORDER BY app.adate DESC";
 
         // $sql = "SELECT * FROM patients;";
         $st = $AppDBConnection->getConnection()->prepare( $sql );
