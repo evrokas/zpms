@@ -79,7 +79,8 @@ require_once(__FWDIR__ . '/bootstrap.php');
         // $pc = new patientsClass();
         // $pat = $pc->getAll();
 
-        $pat = patientsClass::sgetAll();
+        // $pat = patientsClass::sgetAll();
+        $pat = patientsClassEx::getPatientsByLastAppointment();
         // echo "<pre>";
         // print_r( $pat );
         // echo "</pre>";

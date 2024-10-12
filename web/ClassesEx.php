@@ -129,6 +129,38 @@ class patientsClassEx extends patientsClass {
         return ($list);
     }
 
+    static function getPatientsByLastAppointment() {
+        global $AppDBConnection;
+
+        if(!$AppDBConnection->isConnected()) {
+            if(!$AppDBConnection->Connect()) {
+                echo 'Could not connect to database';
+                return (null);
+            }
+        }
+
+        $sql = "SELECT pat.*, app.adate FROM patients pat 
+            LEFT JOIN ( 
+                SELECT pguid, adate, ROW_NUMBER() OVER (PARTITION BY pguid ORDER BY adate DESC) 
+                    as rn FROM appointments ) app 
+                ON pat.guid = app.pguid AND app.rn = 1 
+                ORDER BY app.adate DESC;";
+
+        // $sql = "SELECT * FROM patients;";
+        $st = $AppDBConnection->getConnection()->prepare( $sql );
+        $st->execute();
+
+        $list = array();
+
+        while( $row = $st->fetch() ) {
+            $rclass = new patientsClass( "patients" );
+            $rclass->loadFields( $row );
+            $list[] = $rclass;
+        }
+
+        return ($list);
+    }
+
 }
 
 class appointmentsClassEx extends appointmentsClass {
