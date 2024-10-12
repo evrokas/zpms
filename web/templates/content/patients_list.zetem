@@ -35,6 +35,7 @@
             <th>#</th>
             <th>Name</th>
             <th>AMKA</th>
+            <th>Last Appointment</th>
             <th>Actions</th>
         </thead>
         {% $loop=0; %}
@@ -55,6 +56,11 @@
                     {% if(strlen($pat['pamka'])>0): %}
                         <i class='bx bx-copy' onclick="copyStr('{{$pat['pamka']}}')"></i>
                     {% endif %}
+                </td>
+
+                <td data-column="lastapp">
+
+                    {{$pat['lastapp']}}
                 </td>
                 <td class="actions">
                     <!-- <a href="{{rel_url('/patient/'.$pat['id'].'/edit')}}">edit</a> -->

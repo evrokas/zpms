@@ -155,7 +155,7 @@ class patientsClassEx extends patientsClass {
         while( $row = $st->fetch() ) {
             $rclass = new patientsClass( "patients" );
             $rclass->loadFields( $row );
-            $list[] = $rclass;
+            $list[] = ['p'=>$rclass, 'a'=>$row['adate'] ];
         }
 
         return ($list);

@@ -86,11 +86,15 @@ require_once(__FWDIR__ . '/bootstrap.php');
         // echo "</pre>";
         $pp = array();
         foreach($pat as $p) {
-            if($p->getdeleted() == null) {
+            if($p['p']->getdeleted() == null) {
 
-                $pp[] = ['id' => $p->getid(),
-                        'pname' => $p->getpname(),
-                        'pamka' => $p->getpamka()
+                if($p['a'])$dt = date_format(new DateTime($p['a']), "d-m-Y H:i");
+                else $dt = null;
+
+                $pp[] = ['id' => $p['p']->getid(),
+                        'pname' => $p['p']->getpname(),
+                        'pamka' => $p['p']->getpamka(),
+                        'lastapp' => $dt
                     ];
             }
         }
@@ -314,7 +318,7 @@ require_once(__FWDIR__ . '/bootstrap.php');
 
         $pat = patientsClass::sgetById($params['id']);
 
-        $dtime = time();    // make delete time same for patient and appointments
+        $dtime = getDBtime();    // make delete time same for patient and appointments
                             // so to be able to recover them later
 
         // also delete all records of appointments for this patient
