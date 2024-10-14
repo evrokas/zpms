@@ -39,10 +39,10 @@ require_once(__FWDIR__ . '/bootstrap.php');
 //    echopre('locations: ' . print_r($l->getFields(), 1));
 //    echopre('locations: ' . print_r(get_class_vars( 'locationsClass'),1) );
 
-
     $kernel->setCurrentLanguage('gr');
 
     ob_start();
+    locationsClassEx::setDefaultLocation();
     registerModules();
 
     // $f1 = new Feeder('/content/locations.feeder.yaml');
@@ -66,7 +66,13 @@ require_once(__FWDIR__ . '/bootstrap.php');
 
     function homepage($params) {
         global $Renderer;
-        return $Renderer->render("homepage.zetem", []);
+
+        if(!isset($_SESSION['location']))
+            $locname = $ln[1];
+        else $locname = $_SESSION['location'];
+
+
+        return $Renderer->render("homepage.zetem", ['location' => $locname]);
     }
 
 
@@ -554,7 +560,7 @@ require_once(__FWDIR__ . '/bootstrap.php');
         // $loc = locationsClass::sgetAll();
         $ap = new appointmentsClass([
             'adate' => getDBtime(),
-            'aplace' => '',
+            'aplace' => locationsClassEx::getCurrentLocation(),
             'anote' => '', //print_r( $_SERVER, 1) /*'notes'*/
         ]);
         // $kernel->setS

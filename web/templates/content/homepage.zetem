@@ -1,13 +1,9 @@
-<h2>Welcome to the Patient Management System</h2>
+<!-- <h2>Welcome to the Patient Management System</h2> -->
 
-<p>{{$author}}</p>
+Selected location is: {{$location}}
 
+<hr>
 
-<div class="shortcuts">
-    <ul>
-        <li><a href="http://localhost/apps/zpms/web/patient/new">New Patient</a></li>
-    </ul>
-</div>
 <ul>
     <li>Select <a href="{{rel_url('/patients')}}">Patients</a> for show patient list</li>
     <li>Select <a href="{{rel_url('/appointments')}}">Appointments</a> for show apppointment list</li>

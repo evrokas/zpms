@@ -83,4 +83,48 @@ class locationsClassEx extends locationsClass {
         } else return (null);
     }
 
+
+    static function setDefaultLocation() {
+        global $kernel;
+
+        $loc = locationsClassEx::sgetAll( $kernel->getCurrentLanguage() );
+        $ln = array();
+        foreach($loc as $l)
+            $ln[] = $l->getname();
+
+        
+        // echopre("lcookie: " . $lcookie . "  $_SESSION[location]" . $_SESSION['location']);
+        if(isset($_SESSION['location'])) {
+            $locname = $_SESSION['location'];
+        } else {
+            $lcookie = filter_input(INPUT_COOKIE, 'location');
+            if($lcookie) {
+                $_SESSION['location'] = $lcookie;
+                $locname = $_SESSION['location'];
+            } else {
+                $locname = $ln[1];
+                $_SESSION['location'] = $locname;
+
+            }
+        }
+
+        setcookie('location', null, -1);
+        setcookie('location', $locname, time() + 30*24*60*60);
+    }
+
+    static function getCurrentLocation() {
+        global $kernel;
+
+            $loc = locationsClassEx::sgetAll( $kernel->getCurrentLanguage() );
+            $ln = array();
+            foreach($loc as $l)
+                $ln[] = $l->getname();
+
+                if(!isset($_SESSION['location']))
+                $locname = $ln[1];
+            else $locname = $_SESSION['location'];
+
+        return ($locname);
+    }
+
 }

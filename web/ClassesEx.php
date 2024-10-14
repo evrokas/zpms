@@ -192,6 +192,3 @@ class appointmentsClassEx extends appointmentsClass {
         return ($list);
     }
 }
-
-
-
