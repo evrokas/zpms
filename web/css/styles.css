@@ -293,6 +293,21 @@ form .input-div.input-notes label {
 }
 
 
+.patients-list thead {
+    .sorting-arrows {
+        display: inline-block;
+        color: white;
+    }
+
+    .sorting-arrows i {
+        font-size: 1rem;
+    }
+    .sorting-arrows i:hover {
+        color: black;
+    }
+}
+
+
 .edit-patient .header {
     text-align: center;
 }
