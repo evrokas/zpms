@@ -304,6 +304,7 @@ form .input-div.input-notes label {
     }
     .sorting-arrows i:hover {
         color: black;
+        cursor: pointer;
     }
 }
 
