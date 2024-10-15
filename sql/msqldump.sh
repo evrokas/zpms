@@ -9,10 +9,15 @@ db=`head -2 $dir/admin.sql | gawk '/DATABASE/  { print $6 }' - | cut -d\; -f1 -`
 #echo db $db
 options='--skip-opt --skip-extended-insert'
 
-ignore_tables='analytics analyt'
+ignore_tables=('analytics')
 
-full_ignore_table=`for temp in $ignore_tables; do echo $db.$temp; done`;
+
+for temp in ${ignore_tables[@]}; do full_ignore_tables="$full_ignore_tables --ignore-table=$db.$temp"; done
+
 echo "IGNORE: " $full_ignore_tables
+
+#exit
+options="$options $full_ignore_tables"
 
 
 
