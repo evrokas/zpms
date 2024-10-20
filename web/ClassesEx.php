@@ -129,7 +129,7 @@ class patientsClassEx extends patientsClass {
         return ($list);
     }
 
-    static function getPatientsByLastAppointment() {
+    static function getPatientsByLastAppointment($order) {
         global $AppDBConnection;
 
         if(!$AppDBConnection->isConnected()) {
@@ -139,15 +139,52 @@ class patientsClassEx extends patientsClass {
             }
         }
 
+        switch($order) {
+            case '0': $order = "DESC"; break;
+            case '1': $order = "ASC"; break;
+        }
+
+
         // sql statement extracted from ChatGPT (!!)
         $sql = "SELECT pat.*, app.adate FROM patients pat 
             LEFT JOIN ( 
                 SELECT pguid, adate, ROW_NUMBER() OVER (PARTITION BY pguid ORDER BY adate DESC) 
                     as rn FROM appointments ) app 
                 ON pat.guid = app.pguid AND app.rn = 1 
-                ORDER BY app.adate DESC";
+                ORDER BY app.adate " . $order; /* DESC";*/
 
         // $sql = "SELECT * FROM patients;";
+        $st = $AppDBConnection->getConnection()->prepare( $sql );
+        $st->execute();
+
+        $list = array();
+
+        while( $row = $st->fetch() ) {
+            $rclass = new patientsClass( "patients" );
+            $rclass->loadFields( $row );
+            $list[] = ['p'=>$rclass, 'a'=>$row['adate'] ];
+        }
+
+        return ($list);
+    }
+
+    static function getPatientsByName($order = 'ASC') {
+        global $AppDBConnection;
+
+        if(!$AppDBConnection->isConnected()) {
+            if(!$AppDBConnection->Connect()) {
+                echo 'Could not connect to database';
+                return (null);
+            }
+        }
+
+        switch($order) {
+            case '0': $order = "DESC"; break;
+            case '1': $order = "ASC"; break;
+        }
+
+        // sql statement extracted from ChatGPT (!!)
+        $sql = "SELECT * FROM patients ORDER BY pname " . $order;
         $st = $AppDBConnection->getConnection()->prepare( $sql );
         $st->execute();
 

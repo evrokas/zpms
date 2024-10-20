@@ -82,11 +82,40 @@ require_once(__FWDIR__ . '/bootstrap.php');
 
         SecurityClass::require('patients-view-list');
 
+        // echopre(print_r($params,1));
         // $pc = new patientsClass();
         // $pat = $pc->getAll();
 
         // $pat = patientsClass::sgetAll();
-        $pat = patientsClassEx::getPatientsByLastAppointment();
+        if(array_key_exists("key", $params)) {
+            $sort_key = $params['key'];
+
+            if(array_key_exists("order", $params)) {
+                $order_key = $params['order'];
+            }
+        }
+
+        if(isset($sort_key)) {
+            if(!in_array($sort_key, ['name', 'lastapp']))$sort_key = 'lastapp';
+        } else $sort_key = "lastapp";
+        
+        if(isset($order_key)) {
+            if(!in_array($order_key, ['1', '0']))$order_key = "1";
+        } else if($sort_key == "lastapp")$order_key = "0"; else $order_key = '1';
+
+        // if(isset($sort_key))echopre("SORT set: " . $sort_key);
+        // if(isset($order_key))echopre("ORDER set: " . $order_key);
+
+
+        switch($sort_key) {
+            case 'name':
+                $pat = patientsClassEx::getPatientsByName($order_key);
+                break;
+            case 'lastapp':
+                $pat = patientsClassEx::getPatientsByLastAppointment($order_key);
+                break;
+        }
+
         // echo "<pre>";
         // print_r( $pat );
         // echo "</pre>";
