@@ -1,6 +1,6 @@
 - table: locations
   class: locationsClass
-  extends: feedClass
+#  extends: feedClass
   extention: __APPDIR__ . '/web/locationsClassEx.php'
   fields:
     - guid: char(36) not null
