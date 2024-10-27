@@ -16,7 +16,8 @@ require_once(__FWDIR__ . '/bootstrap.php');
     $router = new RouterClass( $kernel->getConfig('routes') );
     // print_r( $router->getAllRoutes() );
 
-    $Renderer = new ZETEMTemplate($kernel->getConfig('templates')/*  ['templates/','../fw/templates/'] */, false, true);
+    //$Renderer = new ZETEMTemplate($kernel->getConfig('templates')/*  ['templates/','../fw/templates/'] */, false, true);
+    Renderer::init($kernel->getConfig('templates')/*  ['templates/','../fw/templates/'] */, false, true);
 
     $Request = new RequestClass($_SERVER);
     // $handlers = $Request->getQueryRoute();
@@ -65,19 +66,16 @@ require_once(__FWDIR__ . '/bootstrap.php');
 
 
     function homepage($params) {
-        global $Renderer;
-
         if(!isset($_SESSION['location']))
             $locname = $ln[1];
         else $locname = $_SESSION['location'];
 
 
-        return $Renderer->render("homepage.zetem", ['location' => $locname]);
+        return Renderer::render("homepage.zetem", ['location' => $locname]);
     }
 
 
     function patients_list($params) {
-        global $Renderer;
         global $kernel;
 
         SecurityClass::require('patients-view-list');
@@ -134,7 +132,7 @@ require_once(__FWDIR__ . '/bootstrap.php');
             }
         }
 
-        return $Renderer->render("patients_list.zetem",
+        return Renderer::render("patients_list.zetem",
             ['pat_list' => $pp,
                 // 'notice' => $kernel->ifelseStatus('patient_edit', '', true)
             ]);
@@ -153,8 +151,6 @@ require_once(__FWDIR__ . '/bootstrap.php');
     }
 
     function patients_list_search($params) {
-        global $Renderer;
-
         SecurityClass::require('patients-view-list');
 
         $pat = patientsClassEx::search(urldecode($params['term']));
@@ -177,7 +173,7 @@ require_once(__FWDIR__ . '/bootstrap.php');
             $pp[] = $ppp;
         }
 
-        return $Renderer->render("patients_list.zetem",
+        return Renderer::render("patients_list.zetem",
             [   'search_term' => $params['term'],
                 'pat_list' => $pp,
                 // 'notice' => $kernel->ifelseStatus('patient_edit', '', true)
@@ -224,7 +220,6 @@ require_once(__FWDIR__ . '/bootstrap.php');
 
     }
     function patient_edit($params) {
-        global $Renderer;
         global $kernel;
 
         SecurityClass::require('patients-edit-patient');
@@ -250,7 +245,7 @@ require_once(__FWDIR__ . '/bootstrap.php');
             if($ap->getdeleted() == null) {
                 $apprender[] = [
                     'index' => count($apprender),
-                    'markup' => $Renderer->render('view_appointment.zetem', [
+                    'markup' => Renderer::render('view_appointment.zetem', [
                                                     'action' => rel_url('/appointment/' . $ap->getid() . '/edit'),
                                                     'index' => count($apprender)+1,
                                                     'checked' => (!count($apprender)?"checked":""),
@@ -264,7 +259,7 @@ require_once(__FWDIR__ . '/bootstrap.php');
             }
         }
 
-        return ($Renderer->render("edit_patient.zetem", [
+        return (Renderer::render("edit_patient.zetem", [
             'action' => 'edit', 
             'id' => $params['id'], 
             'patient' => $pat,
@@ -272,7 +267,6 @@ require_once(__FWDIR__ . '/bootstrap.php');
         ]));
     }
     function patient_edit_post($params) {
-        global $Renderer;
         global $kernel;
 
         SecurityClass::require('patients-edit-patient');
@@ -322,12 +316,11 @@ require_once(__FWDIR__ . '/bootstrap.php');
         // return '';
         // patients_list(['notice' => 'Ο φάκελος του ασθενή ' + $pat->getpname() . ' έχει αποθηκευτεί.']);
     
-        // return ($Renderer->render("edit_patients.zetem", ['notice' => 'data were saved', 'id' => $params['id'], 'patient' => $pat]));
+        // return (Renderer::render("edit_patients.zetem", ['notice' => 'data were saved', 'id' => $params['id'], 'patient' => $pat]));
     }
 
 
     function patient_new($params) {
-        global $Renderer;
         global $kernel;
 
         SecurityClass::require('patients-new-patient');
@@ -343,7 +336,7 @@ require_once(__FWDIR__ . '/bootstrap.php');
         ]);
         
         // $pat = $pc->getById($params['id']);
-        return ($Renderer->render("edit_patient.zetem", ['action' => 'new', 'id' => null, 'patient' => $pc]));
+        return (Renderer::render("edit_patient.zetem", ['action' => 'new', 'id' => null, 'patient' => $pc]));
     }
 
     function patient_delete($params) {
@@ -376,7 +369,6 @@ require_once(__FWDIR__ . '/bootstrap.php');
 
 
     function patient_new_post($params) {
-        global $Renderer;
         global $kernel;
 
 
@@ -421,7 +413,6 @@ require_once(__FWDIR__ . '/bootstrap.php');
     }
 
     function appointments_list($params) {
-        global $Renderer;
         global $kernel;
 
         SecurityClass::require('appointments-view-list');
@@ -449,7 +440,7 @@ require_once(__FWDIR__ . '/bootstrap.php');
             }
         }
 
-        return $Renderer->render("appointments_list.zetem",
+        return Renderer::render("appointments_list.zetem",
             ['app_list' => $pp,
                 // 'notice' => $kernel->ifelseStatus('patient_edit', '', true)
             ]);
@@ -457,7 +448,6 @@ require_once(__FWDIR__ . '/bootstrap.php');
 
 
     function appointment_edit($params) {
-        global $Renderer;
         global $kernel;
 
         if(!isset($params['id'])) {
@@ -469,7 +459,7 @@ require_once(__FWDIR__ . '/bootstrap.php');
 
         $ap = new appointmentsClass();
         $app = $ap->getById($params['id']);
-        return ($Renderer->render("edit_appointment.zetem", ['action' => 'edit', 'id' => $params['id'], 'appointment' => $app, 'locations' => $loc]));
+        return (Renderer::render("edit_appointment.zetem", ['action' => 'edit', 'id' => $params['id'], 'appointment' => $app, 'locations' => $loc]));
         
     }
     function appointment_edit_post($params) {
@@ -510,7 +500,6 @@ require_once(__FWDIR__ . '/bootstrap.php');
 
 
     function appointment_new($params) {
-        global $Renderer;
         global $kernel;
 
 
@@ -525,11 +514,10 @@ require_once(__FWDIR__ . '/bootstrap.php');
         // error_log('\nREFERER: '. $_SERVER['HTTP_REFERER']."\n");
 
         // $pat = $pc->getById($params['id']);
-        return ($Renderer->render("edit_appointment.zetem", ['action' => 'new', 'id' => null, 'appointment' => $ap, 'locations' => $loc]));
+        return (Renderer::render("edit_appointment.zetem", ['action' => 'new', 'id' => null, 'appointment' => $ap, 'locations' => $loc]));
     }
 
     function appointment_new_post($params) {
-        global $Renderer;
         global $kernel;
 
 
@@ -566,7 +554,6 @@ require_once(__FWDIR__ . '/bootstrap.php');
     }
 
     function patient_appointment_new($params) {
-        global $Renderer;
         global $kernel;
 
         if(!isset($params['id'])) {
@@ -594,11 +581,10 @@ require_once(__FWDIR__ . '/bootstrap.php');
         ]);
         // $kernel->setS
         // $pat = $pc->getById($params['id']);
-        return ($Renderer->render("edit_appointment.zetem", ['action' => 'newappointment', 'id' => null, 'appointment' => $ap, 'patient' => $p, 'locations' => $loc]));
+        return (Renderer::render("edit_appointment.zetem", ['action' => 'newappointment', 'id' => null, 'appointment' => $ap, 'patient' => $p, 'locations' => $loc]));
     }
 
     function patient_appointment_new_post($params) {
-        global $Renderer;
         global $kernel;
 
         // error_log("<pre>patient_appointment_new_post: ".print_r($params, 1)."</pre>");
@@ -648,13 +634,12 @@ require_once(__FWDIR__ . '/bootstrap.php');
 
     function settings($params) {
         global $kernel;
-        global $Renderer;
 
             $cnt = new ContentClass('content/homepage.html');
             $resp = $cnt->render();
 
-            // return $Renderer->render('settings.zetem', ['text' => $resp]);
-            return $Renderer->render('content.zetem', ['text' => $resp]);
+            // return Renderer::render('settings.zetem', ['text' => $resp]);
+            return Renderer::render('content.zetem', ['text' => $resp]);
     }
 
 

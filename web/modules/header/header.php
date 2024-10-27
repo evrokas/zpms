@@ -3,10 +3,9 @@
 class header extends moduleClass {
     function render($params = array()) {
       global $kernel;
-      global $Renderer;
         $tit = $kernel->getConfig()['title'];
         // echo "header module: param title = " . $tit . "\n";
-        return ($Renderer->render("header.zetem", ["title" => $kernel->getConfig()['title'] ]));
+        return (Renderer::render("header.zetem", ["title" => $kernel->getConfig()['title'] ]));
     }
 }
 
