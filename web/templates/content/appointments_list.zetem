@@ -2,7 +2,7 @@
     template parameters
         app_list    list of appointments
 #}
-
+{% attach_library("datepicker-library") %}
 
 <div class="page-title">
     <h2>Appointments</h2>

@@ -300,4 +300,5 @@ modules:
     - copyright
     - content
     - location
+    - datepicker
   # - topbar

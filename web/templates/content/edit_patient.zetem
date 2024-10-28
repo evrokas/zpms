@@ -1,5 +1,6 @@
 
 {% attach_library('loader-library'); %}
+{% attach_library('datepicker-library'); %}
 
 
 <div class="edit-patient">    
@@ -21,10 +22,17 @@
             <label for="patient-name">Όνομα ασθενή</label>
             <input type="text" name="patient-name" loader="info-loader" id="" value="{{$patient->getpname()}}">
         </div>
-
+<!-- 
         <div class="input-div">
             <label for="patient-dob">Ημ/νια Γεννήσεως</label>
-            <input type="datetime-local" name="patient-dob" id="" value="{{$patient->getpdob()}}">
+            <input type="datetime-local" name="patient-dob" id="" value="{{formatDate($patient->getpdob())}}">
+            <input type="text" name="patient-dob" id="datepicker" value="{{$patient->getpdob()}}">
+        </div>
+    -->
+
+        <div class="input-div">
+                <label for="patient-dob">Ημ/νια Γεννήσεως</label>
+                <input type="date" name="patient-dob" id="" role="date-picker" value="{{formatDate($patient->getpdob())}}">
             <!-- <input type="text" name="patient-dob" id="datepicker" value="{{$patient->getpdob()}}"> -->
         </div>
 

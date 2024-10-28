@@ -346,12 +346,22 @@ form .input-header {
     flex-direction: row;
 }
 
+
 form .input-div input,
+form .input-div .date-picker-input {
+    border: 1px solid black;
+    margin: 2px 2px;
+    line-height: 1rem;
+}
+
+form .input-div input,
+form .input-div .date-picker-input,
 form .input-div textarea {
     flex-grow: 1;
     padding: 1px 2px;
     width: 100%;
 }
+
 form .input-div label {
     width: 10rem;
     text-align: right;
