@@ -483,7 +483,21 @@ require_once(__FWDIR__ . '/bootstrap.php');
         // error_log("\bFound appointment: " . print_r($ap, 1) . "\n");
         // $ap->setaplace($_POST['appointment-place']);
         $ap->setaplace((locationsClassEx::getbyMachineName($_POST['appointment-place'], $kernel->getCurrentLanguage()))->getname());
-        $ap->setadate(getDBformattime($_POST['appointment-date']));
+
+        // we cannot search for appointment-date, because of special handling of
+        // date fields in the view page, we must search for appointmenet-date-?
+        // where ? is the appointment index in the view page, we do not care for
+        // the index itself, but for the value of that key
+        // ON THE OTHER HAND
+        // in the single page new appointment, the post field
+        // is named 'appointment-date' 
+        foreach($_POST as $postkey => $postval) {
+            if(strstr($postkey, "appointment-date")) {
+                // error_log($postkey . ' ==> ' . print_r($postkey, 1));
+                $ap->setadate(getDBformattime($postval));    //$_POST['appointment-date']));
+            }
+        }
+
         $ap->setanote($_POST['appointment-notes']);
 
         $ap->update();
