@@ -13,7 +13,7 @@
                 <!-- <li>Opt 1</li> -->
                 <!-- <li>Opt 2</li> -->
                 <!-- <li>Opt 3</li> -->
-            </div>
+            </ul>
         </div>
         <div class="buttons">
             <button type="submit" name="search" value="search">Search</button>
@@ -32,7 +32,7 @@
 <div class="patients-list">
     <table>
         <thead>
-            <th>#</th>
+            <!-- <th>#</th> -->
             <th>Name
                 <div class="sorting-arrows">
                     <i class="bx bx-chevron-down"></i>
@@ -42,21 +42,21 @@
             <th>AMKA
 
             </th>
-            <th>Last Appointment
+            <th>Last App
                 <div class="sorting-arrows">
                     <i class="bx bx-chevron-down"></i>
                     <i class="bx bx-chevron-up"></i>
                 </div>
 
             </th>
-            <th>Actions</th>
+            <th>Act</th>
         </thead>
         {% $loop=0; %}
         <tbody>
             {% foreach($pat_list as $pat): %}
             <tr>
                 {% $loop++ %}
-                <td>{{$loop}}</td>
+                <!-- <td>{{$loop}}</td> -->
                 <td data-column="name">
                     <a href="{{rel_url('/patient/'.$pat['id'].'/edit')}}">{{$pat['pname']}}</a>
                     {% if(strlen($pat['pname'])>0): %}
@@ -73,9 +73,9 @@
 
                 <td data-column="lastapp">
 
-                    {{$pat['lastapp']}}
+                    {% echo explode(' ', $pat['lastapp'])[0]; %}
                 </td>
-                <td class="actions">
+                <td class="actions" data-column="actions">
                     
                     <!-- <a href="{{rel_url('/patient/'.$pat['id'].'/edit')}}">edit</a> -->
                     <a href="{{rel_url('/patient/'.$pat['id'].'/delete')}}"><i class="bx bx-trash"></i></a>

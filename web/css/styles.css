@@ -150,59 +150,85 @@ form .buttons {
     justify-content: space-evenly;
 }
 
-.edit-patient form .buttons {
-    padding: 0.5rem;
+.edit-patient {
+    form .buttons {
+        padding: 0.5rem;
+    }
+
+    form .buttons input[type="submit"] {
+        padding: 4px 8px;
+    }
+
+    form {
+        display: flex;
+        gap: 0.3rem;
+        flex-direction: column;
+    }
+
+    form .input-div {
+        /* background-color: aqua; */
+        /* height: 2rem; */
+        /* line-height: 2rem; */
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.1rem 0.4rem;    
+        /* justify-content: space-evenly; */
+    }
+
+    form .input-div select,
+    form .input-div input,
+    form .input-div .date-picker-input span,
+    form .input-div textarea {
+        flex-grow: 1;
+        padding: 1px 2px;
+        /* width: 100%; */
+        line-height: 19px;
+    }
+    form .input-div label {
+        width: 10rem;
+        text-align: right;
+    }
+
+    form .input-div.input-notes {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.2rem;
+    }
+
+    form .input-div.input-notes label {
+        text-align: left;
+    }
 }
 
-form .buttons input[type="submit"] {
-    padding: 4px 8px;
+
+@media screen and (max-width: 470px) {
+    .edit-patient form {
+        .input-attachments {
+            width: unset;
+        }
+        .input-div {
+            flex-direction: column;
+            gap: 0;
+            align-items: flex-start;
+        }
+
+        .input-div label {
+            width: auto;
+            text-align: left;
+        }
+    }
 }
 
-form {
-    display: flex;
-    gap: 0.3rem;
-    flex-direction: column;
-}
-
-form .input-div {
-    /* background-color: aqua; */
-    /* height: 2rem; */
-    /* line-height: 2rem; */
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 1rem;
-    padding: 0.1rem 0.4rem;    
-    /* justify-content: space-evenly; */
-}
-
-form .input-div select,
-form .input-div input,
-form .input-div .date-picker-input span,
-form .input-div textarea {
-    flex-grow: 1;
-    padding: 1px 2px;
-    /* width: 100%; */
-    line-height: 19px;
-}
-form .input-div label {
-    width: 10rem;
-    text-align: right;
-}
-
-form .input-div.input-notes {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.2rem;
-}
-
-form .input-div.input-notes label {
-    text-align: left;
-}
 /* patients forms */
 
 .page-title {
     text-align: center;
+}
+
+.search {
+    margin: 0 1rem;
 }
 
 .patient-list-actions ul {
@@ -214,7 +240,7 @@ form .input-div.input-notes label {
     padding: 1rem;
 }
 .patients-list table {
-    width: 90%;
+    width: 100%;
 }
 .patients-list table thead {
     background-color: rgb(85, 85, 85);
@@ -247,6 +273,7 @@ form .input-div.input-notes label {
 .patients-list table td[data-column="name"] {
     font-weight: 600;
     /* text-align: center; */
+    width: auto;
 }
 
 .patients-list table td[data-column="name"]:hover {
@@ -267,14 +294,26 @@ form .input-div.input-notes label {
     /* text-align: center; */
 }
 
+/* responsive rules */
+@media screen and (max-width: 470px) {
+    body {
+        margin: 0;
+    }
+
+    .patients-list {
+        padding: 0;
+    }
+}
+
 
 .patients-list table td[data-column="amka"] {
     text-align: center;
+    width: 10rem;
 }
 
 
 .patients-list table td[data-column="amka"] i {
-    margin: 0 0.5rem;
+    /* margin: 0 0.5rem; */
     opacity: 0;
     
 }
@@ -292,6 +331,16 @@ form .input-div.input-notes label {
 .patients-list table tr td a,
 .patients-list table tr td a:visited {
     color: black;
+}
+
+.patients-list table td[data-column="lastapp"] {
+    text-align: center;
+    width: max-content;
+}
+.patients-list table td[data-column="actions"] {
+    padding: 0 1rem;
+    text-align: center;
+    width: min-content;
 }
 
 
