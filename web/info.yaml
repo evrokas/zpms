@@ -81,6 +81,11 @@ roles:
   user: [patients-view-list, appointments-view-list]
   power-user: [patients-view-list, patients-new-patient, patients-delete-patient, patients-edit-patient, appointment-edit]
 
+
+# reduce analytics entries, by not logging localhost calls
+analytics:
+  ignore_ips: [127.0.0.1]
+
 routes:
   homepage:
     title: "Homepage"
