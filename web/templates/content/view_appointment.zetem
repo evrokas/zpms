@@ -18,9 +18,13 @@
         <form action="{{$action}}" method="post">
             <div class="input-header">
                 <div class="input-div">
+                    <!-- <label for="patient-date">Ημ/νια & Ώρα ραντεβού</label> -->
+                    <!-- <input type="datetime-local" loader="app-loader-{{$index}}" name="appointment-date" id="" value="{{$appointment->getadate()}}"> -->
                     <label for="patient-date">Ημ/νια & Ώρα ραντεβού</label>
-                    <input type="datetime-local" loader="app-loader-{{$index}}" name="appointment-date" id="" value="{{$appointment->getadate()}}">
-                </div>
+                    <input type="date" loader="app-loader-{{$index}}" name="appointment-date-{{$index}}" id="" role="date-picker" value="{{formatDate($appointment->getadate())}}">
+                    <!-- <label for="patient-dob">Ημ/νια Γεννήσεως</label> -->
+                    <!-- <input type="date" name="patient-dob" id="" role="date-picker" value="{{formatDate($patient->getpdob())}}"> -->
+                    </div>
                     
                 <div class="input-div">
                     <label for="appointment-place">Περιοχή</label>

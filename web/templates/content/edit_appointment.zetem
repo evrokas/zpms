@@ -10,7 +10,11 @@
         <div class="input-div">
             <label for="patient-date">Ημ/νια & Ώρα ραντεβού</label>
             <input type="datetime-local" name="appointment-date" id="" value="{{$appointment->getadate()}}">
-        </div>
+            <!-- <label for="appointment-date">Ημ/νια & Ώρα ραντεβού</label> -->
+            <!-- <input type="date" name="appointment-date" id="" role="date-picker"" value="{{formatDate($appointment->getadate())}}"> -->
+            <!-- <label for="patient-dob">Ημ/νια Γεννήσεως</label> -->
+            <!-- <input type="date" name="patient-dob" id="" role="date-picker" value="{{formatDate($patient->getpdob())}}"> -->
+    </div>
 
         <div class="input-div">
             <label for="appointment-place">Περιοχή</label>
