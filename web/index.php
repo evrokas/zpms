@@ -10,7 +10,7 @@ require_once(__FWDIR__ . '/bootstrap.php');
     // print_r( $info['menu']['main'] );
     // echo "</pre>";
 
-    $kernel = new Kernel($_SERVER, "info.yaml");
+    $kernel = new Kernel($_SERVER, "../config");
     SecurityClass::init($kernel->getConfig('roles') );
 
     $router = new RouterClass( $kernel->getConfig('routes') );
