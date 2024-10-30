@@ -16,13 +16,14 @@ html {
 
 
 :root {
-    --basic-dark-color: #131f8a;
+    --basic-dark-color: #036379;
+    --main-navigation-menu-level-0-background-color: var(--basic-dark-color);
     --main-navigation-menu-level-0-background-color: var(--basic-dark-color);
     --main-navigation-menu-level-0-link-color: #fff; 
     --main-navigation-menu-level-0-hover-background-color: #d7d7f1;
     --main-navigation-menu-level-0-hover-text-color: #000;
 
-    --main-navigation-menu-level-1-background-color: #131f8a;
+    --main-navigation-menu-level-1-background-color: var(--basic-dark-color);
     /* --main-navigation-menu-level-1-background-color: #d7d7f1; */
     --main-navigation-menu-level-1-link-color: #fff; 
     --main-navigation-menu-level-1-hover-background-color: #d7d7f1;
