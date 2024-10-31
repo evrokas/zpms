@@ -93,23 +93,31 @@ class locationsClassEx extends locationsClass {
             $ln[] = $l->getname();
 
         
-        // echopre("lcookie: " . $lcookie . "  $_SESSION[location]" . $_SESSION['location']);
+        echopre("lcookie: " . $lcookie . "  $_SESSION[location]");
         if(isset($_SESSION['location'])) {
             $locname = $_SESSION['location'];
+            echopre("location variable was already set: $locname");
         } else {
             $lcookie = filter_input(INPUT_COOKIE, 'location');
             if($lcookie) {
                 $_SESSION['location'] = $lcookie;
                 $locname = $_SESSION['location'];
+                echopre("location cookie was already set: $lcookie");
             } else {
                 $locname = $ln[1];
                 $_SESSION['location'] = $locname;
+                echopre("location cookie was not set");
 
             }
         }
 
+        echopre("remove location cookie");
         setcookie('location', null, -1);
-        setcookie('location', $locname, time() + 30*24*60*60);
+        
+        $expiry = time() + 30*24*60*60;
+        
+        echopre("set new cookie: $locname, that expires on $expiry");
+        setcookie('location', $locname, $expiry);
     }
 
     static function getCurrentLocation() {
