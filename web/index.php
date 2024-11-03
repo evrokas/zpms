@@ -43,6 +43,9 @@ require_once(__FWDIR__ . '/bootstrap.php');
     $kernel->setCurrentLanguage('gr');
 
     ob_start();
+
+    // echopre('_SERVER: ' . print_r($_SERVER, 1));
+
     locationsClassEx::setDefaultLocation();
     registerModules();
 
