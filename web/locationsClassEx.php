@@ -23,7 +23,7 @@ class locationsClassEx extends locationsClass {
             return $rclass;
         } else return (null);
     }
-    
+
     static function sgetAll($lang = null) {
         $rows = parent::sgetAll();
         if(!$lang)return $rows;
@@ -33,7 +33,7 @@ class locationsClassEx extends locationsClass {
             if($el->getlang() === $lang)
                 $arr[] = $el;
         }
-        return ($arr);    
+        return ($arr);
     }
 
     static function getbyMachineName($mname, $lang) {
@@ -92,31 +92,29 @@ class locationsClassEx extends locationsClass {
         foreach($loc as $l)
             $ln[] = $l->getname();
 
-        
-        echopre("lcookie: " . $lcookie . "  $_SESSION[location]");
         if(isset($_SESSION['location'])) {
             $locname = $_SESSION['location'];
-            echopre("location variable was already set: $locname");
+            // echopre("location variable was already set: $locname");
         } else {
             $lcookie = filter_input(INPUT_COOKIE, 'location');
             if($lcookie) {
                 $_SESSION['location'] = $lcookie;
                 $locname = $_SESSION['location'];
-                echopre("location cookie was already set: $lcookie");
+                // echopre("location cookie was already set: $lcookie");
             } else {
                 $locname = $ln[1];
                 $_SESSION['location'] = $locname;
-                echopre("location cookie was not set");
+                // echopre("location cookie was not set");
 
             }
         }
 
-        echopre("remove location cookie");
-        setcookie('location', null, -1);
-        
+        // echopre("remove location cookie");
+        setcookie('location', '', -1);
+
         $expiry = time() + 30*24*60*60;
-        
-        echopre("set new cookie: $locname, that expires on $expiry");
+
+        // echopre("set new cookie: $locname, that expires on $expiry");
         setcookie('location', $locname, $expiry);
     }
 
