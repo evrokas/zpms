@@ -7,17 +7,17 @@ db=`head -2 $dir/admin.sql | gawk '/DATABASE/  { print $6 }' - | cut -d\; -f1 -`
 #echo user $user
 #echo pass $password
 #echo db $db
-options='--skip-opt --skip-extended-insert'
+options='-y --skip-opt --skip-extended-insert'
 
-ignore_tables=('analytics')
+#ignore_tables=('analytics')
 
 
-for temp in ${ignore_tables[@]}; do full_ignore_tables="$full_ignore_tables --ignore-table=$db.$temp"; done
+#for temp in ${ignore_tables[@]}; do full_ignore_tables="$full_ignore_tables --ignore-table=$db.$temp"; done
 
-echo "IGNORE: " $full_ignore_tables
+#echo "IGNORE: " $full_ignore_tables
 
 #exit
-options="$options $full_ignore_tables"
+#options="$options $full_ignore_tables"
 
 
 
