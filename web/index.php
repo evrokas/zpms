@@ -53,8 +53,7 @@ require_once(__FWDIR__ . '/bootstrap.php');
 
     // $match = $router->matchRoute( $handlers[0] );
     $match = $router->matchRoute( $Request );
-    // echo "<pre>Match route: " . print_r($match, 1) . "</pre>";
-    // prelog('Match route: ' . print_r($match, 1));
+    // echopre("Match route: " . print_r($match, 1));
     
     $_SESSION['route_match'] = $match;
     $_SESSION['request'] = $Request->getQueryRoute();
