@@ -1,0 +1,79 @@
+{% attach_library('qrgenerator-library') %}
+
+
+<center>
+    <h1>
+        QR Generator Application
+    </h1>
+</center>
+<hr>
+
+<div class="genqr">
+    <form action="/apps/genqr" method="post">
+        <!-- <label for="qrtext">Text</label> -->
+        <input type="text" name="qrtext" id="qrtext" placeholder="Enter the text to be encoded">
+        <div class="options">
+            <span>Options</span>
+            <div class="inputraw">
+                <label for="imagetype">Type</label>
+                <select name="imagetype" id="imagetype">
+                    <option value="png">PNG</option>
+                    <option value="svg">SVG</option>
+                </select>
+            </div>
+
+            <div class="inputraw">
+                <label for="imagedpi">DPI</label>
+                <select name="imagedpi" id="imagedpi">
+                    <option value="75">75</option>
+                    <option value="100">100</option>
+                    <option value="150" selected>150</option>
+                    <option value="200">200</option>
+                    <option value="300">300</option>
+                    <option value="600">600</option>
+                </select>
+            </div>
+            
+            <div class="inputraw">
+                <label for="margins">Margin (px)</label>
+                <select name="margins" id="margins">
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3" selected>3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                </select>
+            </div>
+
+            <div class="inputraw">
+                <label for="errorcorrection">Error correction</label>
+                <select name="errorcorrection" id="errorcorrection">
+                    <option value="l">Low (L)</option>
+                    <option value="m">Medium (M)</option>
+                    <option value="q" selected>High (Q)</option>
+                    <option value="h">Highest (H)</option>
+                </select>
+            </div>
+
+        </div>
+
+
+
+        <button type="submit">Generate</button>
+
+    
+    </form>
+
+    <div class="output">
+        {% if(isset($qrimage)): %}
+            <div class="text">
+                Text: <span>{{$qrtext}}</span>
+            </div>
+            <div class="qrimage">
+                <img src="{{$qrimage|cache_asset}}" id="qrimage" alt="Generated QR image">
+            </div>
+        {% endif %}
+    </div>
+
+</div>

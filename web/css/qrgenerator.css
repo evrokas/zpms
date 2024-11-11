@@ -1,0 +1,83 @@
+.genqr {
+    width: 100%;
+    background-color: rgb(192, 225, 255);
+}
+
+.genqr form {
+    /* margin: auto; */
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+
+    label, input {
+        font-size: 1.3rem;
+        padding: 0.5rem;
+    }
+    label {
+        text-align: center;
+    }
+    input {
+        /* font-size: 1.3rem; */
+    }
+    button {
+        margin: 1rem auto;
+        height: 3rem;
+        width: 15rem;
+
+    }
+
+    .options {
+        margin: 1rem;
+        padding: 0.5rem;
+        background-color: aliceblue;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem 0.5rem;
+    }
+    .options span {
+        grid-column-start: span 3;
+        text-align: center;
+        font-size: 1.2rem;
+        font-weight: 600;
+        border-bottom: 1px solid black;
+        /* grid-column-end: spn 2; */
+    }
+    .options .inputraw {
+        /* display: grid; */
+        /* grid-template-rows: subgrid; */
+        display: flex;
+        flex-direction: row;
+        gap: 1rem;
+
+        label, input {
+            font-size: 1rem;
+        }
+        label {
+            text-align: right;
+            width: 9rem;
+        }
+    }
+}
+
+.output {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    background-color: rgb(102, 179, 251);
+    .text {
+        text-align: center;
+        font-size: 1.5rem;
+    }
+    .text span {
+        outline: 1px solid black;
+        border-radius: 5px;
+        padding: 0.5rem;
+        font-weight: 800;
+    }
+
+    .qrimage {
+        /* width: 100%; */
+        padding: 1rem;
+        margin: 1rem auto;
+    }
+}
