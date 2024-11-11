@@ -21,7 +21,7 @@
                     <!-- <label for="patient-date">Ημ/νια & Ώρα ραντεβού</label> -->
                     <!-- <input type="datetime-local" loader="app-loader-{{$index}}" name="appointment-date" id="" value="{{$appointment->getadate()}}"> -->
                     <label for="patient-date">Ημ/νια & Ώρα ραντεβού</label>
-                    <input type="date" loader="app-loader-{{$index}}" name="appointment-date-{{$index}}" id="" role="date-picker" value="{{formatDate($appointment->getadate())}}">
+                    <input type="date" loader="app-loader-{{$index}}" name="appointment-date-{{$index}}" id="" role="date-picker" value="{{formatBrowserDate($appointment->getadate())}}">
                     <!-- <label for="patient-dob">Ημ/νια Γεννήσεως</label> -->
                     <!-- <input type="date" name="patient-dob" id="" role="date-picker" value="{{formatDate($patient->getpdob())}}"> -->
                     </div>
