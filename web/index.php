@@ -661,7 +661,6 @@ require_once(__FWDIR__ . '/bootstrap.php');
 
     // AJAX callback for updating patient info data
     function ajax_update_patient_info($params) {
-        global $Render;
         global $kernel;
 
         SecurityClass::require('patients-edit-patient');
@@ -685,4 +684,32 @@ require_once(__FWDIR__ . '/bootstrap.php');
 
         error_log('\najax update_patient_info: note: ' . $_POST['patients-note']);
         return ("OK");
+    }
+
+
+
+    function app_generate_qr($params) {
+        // echopre(print_r($_SERVER, 1));
+
+        if(($_SERVER['REQUEST_METHOD'] === "GET") || (!strlen($_POST['qrtext']))) {
+            return Renderer::render('genqr.zetem', []);
+
+        } else {
+            // echopre("qrtext: " . $_POST['qrtext']);
+            // POST method
+            shell_exec("rm -f cache/qr-*");
+            $file = tempnam('cache', 'qr-image-');
+            $str = tempnam('cache', 'qr-text-');
+            $filename = array_reverse( explode('/', $file) )[0];
+            // echopre("file: $file <br>filename: $filename <br> str: $str");
+            // $file = 'cache/qr-image';
+            // $str = 'cache/qr-text';
+
+            file_put_contents($str, $_POST['qrtext']);
+            
+            $cmd = "qrencode -t png -r $str -o $file";
+            $s = shell_exec( $cmd );
+            // echopre("shell_exec() output: $s");
+            return Renderer::render('genqr.zetem', ['qrimage' => $filename,'qrtext' => $_POST['qrtext']]);
+        }
     }
