@@ -1,8 +1,0 @@
-* allow uploading files/images in each patient record
-* [WIP] make modules self contained with their own .yaml file etc
-* [WIP] attachments
-* implement 'Operations' menu item
-* make login safer with challenge question
-* add Google ReCaptcha v3
-* [completed] implement remember-me functionality using cookies
-* [completed] use AJAX to periodically save data entered on patient form and appointment forms
