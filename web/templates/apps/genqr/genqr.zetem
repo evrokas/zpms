@@ -17,7 +17,7 @@
             <div class="inputraw">
                 <label for="imagetype">Type</label>
                 <select name="imagetype" id="imagetype">
-                    <option value="png">PNG</option>
+                    <option value="png" selected>PNG</option>
                     <option value="svg">SVG</option>
                 </select>
             </div>
@@ -49,10 +49,10 @@
             <div class="inputraw">
                 <label for="errorcorrection">Error correction</label>
                 <select name="errorcorrection" id="errorcorrection">
-                    <option value="l">Low (L)</option>
-                    <option value="m">Medium (M)</option>
-                    <option value="q" selected>High (Q)</option>
-                    <option value="h">Highest (H)</option>
+                    <option value="L">Low (L)</option>
+                    <option value="M">Medium (M)</option>
+                    <option value="Q" selected>High (Q)</option>
+                    <option value="H">Highest (H)</option>
                 </select>
             </div>
 

@@ -707,7 +707,13 @@ require_once(__FWDIR__ . '/bootstrap.php');
 
             file_put_contents($str, $_POST['qrtext']);
             
-            $cmd = "qrencode -t png -r $str -o $file";
+            $errorcorrection = $_POST['errorcorrection'];
+            $imagedpi = $_POST['imagedpi'];
+            $imagetype = $_POST['imagetype'];
+            $margins = $_POST['margins'];
+
+            $cmd = "qrencode --type=$imagetype --level=$errorcorrection --dpi=$imagedpi --margin=$margins -r $str -o $file";
+            echopre("$cmd");
             $s = shell_exec( $cmd );
             // echopre("shell_exec() output: $s");
             return Renderer::render('genqr.zetem', ['qrimage' => $filename,'qrtext' => $_POST['qrtext']]);
