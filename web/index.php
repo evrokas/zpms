@@ -241,7 +241,8 @@ require_once(__FWDIR__ . '/bootstrap.php');
         // $loc = locationsClass::sgetAll();
         $loc = locationsClassEx::sgetAll( $kernel->getCurrentLanguage() );
 
-        $apprender = array();;
+        $apprender = array();
+        $appdates = array();
         foreach($app_list as $ap) {
             
             if($ap->getdeleted() == null) {
@@ -258,6 +259,7 @@ require_once(__FWDIR__ . '/bootstrap.php');
                                                 ]),
                     'attributes' => new Attributes()
                 ];
+                $appdates[] = [ 'index' => count($apprender), 'date' => $ap->getadate() ];
             }
         }
 
@@ -265,6 +267,7 @@ require_once(__FWDIR__ . '/bootstrap.php');
             'action' => 'edit', 
             'id' => $params['id'], 
             'patient' => $pat,
+            'appdates' => $appdates,
             'appointments' => $apprender
         ]));
     }

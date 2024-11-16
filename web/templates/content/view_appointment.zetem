@@ -11,7 +11,10 @@
             <!-- {% if(isset($index)): %} -->
             <!-- {{$index}} -->
             <!-- {% endif %} -->
-            <span>Ραντεβού&nbsp;<b>{{formatDate($appointment->getadate())}}</b></span>
+             <p id="app-{{$index}}">
+                 
+                 <span>Ραντεβού&nbsp;<b>{{formatDate($appointment->getadate())}}</b></span>
+                </p>
             
         <div id="app-loader-{{$index}}" class="loader0"></div>
 

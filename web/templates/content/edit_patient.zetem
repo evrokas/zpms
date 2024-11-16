@@ -86,10 +86,27 @@
 
     {% if(isset($appointments) && (count($appointments)>0)): %}
 
-        <ul class="patient-appointments-list">
-            {% foreach($appointments as $ap): %}
-                <li data-index="{{$ap['index']}}">{{$ap['markup']}}</li>
-            {% endforeach %}
-        </ul`>
+        <div class="appointment-entries">
+
+            <div class="appointment-dates">
+                {% foreach($appdates as $ad): %}
+                    <li>
+                        <a href="#app-{{$ad['index']}}">
+                            Date {{$ad['index']}}: {{$ad['date'] | date('d-m-Y')}}
+                        </a>
+                    </li>
+                {% endforeach %}
+            </div>            
+
+
+
+            <ul class="patient-appointments-list">
+                {% foreach($appointments as $ap): %}
+                    <li data-index="{{$ap['index']}}">{{$ap['markup']}}</li>
+                {% endforeach %}
+            </ul`>
+        </div>            
+
+
     {% endif %}
 </div>
