@@ -32,7 +32,7 @@
 
         <div class="input-div">
                 <label for="patient-dob">Ημ/νια Γεννήσεως</label>
-                <input type="date" name="patient-dob" id="" role="date-picker" loader="info-loader" value="{{formatBrowserDate($patient->getpdob())}}">
+                <input type="date" name="patient-dob" id="" role="date-picker" loader="info-loader" value="{{$patient->getpdob() | date('Y-m-d') }}">
             <!-- <input type="text" name="patient-dob" id="datepicker" value="{{$patient->getpdob()}}"> -->
         </div>
 
