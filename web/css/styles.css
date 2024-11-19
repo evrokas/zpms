@@ -417,6 +417,8 @@ form .input-div textarea {
 form .input-div .date-picker-input input {
     margin: 0;
     padding: 0;
+    /* visibility: hidden; */
+    /* position: absolute; */
 }
 
 form .input-div label {
@@ -720,77 +722,6 @@ ul.select-box li:hover {
     color: antiquewhite;
 }
 
-
-.input-attachments {
-    position: relative;
-}
-
-.attachments-box {
-    background-color: white;
-    position: absolute;
-    top: 80%;
-    right: 10%;
-    z-index: 99;
-    padding: 0.3rem;
-    display: none;
-}
-
-.input-div.input-attachments.attachments-box-show .attachments-box {
-    display: block;
-}
-
-.input-div.input-attachments.attachments-box-show label i {
-    -webkit-transform: rotate(180deg);
-    transform: rotate(180deg);
-    color: green;
-}
-
-.appointment-entry  .input-div.input-attachments > .attachments-box ul {
-    display: flex;
-    flex-direction: column;
-    gap: 0.2rem;
-    list-style: none;
-    margin: 0.2rem;
-    padding: 0.2rem;
-    border: 2px solid black;
-    border-radius: 5px;;
-
-    -webkit-box-shadow: 10px 10px 5px -6px rgba(0,0,0,0.5);
-    -moz-box-shadow: 10px 10px 5px -6px rgba(0,0,0,0.5);
-    box-shadow: 10px 10px 5px -6px rgba(0,0,0,0.5);
-}
-
-.appointment-entry .input-div.input-attachments > .attachments-box ul li {
-    padding: 0.2rem 0.5rem;
-    display: flex;
-    flex-direction: row;
-    gap: 1rem;
-    cursor: pointer;
-    border-radius: 5px;;
-
-}
-.appointment-entry .input-div.input-attachments > .attachments-box ul li:first-child {
-    justify-content: center;
-}
-
-.appointment-entry .attachments-box ul li:hover {
-    background-color: rgb(199, 147, 249);
-    color: whitesmoke;
-
-}
-
-.appointment-entry .attachments-box ul li .actions {
-    display: flex;
-    gap: 0.5rem;
-}
-
-.appointment-entry .attachments-box ul li .actions i {
-    color: red;
-}
-
-.appointment-entry .attachments-box ul li .actions i:hover {
-    color: white;
-}
 
 .module-copyright {
     text-align: center;
