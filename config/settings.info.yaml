@@ -42,7 +42,7 @@ libraries:
         src: 'css/loader.css'
     foot_script:
       - loader:
-        type:
+        # type:
         src: 'js/loader.js'
     # - head_script:
   # location-places:
@@ -61,6 +61,11 @@ libraries:
     css:
       - qrgen:
         src: 'css/qrgenerator.css'
+  textarea-autoexpand-library:
+    foot_script:
+      - textarea-autoexpand:
+        defer:
+        src: 'js/textarea-autoexapand.js'
 
 
 
