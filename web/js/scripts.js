@@ -115,11 +115,6 @@ function startTimeout() {
     elementTimeout = timeout(document.querySelector('.appointment-entry')[0], 2000);
 }
 
-textAreas = document.querySelectorAll('textarea');
-console.log(textAreas);
-
-
-
 function toggleAttachmentsBox(el) {
     // console.log( el );
     p = el.parentNode;
