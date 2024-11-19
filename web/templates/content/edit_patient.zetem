@@ -1,6 +1,7 @@
 
 {% attach_library('loader-library'); %}
 {% attach_library('datepicker-library'); %}
+{% attach_library('textarea-expandable-library'); %}
 
 
 <div class="edit-patient">    
@@ -58,7 +59,7 @@
 
         <div class="input-div">
             <label for="patient-note">Σημειώσεις</label>
-            <textarea name="patient-note" loader="info-loader" id="" rows="5" placeholder="σημειώσεις">{{$patient->getpnote()}}</textarea>
+            <textarea name="patient-note" loader="info-loader" autoexpand id="" rows="5" placeholder="σημειώσεις">{{$patient->getpnote()}}</textarea>
         </div>
         <div class="buttons">
             <input type="submit" name="submit" value="Αποθήκευση">
@@ -86,13 +87,6 @@
     {% if(isset($appointments) && (count($appointments)>0)): %}
 
         <ul class="patient-appointments-list">
-            <div class="appointments-header">
-                <div class="buttons">
-                    <button type="button" onclick="appointmentsExpandAll()">Expand all</button>
-                    <button type="button" onclick="appointmentsCollapseAll()">Collapse all</button>
-                </div>
-            </div>
-            <!-- {#{{$appointments}}#} -->
             {% foreach($appointments as $ap): %}
                 <li data-index="{{$ap['index']}}">{{$ap['markup']}}</li>
             {% endforeach %}
