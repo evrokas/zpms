@@ -250,7 +250,7 @@ require_once(__FWDIR__ . '/bootstrap.php');
                     'markup' => Renderer::render('view_appointment.zetem', [
                                                     'action' => rel_url('/appointment/' . $ap->getid() . '/edit'),
                                                     'index' => count($apprender)+1,
-                                                    'checked' => (!count($apprender)?"checked":""),
+                                                    'checked' => "checked",/*(!count($apprender)?"checked":""),*/
                                                     'id' => $params['id'], 
                                                     'patient' => $pat,
                                                     'appointment' => $ap,
