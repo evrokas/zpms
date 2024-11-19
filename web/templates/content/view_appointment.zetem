@@ -1,9 +1,12 @@
+{% attach_library('textarea-autoexpand-library') %}
+
+
 <!-- <hr> -->
 <div class="appointment-entry">
-    <input type="checkbox" name="expand-app" id="expand-app-{{$index}}" {{$checked}}>
+    <input type="checkbox" disabled name="expand-app" id="expand-app-{{$index}}" {{$checked}}>
     <label for="expand-app-{{$index}}">
-        <i name="exp-arrow" class='bx bxs-right-arrow'></i>
-        <i name="cmp-arrow" class='bx bxs-down-arrow'></i>
+        <!-- <i name="exp-arrow" class='bx bxs-right-arrow'></i> -->
+        <!-- <i name="cmp-arrow" class='bx bxs-down-arrow'></i> -->
         <!-- <div class="title"> -->
             <!-- {% if(isset($index)): %} -->
             <!-- {{$index}} -->
@@ -39,47 +42,11 @@
                         </select>
                     <!-- {% endif %} -->
                 </div>
-
-                <div class="input-div input-attachments">
-                    <label onclick="toggleAttachmentsBox(this)"" for="attachments">Attachments
-                        <!-- <i name="exp-arrow" class='bx bxs-right-arrow'></i> -->
-                        <i name="cmp-arrow" class='bx bxs-down-arrow'></i>
-                    </label>
-
-                    <!-- <input type="checkbox" name="attachments" id="attachments"> -->
-                    
-                    <div class="attachments-box">
-                        <ul>
-                            <li>New</li>
-                            <li>
-                                <i class="bx bx-notepad"></i>
-                                <div class="attach-name">image.png</div>
-                                <div class="attach-info">Αδεια</div>
-                                <div class="actions">
-                                    <i class="bx bx-edit"></i>
-                                    <i class="bx bx-trash"></i>
-                                    <i class="bx bx-download"></i>
-                                </div>
-                            </li>
-                            <li>
-                                <i class="bx bx-notepad"></i>
-                                <div class="attach-name">image.png</div>
-                                <div class="attach-info">Αδεια</div>
-                                <div class="actions">
-                                    <i class="bx bx-edit"></i>
-                                    <i class="bx bx-trash"></i>
-                                    <i class="bx bx-download"></i>
-                                </div>
-                            </li>
-                        </ul>
-                    </div>
-
-                </div>
             </div>
 
             <div class="input-div input-notes">
                 <label for="appointment-notes">Σημειώσεις</label>
-                <textarea name="appointment-notes" id="" cols="" rows="15" loader="app-loader-{{$index}}">{{$appointment->getanote()}}</textarea>
+                <textarea name="appointment-notes" id="" autoexpand loader="app-loader-{{$index}}">{{$appointment->getanote()}}</textarea>
             </div>
 
             <div class="buttons">
