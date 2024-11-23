@@ -49,7 +49,7 @@
 
             <div class="input-div input-notes">
                 <label for="appointment-notes">Σημειώσεις</label>
-                <textarea name="appointment-notes" id="" autoexpand loader="app-loader-{{$index}}">{{$appointment->getanote()}}</textarea>
+                <textarea name="appointment-notes" id="" autoexpand rows="5" loader="app-loader-{{$index}}">{{$appointment->getanote()}}</textarea>
             </div>
 
             <div class="buttons">
