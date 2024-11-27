@@ -39,7 +39,7 @@
 
         <div class="input-div">
             <label for="patient-amka">ΑΜΚΑ</label>
-            <input type="number" name="patient-amka" loader="info-loader" id=""  value="{{$patient->getpamka()}}">
+            <input type="number" name="patient-amka" loader="info-loader" validator="validator-amka" id=""  value="{{$patient->getpamka()}}">
         </div>
 
         <div class="input-div">

@@ -127,3 +127,29 @@ function copyStr(astr) {
     console.log( astr );
     navigator.clipboard.writeText( astr );
 }
+
+let validatorArray = [];
+
+validatorList = document.querySelectorAll('input[validator]');
+// console.log( validatorList );
+
+function validate_amka(a) {
+    if(a.length == 10)return true; else return false;
+}
+
+
+validatorList.forEach(vi => {
+    console.log(vi);
+
+    validatorArray.push(vi);
+
+    vi.addEventListener('input', (ev) => {
+        
+        
+        console.log(ev);
+        console.log('validator: ' + ev.target.attributes.validator.value)
+        console.log('result: ' + validate_amka(ev.target.value));
+    })
+});
+
+// console.log(validatorArray);
