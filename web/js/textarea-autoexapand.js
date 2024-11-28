@@ -1,6 +1,6 @@
 ta=document.querySelectorAll('textarea[autoexpand]');
 
-console.log(ta);
+// console.log(ta);
 
 
 // add event listener when text changes
