@@ -1,6 +1,6 @@
 ta=document.querySelectorAll('textarea[autoexpand]');
 
-console.log(ta);
+// console.log(ta);
 
 
 // add event listener when text changes
@@ -20,6 +20,6 @@ ta.forEach((t) =>{
 ta.forEach(el =>{
 
     while(el.clientHeight<el.scrollHeight) {
-        el.style.height = el.clientHeight + 10 + 'px';
+        el.style.height = el.clientHeight + 16 + 'px';
     }
 });

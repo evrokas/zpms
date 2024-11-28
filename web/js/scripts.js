@@ -10,10 +10,10 @@
 //         field.parentNode.insertBefore(picker.el, field.nextSibling);
 //     }
 
-console.log('scripts.js is loaded!');
+// console.log('scripts.js is loaded!');
 
 search = document.querySelectorAll('.select2');
-console.log( search );
+// console.log( search );
 
 var xhr = new XMLHttpRequest(),
     box2 = document.getElementById('select-box');
@@ -115,15 +115,90 @@ function startTimeout() {
     elementTimeout = timeout(document.querySelector('.appointment-entry')[0], 2000);
 }
 
-function toggleAttachmentsBox(el) {
-    // console.log( el );
-    p = el.parentNode;
-    p.classList.toggle('attachments-box-show');
-    console.log( p );
-}
 
-
+// copy string to clipoard
 function copyStr(astr) {
     console.log( astr );
     navigator.clipboard.writeText( astr );
 }
+
+
+
+// input validation code
+let validatorArray = [];
+
+// find all elements that have validator attribute
+validatorList = document.querySelectorAll('input[validator]');
+// console.log( validatorList );
+
+const validatorHandlers = [
+    {name: "amka", cb: (value) => {
+        if(value.length == 10) {
+            return 1; 
+        } else {
+            return 0;
+        }
+    }},
+    {name: "telephone", cb: (value) => {
+        if(value.length == 10) {
+            return 1; 
+        } else {
+            return 0;
+        }
+    }},
+    {name: "email", cb: (value) => {
+        if(value.length==0) {
+            return 2;
+        } else
+        if(validateEmail(value)) {
+            // vinp.classList.add('valid');
+            return 1; 
+        } else {
+            // vinp.classList.add('not-valid');
+            return 0;
+        }
+    }}
+];
+
+function validatorUpdateClass(target, result) {
+    target.classList.remove('valid', 'not-valid');
+
+    switch( result ) {
+        case 0: // not-valid
+            // console.log('not-valid: ', target);
+            target.classList.add('not-valid');
+        break;
+        case 1: // valid
+            // console.log('valid: ', target);
+            target.classList.add('valid');
+        break;
+        case 2: // special do not add valid/not-valid class
+            // console.log('special: ', target);
+        break;
+    }
+}
+
+// initialize validator element event and setup initial appearance of elements
+validatorList.forEach(vi => {
+    // console.log(vi);
+    validatorArray.push(vi);
+
+    vi.addEventListener('input', (ev) => {
+        // console.log(ev);
+        // console.log('validator: ' + ev.target.attributes.validator.value)
+
+        handler = validatorHandlers.find(h => h.name === ev.target.attributes.validator.value);
+        // console.log('found validator handler: ', handler);
+
+        res = handler.cb(ev.target.value);
+        // console.log( 'testing for validator handler result', res)
+        validatorUpdateClass(ev.target, res);
+    })
+
+    handler = validatorHandlers.find(h => h.name === vi.attributes.validator.value);
+    // console.log('initial found validator handler: ', handler);
+
+    res = handler.cb(vi.value);
+    // console.log( 'initial testing for validator handler result', res)
+    validatorUpdateClass(vi, res);
+});
