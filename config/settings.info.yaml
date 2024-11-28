@@ -10,7 +10,7 @@ meta:
 favicon: 'assets/favicon.ico'
 
 templates:
-  - '../fw/templates/'
+  - './core/templates/'
   - './templates/'
 css:
   - normalize:
@@ -319,7 +319,7 @@ menu:
 
 modules:
   path:
-    - "/fw/modules/"
+    - "/web/core/modules/"
     - "/web/modules/"
   modules:
     - admin
