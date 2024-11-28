@@ -1,11 +1,11 @@
 routes:
-    updatelocation:
-        title: 'Update location'
-        name: updatelocation_post
-        url: /updatelocation
-        module: location
-        # handler: module
-        method: post          
+  updatelocation:
+      title: 'Update location'
+      name: updatelocation_post
+      url: /updatelocation
+      module: location
+      # handler: module
+      method: post          
 
 libraries:
   location-places:

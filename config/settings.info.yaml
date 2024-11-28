@@ -104,12 +104,12 @@ routes:
     name: homepage
     url: "/"
     handler: homepage
-  admin:
-    title: "Administration"
-    name : admin
-    url: "/admin"
-    handler: admin
-    access: administrator
+#  admin:
+#    title: "Administration"
+#    name : admin
+#    url: "/admin"
+#    handler: admin
+#    access: administrator
   login:
     title: "User login"
     url: "/login"
@@ -322,6 +322,7 @@ modules:
     - "/fw/modules/"
     - "/web/modules/"
   modules:
+    - admin
     - mainnavigation
     - notifications
     - header
