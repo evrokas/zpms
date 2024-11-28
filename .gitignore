@@ -1,4 +1,4 @@
-fw
+web/core
 config/db.php
 config/site.info.yaml
 sql/admin.sql
