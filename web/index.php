@@ -16,8 +16,7 @@ require_once(__FWDIR__ . '/bootstrap.php');
     $router = new RouterClass( $kernel->getConfig('routes') );
     // print_r( $router->getAllRoutes() );
 
-    //$Renderer = new ZETEMTemplate($kernel->getConfig('templates')/*  ['templates/','../fw/templates/'] */, false, true);
-    Renderer::init($kernel->getConfig('templates')/*  ['templates/','../fw/templates/'] */, false,  $kernel->getConfig('enable_comments'));
+    Renderer::init($kernel->getConfig('templates'), false,  $kernel->getConfig('enable_comments'));
 
     $Request = new RequestClass($_SERVER);
     // $handlers = $Request->getQueryRoute();
