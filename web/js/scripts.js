@@ -133,7 +133,7 @@ validatorList = document.querySelectorAll('input[validator]');
 
 const validatorHandlers = [
     {name: "amka", cb: (value) => {
-        if(value.length == 10) {
+        if(value.length == 11) {
             return 1; 
         } else {
             return 0;
