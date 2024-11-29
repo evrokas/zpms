@@ -2,10 +2,10 @@ libraries:
   datepicker-library:
     css:
       - datepicker:
-        src: '@/date-picker/css/date-picker.css'
+        src: '@app/date-picker/css/date-picker.css'
     foot_script:
       - datepicker:
         type: 
         defer:
-        src: '@/date-picker/js/date-picker.js'
+        src: '@app/date-picker/js/date-picker.js'
     
