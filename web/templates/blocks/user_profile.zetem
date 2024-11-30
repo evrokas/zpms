@@ -4,11 +4,12 @@
     <form action="#" method="post">
         <div class="fields">
             <label for="useractive">User account active</label>
-            <input type="checkbox" name="useractive" disabled {{$useractive}}>
+            <input type="checkbox" name="useractive" disabled {{ ($user->getactive()==1)?"checked":"" }}>
         </div>
+        <!-- user active {{$user->getactive()}} -->
         <div class="fields">
             <label for="userexpired">User account expired</label>
-            <input type="checkbox" name="userexpired" disabled {{$userexpired}}>
+            <input type="checkbox" name="userexpired" disabled {{ ($user->getexpired()==1)?"checked":"" }}>
         </div>
         <div class="fields">
             <label for="user_name">Name</label>
