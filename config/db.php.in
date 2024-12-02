@@ -4,9 +4,9 @@ if(!defined('__APPDIR__'))
   define("__APPDIR__", dirname(__DIR__));
 
 if(!defined('__FWDIR__'))
-  define("__FWDIR__", __APPDIR__ . "/fw");
+  define("__FWDIR__", __APPDIR__ . "/web/core");
 
 define('DB_HOST', '');
 define('DB_USER', '');
-define('DB_PASS', '!');
+define('DB_PASS', '');
 define('DB_NAME', '');
