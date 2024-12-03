@@ -9,4 +9,5 @@ web/classes/*.php
 web/cache
 web/files
 backup/
+backups/
 web/modules/datepicker/date-picker
