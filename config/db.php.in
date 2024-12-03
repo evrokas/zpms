@@ -6,7 +6,7 @@ if(!defined('__APPDIR__'))
 if(!defined('__FWDIR__'))
   define("__FWDIR__", __APPDIR__ . "/web/core");
 
-define('DB_HOST', '');
-define('DB_USER', '');
-define('DB_PASS', '');
-define('DB_NAME', '');
+define('DB_HOST', '<<host>>');
+define('DB_USER', '<<user>>');
+define('DB_PASS', '<<pass>>');
+define('DB_NAME', '<<db>>');
