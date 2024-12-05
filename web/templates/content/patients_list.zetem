@@ -72,8 +72,11 @@
                 </td>
 
                 <td data-column="lastapp">
-
-                    {% echo explode(' ', $pat['lastapp'])[0]; %}
+                    {% if($pat['lastapp']): %}
+                        {% echo explode(' ', $pat['lastapp'])[0]; %}
+                    {% else: %}
+                        -
+                    {% endif %}
                 </td>
                 <td class="actions" data-column="actions">
                     
