@@ -62,7 +62,11 @@ body {
     text-align: right;
 }
 
-.wrapper .header {
+.wrapper {
+    overflow-x: clip;
+}
+
+.header {
     display: flex;
     /* height: 4rem; */
     align-items: center;
@@ -83,9 +87,9 @@ body {
     height: 3rem;
 }
 
-.wrapper .title {
+/* .wrapper .title {
     font-size: 26px;
-}
+} */
 
 .region {
     margin: 1rem 0;
@@ -207,41 +211,54 @@ form .buttons {
         width: 100%;
     } */
 
+    form .input-div input[name="patient-name"],
     form .input-div input[name="patient-amka"],
     form .input-div input[name="patient-telephone"],
     form .input-div input[name="patient-email"] {
         position: relative;
-        & ~ img,
-        & ~ i {
+        & ~ .inline-icons {
+            display: flex;
             position: absolute;
             font-size: 1.5rem;
 
             right: 1rem;
-            /* bottom: 0; */
-            /* transform: translateY(-0.27rem); */
-            visibility: hidden;
-            /* margin: auto; */
+
+            img,
+            i.valid,
+            i.not-valid {
+                visibility: hidden;
+                display: none;
+            }
+
+            i.bx-copy:hover {
+                color: red;
+            }
         }
 
         &.valid {
             /* color: green; */
         }
 
-        &.valid ~ img.valid {
+        /* &.valid ~ .inline-icons img.valid {
             visibility: visible;
-        }
-        &.valid ~ i.valid {
+        } */
+
+        &.valid ~ .inline-icons i.valid {
             visibility: visible;
+            display: inline-block;
         }
 
         &.not-valid {
             color: red;
         }
-        &.not-valid ~ img.not-valid {
+
+        /* &.not-valid ~ img.not-valid {
             visibility: visible;
-        }
-        &.not-valid ~ i.not-valid {
+        } */
+
+        &.not-valid ~ .inline-icons i.not-valid {
             visibility: visible;
+            display: inline-block;
         }
     }
 

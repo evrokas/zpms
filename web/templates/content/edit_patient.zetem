@@ -22,6 +22,10 @@
         <div class="input-div">
             <label for="patient-name">Όνομα ασθενή</label>
             <input type="text" name="patient-name" loader="info-loader" id="" value="{{$patient->getpname()}}">
+
+            <div class="inline-icons">
+                <i class="bx bx-copy" onclick="copyStr('{{$patient->getpname()}}')"></i>
+            </div>
         </div>
 <!-- 
         <div class="input-div">
@@ -41,8 +45,13 @@
             <label for="patient-amka">ΑΜΚΑ</label>
             <input type="text" name="patient-amka" loader="info-loader" validator="amka" value="{{$patient->getpamka()}}">
             
-            <i class='valid bx bx-check' style='color:#00ff00'  ></i>
-            <i class='not-valid bx bx-error' style='color:#ff0000'  ></i>
+            <div class="inline-icons">
+                <i class='valid bx bx-check' style='color:#00ff00'  ></i>
+                <i class='not-valid bx bx-error' style='color:#ff0000'  ></i>
+                
+                <i class="bx bx-copy" onclick="copyStr('{{$patient->getpamka()}}')"></i>
+            </div>
+
             <!-- <img class="valid" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAABAklEQVRIS+2TSwrCMBRFU9A1qCj4W4ao+3AD4tSNOHPg3IX4w034RUXdgxDPsxE/mCaonbVwG2iac9+7fQ1UzFcQM18lBs6Ek4jCiLTKcG8xMr33zH6PSKsc0AmqojYmg2eT3wy0ygMbowpaoDoGp/8YhPAZKtrgYvRdB57waAOturwwpITzy4d7jWVpYjnafojPHWjV4UAfCaCJycFMS4F1amJZszbY29vg9g60yrI5RyW0RTWUQiMD35jKI+GuiKRaAcqESLVpJM9WpisnPNpAdvUNKDMuncjlXfk9NvcUPUzkjMy5V+X+BmEnZe4X4Lv7Qd/V3YEvyfJeYuAMMPaIrlEoNRkz68QbAAAAAElFTkSuQmCC"/> -->
             <!-- <img class="not-valid" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAB9ElEQVRIS9WUTyhEURTG3yillIWNhQg1RJkFzYZsiIXCCgtly4JmRbEwZoPYaLJgzcasFDbESikpZRZIMmFjYyFKyZ/fGfe93jx33jyjKW7zzZl37jnfd/68xmfk+PhyzG/8HYEPw/DTbVh1HKayKy/de+oA8nzIzkGVIhXyWpJfM4l4FQhBtAguFGENNkRy9NcCVF8IyQ0oBr1AioqBB1DOw7ObSMYOEIhAMAXiBAeEDN8pph5E8E1nLQCRVC3VSxdtkO0rgVbsHpDqpQvpRntcO0BAZjwKdgnssDNwt8NzO4hyJzv6mQAEpWRcA3mDApDE8fFJLsHHDxmRjErepCp8dzqFtB1AsEbCAIgR1K9GYwmo53VsH1glZtCzgK26N5L8JEsnUr5ToBL35VdTRh1f5mtsaWk7gGWbiE6wQsCwGe0UUKLL2CGwSWy3s4tvApA0E3QAXkAFAfcZBEq4T4ACECT+2C6iE5CARjDL5aRurk4fRc3gm5DCyGlJK0BgD5cb4BGUESzWOroRqTEVYW+B2C7ytswkqwOS83CegWowzsWCptKUJTvEx3ieB7JoWfi73NsFzNnLzGX2sgPPB2XZQQLITprIP3QKBHEceWZ0D2xA4CRFQM1yDjsC5L8nm/NE0hLksvDkcf0vykbBmfP/BT4BuO90GdOYVhMAAAAASUVORK5CYII="/> -->
         </div>
@@ -50,15 +59,25 @@
         <div class="input-div">
             <label for="patient-telephone">Τηλέφωνο</label>
             <input type="text" name="patient-telephone" loader="info-loader" validator="telephone" value="{{$patient->getptel()}}">
-            <i class='valid bx bx-check' style='color:#00ff00'  ></i>
-            <i class='not-valid bx bx-error' style='color:#ff0000'  ></i>
+
+            <div class="inline-icons">
+                <i class='valid bx bx-check' style='color:#00ff00'  ></i>
+                <i class='not-valid bx bx-error' style='color:#ff0000'  ></i>
+                
+                <i class="bx bx-copy" onclick="copyStr('{{$patient->getptel()}}')"></i>
+            </div>
         </div>
 
         <div class="input-div">
             <label for="patient-email">Email</label>
             <input type="text" name="patient-email" loader="info-loader" validator="email" value="{{$patient->getpemail()}}">
-            <i class='valid bx bx-check' style='color:#00ff00'  ></i>
-            <i class='not-valid bx bx-error' style='color:#ff0000'  ></i>
+            
+            <div class="inline-icons">
+                <i class='valid bx bx-check' style='color:#00ff00'  ></i>
+                <i class='not-valid bx bx-error' style='color:#ff0000'  ></i>
+                
+                <i class="bx bx-copy" onclick="copyStr('{{$patient->getpemail()}}')"></i>
+            </div>
         </div>
 
         <div class="input-div">
