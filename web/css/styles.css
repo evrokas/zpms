@@ -211,6 +211,10 @@ form .buttons {
         width: 100%;
     } */
 
+    form .input-div input::placeholder {
+        font-size: 0.8rem;
+    }
+
     form .input-div input[name="patient-name"],
     form .input-div input[name="patient-amka"],
     form .input-div input[name="patient-telephone"],
@@ -218,6 +222,8 @@ form .buttons {
         position: relative;
         & ~ .inline-icons {
             display: flex;
+            align-items: center;
+            gap: 0.5rem;
             position: absolute;
             font-size: 1.5rem;
 
@@ -230,9 +236,18 @@ form .buttons {
                 display: none;
             }
 
-            i.bx-copy:hover {
+            i.bx-copy,
+            i.bx-phone-call {
+                font-size: 1.2rem;
+            }
+            i.bx-copy:hover,
+            i.bx-phone-call:hover {
                 color: red;
             }
+        }
+
+        &:placeholder-shown ~ .inline-icons {
+            display: none;
         }
 
         &.valid {
@@ -261,7 +276,6 @@ form .buttons {
             display: inline-block;
         }
     }
-
 }
 
 

@@ -21,7 +21,7 @@
 
         <div class="input-div">
             <label for="patient-name">Όνομα ασθενή</label>
-            <input type="text" name="patient-name" loader="info-loader" id="" value="{{$patient->getpname()}}">
+            <input type="text" name="patient-name" loader="info-loader" id="" value="{{$patient->getpname()}}" placeholder="όνομα ασθενούς">
 
             <div class="inline-icons">
                 <i class="bx bx-copy" onclick="copyStr('{{$patient->getpname()}}')"></i>
@@ -43,7 +43,7 @@
 
         <div class="input-div">
             <label for="patient-amka">ΑΜΚΑ</label>
-            <input type="text" name="patient-amka" loader="info-loader" validator="amka" value="{{$patient->getpamka()}}">
+            <input type="text" name="patient-amka" loader="info-loader" validator="amka" value="{{$patient->getpamka()}}" placeholder="ΑΜΚΑ ασθενούς">
             
             <div class="inline-icons">
                 <i class='valid bx bx-check' style='color:#00ff00'  ></i>
@@ -58,31 +58,32 @@
 
         <div class="input-div">
             <label for="patient-telephone">Τηλέφωνο</label>
-            <input type="text" name="patient-telephone" loader="info-loader" validator="telephone" value="{{$patient->getptel()}}">
+            <input type="text" name="patient-telephone" loader="info-loader" validator="telephone" value="{{$patient->getptel()}}" placeholder="τηλέφωνο ασθενούς">
 
             <div class="inline-icons">
                 <i class='valid bx bx-check' style='color:#00ff00'  ></i>
                 <i class='not-valid bx bx-error' style='color:#ff0000'  ></i>
                 
+                <a href="tel:{{$patient->getptel()}}"><i class="bx bx-phone-call"></i></a>
                 <i class="bx bx-copy" onclick="copyStr('{{$patient->getptel()}}')"></i>
             </div>
         </div>
 
         <div class="input-div">
             <label for="patient-email">Email</label>
-            <input type="text" name="patient-email" loader="info-loader" validator="email" value="{{$patient->getpemail()}}">
+            <input type="text" name="patient-email" loader="info-loader" validator="email" value="{{$patient->getpemail()}}" placeholder="email ασθενούς">
             
-            <div class="inline-icons">
-                <i class='valid bx bx-check' style='color:#00ff00'  ></i>
-                <i class='not-valid bx bx-error' style='color:#ff0000'  ></i>
-                
-                <i class="bx bx-copy" onclick="copyStr('{{$patient->getpemail()}}')"></i>
-            </div>
+                <div class="inline-icons">
+                    <i class='valid bx bx-check' style='color:#00ff00'  ></i>
+                    <i class='not-valid bx bx-error' style='color:#ff0000'  ></i>
+                    
+                    <i class="bx bx-copy" onclick="copyStr('{{$patient->getpemail()}}')"></i>
+                </div>
         </div>
 
         <div class="input-div">
             <label for="patient-address">Διεύθυνση</label>
-            <input type="text" name="patient-address" loader="info-loader" id=""  value="{{$patient->getpaddr()}}">
+            <input type="text" name="patient-address" loader="info-loader" id=""  value="{{$patient->getpaddr()}}" placeholder="διεύθυνση ασθενούς">
         </div>
 
         <div class="input-div">

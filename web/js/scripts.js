@@ -131,6 +131,10 @@ let validatorArray = [];
 validatorList = document.querySelectorAll('input[validator]');
 // console.log( validatorList );
 
+function validateEmail(email) {
+    return email.length>3;
+}
+
 const validatorHandlers = [
     {name: "amka", cb: (value) => {
         if(value.length == 11) {
