@@ -20,6 +20,7 @@ options='-y --skip-opt --skip-extended-insert'
 #options="$options $full_ignore_tables"
 
 
+#mysqldump -u $user -p$password $db $options $@
+MYSQL_PWD="$password" mysqldump -u $user  $db $options $@
 
-mysqldump -u $user -p$password $db $options $@
 #mysqldump --defaults-extra-file=<(echo $'[client]\npassword='"$password") -u $user $db $@
