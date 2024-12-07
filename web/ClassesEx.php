@@ -146,12 +146,36 @@ class patientsClassEx extends patientsClass {
 
 
         // sql statement extracted from ChatGPT (!!)
-        $sql = "SELECT pat.*, app.adate FROM patients pat 
+        // sorts the patient list in descending order, according to last appointment
+/*         $sql = "SELECT pat.*, app.adate FROM patients pat 
             LEFT JOIN ( 
                 SELECT pguid, adate, ROW_NUMBER() OVER (PARTITION BY pguid ORDER BY adate DESC) 
                     as rn FROM appointments ) app 
                 ON pat.guid = app.pguid AND app.rn = 1 
-                ORDER BY app.adate " . $order; /* DESC";*/
+                ORDER BY app.adate " . $order;  
+ */
+        // previous query, puts all patients with no appointment at end,
+        // so the following improved query, sorts the patient list in descending order, according to
+        // last appointment if it exists, otherwise it uses the date the patient record is created
+        $sql = "SELECT
+                    pat.*,
+                    app.adate,  -- Assuming you have a patient name or other details in Table A
+                    COALESCE(app.adate, pat.cdate) AS order_date,  -- Use appointment_date if available, otherwise cdate
+                    app.adate,
+                    pat.cdate
+                FROM
+                    patients pat
+                LEFT JOIN
+                    (
+                        SELECT
+                            pguid, adate,
+                            ROW_NUMBER() OVER (PARTITION BY pguid ORDER BY adate DESC) AS rn
+                        FROM
+                            appointments
+                    ) app ON pat.guid = app.pguid AND app.rn = 1
+                ORDER BY
+                    order_date " . $order; /* DESC"; */
+
 
         // $sql = "SELECT * FROM patients;";
         $st = $AppDBConnection->getConnection()->prepare( $sql );
