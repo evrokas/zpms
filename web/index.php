@@ -721,3 +721,7 @@ require_once(__FWDIR__ . '/bootstrap.php');
             return Renderer::render('genqr.zetem', ['qrimage' => $filename,'qrtext' => $_POST['qrtext']]);
         }
     }
+
+function pdflib_handler($params) {
+    return Renderer::render('pdflib.zetem', []);
+}

@@ -298,6 +298,9 @@ menu:
         - qrgenerator:
           text: 'Generate QR code'
           url: /apps/genqr
+        - pdflib:
+          text: 'PDF Archive'
+          url: /apps/pdflib
     # - links:
     #   text: 'Test link menu'
     #   submenu:
@@ -335,4 +338,5 @@ modules:
     - content
     - location
     - datepicker
+    - pdflib
   # - topbar

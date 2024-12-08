@@ -1,0 +1,17 @@
+routes:
+  pdflib-module:
+    title: "PDF Library"
+    name: pdflib_handler
+    module: pdflib
+    url: /apps/pdflib
+    # method: get
+
+libraries:
+  pdflib-library:
+   css:
+     - pdflib:
+       src: "@app/css/pdflib.css"
+#    foot_script:
+#      - pdflib:
+#        sec: "@app/js/pdflib.js"
+  
