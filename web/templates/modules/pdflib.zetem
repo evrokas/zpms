@@ -1,0 +1,5 @@
+{% attach_library('pdflib-library') %}
+
+<h1>
+    This is the PDF library
+</h1>
