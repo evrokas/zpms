@@ -722,6 +722,3 @@ require_once(__FWDIR__ . '/bootstrap.php');
         }
     }
 
-function pdflib_handler($params) {
-    return Renderer::render('pdflib.zetem', []);
-}
