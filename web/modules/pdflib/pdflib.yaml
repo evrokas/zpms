@@ -5,13 +5,20 @@ routes:
     module: pdflib
     url: /apps/pdflib
     # method: get
+  pdflib-module-process:
+    title: "PDF library post process"
+    name: pdflib_process
+    # module: pdflib
+    handler: pdflib_process
+    url: /apps/pdflib-process
 
 libraries:
   pdflib-library:
    css:
+    - pdflib:
+      src: "@app/css/pdflib.css"
+   foot_script:
      - pdflib:
-       src: "@app/css/pdflib.css"
-#    foot_script:
-#      - pdflib:
-#        sec: "@app/js/pdflib.js"
-  
+       src: "@app/js/pdflib.js"
+       defer:
+      

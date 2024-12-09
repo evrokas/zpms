@@ -3,3 +3,26 @@
 <h1>
     This is the PDF library
 </h1>
+
+
+<!-- HTML (index.html) -->
+<div class="pdflib-body">
+    <div class="pdflib-container">
+        <h1>Upload PDF File</h1>
+        <form id="uploadForm" action="pdflib-process" method="post" enctype="multipart/form-data">
+            <label for="pdfFile">Choose a PDF file or drag and drop it below:</label>
+            <!-- <input type="file" id="pdfFile" name="pdfFile" accept="application/pdf" required> -->
+            <!-- <div id="dropZone">Drag and drop your PDF file here</div> -->
+            
+            <div id="dropZone">Drag and drop your PDF file here or click to select</div>
+            <input type="file" id="pdfFile" name="pdfFile" accept="application/pdf" hidden>
+            
+            <!-- <button type="submit">Upload</button> -->
+
+
+
+        </form>
+        <div id="result"></div>
+    </div>
+    <!-- <script src="script.js"></script> -->
+</div>
