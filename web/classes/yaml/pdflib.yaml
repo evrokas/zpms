@@ -1,0 +1,10 @@
+- table: pdflib_files
+  class: pdflibFilesClass
+  fields:
+    - guid: char(36) not NULL
+    - cdate: datetime default CURRENT_TIMESTAMP
+    - cuser: char(32) not NULL
+    - file_name: VARCHAR(255)
+    - file_path: TEXT
+    - extracted_data: TEXT
+    - uploaded_at: DATETIME DEFAULT CURRENT_TIMESTAMP
