@@ -180,9 +180,10 @@ function pdflib_process($params) {
         }
     } else {
         $results = ['No file uploaded'];
-        echo '<p>No file uploaded.</p>';
     }
 
+    global $kernel;
+    $kernel->addStatus('notice', $results);
     $output = json_encode($results);
     echo $output;
     exit();
