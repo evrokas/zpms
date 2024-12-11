@@ -6,5 +6,4 @@
     - cuser: char(32) not NULL
     - file_name: VARCHAR(255)
     - file_path: TEXT
-    - extracted_data: TEXT
-    - uploaded_at: DATETIME DEFAULT CURRENT_TIMESTAMP
+    - data: TEXT
