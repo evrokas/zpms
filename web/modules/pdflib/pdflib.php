@@ -110,14 +110,16 @@ function scanPDF($text) {
 }
 function pdflib_process($params) {
 
+    error_log("Passed security check!\n");
     SecurityClass::require('pdflib-access');
+    error_log("Passed security check!\n");
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['pdfFile'])) {
 
         $fileName = basename(basename($_FILES['pdfFile']['name']));
         $filePath = core_get_file_in_lib($fileName, 'pdflib');
         echopre("Filename to create: $fileName @ $filePath");
-
+        
         // File upload handling
         // $uploadsDir = 'uploads/';
         // $fileName = basename($_FILES['pdfFile']['name']);
@@ -149,37 +151,18 @@ function pdflib_process($params) {
                 ]);
 
                 $dbentry->insert();
-                $results = ['Record imported in database'];
+                $results = 'Record imported in database';
 
             } else {
-                $results[] = "Error parsing uploaded file";
+                $results = "Error parsing uploaded file";
             }
-/*
-            $db = new mysqli('localhost', 'username', 'password', 'database_name');
-            if ($db->connect_error) {
-                die('Database connection failed: ' . $db->connect_error);
-            }
-
-            $stmt = $db->prepare('INSERT INTO files (file_name, file_path, extracted_data) VALUES (?, ?, ?)');
-            $stmt->bind_param('sss', $fileName, $filePath, $extractedInfo);
-
-            if ($stmt->execute()) {
-                echo '<p>File uploaded and processed successfully.</p>';
-                echo '<p>Extracted Data: ' . htmlspecialchars($extractedInfo) . '</p>';
-            } else {
-                echo '<p>Failed to save data to the database.</p>';
-            }
-
-            $stmt->close();
-            $db->close();
-*/
         } else {
-            $results = ['File upload failed'];
+            $results = 'File upload failed';
 
             // echo '<p>File upload failed.</p>';
         }
     } else {
-        $results = ['No file uploaded'];
+        $results = 'No file uploaded';
     }
 
     global $kernel;
