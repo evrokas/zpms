@@ -16,3 +16,6 @@ enable_template_cache: 0
 
 # set to path for cachee (used on when 'enable_template_cache' is set to 1)
 template_cache_path: "cache/"
+
+# library path for stored files
+libpath: files/
