@@ -21,11 +21,24 @@ class pdflibModule extends moduleClass {
 
     function run($params = array()) {
 
-        $t = core_get_file_in_lib('test.txt', 'pdflib');
+        SecurityClass::require('pdflib-access');
+
+
+        // $t = core_get_file_in_lib('test.txt', 'pdflib');
         // echopre("test file: $t");
 
-
-        return $this->renderTemplate([]);
+        $pdflist = pdflibFilesClass::sgetAll();
+        
+        $listhtml = [];
+        $ind = 1;
+        foreach($pdflist as $el) {
+            // echopre("pdf element: " . print_r($el, 1));
+            $elinfo = unserialize($el->getdata());
+            $listhtml[] = $l = Renderer::render('pdflist_element.zetem', ['el' => $el, 'index' => $ind, 'info' => $elinfo]);
+            $ind++;
+            // echopre("element : " . print_r($l, 1));
+        }
+        return $this->renderTemplate(['pdflist' => $listhtml]);
     }
 }
 
@@ -96,6 +109,9 @@ function scanPDF($text) {
     return ($results);
 }
 function pdflib_process($params) {
+
+    SecurityClass::require('pdflib-access');
+
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['pdfFile'])) {
 
         $fileName = basename(basename($_FILES['pdfFile']['name']));
@@ -121,6 +137,23 @@ function pdflib_process($params) {
 
             $results = scanPDF($pdfText);
             // Save data to the database
+
+            if(count($results)>0) {
+                $dbentry = new pdflibFilesClass([
+                    'guid' => guid(),
+                    'cdate' => getDBtime(),
+                    'cuser' => $_SESSION['user'],
+                    'file_name' => $fileName,
+                    'file_path' => $filePath,
+                    'data' => serialize( $results ),
+                ]);
+
+                $dbentry->insert();
+                $results = ['Record imported in database'];
+
+            } else {
+                $results[] = "Error parsing uploaded file";
+            }
 /*
             $db = new mysqli('localhost', 'username', 'password', 'database_name');
             if ($db->connect_error) {
@@ -149,6 +182,7 @@ function pdflib_process($params) {
         $results = ['No file uploaded'];
         echo '<p>No file uploaded.</p>';
     }
+
     $output = json_encode($results);
     echo $output;
     exit();

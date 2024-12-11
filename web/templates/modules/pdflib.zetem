@@ -1,11 +1,5 @@
 {% attach_library('pdflib-library') %}
 
-<h1>
-    This is the PDF library
-</h1>
-
-
-<!-- HTML (index.html) -->
 <div class="pdflib-body">
     <div class="pdflib-container">
         <h1>Upload PDF File</h1>
@@ -23,6 +17,18 @@
 
         </form>
         <div id="result"></div>
+
+        <div class="pdf-table-title">
+            PDF File List
+        </div>
+
+        <div class="pdf-table">
+            <!-- <table> -->
+                {% foreach($pdflist as $el): %}
+                    {{ $el }}
+                {% endforeach %}
+            <!-- </table> -->
+        </div>
     </div>
     <!-- <script src="script.js"></script> -->
 </div>

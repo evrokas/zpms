@@ -23,6 +23,7 @@ document.addEventListener("DOMContentLoaded", () => {
             .then((response) => response.text())
             .then((data) => {
                 resultDiv.innerHTML = data;
+                location.reload();
             })
             .catch((error) => {
                 resultDiv.textContent = "An error occurred during upload.";
@@ -61,3 +62,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
     });
 });
+
+
+function openDetails(e) {
+    console.log(e);
+    par = e.parentNode.parentNode.parentNode;
+    elinfo = par.querySelector('.element-info');
+    elinfo.classList.toggle('open')
+    
+    elbook = par.querySelector('.icons i.bx-book');
+    elbook.classList.toggle('open');
+}
