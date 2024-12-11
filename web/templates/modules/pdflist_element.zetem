@@ -1,0 +1,43 @@
+<div class="pdflist-element">
+    <!-- <tr> -->
+        <div class="el-date">
+            {{$el->getcdate()|date('d-m-Y')}}
+            {{$el->getcdate()|date('H:m:i')}}
+
+        </div>
+        <div class="el-filename">
+            {{$el->getfile_name()}}</td>
+        </div>
+        <div class="icons">
+            <label for="open-details-{{$index}}" >
+                <input type="checkbox" name="open-details-{{$index}}" id="open-details-{{$index}}" onchange="openDetails(this)" hidden>
+                <i class="bx bx-book"></i>
+            </label>
+            <!-- <i class="bx bx-book-open"></i> -->
+             
+            <i class="bx bx-pen"></i>
+            <i class="bx bx-download"></i>
+            <i class="bx bx-trash"></i>
+        </div>
+
+        <div class="element-info">
+            <div class="el-seriesno">
+                {{ $info['series']}} - {{ $info['number'] }}
+            </div>
+            <div class="el-type">
+                {{ $info['type'] }}
+            </div>
+            <div class="el-mark">
+                ΜΑΡΚ: {{ $info['mark'] }}
+            </div>
+
+            <div class="el-name">
+                {{ $info['name'] }}
+            </div>
+            <div class="el-amount">
+                {{ $info['amount'] }}<i class="bx bx-euro"></i>
+            </div>
+        </div>
+
+    <!-- </tr> -->
+</div>
