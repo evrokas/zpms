@@ -110,9 +110,7 @@ function scanPDF($text) {
 }
 function pdflib_process($params) {
 
-    error_log("Passed security check!\n");
     SecurityClass::require('pdflib-access');
-    error_log("Passed security check!\n");
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['pdfFile'])) {
 
