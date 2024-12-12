@@ -64,6 +64,10 @@ function pdf2text($filename) {
     return $content ? $content : 'Error processing PDF';
 }
 
+function hashFile($filename) {
+    $hash = hash_file('sha256', $filename);
+    return $hash;
+}
 
 function scanPDF($text) {
     $patterns = [
@@ -118,46 +122,40 @@ function pdflib_process($params) {
         $filePath = core_get_file_in_lib($fileName, 'pdflib');
         echopre("Filename to create: $fileName @ $filePath");
         
-        // File upload handling
-        // $uploadsDir = 'uploads/';
-        // $fileName = basename($_FILES['pdfFile']['name']);
-        // $filePath = $uploadsDir . $fileName;
-
-        // if (!file_exists($uploadsDir)) {
-            // mkdir($uploadsDir, 0777, true);
-        // }
-
-        if (move_uploaded_file($_FILES['pdfFile']['tmp_name'], $filePath)) {
-            // Extract text from PDF
-            $pdfText = pdf2text($filePath);
-            // echopre("Extracted text: $pdfText");
-
-            // Extract specific info (modify as needed)
-            $extractedInfo = substr($pdfText, 0, 200); // Example: first 200 characters
-
-            $results = scanPDF($pdfText);
-            // Save data to the database
-
-            if(count($results)>0) {
-                $dbentry = new pdflibFilesClass([
-                    'guid' => guid(),
-                    'cdate' => getDBtime(),
-                    'cuser' => $_SESSION['user'],
-                    'file_name' => $fileName,
-                    'file_path' => $filePath,
-                    'data' => serialize( $results ),
-                ]);
-
-                $dbentry->insert();
-                $results = 'Record imported in database';
-
-            } else {
-                $results = "Error parsing uploaded file";
-            }
+        if(file_exists($filePath)) {
+            $results = "File name already exists. Please rename and try again (File: $fileName)";
         } else {
-            $results = 'File upload failed';
+            if (move_uploaded_file($_FILES['pdfFile']['tmp_name'], $filePath)) {
+                
+                // Extract text from PDF
+                $pdfText = pdf2text($filePath);
+                // echopre("Extracted text: $pdfText");
 
-            // echo '<p>File upload failed.</p>';
+                $results = scanPDF($pdfText);
+                
+                // Save data to the database, if record found
+                if(count($results)>0) {
+                    $dbentry = new pdflibFilesClass([
+                        'guid' => guid(),
+                        'cdate' => getDBtime(),
+                        'cuser' => $_SESSION['user'],
+                        'file_name' => $fileName,
+                        'file_path' => $filePath,
+                        'file_hash' => hashFile($filePath),
+                        'data' => serialize( $results ),
+                    ]);
+
+                    $dbentry->insert();
+                    $results = 'Record imported in database';
+
+                } else {
+                    $results = "Error parsing uploaded file";
+                }
+            } else {
+                $results = 'File upload failed';
+
+                // echo '<p>File upload failed.</p>';
+            }
         }
     } else {
         $results = 'No file uploaded';
@@ -168,4 +166,67 @@ function pdflib_process($params) {
     $output = json_encode($results);
     echo $output;
     exit();
+}
+
+
+function pdflib_action_delete($params) {
+    global $kernel;
+
+
+    SecurityClass::require('pdflib-access');
+
+    if(isset($params['id'])) {
+        $rec = pdflibFilesClass::sgetById($params['id']);
+        if($rec) {
+            $rec->delete();
+            if(file_exists($rec->getfile_path())) {
+                $kernel->addStatus('notice', 'file ' . $rec->getfile_name() . ' was deleted succesfully');
+                unlink($rec->getfile_path());
+            } else {
+                $kernel->addStatus('error', 'file `' . $rec->getfile_name() . '` was not found in the library');
+            }
+        } else {
+            $kernel->addStatus('error', "pdflib_action_delete: entry with id = " . $params['id'] . "is not valid");
+        }
+
+    } else {
+        $kernel->addStatus('error', 'pdflib_action_delete: `id` argument is missing');
+    }
+
+    // return to page
+    header('location: ' . rel_url('/apps/pdflib'));
+    exit;
+}
+
+function pdflib_action_download($params) {
+    global $kernel;
+
+    SecurityClass::require('pdflib-access');
+
+    if(isset($params['id'])) {
+        $rec = pdflibFilesClass::sgetById($params['id']);
+        if($rec) {
+            if(file_exists($rec->getfile_path())) {
+                header('Content-Description: File Transfer');
+                header('Content-Type: application/octet-stream');
+                header('Content-Disposition: attachment; filename=' . $rec->getfile_name());
+                header('Expires: 0');
+                header('Cache-Control: must-revalidate');
+                header('Pragma: public');         
+                header('Content-Length: ' . filesize( $rec->getfile_path() ) );
+                readfile($rec->getfile_path());          
+    
+                $kernel->addStatus('notice', 'file `'.$rec->getfile_name() . '` was downloaded succesfully');
+
+            } else $kernel->addStatus('error', "file `' . $rec->getfile_name() . '` was not found in the library");
+
+        } else $kernel->addStatus('error', "pdflib_action_download: entry with id = " . $params['id'] . " is not valid");
+
+    } else
+        $kernel->addStatus('error', 'pdflib_action_download: `id` argument is missing');
+
+    // return to page
+    // header('location: ' . rel_url('/apps/pdflib'));
+    exit;
+    
 }

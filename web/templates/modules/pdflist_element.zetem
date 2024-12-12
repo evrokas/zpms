@@ -16,8 +16,8 @@
             <!-- <i class="bx bx-book-open"></i> -->
              
             <i class="bx bx-pen"></i>
-            <i class="bx bx-download"></i>
-            <i class="bx bx-trash"></i>
+            <a href="{{ rel_url('/apps/pdflib/'.$el->getid().'/download')}}"><i class="bx bx-download"></i></a>
+            <a href="{{ rel_url('/apps/pdflib/'.$el->getid().'/delete')}}"><i class="bx bx-trash"></i></a>
         </div>
 
         <div class="element-info">

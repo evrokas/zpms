@@ -4,7 +4,21 @@ routes:
     name: pdflib_handler
     module: pdflib
     url: /apps/pdflib
-    # method: get
+    method: get
+  pdflib-actions-delete:
+    title: "PDF Library action delete"
+    name: pdflib_action_delete_handler
+    handler: pdflib_action_delete
+    # module: pdflib
+    url: "/apps/pdflib/{id}/delete"
+    method: get
+  pdflib-actions-download:
+    title: "PDF Library action download"
+    name: pdflib_action_download_handler
+    handler: pdflib_action_download
+    # module: pdflib
+    url: "/apps/pdflib/{id}/download"
+    method: get
   pdflib-module-process:
     title: "PDF library post process"
     name: pdflib_process
