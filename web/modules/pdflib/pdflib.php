@@ -21,7 +21,7 @@ class pdflibModule extends moduleClass {
 
     function run($params = array()) {
 
-        SecurityClass::require('pdflib-access');
+        if(($ret=SecurityClass::require('pdflib-access')))return $ret;
 
 
         // $t = core_get_file_in_lib('test.txt', 'pdflib');
@@ -201,7 +201,12 @@ function pdflib_action_delete($params) {
 function pdflib_action_download($params) {
     global $kernel;
 
-    SecurityClass::require('pdflib-access');
+    $ret = SecurityClass::require('pdflib-access');
+    if(!empty($ret)) {
+        echo $ret;
+        exit;
+    }
+    //  $ret;
 
     if(isset($params['id'])) {
         $rec = pdflibFilesClass::sgetById($params['id']);
