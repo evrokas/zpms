@@ -1,0 +1,17 @@
+- table: procedure_info
+  class: procedureInfoClass
+  fields:
+    - guid: char(36) not null
+    - cdate: datetime default current_timestamp
+    - cuser: char(32) not null
+    - field_name: varchar(128)
+    - field_category: char(32)
+    - deleted: datetime default null
+
+
+# procedure_info holds information about
+# operation diagnosis
+# operation procedure
+# clinic
+# category
+# this 'kind' of information is stored in the field 'field_category'
