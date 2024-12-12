@@ -73,3 +73,12 @@ function openDetails(e) {
     elbook = par.querySelector('.icons i.bx-book');
     elbook.classList.toggle('open');
 }
+
+function downloadFile(url) {
+    console.log(url);
+    setTimeout(function () {    
+        console.log('redirect to ' + url.dataset.url);
+        window.location.href = url.dataset.url; 
+    },3000); // 5 seconds
+    
+}

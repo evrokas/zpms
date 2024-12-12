@@ -207,6 +207,7 @@ function pdflib_action_download($params) {
         $rec = pdflibFilesClass::sgetById($params['id']);
         if($rec) {
             if(file_exists($rec->getfile_path())) {
+                header('refresh:3;url=' . rel_url('/apps/pdflib'));
                 header('Content-Description: File Transfer');
                 header('Content-Type: application/octet-stream');
                 header('Content-Disposition: attachment; filename=' . $rec->getfile_name());
@@ -226,7 +227,6 @@ function pdflib_action_download($params) {
         $kernel->addStatus('error', 'pdflib_action_download: `id` argument is missing');
 
     // return to page
-    // header('location: ' . rel_url('/apps/pdflib'));
     exit;
     
 }
