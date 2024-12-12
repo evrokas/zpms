@@ -67,9 +67,16 @@ require_once(__FWDIR__ . '/bootstrap.php');
 
 
     function homepage($params) {
-        if(!isset($_SESSION['location']))
-            $locname = $ln[1];
-        else $locname = $_SESSION['location'];
+
+        if(!SecurityClass::userLoggedIn()) {
+            return Renderer::render("homepage-nologin.zetem", []);
+        }
+
+        // user is logged, so show a different page
+        if(!isset($_SESSION['location'])) {
+            // $locname = $ln[1];
+
+        } else $locname = $_SESSION['location'];
 
 
         return Renderer::render("homepage.zetem", ['location' => $locname]);
