@@ -1,0 +1,16 @@
+<h2 style="text-align: center; margin: 2rem;;">Welcome to the Patient Management System</h2>
+
+<p style="text-align: center; margin: 3rem 2rem;">
+
+    This is property of <b>Evangelos M. Rokas, MD</b> and should only
+    be accessed by the owner.
+</p>
+
+<hr>
+
+<p style="text-align: center; margin: 2rem">
+    Please  <a href="{{rel_url('/login')}}">login</a>
+    if you have the necessery credentials, or contact
+    owner for more information.
+</p>
+
