@@ -6,4 +6,5 @@
     - cuser: char(32) not NULL
     - file_name: VARCHAR(255)
     - file_path: TEXT
+    - file_hash: char(64) not NULL
     - data: TEXT
