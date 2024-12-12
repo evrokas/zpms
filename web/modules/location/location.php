@@ -21,6 +21,8 @@ class locationModule extends moduleClass {
     function render($params = array()) {
         global $kernel;
 
+        if(!SecurityClass::userLoggedIn())return "";
+
         $loc = locationsClassEx::sgetAll( $kernel->getCurrentLanguage() );
         $ln = array();
         foreach($loc as $l)
@@ -38,6 +40,8 @@ class locationModule extends moduleClass {
     }
 
     function run($params = array()) {
+        if(!SecurityClass::userLoggedIn())return "";
+
         if(isset($_POST['location'])) {
             prelog("Location module::run(): location:". $_POST['location'] );
             $_SESSION['location'] = $_POST['location'];
