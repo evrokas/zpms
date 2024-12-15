@@ -1,12 +1,26 @@
-- table: procedure_info
+table: 
+  name: procedure_info
   class: procedureInfoClass
   fields:
-    - guid: char(36) not null
-    - cdate: datetime default current_timestamp
-    - cuser: char(32) not null
-    - field_name: varchar(128)
-    - field_category: char(32)
-    - deleted: datetime default null
+    - name: "guid"
+      type: "@guid"
+
+    - name: "cdate"
+      type: "@cdate"
+
+    - name: "cuser"
+      type: "@cuser"
+
+    - name: "field_name"
+      type: varchar(128)
+
+    - name: "field_category"
+      type: char(32)
+
+    - name: "deleted"
+      type: datetime
+      db_default: null
+
 
 
 # procedure_info holds information about

@@ -1,14 +1,31 @@
-- table: appointments
+table: 
+  name: appointments
   class: appointmentsClass
   fields:
-    - guid: char(36) not null
-    - cdate: datetime default current_timestamp
-    - cuser: char(32) not null
-    - pguid: char(36) not null
-    - adate: datetime default current_timestamp
-    - aplace: text
-    - anote: text
-    - deleted: datetime default null
+    - name: "guid"
+      type:  "@guid"
+
+    - name: "cdate"
+      type: "@cdate"
+
+    - name: "cuser"
+      type: "@cuser"
+
+    - name: "pguid"
+      type: "@guid"
+
+    - name: "adate"
+      type: datetime default current_timestamp
+
+    - name: "aplace"
+      type: text
+
+    - name: "anote"
+      type: text
+
+    - name: "deleted"
+      type: datetime
+      db_default: null
 
 # - guid appointment guid
 # - cdate appointment creation date

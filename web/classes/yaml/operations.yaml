@@ -1,18 +1,48 @@
-- table: operations
+table:
+  name: operations
   class: operationsClass
   fields:
-    - guid: char(36) not null
-    - cdate: datetime default current_timestamp
-    - cuser: char(32) not null
-    - opdate: datetime default current_timestamp
-    - pguid: char(36) not null
-    - pname: varchar(64) not null
-    - pdob: datetime
-    - opdiagnosis: text
-    - opprocedure: text
-    - clinic: text
-    - category: text
-    - surgeon1: varchar(64)
-    - surgeon2: varchar(64)
-    - anesthesiology: varchar(64)
+    - name: "guid"
+      type: "@guid"
+
+    - name: "cdate"
+      type: "@cdate"
+
+    - name: "cuser"
+      type: "@cuser"
+
+    - name: "opdate"
+      type: datetime
+      db_default: current_timestamp
+
+    - name: "pguid"
+      type: "@guid"
+
+    - name: "pname"
+      type: varchar(64)
+      db_required: true
+
+    - name: "pdob"
+      type: datetime
+
+    - name: "opdiagnosis"
+      type: text
+
+    - name: "opprocedure"
+      type: text
+
+    - name: "clinic"
+      type: text
+
+    - name: "category"
+      type: text
+
+    - name: "surgeon1"
+      type: varchar(64)
+
+    - name: "surgeon2"
+      type: varchar(64)
+
+    - name: "anesthesiology"
+      type: varchar(64)
     

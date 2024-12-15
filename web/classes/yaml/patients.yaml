@@ -1,16 +1,43 @@
-- table: patients
+table:
+  name: patients
   class: patientsClass
   fields:
-    - guid: char(36) not null
-    - cdate: datetime default current_timestamp
-    - cuser: char(32) not null
-    - pname: varchar(64) not null
-    - pdob: datetime
-    - pamka: char(11)
-    - ptel: varchar(32)
-    - paddr: varchar(256)
-    - pemail: varchar(128)
-    - firstapp: datetime
-    - pnote: text
-    - deleted: datetime default null
+    - name: "guid"
+      type: "@guid"
+
+    - name: "cdate"
+      type: "@cdate"
+
+    - name: "cuser"
+      type: "@cuser"
+
+    - name: "pname"
+      type: varchar(64)
+      reuired: true
+
+    - name: "pdob"
+      type: datetime
+
+    - name: "pamka"
+      type: char(11)
+
+    - name: "ptel"
+      type: varchar(32)
+
+    - name: "paddr"
+      type: varchar(256)
+
+    - name: "pemail"
+      type: varchar(128)
+
+    - name: "firstapp"
+      type: datetime
+
+    - name: "pnote"
+      type: text
+
+    - name: "deleted"
+      type: datetime
+      db_default: null
+
   

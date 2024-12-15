@@ -1,9 +1,22 @@
-- table: doctors
+table: 
+  name: doctors
   class: doctorsClass
   fields:
-    - guid: char(36) not null
-    - cdate: datetime default current_timestamp
-    - cuser: char(32) not null
-    - doctor_name: varchar(64)
-    - doctor_specialty: varchar(64)
-    - deleted: datetime default null
+    - name: "guid"
+      type: "@guid" 
+      
+    - name: "cdate"
+      type: "@cdate"
+
+    - name: "cuser"
+      type: "@cuser"
+
+    - name: "doctor_name"
+      type: varchar(64)
+
+    - name: "doctor_specialty"
+      type: varchar(64)
+
+    - name: "deleted"
+      type: datetime
+      db_default: null

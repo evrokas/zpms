@@ -1,10 +1,26 @@
-- table: pdflib_files
+table:
+  name: pdflib_files
   class: pdflibFilesClass
   fields:
-    - guid: char(36) not NULL
-    - cdate: datetime default CURRENT_TIMESTAMP
-    - cuser: char(32) not NULL
-    - file_name: VARCHAR(255)
-    - file_path: TEXT
-    - file_hash: char(64) not NULL
-    - data: TEXT
+    - name: "guid"
+      type: "@guid"
+
+    - name: "cdate"
+      type: "@cdate"
+
+    - name: "cuser"
+      type: "@cuser"
+
+    - name: "file_name"
+      type: VARCHAR(255)
+
+    - name: "file_path"
+      type: TEXT
+
+    - name: "file_hash"
+      type: char(64)
+      db_required: true
+
+    - name: "data"
+      type: TEXT
+
