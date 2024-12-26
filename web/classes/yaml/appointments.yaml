@@ -15,7 +15,8 @@ table:
       type: "@guid"
 
     - name: "adate"
-      type: datetime default current_timestamp
+      type: datetime
+      db_default: current_timestamp
 
     - name: "aplace"
       type: text
