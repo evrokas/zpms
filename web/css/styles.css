@@ -51,19 +51,19 @@ body {
 .git-hash {
     /* top: 0px; */
     right: 8px;
-    position: absolute;
-    /* margin: -16px 8px; */
-    /* margin-top: 12px; */
-    /* color: white; */
-    /* top: -16px; */
+    /* position: absolute; */
+    
     color: gray;
     font-size: 12px;
-    /* padding: 8px 8px;    */
     text-align: right;
+    float: right;
 }
 
 .wrapper {
-    overflow-x: clip;
+    /* overflow-x: clip; */
+    max-width: 996px;
+    margin: auto;
+  
 }
 
 .header {
