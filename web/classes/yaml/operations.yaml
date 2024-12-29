@@ -1,6 +1,10 @@
 table:
   name: operations
   class: operationsClass
+
+  method: "post"
+  action: "submit.php"
+
   fields:
     - name: "guid"
       type: "@guid"
@@ -33,6 +37,15 @@ table:
 
     - name: "clinic"
       type: text
+
+      form_type: "select"
+      label: "Κλινική"
+      options:
+       - "Ιατρικό Περιστερίου"
+       - "Metropolitan"
+       - "Euroclinic"
+       - "Βιοκλινική Αθηνών"
+      form_default: "Ιατρικό Περιστερίου"
 
     - name: "category"
       type: text
