@@ -1,27 +1,28 @@
-table: 
+---
+table:
   name: procedure_info
   class: procedureInfoClass
+
   fields:
-    - name: "guid"
-      type: "@guid"
+  - name: guid
+    type: '@guid'
 
-    - name: "cdate"
-      type: "@cdate"
+  - name: cdate
+    type: '@cdate'
 
-    - name: "cuser"
-      type: "@cuser"
+  - name: cuser
+    type: '@cuser'
 
-    - name: "field_name"
-      type: varchar(128)
+  - name: field_name
+    type: varchar(128)
 
-    - name: "field_category"
-      type: char(32)
+  - name: field_category
+    type: char(32)
 
-    - name: "deleted"
-      type: datetime
-      db_default: null
-
-
+  - name: deleted
+    type: datetime
+    default: null
+...
 
 # procedure_info holds information about
 # operation diagnosis

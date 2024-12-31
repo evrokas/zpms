@@ -1,61 +1,117 @@
+---
 table:
   name: operations
   class: operationsClass
 
-  method: "post"
-  action: "submit.php"
-
   fields:
-    - name: "guid"
-      type: "@guid"
+    - name: guid
+      type: '@guid'
 
-    - name: "cdate"
-      type: "@cdate"
+    - name: cdate
+      type: '@cdate'
 
-    - name: "cuser"
-      type: "@cuser"
+    - name: cuser
+      type: '@cuser'
 
-    - name: "opdate"
+    - name: opdate
       type: datetime
-      db_default: current_timestamp
+      default: current_timestamp
 
-    - name: "pguid"
-      type: "@guid"
+    - name: pguid
+      type: '@guid'
 
-    - name: "pname"
+    - name: pname
       type: varchar(64)
-      db_required: true
+      required: true
 
-    - name: "pdob"
+    - name: pdob
       type: datetime
 
-    - name: "opdiagnosis"
+    - name: opdiagnosis
       type: text
 
-    - name: "opprocedure"
+    - name: opprocedure
       type: text
 
-    - name: "clinic"
+    - name: clinic
       type: text
 
-      form_type: "select"
-      label: "Κλινική"
+    - name: category
+      type: text
+
+    - name: surgeon1
+      type: varchar(64)
+
+    - name: surgeon2
+      type: varchar(64)
+
+    - name: anesthesiology
+      type: varchar(64)
+
+
+
+form:
+  name: operations
+  method: "post"
+  action: "#"
+  inputs:
+    - name: opdate
+      label: "Operation date"
+      type: date
+
+    - name: pguid
+      label: "Patient GUID"
+      type: text
+
+    - name: pname
+      label: "Name"
+      type: text
+      required: true
+
+    - name: pdob
+      label: "Date of birth"
+      type: datetime
+
+    - name: opdiagnosis
+      label: "diagnosis"
+      type: text
+
+    - name: opprocedure
+      label: "Procedure"
+      type: text
+
+    - name: clinic
+      label: "Clinic"
+      type: select
       options:
-       - "Ιατρικό Περιστερίου"
-       - "Metropolitan"
-       - "Euroclinic"
-       - "Βιοκλινική Αθηνών"
-      form_default: "Ιατρικό Περιστερίου"
+        iatrikoperisteriou: "Iatriko Peristeriou"
+        metropolitanhostpial: "Metropolitan Hospital"
+        bioclinic: "Bioclinic Athens"
 
-    - name: "category"
+    - name: category
+      label: "Procedure category"
       type: text
 
-    - name: "surgeon1"
-      type: varchar(64)
+    - name: surgeon1
+      label: "Main surgeon"
+      type: text
 
-    - name: "surgeon2"
-      type: varchar(64)
+    - name: surgeon2
+      label: "Assistant surgeon"
+      type: text
 
-    - name: "anesthesiology"
-      type: varchar(64)
+    - name: anesthesiology
+      label: "Anesthesiologist"
+      type: text
+
+  buttons:
+    - type: "submit"
+      label: "Submit"
     
+    - type: "reset"
+      label: "Reset"
+
+    - type: "button"
+      label: "Cancel"
+      action: "window.location.href='index.php';"
+...

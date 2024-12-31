@@ -1,43 +1,43 @@
+---
 table:
   name: patients
   class: patientsClass
+
   fields:
-    - name: "guid"
-      type: "@guid"
+  - name: guid
+    type: '@guid'
 
-    - name: "cdate"
-      type: "@cdate"
+  - name: cdate
+    type: '@cdate'
 
-    - name: "cuser"
-      type: "@cuser"
+  - name: cuser
+    type: '@cuser'
 
-    - name: "pname"
-      type: varchar(64)
-      reuired: true
+  - name: pname
+    type: varchar(64)
 
-    - name: "pdob"
-      type: datetime
+  - name: pdob
+    type: datetime
 
-    - name: "pamka"
-      type: char(11)
+  - name: pamka
+    type: char(11)
 
-    - name: "ptel"
-      type: varchar(32)
+  - name: ptel
+    type: varchar(32)
 
-    - name: "paddr"
-      type: varchar(256)
+  - name: paddr
+    type: varchar(256)
 
-    - name: "pemail"
-      type: varchar(128)
+  - name: pemail
+    type: varchar(128)
 
-    - name: "firstapp"
-      type: datetime
+  - name: firstapp
+    type: datetime
 
-    - name: "pnote"
-      type: text
+  - name: pnote
+    type: text
 
-    - name: "deleted"
-      type: datetime
-      db_default: null
-
-  
+  - name: deleted
+    type: datetime
+    default: null
+...

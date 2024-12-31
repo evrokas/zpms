@@ -1,22 +1,24 @@
-table: 
+---
+table:
   name: doctors
   class: doctorsClass
   fields:
-    - name: "guid"
-      type: "@guid" 
-      
-    - name: "cdate"
-      type: "@cdate"
+  - name: guid
+    type: '@guid'
 
-    - name: "cuser"
-      type: "@cuser"
+  - name: cdate
+    type: '@cdate'
 
-    - name: "doctor_name"
-      type: varchar(64)
+  - name: cuser
+    type: '@cuser'
 
-    - name: "doctor_specialty"
-      type: varchar(64)
+  - name: doctor_name
+    type: varchar(64)
 
-    - name: "deleted"
-      type: datetime
-      db_default: null
+  - name: doctor_specialty
+    type: varchar(64)
+
+  - name: deleted
+    type: datetime
+    default: null
+...

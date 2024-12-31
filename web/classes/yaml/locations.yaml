@@ -1,27 +1,28 @@
+---
 table:
   name: locations
   class: locationsClass
 #  extends: feedClass
   extention: __APPDIR__ . '/web/locationsClassEx.php'
   fields:
-    - name: "guid"
-      type: "@guid"
+  - name: guid
+    type: '@guid'
 
-    - name: "lang"
-      type: char(8)
+  - name: lang
+    type: char(8)
 
-    - name: "cdate"
-      type: "@cdate"
+  - name: cdate
+    type: '@cdate'
 
-    - name: "cuser"
-      type: "@cuser"
+  - name: cuser
+    type: '@cuser'
 
-    - name: "name"
-      type: varchar(64)
+  - name: name
+    type: varchar(64)
 
-    - name: "machinename"
-      type: varchar(64)
+  - name: machinename
+    type: varchar(64)
 
-    - name: "address"
-      type: text
-
+  - name: address
+    type: text
+...
