@@ -6,6 +6,8 @@ sql/admin.sql
 sql/backup
 web/classes/sql/*
 web/classes/*.php
+web/classes/yaml/new/*
+web/classes/yaml/old/*
 web/cache
 web/files
 backup/
