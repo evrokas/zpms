@@ -838,3 +838,16 @@ ul.select-box li:hover {
     background-color: black;
     color: white;
 }
+
+
+form.webform {
+    .form_elements {
+        display: grid;
+        grid-template-columns: auto 1fr;
+    }
+    
+    .form_controls {
+        display: flex;
+        justify-content: space-around;
+    }
+}
