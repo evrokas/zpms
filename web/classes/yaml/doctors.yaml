@@ -2,6 +2,7 @@
 table:
   name: doctors
   class: doctorsClass
+
   fields:
   - name: guid
     type: '@guid'
@@ -21,4 +22,28 @@ table:
   - name: deleted
     type: datetime
     default: null
+
+form:
+  name: doctors
+  method: "post"
+  action: "#"
+  inputs:
+    - name: doc_name
+      label: "Doctor name"
+      type: text
+    
+    - name: doc_specialty
+      label: "Doctor specialty"
+      type: text
+  
+  buttons:
+    - type: "submit"
+      label: "Submit"
+
+    - type: "reset"
+      label: "Reset"
+
+    - type: "button"
+      label: "Cancel"
+      action: "window.location.href='index.php';"
 ...

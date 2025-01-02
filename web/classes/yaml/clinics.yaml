@@ -1,0 +1,40 @@
+table:
+  name: clinics
+  class: clinicsClass
+
+  fields:
+    - name: guid
+      type: "@guid"
+
+    - name: cdate
+      type: "@cdate"
+
+    - name: cuser
+      type: "@cuser"
+
+    - name: clinic_name
+      type: varchar(128)
+
+    - name: deleted
+      type: "@deleted"
+
+form:
+  name: clinics
+  method: "post"
+  action: "#"
+
+  inputs:
+    - name: clinic_name
+      label: "Clinic name"
+      type: text
+
+  buttons:
+    - type: "submit"
+      label: "Submit"
+
+    - type: "reset"
+      label: "Reset"
+
+    - type: "button"
+      label: "Cancel"
+      action: "window.location.href='index.php';"
