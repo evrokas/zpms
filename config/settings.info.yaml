@@ -12,6 +12,7 @@ favicon: 'assets/favicon.ico'
 templates:
   - './core/templates/'
   - './templates/'
+
 css:
   - normalize:
     src: 'css/normalize.css'
@@ -241,6 +242,25 @@ routes:
     url: "/apps/genqr"
     handler: app_generate_qr
     method: post
+  clinics_form:
+    title: "Edit clinics form"
+    url: "/apps/edit_clinics"
+    handler: clinics_edit
+    method: get
+  webforms_post:
+    title: "Process Webform"
+    url: "/webform/processform/{guid}"
+    handler: formsClass::processform
+    method: post
+  webforms_view:
+    title: "View Webform"
+    url: "/webform/viewform/{formname}"
+    handler: formsClass::viewform
+  totp_management:
+    title: "Activate TOTP"
+    url: "/totp/{action}"
+    handler: totp_handler
+
 
 regions:
   - header
