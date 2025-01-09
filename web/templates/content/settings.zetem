@@ -3,3 +3,18 @@
 <p>
     Place here all settings
 </p>
+
+<p>
+    <h3 style="text-align: center">Clinics Results</h3>
+    {{$clinics_results}}
+</p>
+
+<hr>
+
+<p>
+    {{$clinics}}
+</p>
+
+<p>
+    {{$doctors}}
+</p>
