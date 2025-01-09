@@ -9,7 +9,7 @@ require_once(__FWDIR__ . '/bootstrap.php');
     // echo "<pre>";
     // print_r( $info['menu']['main'] );
     // echo "</pre>";
-
+    
     $kernel = new Kernel($_SERVER, "../config");
     SecurityClass::init($kernel->getConfig('roles') );
 
@@ -660,11 +660,15 @@ require_once(__FWDIR__ . '/bootstrap.php');
     function settings($params) {
         global $kernel;
 
-            $cnt = new ContentClass('content/homepage.html');
-            $resp = $cnt->render();
+        $dbclinics = formsClass::getForm('clinics');
+        $dbdoctors = formsClass::getForm('doctors');
 
-            // return Renderer::render('settings.zetem', ['text' => $resp]);
-            return Renderer::render('content.zetem', ['text' => $resp]);
+        return Renderer::render('settings.zetem', [
+            'clinics_results' => formsClass::renderFormResults('clinics'),
+            'clinics' => formsClass::renderForm('clinics'),
+            'doctors' => formsClass::renderForm('doctors')
+        ]);
+
     }
 
 
@@ -729,3 +733,44 @@ require_once(__FWDIR__ . '/bootstrap.php');
         }
     }
 
+
+function clinics_edit($params) {
+    // echopre("Edit clinics");
+
+    $dbForm = formsClass::renderForm('clinics');
+    // $dbForm = formsClass::renderForm('operations');
+
+    return $dbForm;
+}
+
+
+
+function totp_handler($params) {
+
+    global $kernel;
+
+    $tfile = core_get_temp_filename('temp_qrcode.png');
+    $str ="QR TEST CODE";
+
+    $cmd0 =  "qrencode -o $tfile --size=10 " . escapeshellarg($str);
+    $cmd = escapeshellcmd( $cmd0 );
+    error_log("shell command: " . $cmd);
+
+    shell_exec( $cmd );
+/*
+    if(!$output) {
+        $output = ['result' => 'failed',
+                    'error' => 'failed shell execution command'
+                ];
+    }else {
+*/
+        $qrdata = base64_encode(file_get_contents($tfile));
+        error_log("qr data: " . $qrdata);
+        $output = [
+            'result' => 'success',
+            'qrdata' => $qrdata
+        ];
+    // }
+    echo json_encode( $output );
+    exit();
+}
