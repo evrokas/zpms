@@ -8,7 +8,8 @@ class UserProfileModule extends moduleClass {
         $rt = yaml_parse_file(__DIR__ . '/userprofile.yaml');
         
         global $kernel;
-        $kernel->addConfig( $rt );
+        $srt = $kernel->resolveModuleDir($rt, $adir, $amodule);
+        $kernel->addConfig( $srt );
 
         // echo "<pre>";print_r($kernel->getConfig());echo "</pre>";
         // exit();
@@ -36,9 +37,12 @@ class UserProfileModule extends moduleClass {
 
         $user = UsersClassEx::getUserAccount( $u );
 
-        return $this->RenderTemplate(['user' => $user,
+        return $this->RenderTemplate([
+            'user' => $user,
             $user->getactive()?'checked="checked"':'',
-            $user->getExpired()?'checked="checked"':'']);
+            $user->getExpired()?'checked="checked"':'',
+            'totp_activated' => true
+        ]);
     }
 
     function run($params = array()) {

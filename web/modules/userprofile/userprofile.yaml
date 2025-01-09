@@ -13,3 +13,10 @@ routes:
         module: userprofile
         # handler: module
         method: post          
+
+libraries:
+  userprofile-library:
+    css:
+      - userprofile:
+        src: '@app/css/userprofile.css'
+

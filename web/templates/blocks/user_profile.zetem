@@ -1,3 +1,5 @@
+{% attach_library('userprofile-library') %}
+
 <div class="user-profile">
     Userid: {{$user->getuname()}}
 
@@ -23,4 +25,43 @@
             <button type="submit" name="submit">Αποθήκευση</button>
         </div>
     </form>
+
+    <form action="#" method="post">
+        <div class="totp">
+        <h2>TOTP security</h2>
+        {% if(!$totp_activated): %}
+            <p>Timed OTP password is a feature that enhances the security of
+                the application, by requesting a time-dependent key each time the user requests
+                sensitive data.
+            </p>
+            <p>
+                The user must install Google Authenticator on a mobile device and activate TOTP from the button below.
+            </p>
+        {% else: %}
+            <p>Timed OTP is activated. Use the show QR code buton to display the QR code
+                or the deactivate button to disable TOTP security.
+            </p>
+            <p>If TOTP is disabled, all security features will be disabled, but not lost.</p>
+        {% endif %}
+
+        <div class="actions">
+            <button type="submit" {{ ($totp_activated)?"disabled":"" }} onclick="totp_action('activate')">Activate TOTP</button>
+            <button type="submit" {{ (!$totp_activated)?"disabled":"" }} onclick="totp_action('deactivate')">Deactivate TOTP</button>
+            <button type="button" {{ (!$totp_activated)?"disabled":"" }} onclick="totp_action('show_qrcode_modal')" class="showqr" >
+                Show QR code
+                <!-- <img id="qrimg" class="qrimg" src="" alt="TOTP QR Code"> -->
+            </button>
+        </div>
+
+        <div id="modal-qr" class="modal-qr">
+            <div class="modal-qr-inner">
+                <p>Please scan the QR code with Google Authenticator</p>
+                <img id="qrimg" src="" alt="QR Code">
+                <button type="button" onclick="totp_action('close_qrcode_modal')">Close</button>
+            </div>
+        </div>
+    </form>
+
+
+    </div>
 </div>
