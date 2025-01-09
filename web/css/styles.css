@@ -839,15 +839,18 @@ ul.select-box li:hover {
     color: white;
 }
 
-
 form.webform {
     .form_elements {
+        margin: 1rem;
         display: grid;
         grid-template-columns: auto 1fr;
+        gap: 0.5rem;
     }
     
     .form_controls {
+        margin: 1rem auto;
         display: flex;
-        justify-content: space-around;
+        justify-content: center;
+        gap: 1rem;
     }
 }
