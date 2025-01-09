@@ -206,3 +206,42 @@ validatorList.forEach(vi => {
     // console.log( 'initial testing for validator handler result', res)
     validatorUpdateClass(vi, res);
 });
+
+
+async function call_totp_action(action) {
+    console.log('totp action ', action);
+    let response = await fetch('totp/'+action);
+    const result = await response.json();
+
+    return result;
+}
+
+async function totp_action(action) {
+    console.log('action: ', action );
+    switch(action) {
+        case 'show_qrcode_modal':
+            modal = document.getElementById("modal-qr");
+            console.log( modal );
+            modal.classList.add('open');
+            break;
+        case 'close_qrcode_modal':
+            modal = document.getElementById("modal-qr");
+            console.log( modal );
+            modal.classList.remove('open');
+            break;
+        case 'activate':
+            call_totp_action(action).then(result => { 
+                console.log( result );
+                // return result;
+                // const imgElement = document.createElement('img');
+                // imgElement.src = result;
+                // imgElement.alt = 'Fetched Image';
+                document.getElementById('qrimg').src = "data:image/png;base64,"+result.qrdata;
+            });
+        
+            break;
+
+        case 'deactivate':
+            break;
+    }
+}
