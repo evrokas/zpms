@@ -5,14 +5,19 @@
 </p>
 
 <p>
-    <h3 style="text-align: center">Clinics Results</h3>
-    {{$clinics_results}}
+    <h3 style="text-align: center">Clinics Table</h3>
+    {{$clinics_table}}
 </p>
 
 <hr>
 
 <p>
     {{$clinics}}
+</p>
+
+<p>
+    <h3 style="text-align: center">Doctors Table</h3>
+    {{$doctors_table}}
 </p>
 
 <p>
