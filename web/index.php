@@ -5,6 +5,10 @@ include_once(__DIR__ . "/../config/db.php");       // load database parameters
 
 require_once(__FWDIR__ . '/bootstrap.php');
 
+
+    ini_set('session.gc_maxlifetime', 3600);
+    ini_set('session.cookie_lifetime', 3600);
+
     // Project Zeus - Patient Registration System
     // echo "<pre>";
     // print_r( $info['menu']['main'] );
