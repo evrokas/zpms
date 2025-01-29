@@ -11,17 +11,6 @@ class UserProfileModule extends moduleClass {
         $srt = $kernel->resolveModuleDir($rt, $adir, $amodule);
         $kernel->addConfig( $srt );
 
-        // echo "<pre>";print_r($kernel->getConfig());echo "</pre>";
-        // exit();
-
-        // $region_yaml="
-        //     structure:
-        //         notification:
-        //             - userprofile
-        //     ";
-
-        // $kernel->addConfig($region_yaml);
-
         // re-initialize routes
         global $router;
         $router->initRouteTable($kernel->getConfig('routes'));

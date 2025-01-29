@@ -11,8 +11,9 @@ libraries:
   location-places:
     css:
       - location:
+        # type: 
         src: '@app/css/location.css'
     foot_script:
       - location:
-        type:
+        # type:
         src: '@app/js/location.js'
