@@ -38,7 +38,7 @@ html {
 
 a,
 a:visited {
-    color: #393939 !important;
+    /* color: #ff1818 !important; */
 }
 
 
@@ -592,7 +592,7 @@ form .input-div label {
 }
 
 .user-block {
-    margin-top: 1rem;
+    margin-top: 2rem;
 }
 
 .user-block span {
