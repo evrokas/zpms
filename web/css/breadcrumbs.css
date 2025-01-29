@@ -4,6 +4,10 @@
     background-color: white;
 }
 
+.breadcrumbs a {
+    color: gray !important;
+    text-decoration: underline;
+}
 .breadcrumbs ul {
     display: flex;
     flex-direction: row;
