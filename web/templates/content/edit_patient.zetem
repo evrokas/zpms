@@ -1,6 +1,7 @@
 
 {% attach_library('loader-library'); %}
-{% attach_library('datepicker-library'); %}
+{# {% attach_library('datepicker-library'); %} #}
+{% attach_library('pikaday-library'); %}
 {% attach_library('textarea-expandable-library'); %}
 
 
@@ -34,13 +35,21 @@
             <input type="text" name="patient-dob" id="datepicker" value="{{$patient->getpdob()}}">
         </div>
     -->
+        
 
+        <div class="input-div">
+            <label for="patient-dob">Ημ/νια Γεννήσεως</label>
+            <!-- <input type="date" name="patient-dob" id="" value="{{formatDate($patient->getpdob())}}"> -->
+            <input type="text" name="patient-dob" id="datepicker" value="{{$patient->getpdob()| date('d-m-Y')}}">
+        </div>
+   
+{# 
         <div class="input-div">
                 <label for="patient-dob">Ημ/νια Γεννήσεως</label>
                 <input type="date" name="patient-dob" id="" role="date-picker" loader="info-loader" value="{{$patient->getpdob() | date('Y-m-d') }}">
             <!-- <input type="text" name="patient-dob" id="datepicker" value="{{$patient->getpdob()}}"> -->
         </div>
-
+ #}
         <div class="input-div">
             <label for="patient-amka">ΑΜΚΑ</label>
             <input type="text" name="patient-amka" loader="info-loader" validator="amka" value="{{$patient->getpamka()}}" placeholder="ΑΜΚΑ ασθενούς">
@@ -139,3 +148,7 @@
 
     {% endif %}
 </div>
+
+<script>
+    var picker = new Pikaday( { field: document.getElementById('datepicker') } );
+</script>
