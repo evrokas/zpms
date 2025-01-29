@@ -426,7 +426,8 @@ require_once(__FWDIR__ . '/bootstrap.php');
     function appointments_list($params) {
         global $kernel;
 
-        SecurityClass::require('appointments-view-list');
+        // SecurityClass::require('appointments-view-list');
+        if(($errmsg=SecurityClass::require('appointments-view-list')))return $errmsg;
 
         $app = new appointmentsClass();
         $ap = $app->getAll();
@@ -660,12 +661,16 @@ require_once(__FWDIR__ . '/bootstrap.php');
     function settings($params) {
         global $kernel;
 
-        $dbclinics = formsClass::getForm('clinics');
-        $dbdoctors = formsClass::getForm('doctors');
+        if(($errmsg=SecurityClass::require('patients-new-patient')))return $errmsg;
+
+        // $dbclinics = formsClass::getForm('clinics');
+        // $dbdoctors = formsClass::getForm('doctors');
 
         return Renderer::render('settings.zetem', [
-            'clinics_results' => formsClass::renderFormResults('clinics'),
+            'clinics_table' => formsClass::renderFormResults('clinics'),
             'clinics' => formsClass::renderForm('clinics'),
+
+            'doctors_table' => formsClass::renderFormResults('doctors'),
             'doctors' => formsClass::renderForm('doctors')
         ]);
 
@@ -757,20 +762,20 @@ function totp_handler($params) {
     error_log("shell command: " . $cmd);
 
     shell_exec( $cmd );
-/*
-    if(!$output) {
+    if(!file_exists($tfile)) {
         $output = ['result' => 'failed',
-                    'error' => 'failed shell execution command'
+                    'error' => 'failed to create qr image',
+                    'qrdata' => ''
                 ];
     }else {
-*/
         $qrdata = base64_encode(file_get_contents($tfile));
-        error_log("qr data: " . $qrdata);
+        // error_log("qr data: " . $qrdata);
         $output = [
             'result' => 'success',
             'qrdata' => $qrdata
         ];
-    // }
+        unlink( $tfile );
+    }
     echo json_encode( $output );
     exit();
 }
