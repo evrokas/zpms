@@ -83,6 +83,20 @@ function selectclick(e){
     window.location.replace( basepath + e.dataset.url );
 }
 
+
+/* add confirmation dialog to every trash icon */
+let trashelements = document.querySelectorAll('.patients-list a[confirmation]');
+if(trashelements.length>0) {
+    trashelements.forEach(el => {
+        el.addEventListener('click', (e) => {
+            if(!confirm('Are you sure you want to delete the record?'))
+                e.preventDefault();
+        })
+    })
+}
+
+
+
 function appointmentsExpandAll() {
     lis = document.querySelectorAll('ul.patient-appointments-list > li');
     // console.log( lis );
