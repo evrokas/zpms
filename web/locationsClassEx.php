@@ -2,17 +2,8 @@
 
 class locationsClassEx extends locationsClass {
     static function getbyName($name) {
-        global $AppDBConnection;
-
-        if(!$AppDBConnection->isConnected()) {
-            if(!$AppDBConnection->Connect()) {
-                echo 'Could not connect to database';
-                return (null);
-            }
-        }
-
         $sql = "SELECT * FROM locations WHERE name=:name";
-        $st = $AppDBConnection->getConnection()->prepare( $sql );
+        $st = dbConnection::getConnection()->prepare( $sql );
         $st->bindValue(":name", $name, PDO::PARAM_STR);
         $st->execute();
         $row = $st->fetch();
@@ -37,17 +28,8 @@ class locationsClassEx extends locationsClass {
     }
 
     static function getbyMachineName($mname, $lang) {
-        global $AppDBConnection;
-
-        if(!$AppDBConnection->isConnected()) {
-            if(!$AppDBConnection->Connect()) {
-                echo 'Could not connect to database';
-                return (null);
-            }
-        }
-
         $sql = "SELECT * FROM locations WHERE machinename=:machinename AND lang=:lang";
-        $st = $AppDBConnection->getConnection()->prepare( $sql );
+        $st = dbConnection::getConnection()->prepare( $sql );
         $st->bindValue(":machinename", $mname, PDO::PARAM_STR);
         $st->bindValue(":lang", $lang, PDO::PARAM_STR);
         $st->execute();
@@ -61,17 +43,8 @@ class locationsClassEx extends locationsClass {
     }
 
     static function getbyGUID($guid) {
-        global $AppDBConnection;
-
-        if(!$AppDBConnection->isConnected()) {
-            if(!$AppDBConnection->Connect()) {
-                echo 'Could not connect to database';
-                return (null);
-            }
-        }
-
         $sql = "SELECT * FROM locations WHERE guid=:guid";
-        $st = $AppDBConnection->getConnection()->prepare( $sql );
+        $st = dbConnection::getConnection()->prepare( $sql );
         $st->bindValue(":guid", $guid, PDO::PARAM_STR);
         $st->execute();
         $row = $st->fetch();

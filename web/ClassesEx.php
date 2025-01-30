@@ -5,17 +5,8 @@
 class usersClassEx extends usersClass {
     static function getUser( $uname, $upass ) {
 
-        global $AppDBConnection;
-
-        if(!$AppDBConnection->isConnected()) {
-            if(!$AppDBConnection->Connect()) {
-                echo 'Could not connect to database';
-                return (null);
-            }
-        }
-
         $sql = "SELECT * FROM users WHERE uname=:uname AND upass=:upass";
-        $st = $AppDBConnection->getConnection()->prepare( $sql );
+        $st = dbConnection::getConnection()->prepare( $sql );
         $st->bindValue(":uname", $uname, PDO::PARAM_STR);
         $st->bindValue(":upass", $upass, PDO::PARAM_STR);
         $st->execute();
@@ -29,17 +20,8 @@ class usersClassEx extends usersClass {
     }
 
     static function getUserAccount( $uname ) {
-        global $AppDBConnection;
-
-        if(!$AppDBConnection->isConnected()) {
-            if(!$AppDBConnection->Connect()) {
-                echo 'Could not connect to database';
-                return (null);
-            }
-        }
-
         $sql = "SELECT * FROM users WHERE uname=:uname";
-        $st = $AppDBConnection->getConnection()->prepare( $sql );
+        $st = dbConnection::getConnection()->prepare( $sql );
         $st->bindValue(":uname", $uname, PDO::PARAM_STR);
         $st->execute();
         $row = $st->fetch();
@@ -57,17 +39,8 @@ class usersClassEx extends usersClass {
 class patientsClassEx extends patientsClass {
     
     static function sgetByGuid($aguid) {
-        global $AppDBConnection;
-
-        if(!$AppDBConnection->isConnected()) {
-            if(!$AppDBConnection->Connect()) {
-                echo 'Could not connect to database';
-                return (null);
-            }
-        }
-
         $sql = "SELECT * FROM patients WHERE guid=:guid";
-        $st = $AppDBConnection->getConnection()->prepare( $sql );
+        $st = dbConnection::getConnection()->prepare( $sql );
         $st->bindValue(":guid", $aguid, PDO::PARAM_STR);
         $st->execute();
         $row = $st->fetch();
@@ -80,15 +53,6 @@ class patientsClassEx extends patientsClass {
     }
     
     static function search($aterm, $ascope = array()) {
-        global $AppDBConnection;
-
-        if(!$AppDBConnection->isConnected()) {
-            if(!$AppDBConnection->Connect()) {
-                echo 'Could not connect to database';
-                return (null);
-            }
-        }
-
         $aterm = trim($aterm);
         $aterm = str_replace(['  '], [' '], $aterm);
         $terms = explode(' ', $aterm);
@@ -114,7 +78,7 @@ class patientsClassEx extends patientsClass {
         $sql = "SELECT * FROM patients WHERE " . $reqs;
         error_log("\nSQL request: " . $sql . "\n");
         /* (pname LIKE :term) OR (pname LIKE :term2)"; */
-        $st = $AppDBConnection->getConnection()->prepare( $sql );
+        $st = dbConnection::getConnection()->prepare( $sql );
         $st->bindValue(":term", $srch, PDO::PARAM_STR);
         $st->bindValue(":term2", $srch2, PDO::PARAM_STR);
         $st->execute();
@@ -130,15 +94,6 @@ class patientsClassEx extends patientsClass {
     }
 
     static function getPatientsByLastAppointment($order) {
-        global $AppDBConnection;
-
-        if(!$AppDBConnection->isConnected()) {
-            if(!$AppDBConnection->Connect()) {
-                echo 'Could not connect to database';
-                return (null);
-            }
-        }
-
         switch($order) {
             case '0': $order = "DESC"; break;
             case '1': $order = "ASC"; break;
@@ -178,7 +133,7 @@ class patientsClassEx extends patientsClass {
 
 
         // $sql = "SELECT * FROM patients;";
-        $st = $AppDBConnection->getConnection()->prepare( $sql );
+        $st = dbConnection::getConnection()->prepare( $sql );
         $st->execute();
 
         $list = array();
@@ -193,15 +148,6 @@ class patientsClassEx extends patientsClass {
     }
 
     static function getPatientsByName($order = 'ASC') {
-        global $AppDBConnection;
-
-        if(!$AppDBConnection->isConnected()) {
-            if(!$AppDBConnection->Connect()) {
-                echo 'Could not connect to database';
-                return (null);
-            }
-        }
-
         switch($order) {
             case '0': $order = "DESC"; break;
             case '1': $order = "ASC"; break;
@@ -209,7 +155,7 @@ class patientsClassEx extends patientsClass {
 
         // sql statement extracted from ChatGPT (!!)
         $sql = "SELECT * FROM patients ORDER BY pname " . $order;
-        $st = $AppDBConnection->getConnection()->prepare( $sql );
+        $st = dbConnection::getConnection()->prepare( $sql );
         $st->execute();
 
         $list = array();
@@ -227,17 +173,8 @@ class patientsClassEx extends patientsClass {
 
 class appointmentsClassEx extends appointmentsClass {
     static function getAppointmentsForPatient($pguid, $order = 'ASC') {
-        global $AppDBConnection;
-
-        if(!$AppDBConnection->isConnected()) {
-            if(!$AppDBConnection->Connect()) {
-                echo 'Could not connect to database';
-                return (null);
-            }
-        }
-
         $sql = "SELECT * FROM appointments WHERE pguid=:pguid ORDER BY adate $order";
-        $st = $AppDBConnection->getConnection()->prepare( $sql );
+        $st = dbConnection::getConnection()->prepare( $sql );
         $st->bindValue(":pguid", $pguid, PDO::PARAM_STR);
         // $st->bindValue(":order", $order, PDO::PARAM_STR);
 
