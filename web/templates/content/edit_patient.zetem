@@ -1,7 +1,7 @@
 
 {% attach_library('loader-library'); %}
 {# {% attach_library('datepicker-library'); %} #}
-{% attach_library('pikaday-library'); %}
+{# {% attach_library('pikaday-library'); %} #}
 {% attach_library('textarea-expandable-library'); %}
 
 
@@ -149,6 +149,8 @@
     {% endif %}
 </div>
 
+{#
 <script>
     var picker = new Pikaday( { field: document.getElementById('datepicker') } );
 </script>
+#}
