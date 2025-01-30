@@ -81,7 +81,7 @@
                 <td class="actions" data-column="actions">
                     
                     <!-- <a href="{{rel_url('/patient/'.$pat['id'].'/edit')}}">edit</a> -->
-                    <a href="{{rel_url('/patient/'.$pat['id'].'/delete')}}"><i class="bx bx-trash"></i></a>
+                    <a href="{{rel_url('/patient/'.$pat['id'].'/delete')}}" confirmation><i class="bx bx-trash"></i></a>
                 </td>
             </tr>
             {% endforeach %}

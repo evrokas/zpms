@@ -57,11 +57,13 @@ body {
     font-size: 12px;
     text-align: right;
     float: right;
+    word-wrap: anywhere;
 }
 
 .wrapper {
     /* overflow-x: clip; */
-    max-width: 996px;
+    /* max-width: 996px; */
+    max-width: 80%;
     margin: auto;
   
 }
@@ -168,6 +170,7 @@ form .buttons {
         display: flex;
         gap: 0.3rem;
         flex-direction: column;
+        position: relative;
     }
 
     form .input-div {
