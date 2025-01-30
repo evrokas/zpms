@@ -157,6 +157,18 @@ form .buttons {
     justify-content: space-evenly;
 }
 
+form .input-div {
+    /* background-color: aqua; */
+    /* height: 2rem; */
+    /* line-height: 2rem; */
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.1rem 0.4rem;    
+    /* justify-content: space-evenly; */
+}
+
 .edit-patient {
     form .buttons {
         padding: 0.5rem;
@@ -171,18 +183,6 @@ form .buttons {
         gap: 0.3rem;
         flex-direction: column;
         position: relative;
-    }
-
-    form .input-div {
-        /* background-color: aqua; */
-        /* height: 2rem; */
-        /* line-height: 2rem; */
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        gap: 1rem;
-        padding: 0.1rem 0.4rem;    
-        /* justify-content: space-evenly; */
     }
 
     form .input-div select,
@@ -307,7 +307,14 @@ form .buttons {
 }
 
 .search {
-    margin: 0 1rem;
+    margin: 1rem 1rem 0rem ;
+    /* outline: 1px solid red; */
+
+    .input-div label {
+        text-align: left;
+        width: auto;
+        /* margin: 0 1rem; */
+    }
 }
 
 .patient-list-actions ul {
