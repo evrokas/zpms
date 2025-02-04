@@ -36,10 +36,10 @@ html {
     --main-navigation-menu-level-2-hover-text-color: #d7d7f1;
 }
 
-a,
-a:visited {
+/* a, */
+/* a:visited { */
     /* color: #ff1818 !important; */
-}
+/* } */
 
 
 
@@ -63,7 +63,7 @@ body {
 .wrapper {
     /* overflow-x: clip; */
     /* max-width: 996px; */
-    max-width: 80%;
+    max-width: max(900px, 80%);
     margin: auto;
   
 }
