@@ -24,7 +24,7 @@ require_once(__FWDIR__ . '/bootstrap.php');
 
     $Request = new RequestClass($_SERVER);
     // $handlers = $Request->getQueryRoute();
-    // prelog('Request: ', print_r($Request, 1));
+    // echopre('Request: ', print_r($Request, 1));
     // echo "<pre>" . print_r( $_SERVER, 1 ) . "</pre>";
     // echo( "Method: " . $req->getMethod() . '  string: ' . $req->getQueryString() . "<br/>" );
     // print_r( $handlers );
@@ -64,11 +64,36 @@ require_once(__FWDIR__ . '/bootstrap.php');
     $content_response = $router->routerCallFunction($match);
     // print_r($content_response);
 
+
+    /* ------ */
+    global $kernel;
+
+    // echopre("SERVER: " . print_r($_SERVER, 1));
+    // echopre("SESSION: " . print_r($_SESSION, 1));
+    // echopre("SESSION: " . print_r($_SESSION['request'], 1));
+    // echopre("REQUEST: " . print_r($_REQUEST, 1));
+    // echopre("Title: " . $_SESSION['route_match']['_routedata']['title']);
+    // $menu = $kernel->getConfig('menu')['main'];
+    // echopre("menu: " . print_r($menu, 1));
+    // $request_key = $_SESSION['request'][array_key_last($_SESSION['request'])];
+    // $request_key = $_SESSION['route_match']['_routename'];
+    // echopre("key: " . $request_key);
+    // $res = search_menu_for_key($request_key, $menu, $kernel->getConfig('routes'));
+    // echopre("result: " . print_r($res,1) );
+
+    // $routes = $kernel->getConfig('routes');
+
+
+
+    /* ------ */
+
+
+
+
     // echopre(print_r($_SESSION, 1));
     $kernel->renderPage();
 
     ob_end_flush();
-
 
     function homepage($params) {
 
@@ -707,8 +732,6 @@ require_once(__FWDIR__ . '/bootstrap.php');
         error_log('\najax update_patient_info: note: ' . $_POST['patients-note']);
         return ("OK");
     }
-
-
 
     function app_generate_qr($params) {
         // echopre(print_r($_SERVER, 1));
