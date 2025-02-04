@@ -154,8 +154,15 @@ routes:
     title: "Settings"
     url: "/settings"
     handler: settings
+  applications:
+    title: "Applications"
+    url:
+    handler:
   patients:
     title: "Patients"
+    url:
+  patients_list:
+    title: "Patients List"
     url: [
           "/patients",
           "/patients/sort/{key}",
@@ -313,7 +320,7 @@ structure:
 
 menu:
   main:
-    - home:
+    - homepage:
       text: 'Home'
       url: '/'
       # path: home
@@ -324,7 +331,7 @@ menu:
         - patient_list:
           text: 'List'
           url: '/patients'
-        - patient_add:
+        - patient_new:
           text: 'New'
           url: /patient/new
       # path: '/patients'
@@ -343,7 +350,7 @@ menu:
         - qrgenerator:
           text: 'Generate QR code'
           url: /apps/genqr
-        - pdflib:
+        - pdflib-module:
           text: 'PDF Archive'
           url: /apps/pdflib
     # - links:
