@@ -328,7 +328,7 @@ menu:
       text: 'Patients'
       # url: '/patients'
       submenu:
-        - patient_list:
+        - patients_list:
           text: 'List'
           url: '/patients'
         - patient_new:
