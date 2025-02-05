@@ -126,7 +126,9 @@ analytics:
 
 routes:
   homepage:
-    title: "Homepage"
+    title: 
+      gr: "Αρχική"
+      en: "Homepage"
     name: homepage
     url: "/"
     handler: homepage
@@ -151,18 +153,26 @@ routes:
     url: "/logout"
     handler: logout
   settings:
-    title: "Settings"
+    title: 
+      gr: "Ρυμίσεις"
+      en: "Settings"
     url: "/settings"
     handler: settings
   applications:
-    title: "Applications"
+    title: 
+      gr: "Εφαρμογές"
+      en: "Applications"
     url:
     handler:
   patients:
-    title: "Patients"
+    title:
+      gr: "Ασθενείς"
+      en: "Patients"
     url:
   patients_list:
-    title: "Patients List"
+    title: 
+      gr: "Λίστα ασθενών"
+      en: "Patients List"
     url: [
           "/patients",
           "/patients/sort/{key}",
@@ -181,7 +191,9 @@ routes:
     # handler: patients_list
     # access: authenticated user
   patients_search_ajax:
-    title: "Patients"
+    title: 
+      gr: "Ασθενείς"
+      en: "Patients"
     url: "/patients/searchajax/{term}"
     handler: patients_list_search_ajax
     access: authenticated user
@@ -191,7 +203,9 @@ routes:
     handler: patients_search_post
     method: post
   patient_edit:
-    title: "Patient edit"
+    title: 
+      en: "Patient edit"
+      gr: "Επεξεργασία ασθενή"
     url: "/patient/{id}/edit"
     handler: patient_edit
     method: get
@@ -215,12 +229,16 @@ routes:
     url: "/patient/{id}/delete"
     handler: patient_delete
   appointments:
-    title: "Appointments"
+    title:
+      gr: "Εφαρμογές"
+      en: "Appointments"
     url: /appointments
     handler: appointments_list
     # access: authenticated user
   appointment_edit:
-    title: "Appointment edit"
+    title:
+      gr: "Επεξεργασία ραντεβού"
+      en: "Appointment edit"
     url: "/appointment/{id}/edit"
     handler: appointment_edit
     method: get
@@ -230,7 +248,9 @@ routes:
     handler: appointment_edit_post
     method: post
   appointment_new:
-    title: "New appointment"
+    title:
+      gr: "Νέο ραντεβού"
+      en: "New appointment"
     url: "/appointment/new"
     handler: appointment_new
     method: get
@@ -258,7 +278,9 @@ routes:
     handler: patient_appointment_new_post
     method: post
   qrgenerator:
-    title: "Generate QR code"
+    title:
+      gr: "Δημιουργία κωδικού QR"
+      en: "Generate QR code"
     url: "/apps/genqr"
     handler: app_generate_qr
     method: get
@@ -321,37 +343,57 @@ structure:
 menu:
   main:
     - homepage:
-      text: 'Home'
+      text: 
+        gr: 'Αρχική'
+        en: 'Home'
       url: '/'
       # path: home
     - patients:
-      text: 'Patients'
+      text: 
+        gr: 'Ασθενείς'
+        en: 'Patients'
       # url: '/patients'
       submenu:
         - patients_list:
-          text: 'List'
+          text: 
+            gr: 'Λίστα'
+            en: 'List'
           url: '/patients'
         - patient_new:
-          text: 'New'
+          text: 
+            gr: 'Νεός'
+            en: 'New'
           url: /patient/new
       # path: '/patients'
     - appointments:
-      text: 'Appointments'
+      text:
+        gr: 'Ραντεβού'
+        en: 'Appointments'
       url: '/appointments'
     - settings:
-      text: "Settings"
+      text:
+        gr: "Ρυμίσεις"
+        en: "Settings"
       url: '/settings'
     - contact:
-      text: 'Contact'
+      text:
+        gr: 'Επικοινωνία'
+        en: 'Contact'
       url: '#'
     - applications:
-      text: 'Apps'
+      text:
+        en: 'Apps'
+        gr: 'Εφαρμογές'
       submenu:
         - qrgenerator:
-          text: 'Generate QR code'
+          text:
+            gr: 'Δημιουργία κωδικού QR'
+            en: 'Generate QR code'
           url: /apps/genqr
         - pdflib-module:
-          text: 'PDF Archive'
+          text:
+            gr: 'Καταχωρητήριο PDF'
+            en: 'PDF Archive'
           url: /apps/pdflib
     # - links:
     #   text: 'Test link menu'
