@@ -1,6 +1,8 @@
 routes:
   pdflib-module:
-    title: "PDF Library"
+    title:
+      gr: "Βιβλιοθήκη PDF"
+      en: "PDF Library"
     name: pdflib_handler
     module: pdflib
     url: /apps/pdflib
