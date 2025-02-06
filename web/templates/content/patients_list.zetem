@@ -1,19 +1,19 @@
 {% attach_library('boxicons') %}
 
 <div class="page-title">
-    <h2>Patients</h2>
+    <h2>{{t("Patients")}}</h2>
 </div>
 
 <div class="patient-list-actions">
     <ul>
-        <li><a href="{{rel_url('/patient/new')}}"">Add new patient</a></li>
+        <li><a href="{{rel_url('/patient/new')}}"">{{t("Add new patient")}}</a></li>
     </ul>
 </div>
 
 <div class="search">
     <form action="{{rel_url('patients/search')}}" method="post">
         <div class="input-div">
-            <label for="search-term">Search</label>
+            <label for="search-term">{{t("Search")}}</label>
             <input type="text" class="select2" name="search-term" id="" autocomplete="off" value="{% if(isset($search_term))echo $search_term; %}">
         </div>
         <div class="select-container">
@@ -36,23 +36,23 @@
     <table>
         <thead>
             <!-- <th>#</th> -->
-            <th>Name
+            <th>{{t("Name")}}
                 <div class="sorting-arrows">
                     <i class="bx bx-chevron-down"></i>
                     <i class="bx bx-chevron-up"></i>
                 </div>
             </th>
-            <th>AMKA
+            <th>{{t("AMKA")}}
 
             </th>
-            <th>Last App
+            <th>{{t("Last App")}}
                 <div class="sorting-arrows">
                     <i class="bx bx-chevron-down"></i>
                     <i class="bx bx-chevron-up"></i>
                 </div>
 
             </th>
-            <th>Act</th>
+            <th>{{t("Act")}}</th>
         </thead>
         {% $loop=0; %}
         <tbody>
