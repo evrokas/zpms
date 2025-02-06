@@ -2,7 +2,7 @@
 
 
 <div class="location-place">
-    Location
+    {{t("Location")}}
     <select name="location" id="location-selector">
         {% foreach($location_places as $loc): %}
             <option value="{{$loc}}" {{ ($loc == $location)?"selected":""}}>{{$loc}}</option>
