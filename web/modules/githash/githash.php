@@ -18,6 +18,19 @@ class githashModule extends moduleClass {
         $corehash = file_get_contents($rootdir . "/fw/.git/" . $corefile);
         $corebranch = explode('/', $corefile)[2];
 
+        $tagfiles = glob($rootdir . ".git/refs/tags/*");
+        $tags = [];
+        $tag_str = null;
+        foreach($tagfiles as $tag) {
+            $tag_name = basename( $tag );
+            $tags[ $tag_name ] = file_get_contents($tag);
+            if($hash === $tags[ $tag_name ])
+                $tag_str = $tag_name;
+        }
+        
+        if(!$tag_str)
+            $tag_str = $hash;
+
 
         // error_log( "git hash directory: $branch, hash: $hash\n" );
         return $this->renderTemplate(
@@ -27,7 +40,9 @@ class githashModule extends moduleClass {
                 'db' => DB_NAME,
             
                 'corebranch' => $corebranch,
-                'corehash' => $corehash
+                'corehash' => $corehash,
+                
+                'tag' => $tag_str
             ]);
     }
 }
