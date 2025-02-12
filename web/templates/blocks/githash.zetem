@@ -1,4 +1,5 @@
 <!-- git-hash -->
 <div class="git-hash">
-    ({{$db}}) | {{$branch}} | {{$hash}} | core: {{$corebranch}} <br>
+   {# ({{$db}}) | {{$branch}} | {{$hash}} | core: {{$corebranch}} | tag: {{$tag}} #}
+    ({{$db}}) | {{$branch}} | {{$tag}} | core: {{$corebranch}}
 </div>
