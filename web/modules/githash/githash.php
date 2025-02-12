@@ -25,7 +25,7 @@ class githashModule extends moduleClass {
             $tag_name = basename( $tag );
             $tags[ $tag_name ] = file_get_contents($tag);
             if($hash === $tags[ $tag_name ])
-                $tagstr = $tag_name;
+                $tag_str = $tag_name;
         }
         
         if(!$tag_str)
@@ -42,7 +42,7 @@ class githashModule extends moduleClass {
                 'corebranch' => $corebranch,
                 'corehash' => $corehash,
                 
-                'tag' => $tagstr
+                'tag' => $tag_str
             ]);
     }
 }
