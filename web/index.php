@@ -55,7 +55,6 @@ require_once(__FWDIR__ . '/bootstrap.php');
 
     // $f1 = new Feeder('/content/locations.feeder.yaml');
 
-    // $match = $router->matchRoute( $handlers[0] );
     $match = $router->matchRoute( $Request );
     // echopre("Match route: " . print_r($match, 1));
     
@@ -65,19 +64,14 @@ require_once(__FWDIR__ . '/bootstrap.php');
     $content_response = $router->routerCallFunction($match);
     // print_r($content_response);
 
-
-    /* ------ */
-    global $kernel;
-
-    /* ------ */
-
-
-
-
-    // echopre(print_r($_SESSION, 1));
+    // render web page
     $kernel->renderPage();
-
+    
+    // finally flush webpage to the user
     ob_end_flush();
+
+
+/* ----- website handlers ----- */
 
     function homepage($params) {
 
