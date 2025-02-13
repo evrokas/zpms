@@ -32,6 +32,7 @@
     display: block;
     white-space: nowrap;
     /* text-align: center; */
+    position: relative;
 }
 
 .main-navigation li a {
@@ -62,6 +63,16 @@
     /* font-family: "boxicons"; */
     /* content: '\f107'; */
     /* content: '\00bb'; */
+}
+
+.main-navigation .drop-menu {
+    position: absolute;
+    left: 0;
+}
+
+.main-navigation .drop-menu.right-flush {
+    left: auto;
+    right: 0;
 }
 
 .main-navigation .drop-menu-1 {
@@ -314,7 +325,7 @@ label #menu-open {
 
 
     .main-navigation ul li:last-child .drop-menu-1 {
-        transform: translateX(50%);
+        /* transform: translateX(50%); */
         /* background: rgb(93, 151, 228); */
     }
 
