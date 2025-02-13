@@ -48,6 +48,11 @@ body {
 /*    font-size: 14px; */
 }
 
+.section-right-flush {
+    text-align: right;
+    float: right;
+}
+
 .git-hash {
     /* top: 0px; */
     right: 8px;
