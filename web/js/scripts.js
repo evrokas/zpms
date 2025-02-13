@@ -12,6 +12,43 @@
 
 // console.log('scripts.js is loaded!');
 
+
+function adjustSubmenuJustification() {
+    const menuItems = document.querySelectorAll('.submenu-item');
+
+    menuItems.forEach((el) => {
+        const submenu = el.querySelector('.drop-menu');
+        if(submenu) {
+            submenu.classList.remove('right-flush');
+
+            const rect = el.getBoundingClientRect();
+            const subRect = submenu.getBoundingClientRect();
+            
+            console.log(rect.right+subRect.width, window.innerWidth);
+        
+            if(rect.right + subRect.width > window.innerWidth) {
+                submenu.classList.add('right-flush');
+            }
+        }
+    })
+}
+
+let resizeTimeout;
+function handleResize() {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(adjustSubmenuJustification, 100); // Run after 100ms delay
+}
+
+document.addEventListener("DOMContentLoaded", adjustSubmenuJustification);
+
+document.addEventListener("resize", handleResize);
+
+if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", handleResize);
+}
+
+
+
 search = document.querySelectorAll('.select2');
 // console.log( search );
 
