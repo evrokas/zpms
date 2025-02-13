@@ -154,7 +154,7 @@ routes:
     handler: logout
   settings:
     title: 
-      gr: "Ρυμίσεις"
+      gr: "Ρυθμίσεις"
       en: "Settings"
     url: "/settings"
     handler: settings
@@ -215,7 +215,9 @@ routes:
     handler: patient_edit_post
     method: post
   patient_new:
-    title: "New Patient"
+    title: 
+      en: "New Patient"
+      gr: "Νέος ασθενής"
     url: /patient/new
     handler: patient_new
     method: get
@@ -323,10 +325,27 @@ regions:
 #   - maincontent: main_content
 #   - footer: footer
 
+# structure example (updated)
+# structure:
+#   region1:
+#     - block1
+#     - section1:
+#       - block2
+#       - block3
+#     - section2:
+#       - block4
+#       - section3:
+#         - block5
+#       - block6
+#     - block7
+#   region2:
+#
 structure:
   header:
     - header
-    - githash
+    - right-flush:
+      - githash
+      - language_selector
     - userblock
     - location
     - breadcrumbs
@@ -433,4 +452,5 @@ modules:
     - location
     - datepicker
     - pdflib
+    - language_selector
   # - topbar
