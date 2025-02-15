@@ -49,8 +49,10 @@ body {
 }
 
 .section-right-flush {
-    text-align: right;
     float: right;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
 }
 
 .git-hash {
@@ -60,7 +62,7 @@ body {
     
     color: gray;
     font-size: 12px;
-    text-align: right;
+    /* text-align: right; */
     float: right;
     word-wrap: anywhere;
 }
