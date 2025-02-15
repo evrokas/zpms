@@ -42,8 +42,10 @@ require_once(__FWDIR__ . '/bootstrap.php');
 
 //    echopre('locations: ' . print_r($l->getFields(), 1));
 //    echopre('locations: ' . print_r(get_class_vars( 'locationsClass'),1) );
-
-    $kernel->setCurrentLanguage('gr');
+    if(isset($_SESSION) && isset($_SESSION['CURRENT_LANGUAGE']))
+        $kernel->setCurrentLanguage( $_SESSION['CURRENT_LANGUAGE']);
+    else
+        $kernel->setCurrentLanguage('gr');
     // $kernel->setCurrentLanguage('en');
 
     ob_start();
@@ -63,7 +65,6 @@ require_once(__FWDIR__ . '/bootstrap.php');
 
     $content_response = $router->routerCallFunction($match);
     // print_r($content_response);
-
     // render web page
     $kernel->renderPage();
     
