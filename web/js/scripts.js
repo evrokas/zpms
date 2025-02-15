@@ -23,9 +23,7 @@ function adjustSubmenuJustification() {
 
             const rect = el.getBoundingClientRect();
             const subRect = submenu.getBoundingClientRect();
-            
-            console.log(rect.right+subRect.width, window.innerWidth);
-        
+                    
             if(rect.right + subRect.width > window.innerWidth) {
                 submenu.classList.add('right-flush');
             }
