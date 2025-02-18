@@ -1,13 +1,17 @@
 routes:
     userprofile:
-        title: 'User profile'
+        title: 
+          en: 'User profile'
+          gr: 'Προφιλ χρήστη'
         name: userprofile
         url: /profile
         module: userprofile
         # handler: module
         method: get
     userprofile_post:
-        title: 'User profile'
+        title:
+          en: 'User profile'
+          gr: 'Προφιλ χρήστη'
         name: userprofile_post
         url: /profile
         module: userprofile
