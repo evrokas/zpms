@@ -139,12 +139,16 @@ routes:
 #    handler: admin
 #    access: administrator
   login:
-    title: "User login"
+    title:
+      en: "User login"
+      gr: "Είσοδος χρήστη"
     url: "/login"
     handler: login
     method: get
   login_post:
-    title: "User login"
+    title:
+      en: "User login"
+      gr: "Είσοδος χρήστη"
     url: "/login"
     handler: login_post
     method: post
@@ -343,10 +347,12 @@ regions:
 structure:
   header:
     - header
-    - right-flush:
-      - githash
-      - language_selector
-    - userblock
+    - header-grid-2x1:
+      - left-column:
+        - userblock
+      - right-column:
+        - githash
+        - language_selector
     - location
     - breadcrumbs
   main_navigation:
@@ -414,25 +420,7 @@ menu:
             gr: 'Καταχωρητήριο PDF'
             en: 'PDF Archive'
           url: /apps/pdflib
-    # - links:
-    #   text: 'Test link menu'
-    #   submenu:
-    #     - link1:
-    #       text: 'Link 1'
-    #       url: '#'
-    #     - link2:
-    #       text: 'Link 2'
-    #       url: '/links/link2'
-    #     - link3:
-    #       text: 'Link 3'
-    #       submenu:
-    #         - link_link1:
-    #           text: link3-1
-    #           url: '#'
-    #         - link_link2:
-    #           text: 'link3-2 test'
-    #           url: 'links/link3/link_link2'
-
+  
 modules:
   path:
     - "/web/core/modules/"
