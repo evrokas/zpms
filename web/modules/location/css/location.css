@@ -1,8 +1,15 @@
 .location-place {
+    margin: 0.5rem;
     width: 100%;
     text-align: right;
+    display: block;
+    /* outline: 1px solid black; */
 }
 
 .location-place select {
     padding: 1px 12px;
+}
+
+.location-place form .input-div {
+    justify-content: flex-end;
 }

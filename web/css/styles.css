@@ -49,21 +49,43 @@ body {
 }
 
 .section-right-flush {
-    float: right;
+    /* float: right; */
+    display: block;
+    /* display: flex; */
+    /* flex-direction: column; */
+    /* justify-content: flex-end; */
+}
+
+.section-right-flush-contents {
+    text-align: right;
     display: flex;
     flex-direction: column;
-    justify-content: flex-end;
 }
+
+.section-header-grid-2x1 {
+    /* display: grid; */
+    /* grid-template-columns: 1fr 2fr; */
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.section-right-column {
+    display: flex;
+    flex-direction: column;
+    text-align: right;
+}
+
 
 .git-hash {
     /* top: 0px; */
-    right: 8px;
+    /* right: 8px; */
     /* position: absolute; */
-    
+    padding: 0.2rem;
     color: gray;
     font-size: 12px;
-    /* text-align: right; */
-    float: right;
+    text-align: right;
+    /* float: right; */
     word-wrap: anywhere;
 }
 
@@ -305,6 +327,12 @@ form .input-div {
             text-align: left;
         }
     }
+
+    .section-header-grid-2x1 {
+        flex-direction: column-reverse;
+    }
+    
+
 }
 
 /* patients forms */
@@ -431,7 +459,8 @@ form .input-div {
     width: max-content;
 }
 .patients-list table td[data-column="actions"] {
-    padding: 0 1rem;
+    /* padding: 0 1rem; */
+    margin: 0 auto;
     text-align: center;
     width: min-content;
 }
@@ -609,7 +638,7 @@ form .input-div label {
 }
 
 .user-block {
-    margin-top: 2rem;
+    margin-top: 0.2rem;
 }
 
 .user-block span {

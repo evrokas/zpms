@@ -1,11 +1,16 @@
 {% attach_library('location-places') %}
 
-
 <div class="location-place">
-    {{t("Location")}}
-    <select name="location" id="location-selector">
-        {% foreach($location_places as $loc): %}
-            <option value="{{$loc}}" {{ ($loc == $location)?"selected":""}}>{{$loc}}</option>
-        {% endforeach %}
-    </select>
+    <!-- <form action="#"> -->
+        <!-- <div class="input-div"> -->
+
+            <!-- <label for="location-selector">{{t("Location")}}</label> -->
+             {{t("Location")}}
+            <select name="location" id="location-selector">
+                {% foreach($location_places as $loc): %}
+                <option value="{{$loc}}" {{ ($loc == $location)?"selected":""}}>{{$loc}}</option>
+                {% endforeach %}
+            </select>
+        <!-- </div> -->
+    <!-- </form> -->
 </div>

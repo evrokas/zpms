@@ -1,6 +1,6 @@
 <div class="login-page">
     <div class="title">
-        {{t("Enter your credentials to login")}}
+        {{t("Enter your credentials to login")}}    
     </div>    
 
     <form action="{{$action}}" method="post">    
