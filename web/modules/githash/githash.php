@@ -9,14 +9,25 @@ class githashModule extends moduleClass {
         $rootdir = explode('index.php', $_SERVER['SCRIPT_FILENAME'])[0] . "../";
         
         $headfile = file_get_contents($rootdir . ".git/HEAD");
-        $headfile = explode(' ', trim($headfile))[1];
-        $hash = file_get_contents($rootdir . ".git/" . $headfile);
-        $branch = explode('/', $headfile)[2];
+        if(strpos($headfile, "refs")) {
+            $headfile = explode(' ', trim($headfile))[1];
+            $hash = file_get_contents($rootdir . ".git/" . $headfile);
+            $branch = explode('/', $headfile)[2];
+        } else {
+            $hash = $headfile;
+            $branch = "";
+        }
 
         $corefile = file_get_contents($rootdir . "/fw/.git/HEAD");
-        $corefile = explode(' ', trim($corefile))[1];
-        $corehash = file_get_contents($rootdir . "/fw/.git/" . $corefile);
-        $corebranch = explode('/', $corefile)[2];
+        if(strpos($corefile, "refs")) {
+
+            $corefile = explode(' ', trim($corefile))[1];
+            $corehash = file_get_contents($rootdir . "/fw/.git/" . $corefile);
+            $corebranch = explode('/', $corefile)[2];
+        } else {
+            $corehash = $corefile;
+            $corebranch = "";
+        }
 
         $tagfiles = glob($rootdir . ".git/refs/tags/*");
         $tags = [];
