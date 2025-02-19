@@ -377,6 +377,7 @@ menu:
       text: 
         gr: 'Ασθενείς'
         en: 'Patients'
+      access: power-user
       # url: '/patients'
       submenu:
         - patients_list:
@@ -395,11 +396,13 @@ menu:
         gr: 'Ραντεβού'
         en: 'Appointments'
       url: '/appointments'
+      disabled: true
     - settings:
       text:
-        gr: "Ρυμίσεις"
+        gr: "Ρυθμίσεις"
         en: "Settings"
       url: '/settings'
+      access: power-user
     - contact:
       text:
         gr: 'Επικοινωνία'
@@ -420,6 +423,8 @@ menu:
             gr: 'Καταχωρητήριο PDF'
             en: 'PDF Archive'
           url: /apps/pdflib
+          access: power-user
+
   
 modules:
   path:
