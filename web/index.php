@@ -238,7 +238,7 @@ require_once(__FWDIR__ . '/bootstrap.php');
     function patient_edit($params) {
         global $kernel;
 
-        SecurityClass::require('patients-edit-patient');
+        if($errmsg=SecurityClass::require('patients-edit-patient'))return $errmsg;
 
         if(!isset($params['id'])) {
             $kernel->addStatus('error', 'Ο φάκελος του ασθενή δεν βρέθηκε!');
