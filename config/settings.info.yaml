@@ -359,6 +359,7 @@ structure:
     - mainnavigation
   notification:
     - notifications
+    - message
   main_content:
     - content
   footer:
@@ -425,7 +426,27 @@ menu:
           url: /apps/pdflib
           access: power-user
 
-  
+
+
+# Module site configuration
+#
+# modfconf:
+#   module_name:
+#     hide: (hide module from these routes)
+#     display: (display module in these routes)
+#       route_name:
+#         arguments: (arguments to pass by default)
+#           - arg1: value1
+#         access: [access_roles, to allow for route]
+modconf:
+  message:
+    display:
+      userprofile:
+          arguments:
+            type: "Announcements"
+          access: user
+      
+
 modules:
   path:
     - "/web/core/modules/"
@@ -446,4 +467,4 @@ modules:
     - datepicker
     - pdflib
     - language_selector
-  # - topbar
+    - message
