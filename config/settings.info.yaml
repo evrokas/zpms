@@ -444,7 +444,7 @@ modconf:
       userprofile:
           arguments:
             type: "Announcements"
-          access: user
+          # access: user  
       
 
 modules:
