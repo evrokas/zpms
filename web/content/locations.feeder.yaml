@@ -1,5 +1,6 @@
 title: location feeder
 schema: locations.yaml
+schemadir: '@app/web/classes/yaml'
 content_dir: '/web/content'
 # can read folder for .yml files
 source:
