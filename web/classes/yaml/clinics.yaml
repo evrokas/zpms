@@ -16,7 +16,7 @@ table:
       type: varchar(128)
 
     - name: deleted
-      type: "@deleted"
+      type: "@delete"
 
 form:
   name: clinics
