@@ -900,3 +900,26 @@ form.webform {
         gap: 1rem;
     }
 }
+
+.announcements {
+    margin: 1rem;
+    outline: 1px solid lightgray;
+
+    .announce-header {
+        font-weight: 800;
+        font-size: 1.2rem;
+        /* text-align: center; */
+    }
+    ul {
+        margin: 1rem;
+        list-style: square;
+    }
+    .title {
+        font-weight: 800;
+        margin: 1rem;
+    }
+
+    .body {
+        margin: 1rem 2rem;
+    }
+}
