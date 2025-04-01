@@ -171,6 +171,9 @@ function copyStr(astr) {
     navigator.clipboard.writeText( astr );
 }
 
+function copyStr0(astr) {
+    console.log( astr );
+}
 
 
 // input validation code
@@ -294,3 +297,62 @@ async function totp_action(action) {
             break;
     }
 }
+
+
+
+function copyText(text, iconElement) {
+    if (navigator.clipboard && window.isSecureContext) {
+        // Modern clipboard API
+        navigator.clipboard.writeText(text)
+            .then(() => showCopiedFeedback(iconElement))
+            .catch(err => console.error("Clipboard copy failed:", err));
+    } else {
+        // Fallback for older browsers
+        let textarea = document.createElement("textarea");
+        textarea.value = text;
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand("copy");
+        document.body.removeChild(textarea);
+        showCopiedFeedback(iconElement);
+    }
+}
+
+function showCopiedFeedback(iconElement) {
+    // Store original icon class
+    let originalClass = iconElement.className;
+
+    // Change icon to 'bx-check' (✔️) and color to green
+    iconElement.className = "bx bx-check";
+    iconElement.style.color = "green";
+
+    // Create tooltip element
+    let tooltip = document.createElement("span");
+    tooltip.className = "tooltip";
+    tooltip.innerText = "Copied!";
+    document.body.appendChild(tooltip);
+
+    // Position the tooltip near the icon
+    let rect = iconElement.getBoundingClientRect();
+    tooltip.style.left = `${rect.left + window.scrollX}px`;
+    tooltip.style.top = `${rect.top + window.scrollY - 30}px`; // Position above the icon
+
+    // Start fade-out after 1.5s, remove after 2s
+    setTimeout(() => {
+        tooltip.style.opacity = "0"; // Start fade-out effect
+    }, 1500);
+    
+    setTimeout(() => {
+        iconElement.className = originalClass;
+        iconElement.style.color = ""; // Reset color
+        tooltip.remove(); // Remove tooltip from DOM
+    }, 2000);
+}
+
+document.addEventListener("click", function(event) {
+    let element = event.target;
+    if (element.classList.contains("bx-copy")) {
+        let textToCopy = element.getAttribute("data-copy-text") || "No text set";
+        copyText(textToCopy, element);
+    }
+});
