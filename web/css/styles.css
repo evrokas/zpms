@@ -923,3 +923,17 @@ form.webform {
         margin: 1rem 2rem;
     }
 }
+
+
+.tooltip {
+    position: absolute;
+    background-color: black;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    pointer-events: none;
+    opacity: 1;
+    white-space: nowrap;
+    transition: opacity 0.5s ease-in-out; /* Smooth fade-out effect */
+}
