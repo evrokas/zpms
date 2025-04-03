@@ -25,7 +25,7 @@
             <input type="text" name="patient-name" loader="info-loader" id="" value="{{$patient->getpname()}}" placeholder="όνομα ασθενούς">
 
             <div class="inline-icons">
-                <i class="bx bx-copy" onclick="copyStr('{{$patient->getpname()}}')"></i>
+                <i class="bx bx-copy" data-copy-text="{{$patient->getpname()}}" onclick0="copyStr('{{$patient->getpname()}}')"></i>
             </div>
         </div>
 <!-- 
