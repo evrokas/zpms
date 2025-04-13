@@ -425,8 +425,11 @@ menu:
             en: 'PDF Archive'
           url: /apps/pdflib
           access: power-user
-
-
+        - insurance-invoice-module:
+          text:
+            gr: 'Τιμολόγια Ασφαλειών'
+            en: 'Insurance Invoices'
+          url: /apps/ins-invoices
 
 # Module site configuration
 #
@@ -468,3 +471,4 @@ modules:
     - pdflib
     - language_selector
     - message
+    - insuranceinvoices
