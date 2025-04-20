@@ -1,0 +1,69 @@
+table:
+  # doctor_fees_records
+  name: insuranceinvoices
+  class: insuranceInvoicesClass
+
+  fields:
+    - name: patient_code
+      type: VARCHAR(20)
+
+    - name: patient_name
+      type: VARCHAR(255)
+
+    - name: street
+      type: VARCHAR(255)
+
+    - name: town
+      type: VARCHAR(255)
+
+    - name: postal_code
+      type: VARCHAR(10)
+
+    - name: entry_date
+      type: DATETIME
+
+    - name: exit_date
+      type: DATETIME
+
+    - name: insurance
+      type: VARCHAR(255)
+
+    - name: doctor_name
+      type: VARCHAR(255)
+
+    - name: specialty
+      type: VARCHAR(255)
+
+    - name: visit_date
+      type: DATE
+
+    - name: status
+      type: VARCHAR(50)
+
+    - name: contract_amount
+      type: DECIMAL(10,2)
+
+    - name: insurance_amount
+      type: DECIMAL(10,2)
+
+    - name: patient_amount
+      type: DECIMAL(10,2)
+
+    - name: participation
+      type: VARCHAR(20)
+
+    - name: total_contract_amount
+      type: DECIMAL(10,2)
+
+    - name: total_insurance_amount
+      type: DECIMAL(10,2)
+
+    - name: total_patient_amount
+      type: DECIMAL(10,2)
+
+    - name: pdf_path
+      type: VARCHAR(255)
+
+    - name: uploaded_at
+      type: TIMESTAMP 
+      default: CURRENT_TIMESTAMP

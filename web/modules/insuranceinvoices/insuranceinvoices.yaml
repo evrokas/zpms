@@ -1,22 +1,22 @@
 routes:
-  insurance-invoice-module:
+  insuranceinvoices:
     title:
       gr: 'Τιμολόγια Ασφαλειών'
       en: 'Insurance Invoices'
-    name: insurance-invoices_handler
-    module: insurance-invoice-module
-    url:
-      - /apps/ins-invoices
-      - /apps/ins-invoices/{actions}
-    method: get
+    name: insuranceinvoices_handler
+    module: insuranceinvoices
+    url: 
+      - "/apps/insuranceinvoices/{actions}"
+      - "/apps/insuranceinvoices"
+    # method: get
 
 libraries:
-  insurance-invoice-library:
+  insuranceinvoices-library:
     css:
       - ins-invoices:
-        src: '@app/css/insurance-invoices.css'
+        src: '@app/css/insuranceinvoices.css'
     foot_script:
       - ins-invoices:
-        src: '@app/js/insurance-invoices.js'
+        src: '@app/js/insuranceinvoices.js'
         defer:
 

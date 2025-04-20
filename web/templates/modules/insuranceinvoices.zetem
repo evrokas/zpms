@@ -1,0 +1,53 @@
+{% attach_library('insuranceinvoices-library') %}
+
+<h1>
+    Insurance Invoices
+</h1>
+
+<p>
+    Find here invoices from insurances
+</p>
+
+    <h2>Upload Doctor Fees PDF</h2>
+    <form action="{{rel_url('/apps/insuranceinvoices/process')}}" method="post" enctype="multipart/form-data">
+        <label>Select PDF: <input type="file" name="pdf" accept="application/pdf" required></label>
+        <button type="submit">Upload and Parse</button>
+    </form>
+
+    <h2>Stored Records</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Patient</th>
+                <th>Address</th>
+                <th>Town</th>
+                <th>Postal Code</th>
+                <th>Amount</th>
+                <th>Actions</th>
+                {# <th>Copy</th> #}
+            </tr>
+        </thead>
+        <tbody>
+            <?php foreach($invoices as $row): ?>
+            <tr>
+                <td><?= htmlspecialchars($row->getpatient_name()) ?></td>
+                <td><?= htmlspecialchars($row->getstreet()) ?></td>
+                <td><?= htmlspecialchars($row->gettown()) ?></td>
+                <td><?= htmlspecialchars($row->getpostal_code()) ?></td>
+                <td><?= number_format($row->getcontract_amount(), 2) ?> €</td>
+                <td><a href="{{$row->getid()}}/view" target="_blank"><i class="bx bx-show"></i></a>
+                    <a href="{{$row->getid()}}/delete"><i class="bx bx-trash"></i></a></td>
+                {# <td>
+                    <button class="copy-btn" onclick="copyInfo(this)" 
+                        data-name="<?= htmlspecialchars($row->getpatient_name()) ?>"
+                        data-street="<?= htmlspecialchars($row->getstreet()) ?>"
+                        data-town="<?= htmlspecialchars($row->gettown()) ?>"
+                        data-postal="<?= htmlspecialchars($row->getpostal_code()) ?>"
+                        data-amount="<?= number_format($row->getcontract_amount(), 2) ?> €">
+                        Copy Info
+                    </button>
+                </td> #}
+            </tr>
+            <?php endforeach ?>
+        </tbody>
+    </table>
