@@ -115,7 +115,8 @@ roles:
     patients-delete-patient, 
     patients-edit-patient, 
     appointment-edit,
-    pdflib-access
+    pdflib-access,
+    insuranceinvoices-access
     ]
 
 
@@ -430,6 +431,7 @@ menu:
             gr: 'Τιμολόγια Ασφαλειών'
             en: 'Insurance Invoices'
           url: /apps/insuranceinvoices
+          access: power-user
 
 # Module site configuration
 #
