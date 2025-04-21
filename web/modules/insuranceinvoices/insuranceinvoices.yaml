@@ -6,6 +6,7 @@ routes:
     name: insuranceinvoices_handler
     module: insuranceinvoices
     url: 
+      - "/apps/insuranceinvoices/{id}/{actions}"
       - "/apps/insuranceinvoices/{actions}"
       - "/apps/insuranceinvoices"
     # method: get

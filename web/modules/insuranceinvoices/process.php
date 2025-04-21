@@ -13,19 +13,31 @@ function process_run() {
 
     // Save file
     $filename = basename($_FILES['pdf']['name']);
-    $targetPath = $uploadDir . uniqid() . "_" . $filename;
-    if (!move_uploaded_file($_FILES['pdf']['tmp_name'], $targetPath)) {
-        die('Failed to save uploaded file.');
-    }
+    // $targetPath = $uploadDir . uniqid() . "_" . $filename;
+
+    $sourceFile = $_FILES['pdf']['tmp_name'];
+
 
     // Parse it
-    $data = parseDoctorFeesPDF($targetPath);
+    // $data = parseDoctorFeesPDF($targetPath);
+    $data = parseDoctorFeesPDF($sourceFile);
     // echopre("parseDoctorFeePDF: data: " . print_r($data, 1));
     if (!$data) die("Could not parse PDF.");
 
     $patient = $data['patient'];
     $doctor = $data['doctor'];
     $summary = $data['summary'];
+
+    $baseFilename = basename($filename, ".pdf");
+
+    $targetPath = core_get_file_in_lib($patient['full_name']. '-' . 
+                formatBrowserDate($patient['entry_date'] ) . '-' . $baseFilename . '-' . uniqid() . ".pdf", 'insuranceinvoices');
+    
+    echopre("Filename to create: $filename @ $targetPath");
+
+    if (!move_uploaded_file($_FILES['pdf']['tmp_name'], $targetPath)) {
+        die('Failed to save uploaded file.');
+    }
 
     $xr = new insuranceInvoicesClass([
         "patient_code" => $patient["code"],

@@ -1,15 +1,15 @@
 /* Base styling */
-body {
+/* body {
     font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
     background-color: #f8f9fa;
     margin: 20px;
     color: #333;
-}
+} */
 
-h2 {
+/* h2 {
     color: #0056b3;
     margin-bottom: 10px;
-}
+} */
 
 /* Upload form */
 form {
@@ -36,7 +36,7 @@ form input[type="file"] {
 }
 
 form button {
-    background-color: #007bff;
+    background-color: var(--basic-dark-color);
     color: white;
     border: none;
     padding: 10px 16px;
@@ -64,20 +64,15 @@ table {
 }
 
 thead {
-    background-color: #007bff;
+    background-color: var(--basic-dark-color);
     color: white;
+    font-size: 0.9rem;
 }
 
 th, td {
     padding: 12px 16px;
     text-align: left;
     border-bottom: 1px solid #dee2e6;
-
-    & a {
-        /* display: flex; */
-        /* justify-content: space-between; */
-        /* gap: 4px; */
-    }
 
     & a:hover {
         color: red;

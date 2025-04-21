@@ -34,9 +34,11 @@
                 <td><?= htmlspecialchars($row->getstreet()) ?></td>
                 <td><?= htmlspecialchars($row->gettown()) ?></td>
                 <td><?= htmlspecialchars($row->getpostal_code()) ?></td>
-                <td><?= number_format($row->getcontract_amount(), 2) ?> €</td>
-                <td><a href="{{$row->getid()}}/view" target="_blank"><i class="bx bx-show"></i></a>
-                    <a href="{{$row->getid()}}/delete"><i class="bx bx-trash"></i></a></td>
+                <td><?= number_format($row->getcontract_amount(),2) . ' € ' . number_format($row->getinsurance_amount(), 2) . '/' . number_format($row->getpatient_amount(), 2) ?></td>
+                <td><a href="{{rel_url('/apps/insuranceinvoices/'.$row->getid().'/view')}}" target="_blank"><i class="bx bx-show"></i></a>
+                    <a href="{{rel_url('/apps/insuranceinvoices/'.$row->getid().'/delete')}}"><i class="bx bx-trash"></i></a>
+                    {{$row->getpdf_path()}}
+                </td>
                 {# <td>
                     <button class="copy-btn" onclick="copyInfo(this)" 
                         data-name="<?= htmlspecialchars($row->getpatient_name()) ?>"
