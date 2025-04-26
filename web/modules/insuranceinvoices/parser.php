@@ -63,7 +63,7 @@ function parsePdfText($pdfText) {
         // Convert to float
         $floatValue = (float)$cleaned;
         // Format with thousand separators and 2 decimal places
-        return number_format($floatValue, 2, '.', ',');
+        return number_format($floatValue, 2, '.', '');
     }
 
     // Extract doctor ΡΟΚΑΣ ΕΥΑΓΓΕΛΟΣ information

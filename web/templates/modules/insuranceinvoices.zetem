@@ -30,11 +30,12 @@
         <tbody>
             <?php foreach($invoices as $row): ?>
             <tr>
-                <td><?= htmlspecialchars($row->getpatient_name()) ?></td>
-                <td><?= htmlspecialchars($row->getstreet()) ?></td>
-                <td><?= htmlspecialchars($row->gettown()) ?></td>
-                <td><?= htmlspecialchars($row->getpostal_code()) ?></td>
-                <td><?= number_format($row->getcontract_amount(),2) . ' € ' . number_format($row->getinsurance_amount(), 2) . '/' . number_format($row->getpatient_amount(), 2) ?></td>
+                <td><?= htmlspecialchars($row->getpatient_name()) ?><i class="bx bx-copy" data-info="{{$row->getpatient_name()}}" onclick="copyData(this)"></i></td>
+                <td><?= htmlspecialchars($row->getstreet()) ?><i class="bx bx-copy" data-info="{{$row->getstreet()}}" onclick="copyData(this)"></i></td>
+                <td><?= htmlspecialchars($row->gettown()) ?><i class="bx bx-copy" data-info="{{$row->gettown()}}" onclick="copyData(this)"></i></td>
+                <td><?= htmlspecialchars($row->getpostal_code()) ?><i class="bx bx-copy" data-info="{{$row->getpostal_code()}}" onclick="copyData(this)"></i></td>
+                {#<td><?= number_format($row->getcontract_amount(),2) . ' € ' ?> <?= number_format($row->getinsurance_amount(), 2) ?> <i class="bx bx-copy" data-info="{{$row->getpatient_name()}}" onclick="copyData(this)"></i> <?= '/' . number_format($row->getpatient_amount(), 2) ?> <i class="bx bx-copy" data-info="{{$row->getpatient_name()}}" onclick="copyData(this)"></i></td>#}
+                <td><?= number_format($row->getinsurance_amount(), 2) ?> <i class="bx bx-copy" data-info="{{$row->getinsurance_amount()}}" onclick="copyData(this)"></i> <?= '/' . number_format($row->getpatient_amount(), 2) ?> <i class="bx bx-copy" data-info="{{$row->getpatient_amount()}}" onclick="copyData(this)"></i></td>
                 <td><a href="{{rel_url('/apps/insuranceinvoices/'.$row->getid().'/view')}}" target="_blank"><i class="bx bx-show"></i></a>
                     <a href="{{rel_url('/apps/insuranceinvoices/'.$row->getid().'/delete')}}"><i class="bx bx-trash"></i></a>
                     {{$row->getpdf_path()}}

@@ -77,6 +77,10 @@ th, td {
     & a:hover {
         color: red;
     }
+
+    & i.bx.bx-copy:hover {
+        color: red;
+    }
 }
 
 tr:nth-child(even) {
