@@ -1,0 +1,76 @@
+---
+table:
+  name: billing
+  class: billingClass
+
+  fields:
+    - name: guid
+      type: "@guid"
+
+    - name: cdate
+      type: "@cdate"
+
+    - name: cuser
+      type: "@cuser"
+
+    - name: patientname
+      type: text
+
+    - name: operationdate
+      type: datetime
+      default: timestamp
+    
+    - name: operationtype
+      type: text
+    
+    - name: surgeon
+      type: text
+
+    - name: anesthesia
+      type: text
+
+    - name: insurance
+      type: text
+    
+    - name: amount
+      type: decimal(10,2)
+
+    - name: assistantpayment
+      type: decimal(10,2)
+
+    - name: anesthesiapayment
+      type: decimal(10,2)
+
+    - name: invoiceamount
+      type: decimal(10,2)
+
+    - name: invoicedate
+      type: datetime
+    
+    - name: invoicenumber
+      type: int
+    
+    - name: invoicepaymentdate
+      type: datetime
+
+    - name: invoicepatientpart
+      type: decimal(10,2)
+
+    - name: invoicepatientpartpayment
+      type: datetime
+
+    - name: fees_pdf
+      type: text
+
+    - name: invoice_pdf
+      type: text
+
+    - name: invoicepatient_pdf
+      type: text
+
+    - name: bank
+      type: text
+---
+
+# billing record table
+# add form definitions, so to add input form
