@@ -47,12 +47,14 @@ function parsePdfText($pdfText) {
     $entryDatePattern = '/Ημ\/νία Εισαγωγής\s*:\s*(.*?)\s/';
     preg_match($entryDatePattern, $pdfText, $entryDateMatches);
     if (isset($entryDateMatches[1])) {
+        $entryDateMatches[1] = str_replace('/','-',$entryDateMatches[1]);
         $result['patient']['entry_date'] = trim($entryDateMatches[1]);
     }
 
     $exitDatePattern = '/Ημ\/νία Εξόδου\s*:\s*(.*?)\s/';
     preg_match($exitDatePattern, $pdfText, $exitDateMatches);
     if (isset($exitDateMatches[1])) {
+        $exitDateMatches[1] = str_replace('/','-',$exitDateMatches[1]);
         $result['patient']['exit_date'] = trim($exitDateMatches[1]);
     }
 

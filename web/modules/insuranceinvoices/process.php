@@ -63,7 +63,8 @@ function process_run() {
         "total_patient_amount" => $summary["patient_payment"],
         "pdf_path" => $targetPath
     ]);
-
+    
+    // echopre("record: " . print_r($xr, 1));
     $xr->insert();
 
     // echo "File uploaded, parsed, and saved successfully.";
