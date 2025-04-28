@@ -30,8 +30,13 @@ function process_run() {
 
     $baseFilename = basename($filename, ".pdf");
 
+    // format: [patient_name]-[entry_date]-[base filename]-[uniq id].pdf
     $targetPath = core_get_file_in_lib($patient['full_name']. '-' . 
-                formatBrowserDate($patient['entry_date'] ) . '-' . $baseFilename . '-' . uniqid() . ".pdf", 'insuranceinvoices');
+                // formatBrowserDate($patient['entry_date'] ) . 
+                $patient['entry_date'] . 
+                // '-' . $baseFilename . 
+                '-' . uniqid() . 
+                ".pdf", 'insuranceinvoices');
     
     echopre("Filename to create: $filename @ $targetPath");
 
