@@ -1,0 +1,16 @@
+{% attach_library('finance-library') %}
+
+<div class="finance-wrapper">
+    <h3>Finance module</h3>
+
+
+    <p>{{$text}}</p>
+
+    <p>{{$invoices}}</p>
+
+    <p>{{$suppliers}}</p>
+
+    <p>{{$payments}}</p>
+
+    <p>{{$bankaccounts}}</p>
+</div>

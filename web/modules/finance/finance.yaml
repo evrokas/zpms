@@ -1,0 +1,45 @@
+# templates:
+#   - './modules/finance/templates/'
+
+routes:
+  finance-module:
+    title:
+      gr: "Οικονομικά Στοιχεία"
+      en: "Finance"
+    name: finance_handler
+    module: finance
+    url: /apps/finance
+    method: get
+
+
+  # pdflib-actions-delete:
+  #   title: "PDF Library action delete"
+  #   name: pdflib_action_delete_handler
+  #   handler: pdflib_action_delete
+  #   # module: pdflib
+  #   url: "/apps/pdflib/{id}/delete"
+  #   method: get
+  # pdflib-actions-download:
+  #   title: "PDF Library action download"
+  #   name: pdflib_action_download_handler
+  #   handler: pdflib_action_download
+  #   # module: pdflib
+  #   url: "/apps/pdflib/{id}/download"
+  #   method: get
+  # pdflib-module-process:
+  #   title: "PDF library post process"
+  #   name: pdflib_process
+  #   # module: pdflib
+  #   handler: pdflib_process
+  #   url: /apps/pdflib-process
+
+libraries:
+  finance-library:
+   css:
+    - finance:
+      src: "@app/css/finance.css"
+   foot_script:
+     - finance:
+       src: "@app/js/finance.js"
+       defer:
+      
