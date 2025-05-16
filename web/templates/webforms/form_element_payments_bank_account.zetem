@@ -1,0 +1,20 @@
+{% if(isset($label)): %}
+    <label>{{ $label }}</label>
+{% endif %}
+
+{# Render input, textarea, select, or any other tag #}
+
+<{{ $tag }} {% foreach($attributes as $key => $value): %}{{ $key }}="{{ $value }}" {% endforeach %}>
+    {% if ( $tag == 'select' ): %}
+        {# Render options for a select element #}
+        {% foreach($options as $option): %}
+            {# <option value="{{ $option['value'] }}" {% if ( $option['selected'] ): %}selected{% endif %}>{{ $option['label'] }}</option> #}
+            <option value="{{ $option['value'] }}" {% if ( $option['selected'] ): %}selected{% endif %}>{{ $option['bank_name'] }} | {{ $option['iban'] }} </option>
+        {% endforeach %}
+        </{{ $tag }}>
+        {% elseif ( $tag == 'textarea'): %}
+        {# Render default content for a textarea #}
+        {{ $default }}
+        </{{ $tag }}>
+    {% endif %}
+{# <!-- </{{ $tag }}> --> #}
