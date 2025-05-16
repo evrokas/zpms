@@ -1,0 +1,35 @@
+---
+table:
+  name: suppliers
+  class: suppliersClass
+
+  fields:
+    - name: guid
+      type: '@guid'
+
+    - name: cdate
+      type: '@cdate'
+
+    - name: cuser
+      type: '@cuser'
+    
+    - name: name
+      type: text
+
+form:
+  name: suppliers
+  mathod: "post"
+  action: "#"
+  inputs:
+    - name: name
+      label: "Supplier Name"
+      type: text
+  
+---
+  # buttons:
+  #   - type: "Submit"
+  #     label: "Submit"
+
+  #   - type: "button"
+  #     label: "Cancel"
+  #     action: "#"

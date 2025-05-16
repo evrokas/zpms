@@ -1,0 +1,80 @@
+---
+table:
+  name: invoices
+  class: invoicesClass
+
+  fields:
+    - name: guid
+      type: '@guid'
+
+    - name: cdate
+      type: '@cdate'
+
+    - name: cuser
+      type: '@cuser'
+
+    - name: patient_id
+      type: '@guid'
+
+    - name: inv_date
+      type: datetime
+    
+    - name: total_amount
+      type: decimal(10,2)
+
+    - name: tax_amount
+      type: decimal(10,2)
+
+    - name: inv_status
+      type: varchar(16)
+    
+    - name: payment_method
+      type: varchar(16)
+
+    - name: supplier_id
+      type: '@guid'
+
+form:
+  name: invoices
+  method: "post"
+  action: "#"
+  inputs:
+    - name: patient_id
+      label: "Patient Name"
+      type: text
+
+    - name: inv_date
+      label: "Invoice date"
+      type: date
+
+    - name: total_amount
+      label: "Total amount"
+      type: text
+
+    - name: tax_amount
+      label: "Tax amount"
+      type: text
+
+    - name: inv_status
+      label: "Invoice status"
+      type: select
+      options:
+        invoice_issued: "Issued"
+        invoice_paid: "Paid"
+    
+    - name: payment_method
+      label: "Payment method"
+      type: text
+    
+    - name: clinic_id
+      label: "Supplier ID"
+      type: text
+
+---
+  # buttons:
+  #   - type: "Submit"
+  #     label: "Submit"
+
+  #   - type: "Button"
+  #     label: "Cancel"
+  #     url: "#"

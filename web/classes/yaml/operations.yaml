@@ -48,7 +48,8 @@ table:
     - name: anesthesiology
       type: varchar(64)
 
-
+    - name: invoice_status
+      type: text
 
 form:
   name: operations
@@ -58,6 +59,14 @@ form:
     - name: opdate
       label: "Operation date"
       type: date
+
+    - name: cuser
+      label: "user_created"
+      type: hidden
+
+    - name: cdate
+      label: "date_created"
+      type: hidden
 
     - name: pguid
       label: "Patient GUID"
@@ -73,7 +82,7 @@ form:
       type: datetime
 
     - name: opdiagnosis
-      label: "diagnosis"
+      label: "Diagnosis"
       type: text
 
     - name: opprocedure
@@ -83,10 +92,11 @@ form:
     - name: clinic
       label: "Clinic"
       type: select
-      options:
-        iatrikoperisteriou: "Iatriko Peristeriou"
-        metropolitanhostpial: "Metropolitan Hospital"
-        bioclinic: "Bioclinic Athens"
+      static_options:
+        params:
+          tableclass: suppliersClass
+          label: [name]
+          value: guid
 
     - name: category
       label: "Procedure category"
@@ -94,24 +104,64 @@ form:
 
     - name: surgeon1
       label: "Main surgeon"
-      type: text
+      type: select
+      static_options: 
+        params:
+          tableclass: doctorsClass
+          label: [doctor_name]
+          value: guid
+          filter:
+            doctor_specialty: "Neurosurgery"
 
     - name: surgeon2
       label: "Assistant surgeon"
-      type: text
+      type: select
+      static_options: 
+        params:
+          tableclass: doctorsClass
+          label: [doctor_name]
+          value: guid
+          filter:
+            not:
+              - doctor_specialty: "Anesthesiology"
 
     - name: anesthesiology
       label: "Anesthesiologist"
-      type: text
+      type: select
+      static_options: 
+        params:
+          tableclass: doctorsClass
+          label: [doctor_name]
+          value: guid
+          filter:
+            doctor_specialty: "Anesthesiology"
 
-  buttons:
-    - type: "submit"
-      label: "Submit"
-    
-    - type: "reset"
-      label: "Reset"
+    - name: invoice_status
+      label: "Invoice status"
+      type: select
+      options:
+        pending_issue: "Αναμονή για τιμολόγηση"
+        issued_clinic: "Απόδειξη στην κλινική"
+        issued_patient: "Απόδειξη στην ασθενή"
+        pending_payment: "Αναμονή πληρωμής"
+        payed: "Εξόφληση"
 
-    - type: "button"
-      label: "Cancel"
-      action: "window.location.href='index.php';"
 ...
+  # buttons:
+  #   - type: "button"
+  #     button_type: "submit"
+  #     label: "Προσθήκη"
+  #     value: "Submit_value"
+
+      # options:
+      #   iatrikoperisteriou: "Iatriko Peristeriou"
+      #   metropolitanhostpial: "Metropolitan Hospital"
+      #   bioclinic: "Bioclinic Athens"
+
+    
+  #   - type: "reset"
+  #     label: "Reset"
+
+  #   - type: "button"
+  #     label: "Cancel"
+  #     action: "window.location.href='index.php';"

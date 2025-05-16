@@ -1,0 +1,90 @@
+---
+table:
+  name: payments
+  class: paymentsClass
+
+  fields:
+    - name: guid
+      type: '@guid'
+
+    - name: cdate
+      type: '@cdate'
+
+    - name: cuser
+      type: '@cuser'
+
+    - name: inv_id
+      type: '@guid'
+
+    - name: payment_amount
+      type: decimal(10,2)
+
+    - name: payment_date
+      type: date
+
+    - name: payment_method
+      type: text
+
+    - name: bank_account
+      type: text
+
+    - name: tax_amount
+      type: decimal(10,2)
+  
+form:
+  name: payments
+  method: "post"
+  action: "#"
+  inputs:
+    - name: payment_amount
+      label: "Payment amount"
+      type: text
+    
+    - name: payment_date
+      label: "Payment date"
+      type: date
+
+    - name: payment_method
+      label: "Payment method"
+      type: select
+      options:
+        pay_cash: "Cash"
+        pay_card: "Card"
+        pay_paymentlink: "Payment Link"
+        pay_bank: "Bank account"
+        pay_iris: "IRIS"
+
+    - name: bank_account
+      label: "Bank account"
+      type: select
+      static_options:
+        params:
+          tableclass: bankaccountsClass
+          label: [bank_name, iban]
+          value: guid
+
+    - name: tax_amount
+      label: "Tax amount"
+      type: decimal(10,2)
+
+---
+  
+  # buttons:
+  #   - type: "submit"
+  #     label: "Submit"
+    
+  #   - type: "reset"
+  #     label: "Reset"
+    # - name: bank_account
+    #   label: "Bank account"
+    #   type: select
+    #   static_options:
+    #     params:
+    #       table: bankaccounts
+    #       values: [bank_name, iban]
+
+
+    # - name: bank_account
+    #   label: "Bank account"
+    #   type: text
+

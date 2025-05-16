@@ -1,0 +1,41 @@
+---
+table:
+  name: bankaccounts
+  class: bankaccountsClass
+
+  fields:
+    - name: guid
+      type: '@guid'
+
+    - name: cdate
+      type: '@cdate'
+
+    - name: cuser
+      type: '@cuser'
+
+    - name: bank_name
+      type: varchar(128)
+
+    - name: iban
+      type: char(48)
+    
+form:
+  name: bankaccounts
+  method: post
+  action: "#"
+  inputs:
+    - name: bank_name
+      label: "Bank Name"
+      type: text
+
+    - name:  iban
+      label: "IBAN"
+      type: text
+    
+---
+  # buttons:
+  #   - type: "submit"
+  #     label: "Submit"
+    
+  #   - type: "reset"
+  #     label: "Reset"
