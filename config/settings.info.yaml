@@ -15,6 +15,7 @@ favicon:
 templates:
   - './core/templates/'
   - './templates/'
+  - './modules/finance/templates/'
 
 css:
   - normalize:
@@ -115,7 +116,11 @@ roles:
     patients-delete-patient, 
     patients-edit-patient, 
     appointment-edit,
-    pdflib-access
+    pdflib-access,
+    operations-view-list,
+    operations-new-operation,
+    operations-delete-operation,
+    operations-edit-operation
     ]
 
 
@@ -313,6 +318,67 @@ routes:
     title: "Activate TOTP"
     url: "/totp/{action}"
     handler: totp_handler
+  operations_list:
+    title: 
+      gr: "Λίστα χειρουργείων"
+      en: "Operations List"
+    url: [
+          "/operations",
+          "/operations/sort/{key}",
+          "/operations/sort/{key}/{order}"
+          ]
+    handler: operations_list
+    access: authenticated user
+  operations_search:
+    title: "Οperations"
+    url: "/operations/search/{term}"
+    handler: operations_list_search
+    access: authenticated user
+  # operations_search0:
+    # title: "operations"
+    # url: "/operations/search"
+    # handler: operations_list
+    # access: authenticated user
+  operations_search_ajax:
+    title: 
+      gr: "Χειρουργεία"
+      en: "Operations"
+    url: "/operations/searchajax/{term}"
+    handler: operations_list_search_ajax
+    access: authenticated user
+  operations_search_post:
+    title: "operations search"
+    url: "/operations/search"
+    handler: operations_search_post
+    method: post
+  operation_edit:
+    title: 
+      en: "Operation edit"
+      gr: "Επεξεργασία χειρουργείoυ"
+    url: "/operation/{id}/edit"
+    handler: operation_edit
+    method: get
+  operation_edit_post:
+    title: "operation edit"
+    url: "/operation/{id}/edit"
+    handler: operation_edit_post
+    method: post
+  operation_new:
+    title: 
+      en: "New operation"
+      gr: "Νέο χειρουργείο"
+    url: /operation/new
+    handler: operation_new
+    method: get
+  operation_new_post:
+    title: "New operation"
+    url: /operation/new
+    handler: operation_new_post
+    method: post
+  operation_delete:
+    title: "operation delete"
+    url: "/operation/{id}/delete"
+    handler: operation_delete
 
 
 regions:
@@ -392,28 +458,47 @@ menu:
             en: 'New'
           url: /patient/new
       # path: '/patients'
+    - operations:
+      text:
+        gr: 'Χειρουργεία'
+        en: 'Operations'
+      access: power-user
+      # url: '/operations'
+      submenu:
+        - operations_list:
+          text: 
+            gr: 'Λίστα'
+            en: 'List'
+          url: '/operations'
+        - patient_new:
+          text: 
+            gr: 'Νέο'
+            en: 'New'
+          url: /operation/new
+      # path: '/patients'
+      # disabled: true
     - appointments:
       text:
         gr: 'Ραντεβού'
         en: 'Appointments'
       url: '/appointments'
       disabled: true
-    - settings:
-      text:
-        gr: "Ρυθμίσεις"
-        en: "Settings"
-      url: '/settings'
-      access: power-user
-    - contact:
-      text:
-        gr: 'Επικοινωνία'
-        en: 'Contact'
-      url: '#'
     - applications:
       text:
         en: 'Apps'
         gr: 'Εφαρμογές'
       submenu:
+        - settings:
+          text:
+            gr: "Ρυθμίσεις"
+            en: "Settings"
+          url: '/settings'
+          access: power-user
+        - contact:
+          text:
+            gr: 'Επικοινωνία'
+            en: 'Contact'
+          url: '#'
         - qrgenerator:
           text:
             gr: 'Δημιουργία κωδικού QR'
@@ -425,8 +510,11 @@ menu:
             en: 'PDF Archive'
           url: /apps/pdflib
           access: power-user
-
-
+        - finance-module:
+          text:
+            gr: 'Οικονομικά Στοιχεία'
+            en: 'Finanace'
+          url: /apps/finance
 
 # Module site configuration
 #
@@ -468,3 +556,4 @@ modules:
     - pdflib
     - language_selector
     - message
+    - finance
