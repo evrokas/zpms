@@ -13,3 +13,4 @@ web/files
 backup/
 backups/
 web/modules/datepicker/date-picker
+web/test
