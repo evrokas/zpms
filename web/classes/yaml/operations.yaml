@@ -139,14 +139,20 @@ form:
     - name: invoice_status
       label: "Invoice status"
       type: select
-      options:
-        pending_issue: "Αναμονή για τιμολόγηση"
-        issued_clinic: "Απόδειξη στην κλινική"
-        issued_patient: "Απόδειξη στην ασθενή"
-        pending_payment: "Αναμονή πληρωμής"
-        payed: "Εξόφληση"
+      static_options:
+        params:
+          tableclass: invoiceStatusClass
+          label: [status]
+          value: status
+---
 
-...
+      # options:
+      #   pending_issue: "Αναμονή για τιμολόγηση"
+      #   issued_clinic: "Απόδειξη στην κλινική"
+      #   issued_patient: "Απόδειξη στην ασθενή"
+      #   pending_payment: "Αναμονή πληρωμής"
+      #   payed: "Εξόφληση"
+
   # buttons:
   #   - type: "button"
   #     button_type: "submit"
