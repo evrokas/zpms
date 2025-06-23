@@ -46,4 +46,4 @@ prefeed:
   #   - 'Eleftheriou Venizelou 1 & Ethnarchou Makariou 9, 18547, Neo Faliro'
 
 # data can be ordered be keys
-order: [mandra, iatriko_peristeriou, metropolitan]
+#order: [mandra, iatriko_peristeriou, metropolitan]
