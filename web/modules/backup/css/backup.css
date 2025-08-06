@@ -1,0 +1,102 @@
+/* * {
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+body {
+    background-color: #f4f4f4;
+    padding: 20px;
+}
+*/
+
+.backup-container {
+  max-width: 900px;
+  margin: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.action-area {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  text-align: left;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.action-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 12px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.action-button i {
+  margin-right: 8px;
+}
+
+.action-button:hover {
+  background-color: #0056b3;
+}
+
+.backup-list {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.backup-list h2 {
+  margin-bottom: 15px;
+  font-size: 20px;
+}
+
+.backup-entry {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid #ddd;
+  padding: 12px 0;
+}
+
+.backup-entry:first-of-type {
+  border-top: none;
+}
+
+.backup-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.backup-name {
+  font-weight: bold;
+  font-size: 16px;
+}
+
+.backup-date {
+  font-size: 14px;
+  color: #666;
+}
+
+.backup-actions button {
+  background: none;
+  border: none;
+  margin-left: 10px;
+  cursor: pointer;
+  font-size: 16px;
+  color: #444;
+}
+
+.backup-actions button:hover {
+  color: #007bff;
+}
+
+.backup-size {
+  font-size: 14px;
+  color: #888;
+}

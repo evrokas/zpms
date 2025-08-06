@@ -1,0 +1,61 @@
+{% attach_library('backup-library') %}
+
+
+<h1>
+Backup module
+</h1>
+
+<!--
+    <code>
+        
+        {% foreach($files as $index => $file): %}
+        {{$index+1}} -> {{ $file['name'] }}<br>
+        {% endforeach %}
+    </code>
+-->
+
+
+
+  <div class="backup-container">
+    <!-- Action Area -->
+    <section class="action-area">
+      <button class="action-button">
+        <i class="fas fa-plus-circle"></i> Create Backup
+      </button>
+    </section>
+
+    <!-- Backup List Area -->
+    <!-- Backup List Area -->
+    <section class="backup-list">
+    <h2>Available Backups</h2>
+
+    <div class="backup-entry">
+        <div class="backup-info">
+        <span class="backup-name">backup_2025_08_06.sql</span>
+        <span class="backup-date">Aug 6, 2025, 10:45</span>
+        <span class="backup-size">Size: 12.4 MB</span>
+        </div>
+        <div class="backup-actions">
+        <button title="Download"><i class="fas fa-download"></i></button>
+        <button title="Delete"><i class="fas fa-trash-alt"></i></button>
+        <button title="Cloud Backup"><i class="fas fa-cloud-upload-alt"></i></button>
+        </div>
+    </div>
+
+    <div class="backup-entry">
+        <div class="backup-info">
+        <span class="backup-name">backup_2025_08_05.sql</span>
+        <span class="backup-date">Aug 5, 2025, 09:15</span>
+        <span class="backup-size">Size: 9.8 MB</span>
+        </div>
+        <div class="backup-actions">
+        <button title="Download"><i class="fas fa-download"></i></button>
+        <button title="Delete"><i class="fas fa-trash-alt"></i></button>
+        <button title="Cloud Backup"><i class="fas fa-cloud-upload-alt"></i></button>
+        </div>
+    </div>
+    </section>
+
+`
+
+</div>
