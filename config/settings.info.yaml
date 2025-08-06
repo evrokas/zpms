@@ -115,7 +115,8 @@ roles:
     patients-delete-patient, 
     patients-edit-patient, 
     appointment-edit,
-    pdflib-access
+    pdflib-access,
+    backup-access
     ]
 
 
@@ -425,6 +426,13 @@ menu:
             en: 'PDF Archive'
           url: /apps/pdflib
           access: power-user
+        - backup:
+          text:
+            gr: "Αντίγραφα Ασφαλείας"
+            en: "Backups"
+          url: /apps/backup
+          access: power-user
+
 
 
 
@@ -468,3 +476,4 @@ modules:
     - pdflib
     - language_selector
     - message
+    - backup
