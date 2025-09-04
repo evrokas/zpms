@@ -15,7 +15,7 @@ class locationsClassEx extends locationsClass {
         } else return (null);
     }
 
-    static function sgetAll($lang = null) {
+    static function sgetAll($lang = null, $nothing = null) {
         $rows = parent::sgetAll();
         if(!$lang)return $rows;
 

@@ -119,9 +119,12 @@
     {% if($action != 'new'): %}
         <hr>
         <div class="patient-appointments">
-            <div class="new-appointment">
-                <a href="{{rel_url('/appointment/'.$id.'/newappointment')}}">Νέο Ραντεβού</a>
-            </div>
+            <a href="{{rel_url('/appointment/'.$id.'/newappointment')}}">
+                <div class="new-appointment">
+                    Νέο Ραντεβού
+                </div>
+            </a>
+
         </div>
     {% endif %}
 

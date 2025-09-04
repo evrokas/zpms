@@ -143,8 +143,8 @@
     color: var(--main-navigation-menu-level-2-link-color) !important;
     /* width: 250px; */
     position: absolute;
-    /* left: 50px; */
-    /* top: 100px; */
+    left: 95%;
+    top: 4px;
     /* transform: translateX( -50% ); */
     display: flex;
     flex-direction: column;

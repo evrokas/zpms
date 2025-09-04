@@ -1,0 +1,43 @@
+routes:
+  backup-module:
+    title:
+      gr: "Αντίγραφα Ασφαλείας"
+      en: "Backups"
+    name: backup_handler
+    module: backup
+    url: /apps/backup
+    method: get
+#  backup-actions-delete:
+#    title: "PDF Library action delete"
+#    name: backup_action_delete_handler
+#    handler: backup_action_delete
+    # module: backup
+#    url: "/apps/backup/{id}/delete"
+#    method: get
+#  backup-actions-download:
+#    title: "PDF Library action download"
+#    name: backup_action_download_handler
+#    handler: backup_action_download
+    # module: backup
+#    url: "/apps/backup/{id}/download"
+#    method: get
+#  backup-module-process:
+#    title: "PDF library post process"
+#    name: backup_process
+    # module: backup
+#    handler: backup_process
+#    url: /apps/backup-process
+
+libraries:
+  backup-library:
+   css:
+    - backup:
+      src: "@app/css/backup.css"
+    - fontawosame:
+      type: 'text/css'
+      rel: 'stylesheet'
+      src: 'https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css'
+   foot_script:
+     - backup:
+       src: "@app/js/backup.js"
+       defer:
