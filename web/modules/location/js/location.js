@@ -2,7 +2,7 @@
 
 ls = document.getElementById('location-selector');
 
-// console.log( ls );
+//console.log( ls );
 
 ls.addEventListener('change', (e) => {
     console.log('selection changed', ls.value);
@@ -10,7 +10,7 @@ ls.addEventListener('change', (e) => {
     var fdata = new FormData();
     fdata.append('location', ls.value);
 
-    fetch('updatelocation', {
+    fetch('/updatelocation', {
         'method': 'post',
         body: new URLSearchParams( fdata ),
         'headers': {
