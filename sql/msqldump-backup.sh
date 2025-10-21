@@ -23,4 +23,6 @@ options="$options $full_ignore_tables"
 #mysqldump -u $user -p$password $db $options $@
 MYSQL_PWD="$password" mysqldump -u $user  $db $options $@
 
+echo "error $?"
+
 #mysqldump --defaults-extra-file=<(echo $'[client]\npassword='"$password") -u $user $db $@
