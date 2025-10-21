@@ -1,0 +1,59 @@
+{% attach_library('finance-library') %}
+
+<div class="operations-list">
+
+    <center>
+        <h2>Operations List</h2>
+
+    </center>
+
+    <table>
+        <thead>
+            {# {% foreach($headers as $header): %}
+            <th>
+                {{ $header['label'] }}
+            </th>
+            {% endforeach %}
+            <th>
+                Actions
+            </th> #}
+            <th>Date</th>
+            <th>Name</th>
+            <th>Diagnosis</th>
+            <th>Procedure</th>
+            <th>Clinic</th>
+            <th>Actions</th>
+        </thead>
+        
+        <tbody>
+            {% foreach($rowdata as $row): %}
+            {# {% echopre("row: " . print_r($row, 1)) %} #}
+            <tr>
+                <td>{{$row['opdate']|date('d-m-Y')}}</td>
+                <td>{{$row['pname']}}</td>
+                <td>{{$row['opdiagnosis']}}</td>
+                <td>{{$row['opprocedure']}}</td>
+                <td>{{$row['clinic']}}</td>
+                {# {% foreach($row as $index => $el): %}
+                <td data-name="{{$headers[ $index ]['name'] }}">
+                    {% if(strtolower($headers[ $index ]['label']) === 'name'): %}
+                        <a href="#"> {{ $el }} </a>
+                    {% else: %}
+                        {{ $el }}
+                    {% endif %}
+                </td>
+                {% endforeach %}
+                 #}
+                 
+                <td>
+                    <div class="operations-record-actions">
+                        <a href="#"><i class="bx bx-trash"></i></a>
+                    </div>
+
+                </td>
+                
+            </tr>
+            {% endforeach %}
+        </tbody>
+    </table>
+</div>

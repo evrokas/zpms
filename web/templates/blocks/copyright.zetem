@@ -1,0 +1,14 @@
+{#
+  htmltext.zetem
+  html text template
+
+  variables:
+    $modulename     name of module calling the template
+    $text           text to be displayed
+#}
+
+<div class="module-copyright">
+    &copy 2013 - 2025 by Evangelos M. Rokas, MD | Neurosurgeon
+    <br>
+    Minimal Invasive Brain & Spine Surgery
+</div>

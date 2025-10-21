@@ -1,0 +1,30 @@
+<div class="paymentinvoices-list">
+
+    <center>
+        <h2>Payment Invoices List</h2>
+
+    </center>
+
+    <table>
+        <thead>
+            {% foreach($headers as $header): %}
+            <th>
+                {{ $header['label'] }}
+            </th>
+            {% endforeach %}
+        </thead>
+        
+        <tbody>
+            {% foreach($rowdata as $row): %}
+            {# {% echopre("row: " . print_r($row, 1)) %} #}
+            <tr>
+                {% foreach($row as $index => $el): %}
+                <td data-name="{{$headers[ $index ]['name'] }}">
+                    {{ $el }}
+                </td>
+                {% endforeach %}
+            </tr>
+            {% endforeach %}
+        </tbody>
+    </table>
+</div>

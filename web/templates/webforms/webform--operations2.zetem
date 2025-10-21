@@ -1,0 +1,74 @@
+{% attach_library('webform') %}
+
+
+
+<form action="/apps/zpms/web/webform/processform/95bb1452-b2ed-4a4e-971b-efa8cf632407" method="post" class="webform">
+    <div class="form_elements">
+
+        <label>Operation date</label>
+        <input name="opdate" type="date" value="2025-05-17">
+
+        <input name="cuser" type="hidden" value="">
+        <input name="cdate" type="hidden" value="">
+
+
+        <label>Patient GUID</label>
+        <input name="pguid" type="text" value="">
+
+        <label>Name</label>
+        <input class="select2" name="pname" type="text" value="">
+
+
+        <label>Date of birth</label>
+        <input name="pdob" type="datetime" value="">
+
+        <label>Diagnosis</label>
+        <input name="opdiagnosis" type="text" value="">
+
+        <label>Procedure</label>
+        <input name="opprocedure" type="text" value="">
+
+        <label>Clinic</label>
+        <select name="clinic">
+            <option value="02b88bc9-7294-4d56-acc5-be476df56dbd">Ιατρικό Περιστερίου</option>
+            <option value="91f925ad-ba41-463a-b47c-98f9050f5e4c">Metropolitan Hospital</option>
+        </select>
+
+        <label>Procedure category</label>
+        <input name="category" type="text" value="">
+
+        <label>Main surgeon</label>
+        <select name="surgeon1">
+            <option value="f37c6345-e0a9-468e-bd0e-4897d05ea8a0">Evangelos Rokas</option>
+            <option value="d02425ab-51ee-475d-8f9d-8308239c59dc">Georgios Dimogerontas</option>
+        </select>
+
+        <label>Assistant surgeon</label>
+        <select name="surgeon2">
+            <option value="f37c6345-e0a9-468e-bd0e-4897d05ea8a0">Evangelos Rokas</option>
+            <option value="d02425ab-51ee-475d-8f9d-8308239c59dc">Georgios Dimogerontas</option>
+        </select>
+
+
+        <label>Anesthesiologist</label>
+        <select name="anesthesiology">
+            <option value="62ecd572-d413-4263-b5d5-e970128b814b">Gianniri Maria</option>
+            <option value="f301dffc-284b-46f6-880d-4063895ed973">Vasiliki Mariatou</option>
+            <option value="db77b49e-a00a-4dce-88e7-3e545ae60e09">Aggeliki Pantazi</option>
+        </select>
+
+        <label>Invoice status</label>
+        <select name="invoice_status">
+            <option value="Αναμονή_για_τιμολόγηση">Αναμονή για τιμολόγηση</option>
+            <option value="Απόδειξη_στην_κλινική">Απόδειξη στην κλινική</option>
+            <option value="Απόδειξη_στην_ασθενή">Απόδειξη στην ασθενή</option>
+            <option value="Αναμονή_πληρωμής">Αναμονή πληρωμής</option>
+            <option value="Εξόφληση">Εξόφληση</option>
+        </select>
+    </div>
+
+    <div class="form_controls">
+        <button type="submit" name="submit" value="new">Προσθήκη</button>
+    </div>
+
+</form>

@@ -1,0 +1,49 @@
+{% attach_library('webform') %}
+
+
+<div class="patient-selection">
+    <div class="search">
+        <form action="{{rel_url('patients/searchajax/term')}}" method="post">
+            <div class="input-div">
+                <label for="search-term">{{t("Search")}}</label>
+                <input type="text" class="select2" name="search-term" id="" autocomplete="off" value="{% if(isset($search_term))echo $search_term; %}">
+            </div>
+            <div class="select-container">
+                <ul class="select-box" id="select-box" data-selectrow="selectclickoperation">
+                    <!-- <li>Opt 1</li> -->
+                    <!-- <li>Opt 2</li> -->
+                    <!-- <li>Opt 3</li> -->
+                </ul>
+            </div>
+            <!-- <div class="buttons">
+                <button type="submit" name="search" value="search">Search</button>
+            </div> -->
+    
+            <!-- <p>
+                <textarea name="search-response" id="search-response" cols="30" rows="10"></textarea>
+            </p> -->
+        </form>
+    </div>
+</div>
+
+
+
+<form {% foreach($attributes as $attr => $value): %}{{ $attr }}="{{ $value }}" {% endforeach %}>
+    <div class="form_elements">
+        {% foreach($elements as $element): %}
+            {{ $element }}
+        {% endforeach %}
+
+
+        <!-- {# foreach($formelements as $felem): #} -->
+    </div>
+
+    {% if(count($controls)>0): %}
+        <div class="form_controls">
+            {% foreach($controls as $control): %}
+                {{ $control }}
+            {% endforeach %}
+        </div>
+    {% endif %}
+    
+</form>

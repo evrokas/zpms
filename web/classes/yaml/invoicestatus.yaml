@@ -1,0 +1,21 @@
+---
+table:
+  name: invoicestatus
+  class: invoiceStatusClass
+
+  fields:
+    - name: guid
+      type: '@guid'
+
+    - name: cdate
+      type: '@cdate'
+
+    - name: cuser
+      type: '@cuser'
+
+    - name: status
+      type: text
+
+    - name: label
+      type: text
+---
