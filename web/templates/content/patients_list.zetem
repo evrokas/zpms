@@ -70,7 +70,7 @@
                 <td data-column="amka">
                     {{$pat['pamka']}} 
                     {% if(strlen($pat['pamka'])>0): %}
-                        <i class='bx bx-copy' onclick="copyStr('{{$pat['pamka']}}')"></i>
+                        <i class='bx bx-copy' onclick="copyStr('{{$pat['pamka']}}')" data-copy-text="{{$pat['pamka']}}"></i>
                     {% endif %}
                 </td>
 
