@@ -63,7 +63,7 @@
                 <td data-column="name">
                     <a href="{{rel_url('/patient/'.$pat['id'].'/edit')}}">{{$pat['pname']}}</a>
                     {% if(strlen($pat['pname'])>0): %}
-                        <i class='bx bx-copy' onclick="copyStr('{{$pat['pname']}}')"></i>
+                        <i class='bx bx-copy' onclick="copyStr('{{$pat['pname']}}')" data-copy-text="{{$pat['pname']}}"></i>
                     {% endif %}
                 </td>
 
