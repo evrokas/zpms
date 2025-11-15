@@ -27,13 +27,26 @@ class backupModule extends moduleClass {
     function run($params = array()) {
 
         if(($ret=SecurityClass::require('backup-access')))return $ret;
-        // echopre(">".__APPDIR__ . "< params: " . print_r($params, 1));
+        // echopre("params: " . print_r($params, 1));
+
 
         // $t = core_get_file_in_lib('test.txt', 'backup');
         // echopre("test file: $t");
 
         // $pdflist = backupFilesClass::sgetAll();
-        
+        $action = $params['action'] ?? null;
+        if(!is_null($action)) {
+
+            switch( $action ) {
+                case 'create':
+                    backup_create_backup();
+                    break;
+                default:
+                    echopre("default");
+            }
+        }
+
+
         $files = new RecursiveIteratorIterator(
             new RecursiveDirectoryIterator(self::$dirPath,RecursiveDirectoryIterator::SKIP_DOTS),
             RecursiveIteratorIterator::LEAVES_ONLY);
@@ -67,6 +80,25 @@ function register_backup_module() {
 
 function backup_handler($params) {    
     return Renderer::render('backup.zetem', []);
+}
+
+
+function backup_create_backup() {
+    $current_date = formatBrowserDate(time());
+    echopre("create backup");
+    // echopre("Date: " . formatBrowserDate(time()));
+    $file = "backup-{$current_date}-" . randomAlnum(5) . '.sql';
+    $libfile = core_get_file_in_lib($file, 'backup');
+
+    // echopre("backup file: " . $file);
+    // $cmd = __APPDIR__ . "/sql/msqldump-backup.sh ";
+    $cmd = __APPDIR__ . "/sql/msqldump-backup.sh > {$libfile}";
+    echopre("cmd: $cmd");
+    // $res = 0;
+    $out = exec($cmd);
+    // echopre("return code: $res");
+    echopre("result: " . print_r($out, 1));
+    // $file = 
 }
 
 
