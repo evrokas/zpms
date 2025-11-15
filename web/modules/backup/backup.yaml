@@ -5,7 +5,9 @@ routes:
       en: "Backups"
     name: backup_handler
     module: backup
-    url: /apps/backup
+    url: 
+      - "/apps/backup"
+      - "/apps/backup/{action}"
     method: get
 #  backup-actions-delete:
 #    title: "PDF Library action delete"
