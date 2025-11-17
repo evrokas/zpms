@@ -1,63 +1,99 @@
 {% attach_library('textarea-autoexpand-library') %}
-
+{% attach_library('appointment-improvements') %}
 
 <!-- <hr> -->
 <div class="appointment-entry">
     <input type="checkbox" disabled name="expand-app" id="expand-app-{{$index}}" {{$checked}}>
     <label for="expand-app-{{$index}}">
-        <!-- <i name="exp-arrow" class='bx bxs-right-arrow'></i> -->
-        <!-- <i name="cmp-arrow" class='bx bxs-down-arrow'></i> -->
-        <!-- <div class="title"> -->
-            <!-- {% if(isset($index)): %} -->
-            <!-- {{$index}} -->
-            <!-- {% endif %} -->
              <p id="app-{{$index}}">
                  
                  <span>Ραντεβού&nbsp;<b>{{formatDate($appointment->getadate())}}</b></span>
                 </p>
             
         <div id="app-loader-{{$index}}" class="loader0"></div>
-
-            <!-- </div> -->
     </label>
-    <div class="edit-appointment">    
-        <form action="{{$action}}" method="post">
-            <div class="input-header">
-                <div class="input-div">
-                    <!-- <label for="patient-date">Ημ/νια & Ώρα ραντεβού</label> -->
-                    <!-- <input type="datetime-local" loader="app-loader-{{$index}}" name="appointment-date" id="" value="{{$appointment->getadate()}}"> -->
-                    <label for="patient-date">Ημ/νια & Ώρα ραντεβού</label>
-                    <input type="date" loader="app-loader-{{$index}}" name="appointment-date-{{$index}}" id="" role="date-picker" value="{{formatBrowserDate($appointment->getadate())}}">
-                    <!-- <label for="patient-dob">Ημ/νια Γεννήσεως</label> -->
-                    <!-- <input type="date" name="patient-dob" id="" role="date-picker" value="{{formatDate($patient->getpdob())}}"> -->
+
+    <div class="appointment-wrapper">
+        <div class="edit-appointment">    
+            <form action="{{$action}}" method="post">
+                <div class="input-header">
+                    <div class="input-div">
+                        <!-- <label for="patient-date">Ημ/νια & Ώρα ραντεβού</label> -->
+                        <!-- <input type="datetime-local" loader="app-loader-{{$index}}" name="appointment-date" id="" value="{{$appointment->getadate()}}"> -->
+                        <label for="patient-date">Ημ/νια & Ώρα ραντεβού</label>
+                        <input type="date" loader="app-loader-{{$index}}" name="appointment-date-{{$index}}" id="" role="date-picker" value="{{formatBrowserDate($appointment->getadate())}}">
+                        <!-- <label for="patient-dob">Ημ/νια Γεννήσεως</label> -->
+                        <!-- <input type="date" name="patient-dob" id="" role="date-picker" value="{{formatDate($patient->getpdob())}}"> -->
+                        </div>
+                        
+                    <div class="input-div">
+                        <label for="appointment-place">Περιοχή</label>
+                        <!-- <input type="text" name="appointment-place" id=""  value="{{$appointment->getaplace()}}"> -->
+
+                        <!-- {% if(isset($locations)): %} -->
+                            <select name="appointment-place" loader="app-loader-{{$index}}">
+                                {% foreach($locations as $loc): %}
+                                <!-- {{ $loc->getname() }} - {{ $loc->getmachinename() }} {{$appointment->getaplace()}} -->
+                                <option value="{{$loc->getmachinename()}}"{{($loc->getname() == $appointment->getaplace())?"selected":""}}>{{$loc->getname()}}</option>
+                            {% endforeach %}
+                            </select>
+                        <!-- {% endif %} -->
                     </div>
-                    
-                <div class="input-div">
-                    <label for="appointment-place">Περιοχή</label>
-                    <!-- <input type="text" name="appointment-place" id=""  value="{{$appointment->getaplace()}}"> -->
-
-                    <!-- {% if(isset($locations)): %} -->
-                        <select name="appointment-place" loader="app-loader-{{$index}}">
-                            {% foreach($locations as $loc): %}
-                            <!-- {{ $loc->getname() }} - {{ $loc->getmachinename() }} {{$appointment->getaplace()}} -->
-                            <option value="{{$loc->getmachinename()}}"{{($loc->getname() == $appointment->getaplace())?"selected":""}}>{{$loc->getname()}}</option>
-                        {% endforeach %}
-                        </select>
-                    <!-- {% endif %} -->
                 </div>
+
+                <div class="input-div input-notes">
+                    <label for="appointment-notes">Σημειώσεις</label>
+                    <textarea name="appointment-notes" id="" autoexpand rows="5" loader="app-loader-{{$index}}">{{$appointment->getanote()}}</textarea>
+                </div>
+
+                <div class="buttons">
+                    <input type="submit" name="submit" value="Αποθήκευση">
+                    <input type="submit" name="delete" value="Διαγραφή">
+                    <!-- <input type="submit" name="cancel" value="cancel"> -->
+                    <button hidden type="button" loader="app-loader-{{$index}}" onclick="field_update(this)">Update</button>
+                    </div>
+            </form>
+        </div>
+
+        <!-- NEW: File upload section for this appointment -->
+        <div class="file-upload-section">
+            <h5>Συνημμένα Αρχεία</h5>
+            <div class="file-upload-area">
+                <input type="file" id="file-upload-1" multiple
+                    accept="image/*,.pdf" class="file-input">
+                <label for="file-upload-1" class="file-upload-label">
+                    <i class='bx bx-cloud-upload'></i>
+                    <span>Επιλέξτε ή μεταφέρετε αρχεία εδώ</span>
+                </label>
             </div>
 
-            <div class="input-div input-notes">
-                <label for="appointment-notes">Σημειώσεις</label>
-                <textarea name="appointment-notes" id="" autoexpand rows="5" loader="app-loader-{{$index}}">{{$appointment->getanote()}}</textarea>
+            <!-- File previews container -->
+            <div class="file-previews" id="file-previews-1">
+                <!-- Preview items will be added here dynamically -->
             </div>
 
-            <div class="buttons">
-                <input type="submit" name="submit" value="Αποθήκευση">
-                <input type="submit" name="delete" value="Διαγραφή">
-                <!-- <input type="submit" name="cancel" value="cancel"> -->
-                <button hidden type="button" loader="app-loader-{{$index}}" onclick="field_update(this)">Update</button>
-                </div>
-        </form>
+            <!-- Existing uploaded files (if any) -->
+            <div class="existing-files">
+                <p>existing files</p>
+                <!-- Example of existing file -->
+                <!--
+                    <div class="file-item">
+                        <div class="file-preview">
+                            <img src="path/to/thumbnail.jpg" alt="File preview">
+                        </div>
+                        <div class="file-info">
+                            <span class="file-name">medical_report.pdf</span>
+                            <span class="file-size">2.4 MB</span>
+                        </div>
+                        <div class="file-actions">
+                            <button class="view-btn" data-file="path/to/file.pdf">Προβολή</button>
+                            <button class="delete-btn">Διαγραφή</button>
+                        </div>
+                    </div>
+                -->
+            </div>
+        </div>
+
+
     </div>
 </div>
