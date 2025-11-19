@@ -76,7 +76,7 @@
             <div class="existing-files">
                 <p>existing files</p>
                 <!-- Example of existing file -->
-                <!--
+                
                     <div class="file-item">
                         <div class="file-preview">
                             <img src="path/to/thumbnail.jpg" alt="File preview">
@@ -90,7 +90,7 @@
                             <button class="delete-btn">Διαγραφή</button>
                         </div>
                     </div>
-                -->
+                
             </div>
         </div>
 
