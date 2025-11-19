@@ -713,8 +713,16 @@ ul.patient-appointments-list {
 }
 
 .appointment-entry .edit-appointment .input-header {
-    display: flex;
-    flex-wrap: wrap;
+    /* display: flex; */
+    /* flex-wrap: wrap; */
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+
+    .input-div {
+        width: auto !important;
+        /* display: grid; */
+        /* grid-template-columns: subgrid; */
+    }
 }
 
 .appointment-entry .edit-appointment .input-header > .input-div:nth-child(1) {
@@ -725,6 +733,12 @@ ul.patient-appointments-list {
 }
 .appointment-entry .edit-appointment .input-header > .input-div:nth-child(3) {
     width: 20%;
+}
+
+.appointment-wrapper {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
 }
 
 /* login page */
