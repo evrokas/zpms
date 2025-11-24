@@ -2,20 +2,38 @@
 {% attach_library('appointment-improvements') %}
 
 <!-- <hr> -->
-<div class="appointment-entry">
-    <input type="checkbox" disabled name="expand-app" id="expand-app-{{$index}}" {{$checked}}>
-    <label for="expand-app-{{$index}}">
-             <p id="app-{{$index}}">
-                 
-                 <span>Ραντεβού&nbsp;<b>{{formatDate($appointment->getadate())}}</b></span>
-                </p>
+<div class="appointment-entry" id="app-{{$index}}">
+    <div class="input-header">
+        <div class="input-div" role="rendezvouz">
+            <!-- <label for="patient-date">Ημ/νια & Ώρα ραντεβού</label> -->
+            <!-- <input type="datetime-local" loader="app-loader-{{$index}}" name="appointment-date" id="" value="{{$appointment->getadate()}}"> -->
+            <label for="patient-date">Ραντεβού</label>
+            <input type="date" loader="app-loader-{{$index}}" name="appointment-date-{{$index}}" id="" role="date-picker" value="{{formatBrowserDate($appointment->getadate())}}">
+            <!-- <label for="patient-dob">Ημ/νια Γεννήσεως</label> -->
+            <!-- <input type="date" name="patient-dob" id="" role="date-picker" value="{{formatDate($patient->getpdob())}}"> -->
+            </div>
             
-        <div id="app-loader-{{$index}}" class="loader0"></div>
-    </label>
+        <div class="input-div">
+            <label for="appointment-place" role="location">Περιοχή</label>
+            <!-- <input type="text" name="appointment-place" id=""  value="{{$appointment->getaplace()}}"> -->
+
+            <!-- {% if(isset($locations)): %} -->
+                <select name="appointment-place" loader="app-loader-{{$index}}">
+                    {% foreach($locations as $loc): %}
+                    <!-- {{ $loc->getname() }} - {{ $loc->getmachinename() }} {{$appointment->getaplace()}} -->
+                    <option value="{{$loc->getmachinename()}}"{{($loc->getname() == $appointment->getaplace())?"selected":""}}>{{$loc->getname()}}</option>
+                {% endforeach %}
+                </select>
+            <!-- {% endif %} -->
+        </div>
+    </div>
+    <div id="app-loader-{{$index}}" class="loader0"></div>
 
     <div class="appointment-wrapper">
         <div class="edit-appointment">    
             <form action="{{$action}}" method="post">
+{#
+                
                 <div class="input-header">
                     <div class="input-div">
                         <!-- <label for="patient-date">Ημ/νια & Ώρα ραντεβού</label> -->
@@ -40,6 +58,7 @@
                         <!-- {% endif %} -->
                     </div>
                 </div>
+#}
 
                 <div class="input-div input-notes">
                     <label for="appointment-notes">Σημειώσεις</label>
