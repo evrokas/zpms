@@ -1,0 +1,162 @@
+/* COLOR PALETTE FOR PATIENT MANAGEMENT SYSTEM */
+
+:root {
+  /* Primary Colors - Teal Family */
+  --primary: #036379;        /* Main primary color (already in use) */
+  --primary-light: #04819e;  /* Lighter variant for hover states */
+  --primary-dark: #024a5c;   /* Darker variant for active states */
+  --primary-rgb: 3, 99, 121; /* RGB values for transparency effects */
+  
+  /* Secondary Colors - Green Family */
+  --secondary: #4CAF50;      /* Success/positive actions */
+  --secondary-light: #81C784; /* Light success states */
+  --secondary-dark: #388E3C;  /* Dark success states */
+  --secondary-rgb: 76, 175, 80; /* RGB values for transparency */
+  
+  /* Neutral Colors - Gray Family */
+  --light-gray: #f8f9fa;
+  --medium-gray: #e9ecef;
+  --dark-gray: #495057;
+  --text: #212529;
+  
+  /* Semantic Colors */
+  --success: var(--secondary);
+  --success-light: var(--secondary-light);
+  --success-dark: var(--secondary-dark);
+  
+  --warning: #ffc107;
+  --warning-light: #ffcd39;
+  --warning-dark: #e0a800;
+  --warning-rgb: 255, 193, 7;
+  
+  --error: #dc3545;
+  --error-light: #e57373;
+  --error-dark: #c62828;
+  --error-rgb: 220, 53, 69;
+  
+  --info: #17a2b8;
+  --info-light: #4dd0e1;
+  --info-dark: #00838f;
+  --info-rgb: 23, 162, 184;
+  
+  /* Shadow Variables */
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  --shadow-base: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  
+  /* Primary Shadow Variants */
+  --shadow-primary-sm: 0 1px 2px 0 rgba(3, 99, 121, 0.1);
+  --shadow-primary-base: 0 1px 3px 0 rgba(3, 99, 121, 0.1), 0 1px 2px 0 rgba(3, 99, 121, 0.06);
+  --shadow-primary-md: 0 4px 6px -1px rgba(3, 99, 121, 0.1), 0 2px 4px -1px rgba(3, 99, 121, 0.06);
+  --shadow-primary-lg: 0 10px 15px -3px rgba(3, 99, 121, 0.1), 0 4px 6px -2px rgba(3, 99, 121, 0.05);
+  
+  /* Border Radius */
+  --border-radius-sm: 0.25rem;
+  --border-radius: 0.375rem;
+  --border-radius-md: 0.5rem;
+  --border-radius-lg: 0.75rem;
+  
+  /* Spacing */
+  --spacing-xs: 0.25rem;
+  --spacing-sm: 0.5rem;
+  --spacing: 1rem;
+  --spacing-md: 1.5rem;
+  --spacing-lg: 2rem;
+  --spacing-xl: 3rem;
+  
+  /* Transitions */
+  --transition-fast: 0.15s ease-in-out;
+  --transition-base: 0.3s ease-in-out;
+  --transition-slow: 0.5s ease-in-out;
+}
+
+/* UTILITY CLASSES FOR COLORS */
+
+/* Background Colors */
+.bg-primary { background-color: var(--primary); }
+.bg-primary-light { background-color: var(--primary-light); }
+.bg-primary-dark { background-color: var(--primary-dark); }
+
+.bg-secondary { background-color: var(--secondary); }
+.bg-secondary-light { background-color: var(--secondary-light); }
+.bg-secondary-dark { background-color: var(--secondary-dark); }
+
+.bg-light-gray { background-color: var(--light-gray); }
+.bg-medium-gray { background-color: var(--medium-gray); }
+.bg-dark-gray { background-color: var(--dark-gray); }
+
+.bg-success { background-color: var(--success); }
+.bg-warning { background-color: var(--warning); }
+.bg-error { background-color: var(--error); }
+.bg-info { background-color: var(--info); }
+
+/* Text Colors */
+.text-primary { color: var(--primary); }
+.text-primary-light { color: var(--primary-light); }
+.text-primary-dark { color: var(--primary-dark); }
+
+.text-secondary { color: var(--secondary); }
+.text-secondary-light { color: var(--secondary-light); }
+.text-secondary-dark { color: var(--secondary-dark); }
+
+.text-light { color: var(--light-gray); }
+.text-medium { color: var(--medium-gray); }
+.text-dark { color: var(--dark-gray); }
+.text-body { color: var(--text); }
+
+.text-success { color: var(--success); }
+.text-warning { color: var(--warning); }
+.text-error { color: var(--error); }
+.text-info { color: var(--info); }
+
+/* Border Colors */
+.border-primary { border-color: var(--primary); }
+.border-secondary { border-color: var(--secondary); }
+.border-light { border-color: var(--light-gray); }
+.border-medium { border-color: var(--medium-gray); }
+.border-dark { border-color: var(--dark-gray); }
+
+/* Shadow Utilities */
+.shadow-sm { box-shadow: var(--shadow-sm); }
+.shadow { box-shadow: var(--shadow-base); }
+.shadow-md { box-shadow: var(--shadow-md); }
+.shadow-lg { box-shadow: var(--shadow-lg); }
+.shadow-xl { box-shadow: var(--shadow-xl); }
+
+.shadow-primary-sm { box-shadow: var(--shadow-primary-sm); }
+.shadow-primary { box-shadow: var(--shadow-primary-base); }
+.shadow-primary-md { box-shadow: var(--shadow-primary-md); }
+.shadow-primary-lg { box-shadow: var(--shadow-primary-lg); }
+
+/* Focus States */
+.focus-primary:focus {
+  outline: 2px solid var(--primary-light);
+  outline-offset: 2px;
+}
+
+.focus-secondary:focus {
+  outline: 2px solid var(--secondary-light);
+  outline-offset: 2px;
+}
+
+/* Hover Effects */
+.hover-lift {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+.hover-primary:hover {
+  background-color: var(--primary-light);
+  color: white;
+}
+
+.hover-secondary:hover {
+  background-color: var(--secondary-light);
+  color: white;
+}
