@@ -131,28 +131,6 @@ if(trashelements.length>0) {
 }
 
 
-
-function appointmentsExpandAll() {
-    lis = document.querySelectorAll('ul.patient-appointments-list > li');
-    // console.log( lis );
-    lis.forEach(el => {
-        // console.log(el.querySelectorAll('.appointment-entry input[type="checkbox"]'));
-        el.querySelectorAll('.appointment-entry input[type="checkbox"]')[0].checked = true;
-    });
-
-    // console.log(lis);
-}
-
-function appointmentsCollapseAll() {
-    lis = document.querySelectorAll('ul.patient-appointments-list > li');
-    lis.forEach(el => {
-        // console.log(el.querySelectorAll('.appointment-entry input[type="checkbox"]'));
-        el.querySelectorAll('.appointment-entry input[type="checkbox"]')[0].checked = false;
-    });
-    
-    // console.log(lis);
-}
-
 var elementTimeout;
 
 function saveTimeout(element) {
