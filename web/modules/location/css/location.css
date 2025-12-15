@@ -1,13 +1,22 @@
 .location-place {
     margin: 0.5rem 0;
-    /* width: 100%; */
     text-align: right;
     display: block;
-    /* outline: 1px solid black; */
 }
 
 .location-place select {
-    padding: 1px 12px;
+    padding: 8px 12px;
+    border: 1px solid var(--medium-gray);
+    border-radius: var(--border-radius-sm);
+    background: white;
+    transition: all var(--transition-fast);
+
+}
+
+.location-place select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(3, 99, 121, 0.1);
+    outline: none;
 }
 
 .location-place form .input-div {
