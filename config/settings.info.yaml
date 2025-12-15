@@ -19,12 +19,16 @@ templates:
 css:
   - normalize:
     src: 'css/normalize.css'
+  - colorpalette:
+    src: 'css/color-palette.css'
   - navigation:
     src: 'css/navigation.css'
   - styles:
     src: 'css/styles.css'
   - boxicons:
     src: 'css/bx/css/boxicons.min.css'
+  # - newstyles:
+    # src: 'css/new-styles.css'
   # - breadcrumbs:
     # src: 'css/breadcrumbs.css'
   # - utils:
@@ -91,6 +95,26 @@ libraries:
       - pikaday_js:
         type:
         src: "."
+  appointment-improvements:
+    css:
+      - uploads:
+        type: 'text/css'
+        src: 'css/file-uploads.css'
+      - appointments:
+        type: 'text/css'
+        src: 'css/appointment-improvements.css'
+      # - sidebar:
+      #   type: 'text/css'
+      #   src: 'css/attachments-sidebar.css'
+    foot_script:
+      - uploads:
+        type: 'text/javascript'
+        src: 'js/file-upload.js'
+        defer:
+      - preview:
+        type: 'text/javascript'
+        src: 'js/pdf-preview.js'
+        defer:
 
 
 # head_script:
