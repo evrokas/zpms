@@ -45,7 +45,7 @@ function enableLoader(loader, form) {
                 'X-Requested-With': 'XMLHttpRequest'
             },
         }).then((response) => {
-            console.log(response);
+            console.log('ajax response ', response);
             return (response)
         }).then((res) => {
             if(res.status === 200) {
@@ -75,7 +75,7 @@ function enableLoader(loader, form) {
 // }
 
 function update_form(e, form) {
-    // console.log( e, "has changed, new value: ", e.target.value);
+    console.log( e, "has changed, new value: ", e.target.value);
     // console.log( 'Form node: ', form);
 
     loader = form.querySelector('button[loader]');
@@ -105,11 +105,11 @@ window.addEventListener('load', (e) => {
     // console.log(loaderTimeouts);
 
     loaders.forEach(l => {
-        // console.log( l.id );
+        console.log( l.id );
 
         // add event handler for datetime and select inputs
         Inputs = document.querySelectorAll('input[loader=\"'+l.id+'\"],select[loader=\"'+l.id+'\"]');
-        // console.log( 'inputs: ', Inputs );
+        console.log( 'inputs: ', Inputs );
         Inputs.forEach(inp => {
             inp.addEventListener('input', (e) => {
                 // console.log( e, "has changed, new value: ", e.target.value);
