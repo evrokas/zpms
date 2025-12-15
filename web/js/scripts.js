@@ -334,3 +334,45 @@ document.addEventListener("click", function(event) {
         copyText(textToCopy, element);
     }
 });
+
+
+// startDate must be a date string
+function dateAgo(date) {
+    var startDate = new Date(date);
+    var diffDate = new Date(new Date() - startDate);
+    return ((diffDate.toISOString().slice(0, 4) - 1970) + "y " +
+        diffDate.getMonth() + "m "
+        //  + (diffDate.getDate()-1) + "D"
+        );
+}
+
+function isDateValid(dateStr) {
+  return !isNaN(new Date(dateStr));
+}
+
+function dobChange(e) {
+    // console.log('dob change: ' , e.attributes['agefield']);
+    target=document.getElementById(e.attributes['agefield'].nodeValue);
+    // console.log(target);
+
+    ymd = e.value.split('-');
+    // console.log('ymd', ymd);
+    dobDate = new Date(ymd[2],ymd[1],ymd[0]);
+
+    if(isDateValid(dobDate)
+        && (ymd[2] > 1900)
+        && (ymd[1] > 0) && (ymd[1] < 13)
+        && (ymd[0] >= 0) && (ymd[0] < 32)
+        ) {
+        d = dateAgo(dobDate);
+        target.innerHTML = d;
+        e.classList.add('valid');
+        e.classList.remove('not-valid');
+    } else {
+        target.innerHTML = '';
+        e.classList.add('not-valid');
+        e.classList.remove('valid');
+    }
+
+}
+
