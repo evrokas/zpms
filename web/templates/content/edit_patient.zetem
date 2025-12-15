@@ -40,15 +40,24 @@
             <div class="input-div">
                 <label for="patient-dob">Ημ/νια Γεννήσεως</label>
                 <!-- <input type="date" name="patient-dob" id="" value="{{formatDate($patient->getpdob())}}"> -->
-                <input type="text" name="patient-dob" id="datepicker" value="{{$patient->getpdob()| date('d-m-Y')}}" onkeyup="dobChange(this)" agefield="age_field">
+                <input type="text" name="patient-dob" id="datepicker" loader="info-loader" value="{{$patient->getpdob()| date('d-m-Y')}}" onkeyup="dobChange(this)" agefield="age_field">
                 
-                <label for="dob-age" style="width: max-content;" disabled">Ηλικία</label>
-                <input type="text" style="width: 1rem" disabled name="dob-age" id="age_field" value="">
+                <div class="inline-icons">
+                    <!-- <i class='valid bx bx-check' style='color:#00ff00'  ></i> -->
+                    <i class='not-valid bx bx-error' style='color:#ff0000'  ></i>
+                    <span for="dob-age" id="age_field" style="width: max-content;" disabled">Ηλικία</label>
+                </div>
+
+                <!-- <input type="text" style="width: 1rem" disabled name="dob-age" id="age_field" value=""> -->
             </div>
 
         <!-- </div> -->
    
-
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                dobChange(document.getElementById('datepicker'));
+            });
+        </script>
 
 {# 
         <div class="input-div">
