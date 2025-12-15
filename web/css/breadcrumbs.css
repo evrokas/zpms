@@ -1,17 +1,38 @@
 
 .breadcrumbs {
-    padding: 0.5rem 0;
-    background-color: white;
+    /* background-color: white; */
+
+    background: white;
+    padding: var(--spacing-sm);
+    border-radius: var(--border-radius-sm);
+    box-shadow: var(--shadow-sm);
+    margin: var(--spacing-sm) 0;
+
 }
 
 .breadcrumbs a {
-    color: gray !important;
+    text-decoration: none;
+    /* text-decoration: underline; */
+
+    color: var(--primary);
+    transition: color var(--transition-fast);
+}
+
+.breadcrumbs a:hover {
+    color: var(--primary-dark);
     text-decoration: underline;
 }
+
+
+
 .breadcrumbs ul {
     display: flex;
     flex-direction: row;
     list-style: none;
+
+    align-items: center;
+    gap: var(--spacing-xs);
+
     /* gap: 12px; */
 }
 

@@ -4,7 +4,6 @@
 {# {% attach_library('pikaday-library'); %} #}
 {% attach_library('textarea-expandable-library'); %}
 
-
 <div class="edit-patient">    
     <div class="header">
         <h4>Επεξεργασία στοιχείων ασθενή</h4>
@@ -36,13 +35,21 @@
         </div>
     -->
         
+        <!-- <div class="dob-field"> -->
 
-        <div class="input-div">
-            <label for="patient-dob">Ημ/νια Γεννήσεως</label>
-            <!-- <input type="date" name="patient-dob" id="" value="{{formatDate($patient->getpdob())}}"> -->
-            <input type="text" name="patient-dob" id="datepicker" value="{{$patient->getpdob()| date('d-m-Y')}}">
-        </div>
+            <div class="input-div">
+                <label for="patient-dob">Ημ/νια Γεννήσεως</label>
+                <!-- <input type="date" name="patient-dob" id="" value="{{formatDate($patient->getpdob())}}"> -->
+                <input type="text" name="patient-dob" id="datepicker" value="{{$patient->getpdob()| date('d-m-Y')}}" onkeyup="dobChange(this)" agefield="age_field">
+                
+                <label for="dob-age" style="width: max-content;" disabled">Ηλικία</label>
+                <input type="text" style="width: 1rem" disabled name="dob-age" id="age_field" value="">
+            </div>
+
+        <!-- </div> -->
    
+
+
 {# 
         <div class="input-div">
                 <label for="patient-dob">Ημ/νια Γεννήσεως</label>
