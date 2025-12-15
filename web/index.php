@@ -20,7 +20,7 @@ require_once(__FWDIR__ . '/bootstrap.php');
     $router = new RouterClass( $kernel->getConfig('routes') );
     // print_r( $router->getAllRoutes() );
 
-    Renderer::init($kernel->getConfig('templates'), false,  $kernel->getConfig('enable_comments'));
+    Renderer::init($kernel->getConfig('templates'), false,  $kernel->safeGetConfig('template_cache_path'), $kernel->getConfig('enable_comments'));
 
     $Request = new RequestClass($_SERVER);
     // $handlers = $Request->getQueryRoute();
@@ -320,16 +320,23 @@ require_once(__FWDIR__ . '/bootstrap.php');
             'pnote' => $_POST['patient-note']
         ]);
         
-        $pat->update();
+        $res = $pat->update();
 
-        // error_log("patient record saved\n");
-        
         if(isset($_POST['use_ajax'])) {
-            echo "OK";
+            if($res) {
+                echo "OK";
+            } else {
+                echo "FAILED";
+            }
             exit();
         }
 
-        $kernel->addStatus('notice', 'Ο φάκελος του ασθενή <b>' . $pat->getpname() . '</b> έχει αποθηκευτεί.');
+        if($res) {
+            $kernel->addStatus('notice', 'Ο φάκελος του ασθενή <b>' . $pat->getpname() . '</b> έχει αποθηκευτεί.');
+        } else {
+            $kernel->addStatus('error', 'Αδυναμία αποθήκευσης φακέλου.');
+        }
+
         header('location: '.rel_url('/patient/'.$pat->getid().'/edit'));
         exit();
         // return '';
