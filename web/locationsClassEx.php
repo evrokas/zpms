@@ -83,12 +83,13 @@ class locationsClassEx extends locationsClass {
         }
 
         // echopre("remove location cookie");
-        setcookie('location', '', -1);
+        setcookie('location', '', time()-3600, '/');
+        unset($_COOKIE['location']);
 
         $expiry = time() + 30*24*60*60;
 
         // echopre("set new cookie: $locname, that expires on $expiry");
-        setcookie('location', $locname, $expiry);
+        setcookie('location', $locname, $expiry, '/');
     }
 
     static function getCurrentLocation() {
