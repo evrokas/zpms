@@ -5,12 +5,16 @@ ls = document.getElementById('location-selector');
 //console.log( ls );
 
 ls.addEventListener('change', (e) => {
-    console.log('selection changed', ls.value);
+    // console.log('selection changed', ls.value);
+    // console.log('location selector: ', ls);
+    // console.log('location selector: ', ls.dataset.ajaxCallback);
+    url = ls.dataset.ajaxCallback;
 
     var fdata = new FormData();
     fdata.append('location', ls.value);
 
-    fetch('/updatelocation', {
+    if(url)
+    fetch( url, {
         'method': 'post',
         body: new URLSearchParams( fdata ),
         'headers': {
@@ -22,12 +26,12 @@ ls.addEventListener('change', (e) => {
         return(response);
     }).then((res) => {
         if(res.status === 200) {
-            // console.log('ajax location request successful');
+            console.log('ajax location request successful');
 
         }
 
     }).catch((error) => {
-        // console.log('ajax request location error ', error);
+        console.log('ajax request location error ', error);
 
     })
 });
