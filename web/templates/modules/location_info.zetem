@@ -6,7 +6,7 @@
 
             <!-- <label for="location-selector">{{t("Location")}}</label> -->
              {{t("Location")}}
-            <select name="location" id="location-selector">
+            <select name="location" id="location-selector" data-ajax-callback="{{rel_url('/updatelocation')}}"">
                 {% foreach($location_places as $loc): %}
                 <option value="{{$loc}}" {{ ($loc == $location)?"selected":""}}>{{$loc}}</option>
                 {% endforeach %}
