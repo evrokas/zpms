@@ -67,7 +67,7 @@ html {
     --main-navigation-menu-level-2-background-color: var(--primary-dark);
     --main-navigation-menu-level-2-link-color: #fff;
     --main-navigation-menu-level-2-hover-background-color: var(--primary-light);
-    --main-`-menu-level-2-hover-text-color: #fff;
+    --main-menu-level-2-hover-text-color: #fff;
 }
 
 /* OLD body styles - keeping for reference */
