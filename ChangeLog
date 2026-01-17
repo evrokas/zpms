@@ -1,3 +1,8 @@
+2026-01-18
+In progress to implement new theme scheme, with vertical side bar
+based on Claude AI inspired design system.
+
+
 * Rebased 'stage' branch to 'devel' branch, works seems ok
 * Completed reorganization of modules, plan is to separate the core fw/ folder from site
   development, so same fw/ code can be used in multiple sites
