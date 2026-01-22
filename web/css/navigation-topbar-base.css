@@ -1,5 +1,5 @@
 /* =====================================================
-   v2
+   v3
    TOPBAR NAVIGATION - BASE STRUCTURE
    Horizontal menu layout and responsive behavior
    Compatible with existing .main-navigation structure
@@ -17,8 +17,7 @@
 }
 
 /* ===== TOPBAR NAVIGATION CONTAINER ===== */
-.main-navigation,
-.topbar-nav {
+.main-navigation {
     display: block;
     width: 100%;
     position: relative;
@@ -28,8 +27,7 @@
 }
 
 /* Top-level menu list */
-.main-navigation > ul,
-.topbar-nav > ul {
+.main-navigation > ul {
     list-style: none;
     margin: 0;
     padding: 0;
@@ -61,8 +59,33 @@
     position: relative;
 }
 
+/* Link inside label for items with submenus */
+.submenu-toggle-label > a {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm, 0.5rem);
+    padding: 0;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all var(--transition-base, 250ms ease-in-out);
+    font-weight: var(--font-weight-medium, 500);
+    flex: 1;
+}
+
+.submenu-toggle-label > span {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm, 0.5rem);
+    padding: 0;
+    cursor: pointer;
+    transition: all var(--transition-base, 250ms ease-in-out);
+    font-weight: var(--font-weight-medium, 500);
+    flex: 1;
+}
+
 /* Icon positioning */
-.topbar-menu-link .menu-icon {
+.topbar-menu-link .menu-icon,
+.submenu-toggle-label .menu-icon {
     font-size: var(--font-size-xl, 1.25rem);
     display: flex;
     align-items: center;
@@ -70,12 +93,14 @@
 }
 
 /* Menu text */
-.topbar-menu-link .menu-text {
+.topbar-menu-link .menu-text,
+.submenu-toggle-label .menu-text {
     display: inline-block;
 }
 
 /* Badge positioning */
-.topbar-menu-link .badge {
+.topbar-menu-link .badge,
+.submenu-toggle-label .badge {
     margin-left: var(--space-xs, 0.25rem);
 }
 
@@ -97,23 +122,17 @@
     user-select: none;
 }
 
-.submenu-toggle-label > a {
-    display: flex;
-    align-items: center;
-    flex: 1;
-}
-
 /* Chevron indicator */
 .submenu-toggle-label > i.bx-chevron-right {
     margin-left: var(--space-xs, 0.25rem);
     transition: transform var(--transition-base, 250ms ease-in-out);
     font-size: var(--font-size-base, 1rem);
-    display: inline-block;
+    display: none; /* Hidden on desktop, shown on mobile */
 }
 
 /* ===== DROPDOWN MENUS ===== */
 .topbar-dropdown,
-.main-navigation .drop-menu-1 {
+.sidebar-submenu {
     position: absolute;
     top: 100%;
     left: 0;
@@ -131,7 +150,7 @@
 
 /* Show dropdown on hover (desktop) */
 .main-navigation ul li:hover > .topbar-dropdown,
-.main-navigation ul li:hover > .drop-menu-1 {
+.main-navigation ul li:hover > .sidebar-submenu {
     opacity: 1;
     visibility: visible;
     transition: all 0.3s ease;
@@ -139,14 +158,14 @@
 
 /* Align dropdown to right */
 .topbar-dropdown.align-right,
-.drop-menu-1.right-flush {
+.sidebar-submenu.align-right {
     left: auto;
     right: 0;
 }
 
 /* Level 2 dropdowns */
 .topbar-dropdown-level-2,
-.main-navigation .drop-menu-2 {
+.sidebar-submenu-level-2 {
     position: absolute;
     left: 95%;
     top: 4px;
@@ -160,26 +179,34 @@
     z-index: 1000;
 }
 
-.main-navigation .drop-menu-1 li:hover > .drop-menu-2 {
+.topbar-dropdown .topbar-menu-item:hover > .topbar-dropdown,
+.topbar-dropdown .topbar-menu-item:hover > .sidebar-submenu,
+.sidebar-submenu .topbar-menu-item:hover > .topbar-dropdown,
+.sidebar-submenu .topbar-menu-item:hover > .sidebar-submenu {
     opacity: 1;
     visibility: visible;
     transition: all 0.3s ease;
 }
 
-.drop-menu-2-align-left {
+.topbar-dropdown-level-2.align-left,
+.sidebar-submenu-level-2.align-left {
     right: 0;
     left: auto;
 }
 
 /* Dropdown items */
 .topbar-dropdown .topbar-menu-item,
-.drop-menu-1 .topbar-menu-item {
+.sidebar-submenu .topbar-menu-item {
     width: 100%;
     padding: 0;
 }
 
 .topbar-dropdown .topbar-menu-link,
-.drop-menu-1 .topbar-menu-link {
+.topbar-dropdown .submenu-toggle-label > a,
+.topbar-dropdown .submenu-toggle-label > span,
+.sidebar-submenu .topbar-menu-link,
+.sidebar-submenu .submenu-toggle-label > a,
+.sidebar-submenu .submenu-toggle-label > span {
     padding: 0.5rem 1rem;
     width: 100%;
 }
@@ -215,7 +242,9 @@
 }
 
 /* Unpublished items */
-.topbar-menu-item.unpublished .topbar-menu-link {
+.topbar-menu-item.unpublished .topbar-menu-link,
+.topbar-menu-item.unpublished .submenu-toggle-label > a,
+.topbar-menu-item.unpublished .submenu-toggle-label > span {
     opacity: 0.6;
     font-style: italic;
 }
@@ -257,23 +286,21 @@
         padding: 1rem;
     }
     
-    .topbar-menu-link {
+    .topbar-menu-link,
+    .submenu-toggle-label > a,
+    .submenu-toggle-label > span {
         width: 100%;
         display: flex;
+        padding: 0.5rem;
     }
     
     .submenu-toggle-label {
         width: 100%;
     }
     
-    .submenu-toggle-label > a {
-        width: 100%;
-        padding: 0.5rem;
-    }
-    
     /* Dropdowns become accordion */
     .topbar-dropdown,
-    .drop-menu-1 {
+    .sidebar-submenu {
         position: static;
         opacity: 1;
         visibility: visible;
@@ -283,7 +310,7 @@
     
     /* Show dropdown when checkbox checked */
     .submenu-toggle:checked ~ .topbar-dropdown,
-    .submenu-toggle:checked ~ .drop-menu-1 {
+    .submenu-toggle:checked ~ .sidebar-submenu {
         display: block;
     }
     
@@ -294,7 +321,7 @@
     
     /* Remove hover states on mobile */
     .main-navigation ul li:hover > .topbar-dropdown,
-    .main-navigation ul li:hover > .drop-menu-1 {
+    .main-navigation ul li:hover > .sidebar-submenu {
         opacity: 0;
         visibility: hidden;
     }
@@ -306,23 +333,18 @@
     
     /* Nested dropdowns */
     .topbar-dropdown-level-2,
-    .drop-menu-2 {
+    .sidebar-submenu-level-2 {
         position: static;
         margin-left: 0;
-    }
-}
-
-@media screen and (min-width: 531px) {
-    /* Hide chevron on desktop (hover to expand) */
-    .submenu-toggle-label > i.bx-chevron-right {
-        display: none;
     }
 }
 
 /* ===== ACCESSIBILITY ===== */
 
 /* Focus states */
-.topbar-menu-link:focus-visible {
+.topbar-menu-link:focus-visible,
+.submenu-toggle-label > a:focus-visible,
+.submenu-toggle-label > span:focus-visible {
     outline: 2px solid;
     outline-offset: 2px;
     z-index: 1;
@@ -343,17 +365,23 @@
 
 /* High contrast mode */
 @media (prefers-contrast: high) {
-    .topbar-menu-link {
+    .topbar-menu-link,
+    .submenu-toggle-label > a,
+    .submenu-toggle-label > span {
         border: 1px solid transparent;
     }
     
     .topbar-menu-link:hover,
-    .topbar-menu-link:focus {
+    .topbar-menu-link:focus,
+    .submenu-toggle-label > a:hover,
+    .submenu-toggle-label > a:focus,
+    .submenu-toggle-label > span:hover,
+    .submenu-toggle-label > span:focus {
         border-color: currentColor;
     }
     
     .topbar-dropdown,
-    .drop-menu-1 {
+    .sidebar-submenu {
         border: 1px solid currentColor;
     }
 }
@@ -361,9 +389,11 @@
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
     .topbar-menu-link,
+    .submenu-toggle-label > a,
+    .submenu-toggle-label > span,
     .submenu-toggle-label > i.bx-chevron-right,
     .topbar-dropdown,
-    .drop-menu-1 {
+    .sidebar-submenu {
         transition: none;
     }
 }

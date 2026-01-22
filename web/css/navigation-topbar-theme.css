@@ -1,5 +1,5 @@
 /* =====================================================
-   v2
+   v3
    TOPBAR NAVIGATION - THEME STYLES
    Colors, shadows, gradients using design system
    Compatible with existing .main-navigation structure
@@ -13,8 +13,7 @@
 }
 
 /* ===== TOPBAR CONTAINER STYLING ===== */
-.main-navigation,
-.topbar-nav {
+.main-navigation {
     background: linear-gradient(135deg, 
         var(--primary-600, #1e88e5) 0%, 
         var(--primary-700, #1976d2) 100%);
@@ -23,14 +22,17 @@
 
 /* ===== MENU ITEM COLORS ===== */
 .main-navigation li a,
-.topbar-menu-link {
+.topbar-menu-link,
+.submenu-toggle-label > a,
+.submenu-toggle-label > span {
     color: white !important;
     background-color: transparent;
 }
 
 /* Hover state - Desktop */
 @media screen and (min-width: 450px) {
-    .main-navigation li:hover {
+    .main-navigation li:hover,
+    .topbar-menu-item:hover {
         background-color: rgba(255, 255, 255, 0.15) !important;
         color: white !important;
         cursor: pointer;
@@ -39,14 +41,18 @@
 
 /* Active/Current page */
 .topbar-menu-item.current-page > .topbar-menu-link,
-.topbar-menu-item.current-page > .submenu-toggle-label .topbar-menu-link {
+.topbar-menu-item.current-page > .submenu-toggle-label,
+.topbar-menu-item.current-page > .submenu-toggle-label > a,
+.topbar-menu-item.current-page > .submenu-toggle-label > span {
     background-color: rgba(255, 255, 255, 0.25);
     color: white;
     font-weight: var(--font-weight-semibold, 600);
 }
 
 /* In active trail */
-.topbar-menu-item.in-trail > .topbar-menu-link {
+.topbar-menu-item.in-trail > .topbar-menu-link,
+.topbar-menu-item.in-trail > .submenu-toggle-label > a,
+.topbar-menu-item.in-trail > .submenu-toggle-label > span {
     background-color: rgba(255, 255, 255, 0.1);
     font-weight: var(--font-weight-medium, 500);
 }
@@ -56,13 +62,14 @@
     color: white;
 }
 
-.topbar-menu-link:hover .menu-icon {
+.topbar-menu-link:hover .menu-icon,
+.submenu-toggle-label:hover .menu-icon {
     color: white;
 }
 
 /* ===== DROPDOWN STYLING ===== */
 .topbar-dropdown,
-.main-navigation .drop-menu-1 {
+.main-navigation .sidebar-submenu {
     background-color: var(--background, #ffffff);
     border-radius: var(--radius-md, 0.5rem);
     box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
@@ -70,40 +77,41 @@
 
 /* Dropdown items */
 .topbar-dropdown .topbar-menu-link,
-.drop-menu-1 li a {
+.topbar-dropdown .submenu-toggle-label > a,
+.topbar-dropdown .submenu-toggle-label > span,
+.sidebar-submenu .topbar-menu-link,
+.sidebar-submenu .submenu-toggle-label > a,
+.sidebar-submenu .submenu-toggle-label > span {
     color: var(--text-primary, #212121) !important;
     border-radius: var(--radius-sm, 0.25rem);
 }
 
 .topbar-dropdown .topbar-menu-link:hover,
-.drop-menu-1 li:hover a {
+.topbar-dropdown .submenu-toggle-label:hover > a,
+.topbar-dropdown .submenu-toggle-label:hover > span,
+.sidebar-submenu .topbar-menu-link:hover,
+.sidebar-submenu .submenu-toggle-label:hover > a,
+.sidebar-submenu .submenu-toggle-label:hover > span {
     background-color: var(--primary-50, #e3f2fd);
     color: var(--primary-700, #1976d2) !important;
 }
 
 /* Active dropdown item */
-.topbar-dropdown .topbar-menu-item.current-page > .topbar-menu-link {
+.topbar-dropdown .topbar-menu-item.current-page > .topbar-menu-link,
+.topbar-dropdown .topbar-menu-item.current-page > .submenu-toggle-label > a,
+.topbar-dropdown .topbar-menu-item.current-page > .submenu-toggle-label > span,
+.sidebar-submenu .topbar-menu-item.current-page > .topbar-menu-link,
+.sidebar-submenu .topbar-menu-item.current-page > .submenu-toggle-label > a,
+.sidebar-submenu .topbar-menu-item.current-page > .submenu-toggle-label > span {
     background-color: var(--primary-100, #bbdefb);
     color: var(--primary-700, #1976d2) !important;
 }
 
 /* Level 2 dropdowns */
-.main-navigation .drop-menu-2 {
+.topbar-dropdown-level-2,
+.sidebar-submenu-level-2 {
     background-color: var(--background, white);
     box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
-}
-
-.main-navigation .drop-menu-2 li {
-    background-color: var(--background, white);
-}
-
-.main-navigation .drop-menu-2 li:hover {
-    background-color: var(--primary-50, #e3f2fd);
-}
-
-.main-navigation .drop-menu-2 li:hover a {
-    background-color: var(--primary-50, #e3f2fd);
-    color: var(--primary-700, #1976d2) !important;
 }
 
 /* ===== CHEVRON INDICATOR ===== */
@@ -112,24 +120,26 @@
 }
 
 .topbar-dropdown .submenu-toggle-label > i.bx-chevron-right,
-.drop-menu-1 .submenu-toggle-label > i.bx-chevron-right {
+.sidebar-submenu .submenu-toggle-label > i.bx-chevron-right {
     color: var(--text-secondary, #616161);
 }
 
 /* ===== BADGES ===== */
-.topbar-menu-link .badge {
+.topbar-menu-link .badge,
+.submenu-toggle-label .badge {
     font-size: var(--font-size-xs, 0.75rem);
     background-color: rgba(255, 255, 255, 0.9);
     color: var(--primary-700, #1976d2);
 }
 
-.topbar-menu-link .badge-danger {
+.topbar-menu-link .badge-danger,
+.submenu-toggle-label .badge-danger {
     background-color: var(--danger-500, #f44336);
     color: white;
 }
 
 .topbar-dropdown .badge,
-.drop-menu-1 .badge {
+.sidebar-submenu .badge {
     background-color: var(--primary-50, #e3f2fd);
     color: var(--primary-700, #1976d2);
 }
@@ -151,26 +161,38 @@
 }
 
 /* ===== UNPUBLISHED ITEMS ===== */
-.topbar-menu-item.unpublished .topbar-menu-link {
+.topbar-menu-item.unpublished .topbar-menu-link,
+.topbar-menu-item.unpublished .submenu-toggle-label > a,
+.topbar-menu-item.unpublished .submenu-toggle-label > span {
     border-bottom: 2px dashed var(--warning-500, #ff9800);
 }
 
 .topbar-dropdown .topbar-menu-item.unpublished .topbar-menu-link,
-.drop-menu-1 .topbar-menu-item.unpublished a {
+.topbar-dropdown .topbar-menu-item.unpublished .submenu-toggle-label > a,
+.topbar-dropdown .topbar-menu-item.unpublished .submenu-toggle-label > span,
+.sidebar-submenu .topbar-menu-item.unpublished .topbar-menu-link,
+.sidebar-submenu .topbar-menu-item.unpublished .submenu-toggle-label > a,
+.sidebar-submenu .topbar-menu-item.unpublished .submenu-toggle-label > span {
     border-left: 3px solid var(--warning-500, #ff9800);
     border-bottom: none;
     padding-left: calc(1rem - 3px);
 }
 
 /* ===== FOCUS STATES ===== */
-.topbar-menu-link:focus-visible {
+.topbar-menu-link:focus-visible,
+.submenu-toggle-label > a:focus-visible,
+.submenu-toggle-label > span:focus-visible {
     outline-color: white;
     outline-offset: -2px;
     background-color: rgba(255, 255, 255, 0.2);
 }
 
 .topbar-dropdown .topbar-menu-link:focus-visible,
-.drop-menu-1 a:focus-visible {
+.topbar-dropdown .submenu-toggle-label > a:focus-visible,
+.topbar-dropdown .submenu-toggle-label > span:focus-visible,
+.sidebar-submenu .topbar-menu-link:focus-visible,
+.sidebar-submenu .submenu-toggle-label > a:focus-visible,
+.sidebar-submenu .submenu-toggle-label > span:focus-visible {
     outline-color: var(--primary-500, #2196f3);
     outline-offset: -2px;
 }
@@ -186,6 +208,8 @@
     
     /* Mobile menu items */
     .topbar-menu-link,
+    .submenu-toggle-label > a,
+    .submenu-toggle-label > span,
     .main-navigation ul > li > a {
         color: white !important;
         border-bottom: 1px solid rgba(255, 255, 255, 0.1);
@@ -193,22 +217,25 @@
     
     .topbar-menu-link:hover,
     .submenu-toggle-label:hover,
-    .main-navigation .menu-item a:hover,
-    .main-navigation .submenu-item label:hover {
+    .submenu-toggle-label:hover > a,
+    .submenu-toggle-label:hover > span,
+    .main-navigation .topbar-menu-item:hover {
         color: var(--primary-50, #e3f2fd) !important;
         background-color: rgba(255, 255, 255, 0.15) !important;
         cursor: pointer;
     }
     
     .topbar-menu-item.current-page > .topbar-menu-link,
-    .topbar-menu-item.current-page > .submenu-toggle-label {
+    .topbar-menu-item.current-page > .submenu-toggle-label,
+    .topbar-menu-item.current-page > .submenu-toggle-label > a,
+    .topbar-menu-item.current-page > .submenu-toggle-label > span {
         border-left: 4px solid white;
-        padding-left: calc(1rem - 4px);
+        padding-left: calc(0.5rem - 4px);
     }
     
     /* Mobile dropdowns inherit background */
     .topbar-dropdown,
-    .drop-menu-1 {
+    .sidebar-submenu {
         background-color: rgba(0, 0, 0, 0.1);
         border: none;
         box-shadow: none;
@@ -216,12 +243,20 @@
     }
     
     .topbar-dropdown .topbar-menu-link,
-    .drop-menu-1 li a {
+    .topbar-dropdown .submenu-toggle-label > a,
+    .topbar-dropdown .submenu-toggle-label > span,
+    .sidebar-submenu .topbar-menu-link,
+    .sidebar-submenu .submenu-toggle-label > a,
+    .sidebar-submenu .submenu-toggle-label > span {
         color: rgba(255, 255, 255, 0.9) !important;
     }
     
     .topbar-dropdown .topbar-menu-link:hover,
-    .drop-menu-1 li:hover a {
+    .topbar-dropdown .submenu-toggle-label:hover > a,
+    .topbar-dropdown .submenu-toggle-label:hover > span,
+    .sidebar-submenu .topbar-menu-link:hover,
+    .sidebar-submenu .submenu-toggle-label:hover > a,
+    .sidebar-submenu .submenu-toggle-label:hover > span {
         background-color: rgba(255, 255, 255, 0.1);
         color: white !important;
     }
@@ -235,15 +270,21 @@
     border-bottom: 1px solid var(--border, #e0e0e0);
 }
 
-.main-navigation.variant-light li a {
+.main-navigation.variant-light li a,
+.main-navigation.variant-light .topbar-menu-link,
+.main-navigation.variant-light .submenu-toggle-label > a,
+.main-navigation.variant-light .submenu-toggle-label > span {
     color: var(--text-primary, #212121) !important;
 }
 
-.main-navigation.variant-light li:hover {
+.main-navigation.variant-light li:hover,
+.main-navigation.variant-light .topbar-menu-item:hover {
     background-color: var(--gray-100, #f5f5f5) !important;
 }
 
-.main-navigation.variant-light .topbar-menu-item.current-page > .topbar-menu-link {
+.main-navigation.variant-light .topbar-menu-item.current-page > .topbar-menu-link,
+.main-navigation.variant-light .topbar-menu-item.current-page > .submenu-toggle-label > a,
+.main-navigation.variant-light .topbar-menu-item.current-page > .submenu-toggle-label > span {
     background-color: var(--primary-50, #e3f2fd);
     color: var(--primary-700, #1976d2) !important;
 }
@@ -258,24 +299,32 @@
     padding: 0.25rem 0.5rem;
 }
 
-.main-navigation.variant-compact .topbar-menu-link {
+.main-navigation.variant-compact .topbar-menu-link,
+.main-navigation.variant-compact .submenu-toggle-label > a,
+.main-navigation.variant-compact .submenu-toggle-label > span {
     font-size: var(--font-size-sm, 0.875rem);
 }
 
 /* ===== DISABLED STATE ===== */
-.topbar-menu-item.disabled .topbar-menu-link {
+.topbar-menu-item.disabled .topbar-menu-link,
+.topbar-menu-item.disabled .submenu-toggle-label > a,
+.topbar-menu-item.disabled .submenu-toggle-label > span {
     opacity: 0.4;
     cursor: not-allowed;
     pointer-events: none;
 }
 
 /* ===== LOADING STATE ===== */
-.topbar-menu-item.loading .topbar-menu-link {
+.topbar-menu-item.loading .topbar-menu-link,
+.topbar-menu-item.loading .submenu-toggle-label > a,
+.topbar-menu-item.loading .submenu-toggle-label > span {
     opacity: 0.7;
     cursor: wait;
 }
 
-.topbar-menu-item.loading .topbar-menu-link::after {
+.topbar-menu-item.loading .topbar-menu-link::after,
+.topbar-menu-item.loading .submenu-toggle-label > a::after,
+.topbar-menu-item.loading .submenu-toggle-label > span::after {
     content: '';
     display: inline-block;
     width: 12px;
@@ -298,21 +347,29 @@
         border-bottom-color: var(--gray-700, #616161);
     }
     
-    .main-navigation.variant-light li a {
+    .main-navigation.variant-light li a,
+    .main-navigation.variant-light .topbar-menu-link,
+    .main-navigation.variant-light .submenu-toggle-label > a,
+    .main-navigation.variant-light .submenu-toggle-label > span {
         color: var(--gray-100, #f5f5f5) !important;
     }
     
-    .main-navigation.variant-light li:hover {
+    .main-navigation.variant-light li:hover,
+    .main-navigation.variant-light .topbar-menu-item:hover {
         background-color: var(--gray-800, #424242) !important;
     }
     
     .topbar-dropdown,
-    .drop-menu-1 {
+    .sidebar-submenu {
         background-color: var(--gray-800, #424242);
     }
     
     .topbar-dropdown .topbar-menu-link,
-    .drop-menu-1 li a {
+    .topbar-dropdown .submenu-toggle-label > a,
+    .topbar-dropdown .submenu-toggle-label > span,
+    .sidebar-submenu .topbar-menu-link,
+    .sidebar-submenu .submenu-toggle-label > a,
+    .sidebar-submenu .submenu-toggle-label > span {
         color: var(--gray-100, #f5f5f5) !important;
     }
 }

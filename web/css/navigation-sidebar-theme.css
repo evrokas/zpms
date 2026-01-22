@@ -1,32 +1,38 @@
 /* =====================================================
+   v2
    SIDEBAR NAVIGATION - THEME STYLES
    Colors, shadows, borders using design system
    ===================================================== */
 
 /* ===== SIDEBAR NAVIGATION STYLING ===== */
+.sidebar-nav-area {
+    /* Optional: Add container styling */
+}
+
 .sidebar-nav {
     background-color: var(--background, #ffffff);
 }
 
-.sidebar-menu {
-    /* Optional: Add top-level menu background */
-}
-
 /* ===== MENU ITEM COLORS ===== */
-.sidebar-menu-link {
+.sidebar-menu-link,
+.submenu-toggle-label > a,
+.submenu-toggle-label > span {
     color: var(--text-secondary, #616161);
     background-color: transparent;
 }
 
 /* Hover state */
-.sidebar-menu-link:hover {
+.sidebar-menu-link:hover,
+.submenu-toggle-label:hover > a,
+.submenu-toggle-label:hover > span {
     background-color: var(--primary-50, #e3f2fd);
     color: var(--primary-600, #1e88e5);
 }
 
 /* Active/Current page */
 .sidebar-menu-item.current-page > .sidebar-menu-link,
-.sidebar-menu-item.current-page > .submenu-toggle-label > .sidebar-menu-link {
+.sidebar-menu-item.current-page > .submenu-toggle-label > a,
+.sidebar-menu-item.current-page > .submenu-toggle-label > span {
     background-color: var(--primary-600, #1e88e5);
     color: white;
 }
@@ -37,7 +43,9 @@
 }
 
 /* In active trail (but not current) */
-.sidebar-menu-item.in-trail > .sidebar-menu-link {
+.sidebar-menu-item.in-trail > .sidebar-menu-link,
+.sidebar-menu-item.in-trail > .submenu-toggle-label > a,
+.sidebar-menu-item.in-trail > .submenu-toggle-label > span {
     color: var(--primary-600, #1e88e5);
     font-weight: var(--font-weight-semibold, 600);
 }
@@ -47,7 +55,8 @@
     color: var(--text-secondary, #616161);
 }
 
-.sidebar-menu-link:hover .menu-icon {
+.sidebar-menu-link:hover .menu-icon,
+.submenu-toggle-label:hover .menu-icon {
     color: var(--primary-600, #1e88e5);
 }
 
@@ -65,18 +74,24 @@
 }
 
 /* Submenu items */
-.sidebar-submenu .sidebar-menu-link {
+.sidebar-submenu .sidebar-menu-link,
+.sidebar-submenu .submenu-toggle-label > a,
+.sidebar-submenu .submenu-toggle-label > span {
     color: var(--text-secondary, #616161);
 }
 
-.sidebar-submenu .sidebar-menu-link:hover {
+.sidebar-submenu .sidebar-menu-link:hover,
+.sidebar-submenu .submenu-toggle-label:hover > a,
+.sidebar-submenu .submenu-toggle-label:hover > span {
     background-color: var(--gray-50, #fafafa);
     color: var(--text-primary, #212121);
     padding-left: calc(var(--space-md, 1rem) + 4px);
 }
 
 /* Active submenu item */
-.sidebar-submenu .sidebar-menu-item.current-page > .sidebar-menu-link {
+.sidebar-submenu .sidebar-menu-item.current-page > .sidebar-menu-link,
+.sidebar-submenu .sidebar-menu-item.current-page > .submenu-toggle-label > a,
+.sidebar-submenu .sidebar-menu-item.current-page > .submenu-toggle-label > span {
     background-color: var(--primary-50, #e3f2fd);
     color: var(--primary-700, #1976d2);
     border-left: 3px solid var(--primary-600, #1e88e5);
@@ -84,15 +99,15 @@
 }
 
 /* ===== CHEVRON INDICATOR ===== */
-.submenu-chevron {
+.submenu-toggle-label > i.bx-chevron-right {
     color: var(--text-secondary, #616161);
 }
 
-.sidebar-menu-link:hover .submenu-chevron {
+.submenu-toggle-label:hover > i.bx-chevron-right {
     color: var(--primary-600, #1e88e5);
 }
 
-.sidebar-menu-item.current-page .submenu-chevron {
+.sidebar-menu-item.current-page .submenu-toggle-label > i.bx-chevron-right {
     color: white;
 }
 
@@ -103,28 +118,37 @@
 }
 
 /* ===== UNPUBLISHED ITEMS ===== */
-.sidebar-menu-item.unpublished .sidebar-menu-link {
+.sidebar-menu-item.unpublished .sidebar-menu-link,
+.sidebar-menu-item.unpublished .submenu-toggle-label > a,
+.sidebar-menu-item.unpublished .submenu-toggle-label > span {
     border-left: 3px solid var(--warning-500, #ff9800);
     padding-left: calc(var(--space-md, 1rem) - 3px);
 }
 
 /* ===== FOCUS STATES ===== */
-.sidebar-menu-link:focus-visible {
+.sidebar-menu-link:focus-visible,
+.submenu-toggle-label > a:focus-visible,
+.submenu-toggle-label > span:focus-visible {
     outline-color: var(--primary-500, #2196f3);
     background-color: var(--primary-50, #e3f2fd);
 }
 
 /* ===== COLLAPSED SIDEBAR ===== */
-.sidebar.collapsed .sidebar-menu-link:hover {
+.sidebar.collapsed .sidebar-menu-link:hover,
+.sidebar.collapsed .submenu-toggle-label:hover > a,
+.sidebar.collapsed .submenu-toggle-label:hover > span {
     background-color: var(--primary-600, #1e88e5);
     color: white;
 }
 
-.sidebar.collapsed .sidebar-menu-link:hover .menu-icon {
+.sidebar.collapsed .sidebar-menu-link:hover .menu-icon,
+.sidebar.collapsed .submenu-toggle-label:hover .menu-icon {
     color: white;
 }
 
-.sidebar.collapsed .sidebar-menu-item.current-page > .sidebar-menu-link {
+.sidebar.collapsed .sidebar-menu-item.current-page > .sidebar-menu-link,
+.sidebar.collapsed .sidebar-menu-item.current-page > .submenu-toggle-label > a,
+.sidebar.collapsed .sidebar-menu-item.current-page > .submenu-toggle-label > span {
     background-color: var(--primary-700, #1976d2);
 }
 
@@ -136,13 +160,19 @@
 }
 
 /* Level 2 items - slightly muted */
-.menu-item-depth-1 .sidebar-menu-link {
+.menu-item-depth-1 .sidebar-menu-link,
+.menu-item-depth-1 .submenu-toggle-label > a,
+.menu-item-depth-1 .submenu-toggle-label > span {
     color: var(--text-secondary, #616161);
 }
 
 /* Level 3+ items - more muted */
 .menu-item-depth-2 .sidebar-menu-link,
-.menu-item-depth-3 .sidebar-menu-link {
+.menu-item-depth-2 .submenu-toggle-label > a,
+.menu-item-depth-2 .submenu-toggle-label > span,
+.menu-item-depth-3 .sidebar-menu-link,
+.menu-item-depth-3 .submenu-toggle-label > a,
+.menu-item-depth-3 .submenu-toggle-label > span {
     font-size: var(--font-size-sm, 0.875rem);
     color: var(--gray-600, #757575);
 }
@@ -155,11 +185,8 @@
 }
 
 /* ===== SECTION HEADERS (Optional) ===== */
-.sidebar-menu-item.menu-header {
-    padding: var(--space-sm, 0.5rem) var(--space-md, 1rem);
-}
-
-.sidebar-menu-item.menu-header .sidebar-menu-link {
+.sidebar-menu-item.menu-header .sidebar-menu-link,
+.sidebar-menu-item.menu-header .submenu-toggle-label > span {
     font-size: var(--font-size-xs, 0.75rem);
     font-weight: var(--font-weight-bold, 700);
     text-transform: uppercase;
@@ -169,17 +196,22 @@
     pointer-events: none;
 }
 
-.sidebar-menu-item.menu-header .sidebar-menu-link:hover {
+.sidebar-menu-item.menu-header .sidebar-menu-link:hover,
+.sidebar-menu-item.menu-header .submenu-toggle-label:hover > span {
     background-color: transparent;
 }
 
 /* ===== LOADING STATE (Optional) ===== */
-.sidebar-menu-item.loading .sidebar-menu-link {
+.sidebar-menu-item.loading .sidebar-menu-link,
+.sidebar-menu-item.loading .submenu-toggle-label > a,
+.sidebar-menu-item.loading .submenu-toggle-label > span {
     opacity: 0.5;
     cursor: wait;
 }
 
-.sidebar-menu-item.loading .sidebar-menu-link::after {
+.sidebar-menu-item.loading .sidebar-menu-link::after,
+.sidebar-menu-item.loading .submenu-toggle-label > a::after,
+.sidebar-menu-item.loading .submenu-toggle-label > span::after {
     content: '';
     display: inline-block;
     width: 12px;
@@ -196,7 +228,9 @@
 }
 
 /* ===== DISABLED STATE ===== */
-.sidebar-menu-item.disabled .sidebar-menu-link {
+.sidebar-menu-item.disabled .sidebar-menu-link,
+.sidebar-menu-item.disabled .submenu-toggle-label > a,
+.sidebar-menu-item.disabled .submenu-toggle-label > span {
     opacity: 0.4;
     cursor: not-allowed;
     pointer-events: none;
@@ -205,13 +239,15 @@
 
 /* ===== RESPONSIVE THEMING ===== */
 @media (max-width: 768px) {
-    .sidebar-menu {
+    .sidebar-nav > ul {
         background-color: var(--surface, #f8f9fa);
         padding: var(--space-md, 1rem);
         border-radius: var(--radius-lg, 0.75rem);
     }
     
-    .sidebar-menu-link {
+    .sidebar-menu-link,
+    .submenu-toggle-label > a,
+    .submenu-toggle-label > span {
         border-radius: var(--radius-md, 0.5rem);
     }
 }
@@ -222,16 +258,22 @@
         background-color: var(--gray-900, #212121);
     }
     
-    .sidebar-menu-link {
+    .sidebar-menu-link,
+    .submenu-toggle-label > a,
+    .submenu-toggle-label > span {
         color: var(--gray-300, #e0e0e0);
     }
     
-    .sidebar-menu-link:hover {
+    .sidebar-menu-link:hover,
+    .submenu-toggle-label:hover > a,
+    .submenu-toggle-label:hover > span {
         background-color: var(--gray-800, #424242);
         color: var(--primary-300, #90caf9);
     }
     
-    .sidebar-menu-item.current-page > .sidebar-menu-link {
+    .sidebar-menu-item.current-page > .sidebar-menu-link,
+    .sidebar-menu-item.current-page > .submenu-toggle-label > a,
+    .sidebar-menu-item.current-page > .submenu-toggle-label > span {
         background-color: var(--primary-700, #1976d2);
     }
     

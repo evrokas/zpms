@@ -1,8 +1,15 @@
 /* =====================================================
+   v2
    SIDEBAR NAVIGATION - BASE STRUCTURE
    Layout, positioning, and responsive behavior
    No colors, shadows, or design-specific styling
    ===================================================== */
+
+/* ===== SIDEBAR NAVIGATION AREA ===== */
+.sidebar-nav-area {
+    display: block;
+    width: 100%;
+}
 
 /* ===== SIDEBAR NAVIGATION CONTAINER ===== */
 .sidebar-nav {
@@ -10,7 +17,8 @@
     width: 100%;
 }
 
-.sidebar-menu {
+/* Top-level menu list */
+.sidebar-nav > ul {
     list-style: none;
     margin: 0;
     padding: 0;
@@ -40,7 +48,8 @@
 }
 
 /* Icon positioning */
-.sidebar-menu-link .menu-icon {
+.sidebar-menu-link .menu-icon,
+.sidebar-nav .menu-icon {
     font-size: var(--font-size-xl, 1.25rem);
     display: flex;
     align-items: center;
@@ -81,16 +90,30 @@
     user-select: none;
 }
 
+.submenu-toggle-label > a,
+.submenu-toggle-label > span {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md, 1rem);
+    padding: var(--space-md, 1rem);
+    text-decoration: none;
+    cursor: pointer;
+    transition: all var(--transition-base, 250ms ease-in-out);
+    border-radius: var(--radius-md, 0.5rem);
+    font-weight: var(--font-weight-medium, 500);
+    width: 100%;
+}
+
 /* Chevron indicator */
-.submenu-chevron {
+.submenu-toggle-label > i.bx-chevron-right {
     margin-left: auto;
     transition: transform var(--transition-base, 250ms ease-in-out);
     font-size: var(--font-size-lg, 1.125rem);
 }
 
 /* Rotate chevron when expanded */
-.submenu-toggle:checked ~ .submenu-toggle-label .submenu-chevron,
-.sidebar-menu-item.is-expanded .submenu-chevron {
+.submenu-toggle:checked ~ .submenu-toggle-label > i.bx-chevron-right,
+.sidebar-menu-item.is-expanded > .submenu-toggle-label > i.bx-chevron-right {
     transform: rotate(90deg);
 }
 
@@ -128,7 +151,9 @@
     margin-top: var(--space-xs, 0.25rem);
 }
 
-.sidebar-submenu .sidebar-menu-link {
+.sidebar-submenu .sidebar-menu-link,
+.sidebar-submenu .submenu-toggle-label > a,
+.sidebar-submenu .submenu-toggle-label > span {
     font-size: var(--font-size-sm, 0.875rem);
     padding: var(--space-sm, 0.5rem) var(--space-md, 1rem);
 }
@@ -146,7 +171,9 @@
 }
 
 /* Unpublished items */
-.sidebar-menu-item.unpublished .sidebar-menu-link {
+.sidebar-menu-item.unpublished .sidebar-menu-link,
+.sidebar-menu-item.unpublished .submenu-toggle-label > a,
+.sidebar-menu-item.unpublished .submenu-toggle-label > span {
     opacity: 0.6;
     font-style: italic;
 }
@@ -177,11 +204,13 @@
         width: 100%;
     }
     
-    .sidebar-menu {
+    .sidebar-nav > ul {
         gap: var(--space-sm, 0.5rem);
     }
     
-    .sidebar-menu-link {
+    .sidebar-menu-link,
+    .submenu-toggle-label > a,
+    .submenu-toggle-label > span {
         padding: var(--space-md, 1rem) var(--space-lg, 1.5rem);
     }
 }
@@ -189,7 +218,9 @@
 /* ===== ACCESSIBILITY ===== */
 
 /* Focus states */
-.sidebar-menu-link:focus-visible {
+.sidebar-menu-link:focus-visible,
+.submenu-toggle-label > a:focus-visible,
+.submenu-toggle-label > span:focus-visible {
     outline: 2px solid;
     outline-offset: 2px;
 }
@@ -208,19 +239,27 @@
 }
 
 /* Keyboard navigation */
-.sidebar-menu-link:focus {
+.sidebar-menu-link:focus,
+.submenu-toggle-label > a:focus,
+.submenu-toggle-label > span:focus {
     position: relative;
     z-index: 1;
 }
 
 /* High contrast mode support */
 @media (prefers-contrast: high) {
-    .sidebar-menu-link {
+    .sidebar-menu-link,
+    .submenu-toggle-label > a,
+    .submenu-toggle-label > span {
         border: 1px solid transparent;
     }
     
     .sidebar-menu-link:hover,
-    .sidebar-menu-link:focus {
+    .sidebar-menu-link:focus,
+    .submenu-toggle-label > a:hover,
+    .submenu-toggle-label > a:focus,
+    .submenu-toggle-label > span:hover,
+    .submenu-toggle-label > span:focus {
         border-color: currentColor;
     }
 }
@@ -228,7 +267,9 @@
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
     .sidebar-menu-link,
-    .submenu-chevron,
+    .submenu-toggle-label > a,
+    .submenu-toggle-label > span,
+    .submenu-toggle-label > i.bx-chevron-right,
     .sidebar-submenu {
         transition: none;
     }
