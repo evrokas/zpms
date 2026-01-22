@@ -1,0 +1,235 @@
+/* =====================================================
+   SIDEBAR NAVIGATION - BASE STRUCTURE
+   Layout, positioning, and responsive behavior
+   No colors, shadows, or design-specific styling
+   ===================================================== */
+
+/* ===== SIDEBAR NAVIGATION CONTAINER ===== */
+.sidebar-nav {
+    display: block;
+    width: 100%;
+}
+
+.sidebar-menu {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs, 0.25rem);
+}
+
+/* ===== MENU ITEMS ===== */
+.sidebar-menu-item {
+    position: relative;
+    display: block;
+}
+
+.sidebar-menu-link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md, 1rem);
+    padding: var(--space-md, 1rem);
+    text-decoration: none;
+    cursor: pointer;
+    transition: all var(--transition-base, 250ms ease-in-out);
+    border-radius: var(--radius-md, 0.5rem);
+    font-weight: var(--font-weight-medium, 500);
+    position: relative;
+    width: 100%;
+}
+
+/* Icon positioning */
+.sidebar-menu-link .menu-icon {
+    font-size: var(--font-size-xl, 1.25rem);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+/* Menu text */
+.sidebar-menu-link .menu-text {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Badge positioning */
+.sidebar-menu-link .badge {
+    margin-left: auto;
+}
+
+/* ===== SUBMENU STRUCTURE ===== */
+.has-submenu {
+    display: block;
+}
+
+/* Submenu toggle checkbox - hidden */
+.submenu-toggle {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Toggle label */
+.submenu-toggle-label {
+    display: block;
+    width: 100%;
+    cursor: pointer;
+    user-select: none;
+}
+
+/* Chevron indicator */
+.submenu-chevron {
+    margin-left: auto;
+    transition: transform var(--transition-base, 250ms ease-in-out);
+    font-size: var(--font-size-lg, 1.125rem);
+}
+
+/* Rotate chevron when expanded */
+.submenu-toggle:checked ~ .submenu-toggle-label .submenu-chevron,
+.sidebar-menu-item.is-expanded .submenu-chevron {
+    transform: rotate(90deg);
+}
+
+/* ===== SUBMENU DROPDOWNS ===== */
+.sidebar-submenu {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    padding-left: var(--space-xl, 2rem);
+    display: none;
+    overflow: hidden;
+}
+
+/* Show submenu when checkbox is checked */
+.submenu-toggle:checked ~ .sidebar-submenu,
+.sidebar-menu-item.is-expanded > .sidebar-submenu {
+    display: block;
+}
+
+/* Level-based indentation */
+.sidebar-submenu-level-1 {
+    padding-left: var(--space-xl, 2rem);
+}
+
+.sidebar-submenu-level-2 {
+    padding-left: calc(var(--space-xl, 2rem) + var(--space-lg, 1.5rem));
+}
+
+.sidebar-submenu-level-3 {
+    padding-left: calc(var(--space-xl, 2rem) + var(--space-xl, 2rem));
+}
+
+/* Nested menu items */
+.sidebar-submenu .sidebar-menu-item {
+    margin-top: var(--space-xs, 0.25rem);
+}
+
+.sidebar-submenu .sidebar-menu-link {
+    font-size: var(--font-size-sm, 0.875rem);
+    padding: var(--space-sm, 0.5rem) var(--space-md, 1rem);
+}
+
+/* ===== STATES ===== */
+
+/* Current page indicator */
+.sidebar-menu-item.current-page {
+    position: relative;
+}
+
+/* Active trail */
+.sidebar-menu-item.in-trail {
+    /* Structural only */
+}
+
+/* Unpublished items */
+.sidebar-menu-item.unpublished .sidebar-menu-link {
+    opacity: 0.6;
+    font-style: italic;
+}
+
+/* ===== RESPONSIVE BEHAVIOR ===== */
+
+/* Collapsed sidebar support */
+.sidebar.collapsed .sidebar-menu-link .menu-text {
+    display: none;
+}
+
+.sidebar.collapsed .sidebar-menu-link .badge {
+    display: none;
+}
+
+.sidebar.collapsed .sidebar-menu-link {
+    justify-content: center;
+    padding: var(--space-md, 1rem);
+}
+
+.sidebar.collapsed .sidebar-submenu {
+    display: none !important;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .sidebar-nav {
+        width: 100%;
+    }
+    
+    .sidebar-menu {
+        gap: var(--space-sm, 0.5rem);
+    }
+    
+    .sidebar-menu-link {
+        padding: var(--space-md, 1rem) var(--space-lg, 1.5rem);
+    }
+}
+
+/* ===== ACCESSIBILITY ===== */
+
+/* Focus states */
+.sidebar-menu-link:focus-visible {
+    outline: 2px solid;
+    outline-offset: 2px;
+}
+
+/* Screen reader only text */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* Keyboard navigation */
+.sidebar-menu-link:focus {
+    position: relative;
+    z-index: 1;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .sidebar-menu-link {
+        border: 1px solid transparent;
+    }
+    
+    .sidebar-menu-link:hover,
+    .sidebar-menu-link:focus {
+        border-color: currentColor;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .sidebar-menu-link,
+    .submenu-chevron,
+    .sidebar-submenu {
+        transition: none;
+    }
+}

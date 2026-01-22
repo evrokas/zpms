@@ -1,0 +1,241 @@
+/* =====================================================
+   SIDEBAR NAVIGATION - THEME STYLES
+   Colors, shadows, borders using design system
+   ===================================================== */
+
+/* ===== SIDEBAR NAVIGATION STYLING ===== */
+.sidebar-nav {
+    background-color: var(--background, #ffffff);
+}
+
+.sidebar-menu {
+    /* Optional: Add top-level menu background */
+}
+
+/* ===== MENU ITEM COLORS ===== */
+.sidebar-menu-link {
+    color: var(--text-secondary, #616161);
+    background-color: transparent;
+}
+
+/* Hover state */
+.sidebar-menu-link:hover {
+    background-color: var(--primary-50, #e3f2fd);
+    color: var(--primary-600, #1e88e5);
+}
+
+/* Active/Current page */
+.sidebar-menu-item.current-page > .sidebar-menu-link,
+.sidebar-menu-item.current-page > .submenu-toggle-label > .sidebar-menu-link {
+    background-color: var(--primary-600, #1e88e5);
+    color: white;
+}
+
+/* Active page icon */
+.sidebar-menu-item.current-page .menu-icon {
+    color: white;
+}
+
+/* In active trail (but not current) */
+.sidebar-menu-item.in-trail > .sidebar-menu-link {
+    color: var(--primary-600, #1e88e5);
+    font-weight: var(--font-weight-semibold, 600);
+}
+
+/* ===== ICON STYLING ===== */
+.menu-icon {
+    color: var(--text-secondary, #616161);
+}
+
+.sidebar-menu-link:hover .menu-icon {
+    color: var(--primary-600, #1e88e5);
+}
+
+.sidebar-menu-item.current-page .menu-icon {
+    color: white;
+}
+
+/* ===== SUBMENU STYLING ===== */
+.sidebar-submenu {
+    background-color: transparent;
+    border-left: 2px solid var(--gray-200, #eeeeee);
+    margin-left: var(--space-lg, 1.5rem);
+    margin-top: var(--space-xs, 0.25rem);
+    margin-bottom: var(--space-xs, 0.25rem);
+}
+
+/* Submenu items */
+.sidebar-submenu .sidebar-menu-link {
+    color: var(--text-secondary, #616161);
+}
+
+.sidebar-submenu .sidebar-menu-link:hover {
+    background-color: var(--gray-50, #fafafa);
+    color: var(--text-primary, #212121);
+    padding-left: calc(var(--space-md, 1rem) + 4px);
+}
+
+/* Active submenu item */
+.sidebar-submenu .sidebar-menu-item.current-page > .sidebar-menu-link {
+    background-color: var(--primary-50, #e3f2fd);
+    color: var(--primary-700, #1976d2);
+    border-left: 3px solid var(--primary-600, #1e88e5);
+    padding-left: calc(var(--space-md, 1rem) - 3px);
+}
+
+/* ===== CHEVRON INDICATOR ===== */
+.submenu-chevron {
+    color: var(--text-secondary, #616161);
+}
+
+.sidebar-menu-link:hover .submenu-chevron {
+    color: var(--primary-600, #1e88e5);
+}
+
+.sidebar-menu-item.current-page .submenu-chevron {
+    color: white;
+}
+
+/* ===== BADGES ===== */
+/* Badge colors are handled by badge component classes */
+.sidebar-menu-link .badge {
+    font-size: var(--font-size-xs, 0.75rem);
+}
+
+/* ===== UNPUBLISHED ITEMS ===== */
+.sidebar-menu-item.unpublished .sidebar-menu-link {
+    border-left: 3px solid var(--warning-500, #ff9800);
+    padding-left: calc(var(--space-md, 1rem) - 3px);
+}
+
+/* ===== FOCUS STATES ===== */
+.sidebar-menu-link:focus-visible {
+    outline-color: var(--primary-500, #2196f3);
+    background-color: var(--primary-50, #e3f2fd);
+}
+
+/* ===== COLLAPSED SIDEBAR ===== */
+.sidebar.collapsed .sidebar-menu-link:hover {
+    background-color: var(--primary-600, #1e88e5);
+    color: white;
+}
+
+.sidebar.collapsed .sidebar-menu-link:hover .menu-icon {
+    color: white;
+}
+
+.sidebar.collapsed .sidebar-menu-item.current-page > .sidebar-menu-link {
+    background-color: var(--primary-700, #1976d2);
+}
+
+/* ===== DEPTH VARIATIONS ===== */
+
+/* Level 1 items */
+.menu-item-depth-0 {
+    /* Top level styling */
+}
+
+/* Level 2 items - slightly muted */
+.menu-item-depth-1 .sidebar-menu-link {
+    color: var(--text-secondary, #616161);
+}
+
+/* Level 3+ items - more muted */
+.menu-item-depth-2 .sidebar-menu-link,
+.menu-item-depth-3 .sidebar-menu-link {
+    font-size: var(--font-size-sm, 0.875rem);
+    color: var(--gray-600, #757575);
+}
+
+/* ===== DIVIDERS (Optional) ===== */
+.sidebar-menu-item.menu-divider {
+    border-top: 1px solid var(--border, #e0e0e0);
+    margin-top: var(--space-md, 1rem);
+    padding-top: var(--space-md, 1rem);
+}
+
+/* ===== SECTION HEADERS (Optional) ===== */
+.sidebar-menu-item.menu-header {
+    padding: var(--space-sm, 0.5rem) var(--space-md, 1rem);
+}
+
+.sidebar-menu-item.menu-header .sidebar-menu-link {
+    font-size: var(--font-size-xs, 0.75rem);
+    font-weight: var(--font-weight-bold, 700);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--gray-600, #757575);
+    cursor: default;
+    pointer-events: none;
+}
+
+.sidebar-menu-item.menu-header .sidebar-menu-link:hover {
+    background-color: transparent;
+}
+
+/* ===== LOADING STATE (Optional) ===== */
+.sidebar-menu-item.loading .sidebar-menu-link {
+    opacity: 0.5;
+    cursor: wait;
+}
+
+.sidebar-menu-item.loading .sidebar-menu-link::after {
+    content: '';
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-left: var(--space-sm, 0.5rem);
+    border: 2px solid var(--gray-300, #e0e0e0);
+    border-top-color: var(--primary-600, #1e88e5);
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ===== DISABLED STATE ===== */
+.sidebar-menu-item.disabled .sidebar-menu-link {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+    color: var(--gray-400, #bdbdbd);
+}
+
+/* ===== RESPONSIVE THEMING ===== */
+@media (max-width: 768px) {
+    .sidebar-menu {
+        background-color: var(--surface, #f8f9fa);
+        padding: var(--space-md, 1rem);
+        border-radius: var(--radius-lg, 0.75rem);
+    }
+    
+    .sidebar-menu-link {
+        border-radius: var(--radius-md, 0.5rem);
+    }
+}
+
+/* ===== DARK MODE SUPPORT (Optional) ===== */
+@media (prefers-color-scheme: dark) {
+    .sidebar-nav {
+        background-color: var(--gray-900, #212121);
+    }
+    
+    .sidebar-menu-link {
+        color: var(--gray-300, #e0e0e0);
+    }
+    
+    .sidebar-menu-link:hover {
+        background-color: var(--gray-800, #424242);
+        color: var(--primary-300, #90caf9);
+    }
+    
+    .sidebar-menu-item.current-page > .sidebar-menu-link {
+        background-color: var(--primary-700, #1976d2);
+    }
+    
+    .sidebar-submenu {
+        border-left-color: var(--gray-700, #616161);
+    }
+}

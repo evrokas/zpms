@@ -1,0 +1,318 @@
+/* =====================================================
+   v2
+   TOPBAR NAVIGATION - THEME STYLES
+   Colors, shadows, gradients using design system
+   Compatible with existing .main-navigation structure
+   ===================================================== */
+
+/* ===== MAIN NAVIGATION AREA STYLING ===== */
+.main-navigation-area {
+    background: var(--background, white);
+    border-radius: var(--radius-lg, 0.75rem);
+    box-shadow: var(--shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05));
+}
+
+/* ===== TOPBAR CONTAINER STYLING ===== */
+.main-navigation,
+.topbar-nav {
+    background: linear-gradient(135deg, 
+        var(--primary-600, #1e88e5) 0%, 
+        var(--primary-700, #1976d2) 100%);
+    border-radius: var(--radius-lg, 0.75rem);
+}
+
+/* ===== MENU ITEM COLORS ===== */
+.main-navigation li a,
+.topbar-menu-link {
+    color: white !important;
+    background-color: transparent;
+}
+
+/* Hover state - Desktop */
+@media screen and (min-width: 450px) {
+    .main-navigation li:hover {
+        background-color: rgba(255, 255, 255, 0.15) !important;
+        color: white !important;
+        cursor: pointer;
+    }
+}
+
+/* Active/Current page */
+.topbar-menu-item.current-page > .topbar-menu-link,
+.topbar-menu-item.current-page > .submenu-toggle-label .topbar-menu-link {
+    background-color: rgba(255, 255, 255, 0.25);
+    color: white;
+    font-weight: var(--font-weight-semibold, 600);
+}
+
+/* In active trail */
+.topbar-menu-item.in-trail > .topbar-menu-link {
+    background-color: rgba(255, 255, 255, 0.1);
+    font-weight: var(--font-weight-medium, 500);
+}
+
+/* ===== ICON STYLING ===== */
+.menu-icon {
+    color: white;
+}
+
+.topbar-menu-link:hover .menu-icon {
+    color: white;
+}
+
+/* ===== DROPDOWN STYLING ===== */
+.topbar-dropdown,
+.main-navigation .drop-menu-1 {
+    background-color: var(--background, #ffffff);
+    border-radius: var(--radius-md, 0.5rem);
+    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+}
+
+/* Dropdown items */
+.topbar-dropdown .topbar-menu-link,
+.drop-menu-1 li a {
+    color: var(--text-primary, #212121) !important;
+    border-radius: var(--radius-sm, 0.25rem);
+}
+
+.topbar-dropdown .topbar-menu-link:hover,
+.drop-menu-1 li:hover a {
+    background-color: var(--primary-50, #e3f2fd);
+    color: var(--primary-700, #1976d2) !important;
+}
+
+/* Active dropdown item */
+.topbar-dropdown .topbar-menu-item.current-page > .topbar-menu-link {
+    background-color: var(--primary-100, #bbdefb);
+    color: var(--primary-700, #1976d2) !important;
+}
+
+/* Level 2 dropdowns */
+.main-navigation .drop-menu-2 {
+    background-color: var(--background, white);
+    box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+}
+
+.main-navigation .drop-menu-2 li {
+    background-color: var(--background, white);
+}
+
+.main-navigation .drop-menu-2 li:hover {
+    background-color: var(--primary-50, #e3f2fd);
+}
+
+.main-navigation .drop-menu-2 li:hover a {
+    background-color: var(--primary-50, #e3f2fd);
+    color: var(--primary-700, #1976d2) !important;
+}
+
+/* ===== CHEVRON INDICATOR ===== */
+.submenu-toggle-label > i.bx-chevron-right {
+    color: white;
+}
+
+.topbar-dropdown .submenu-toggle-label > i.bx-chevron-right,
+.drop-menu-1 .submenu-toggle-label > i.bx-chevron-right {
+    color: var(--text-secondary, #616161);
+}
+
+/* ===== BADGES ===== */
+.topbar-menu-link .badge {
+    font-size: var(--font-size-xs, 0.75rem);
+    background-color: rgba(255, 255, 255, 0.9);
+    color: var(--primary-700, #1976d2);
+}
+
+.topbar-menu-link .badge-danger {
+    background-color: var(--danger-500, #f44336);
+    color: white;
+}
+
+.topbar-dropdown .badge,
+.drop-menu-1 .badge {
+    background-color: var(--primary-50, #e3f2fd);
+    color: var(--primary-700, #1976d2);
+}
+
+/* ===== MOBILE MENU TOGGLE ===== */
+.mobile-menu-toggle-label,
+.mobile-menu-close-label {
+    color: white;
+    background-color: transparent;
+}
+
+.mobile-menu-toggle-label:hover,
+.mobile-menu-close-label:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+#menu-open:checked ~ .mobile-menu-close-label {
+    background-color: rgba(255, 255, 255, 0.25);
+}
+
+/* ===== UNPUBLISHED ITEMS ===== */
+.topbar-menu-item.unpublished .topbar-menu-link {
+    border-bottom: 2px dashed var(--warning-500, #ff9800);
+}
+
+.topbar-dropdown .topbar-menu-item.unpublished .topbar-menu-link,
+.drop-menu-1 .topbar-menu-item.unpublished a {
+    border-left: 3px solid var(--warning-500, #ff9800);
+    border-bottom: none;
+    padding-left: calc(1rem - 3px);
+}
+
+/* ===== FOCUS STATES ===== */
+.topbar-menu-link:focus-visible {
+    outline-color: white;
+    outline-offset: -2px;
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.topbar-dropdown .topbar-menu-link:focus-visible,
+.drop-menu-1 a:focus-visible {
+    outline-color: var(--primary-500, #2196f3);
+    outline-offset: -2px;
+}
+
+/* ===== RESPONSIVE THEMING ===== */
+@media screen and (max-width: 530px) {
+    /* Mobile menu background */
+    .main-navigation > ul {
+        background-color: var(--primary-500, #2196f3);
+        border-radius: 0 0 var(--radius-md, 0.5rem) var(--radius-md, 0.5rem);
+        box-shadow: var(--shadow-lg, 0 10px 15px -3px rgba(0, 0, 0, 0.1));
+    }
+    
+    /* Mobile menu items */
+    .topbar-menu-link,
+    .main-navigation ul > li > a {
+        color: white !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .topbar-menu-link:hover,
+    .submenu-toggle-label:hover,
+    .main-navigation .menu-item a:hover,
+    .main-navigation .submenu-item label:hover {
+        color: var(--primary-50, #e3f2fd) !important;
+        background-color: rgba(255, 255, 255, 0.15) !important;
+        cursor: pointer;
+    }
+    
+    .topbar-menu-item.current-page > .topbar-menu-link,
+    .topbar-menu-item.current-page > .submenu-toggle-label {
+        border-left: 4px solid white;
+        padding-left: calc(1rem - 4px);
+    }
+    
+    /* Mobile dropdowns inherit background */
+    .topbar-dropdown,
+    .drop-menu-1 {
+        background-color: rgba(0, 0, 0, 0.1);
+        border: none;
+        box-shadow: none;
+        border-radius: 0;
+    }
+    
+    .topbar-dropdown .topbar-menu-link,
+    .drop-menu-1 li a {
+        color: rgba(255, 255, 255, 0.9) !important;
+    }
+    
+    .topbar-dropdown .topbar-menu-link:hover,
+    .drop-menu-1 li:hover a {
+        background-color: rgba(255, 255, 255, 0.1);
+        color: white !important;
+    }
+}
+
+/* ===== ALTERNATIVE STYLES ===== */
+
+/* Light topbar variant */
+.main-navigation.variant-light {
+    background: var(--background, #ffffff);
+    border-bottom: 1px solid var(--border, #e0e0e0);
+}
+
+.main-navigation.variant-light li a {
+    color: var(--text-primary, #212121) !important;
+}
+
+.main-navigation.variant-light li:hover {
+    background-color: var(--gray-100, #f5f5f5) !important;
+}
+
+.main-navigation.variant-light .topbar-menu-item.current-page > .topbar-menu-link {
+    background-color: var(--primary-50, #e3f2fd);
+    color: var(--primary-700, #1976d2) !important;
+}
+
+.main-navigation.variant-light .menu-icon,
+.main-navigation.variant-light .submenu-toggle-label > i.bx-chevron-right {
+    color: var(--text-secondary, #616161);
+}
+
+/* Compact variant */
+.main-navigation.variant-compact {
+    padding: 0.25rem 0.5rem;
+}
+
+.main-navigation.variant-compact .topbar-menu-link {
+    font-size: var(--font-size-sm, 0.875rem);
+}
+
+/* ===== DISABLED STATE ===== */
+.topbar-menu-item.disabled .topbar-menu-link {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* ===== LOADING STATE ===== */
+.topbar-menu-item.loading .topbar-menu-link {
+    opacity: 0.7;
+    cursor: wait;
+}
+
+.topbar-menu-item.loading .topbar-menu-link::after {
+    content: '';
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    margin-left: var(--space-sm, 0.5rem);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ===== DARK MODE SUPPORT ===== */
+@media (prefers-color-scheme: dark) {
+    .main-navigation.variant-light {
+        background: var(--gray-900, #212121);
+        border-bottom-color: var(--gray-700, #616161);
+    }
+    
+    .main-navigation.variant-light li a {
+        color: var(--gray-100, #f5f5f5) !important;
+    }
+    
+    .main-navigation.variant-light li:hover {
+        background-color: var(--gray-800, #424242) !important;
+    }
+    
+    .topbar-dropdown,
+    .drop-menu-1 {
+        background-color: var(--gray-800, #424242);
+    }
+    
+    .topbar-dropdown .topbar-menu-link,
+    .drop-menu-1 li a {
+        color: var(--gray-100, #f5f5f5) !important;
+    }
+}

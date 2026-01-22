@@ -1,0 +1,369 @@
+/* =====================================================
+   v2
+   TOPBAR NAVIGATION - BASE STRUCTURE
+   Horizontal menu layout and responsive behavior
+   Compatible with existing .main-navigation structure
+   ===================================================== */
+
+/* ===== MAIN NAVIGATION AREA ===== */
+.main-navigation-area {
+    display: block;
+    width: 100%;
+    margin-bottom: var(--spacing, 1rem);
+}
+
+.wrapper {
+    width: 100%;
+}
+
+/* ===== TOPBAR NAVIGATION CONTAINER ===== */
+.main-navigation,
+.topbar-nav {
+    display: block;
+    width: 100%;
+    position: relative;
+    padding: 0.5rem 1rem;
+    font-size: 1.2em;
+    line-height: 1.6em;
+}
+
+/* Top-level menu list */
+.main-navigation > ul,
+.topbar-nav > ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-sm, 0.5rem);
+    flex-wrap: wrap;
+}
+
+/* ===== MENU ITEMS ===== */
+.topbar-menu-item {
+    position: relative;
+    display: block;
+    padding: 0 0.8rem;
+    white-space: nowrap;
+}
+
+.topbar-menu-link {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm, 0.5rem);
+    padding: 0;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all var(--transition-base, 250ms ease-in-out);
+    font-weight: var(--font-weight-medium, 500);
+    white-space: nowrap;
+    position: relative;
+}
+
+/* Icon positioning */
+.topbar-menu-link .menu-icon {
+    font-size: var(--font-size-xl, 1.25rem);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Menu text */
+.topbar-menu-link .menu-text {
+    display: inline-block;
+}
+
+/* Badge positioning */
+.topbar-menu-link .badge {
+    margin-left: var(--space-xs, 0.25rem);
+}
+
+/* ===== SUBMENU/DROPDOWN STRUCTURE ===== */
+.has-submenu {
+    position: relative;
+}
+
+/* Submenu toggle checkbox - hidden */
+.submenu-toggle {
+    display: none;
+}
+
+/* Toggle label */
+.submenu-toggle-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+.submenu-toggle-label > a {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+/* Chevron indicator */
+.submenu-toggle-label > i.bx-chevron-right {
+    margin-left: var(--space-xs, 0.25rem);
+    transition: transform var(--transition-base, 250ms ease-in-out);
+    font-size: var(--font-size-base, 1rem);
+    display: inline-block;
+}
+
+/* ===== DROPDOWN MENUS ===== */
+.topbar-dropdown,
+.main-navigation .drop-menu-1 {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    list-style: none;
+    margin: 0;
+    padding: 5px 3px;
+    min-width: 8rem;
+    
+    /* Hidden by default */
+    opacity: 0;
+    visibility: hidden;
+    
+    z-index: 1000;
+}
+
+/* Show dropdown on hover (desktop) */
+.main-navigation ul li:hover > .topbar-dropdown,
+.main-navigation ul li:hover > .drop-menu-1 {
+    opacity: 1;
+    visibility: visible;
+    transition: all 0.3s ease;
+}
+
+/* Align dropdown to right */
+.topbar-dropdown.align-right,
+.drop-menu-1.right-flush {
+    left: auto;
+    right: 0;
+}
+
+/* Level 2 dropdowns */
+.topbar-dropdown-level-2,
+.main-navigation .drop-menu-2 {
+    position: absolute;
+    left: 95%;
+    top: 4px;
+    list-style: none;
+    margin: 0;
+    padding: 5px 3px;
+    
+    opacity: 0;
+    visibility: hidden;
+    
+    z-index: 1000;
+}
+
+.main-navigation .drop-menu-1 li:hover > .drop-menu-2 {
+    opacity: 1;
+    visibility: visible;
+    transition: all 0.3s ease;
+}
+
+.drop-menu-2-align-left {
+    right: 0;
+    left: auto;
+}
+
+/* Dropdown items */
+.topbar-dropdown .topbar-menu-item,
+.drop-menu-1 .topbar-menu-item {
+    width: 100%;
+    padding: 0;
+}
+
+.topbar-dropdown .topbar-menu-link,
+.drop-menu-1 .topbar-menu-link {
+    padding: 0.5rem 1rem;
+    width: 100%;
+}
+
+/* ===== MOBILE MENU TOGGLE ===== */
+#menu-open {
+    display: none;
+}
+
+.mobile-menu-toggle-label,
+.mobile-menu-close-label {
+    display: none;
+    align-items: center;
+    justify-content: end;
+    font-size: 2rem;
+    line-height: 2rem;
+    width: 100%;
+    vertical-align: middle;
+    padding: 0.5rem;
+    cursor: pointer;
+}
+
+/* ===== STATES ===== */
+
+/* Current page */
+.topbar-menu-item.current-page {
+    position: relative;
+}
+
+/* Active trail */
+.topbar-menu-item.in-trail {
+    /* Structural only */
+}
+
+/* Unpublished items */
+.topbar-menu-item.unpublished .topbar-menu-link {
+    opacity: 0.6;
+    font-style: italic;
+}
+
+/* ===== RESPONSIVE BEHAVIOR ===== */
+@media screen and (max-width: 530px) {
+    /* Show mobile toggle */
+    .mobile-menu-toggle-label {
+        display: flex;
+    }
+    
+    /* Hide menu by default */
+    .main-navigation > ul {
+        display: none;
+        flex-direction: column;
+        background-color: inherit;
+        width: 100%;
+    }
+    
+    /* Show menu when toggle is checked */
+    #menu-open:checked ~ ul {
+        display: flex;
+    }
+    
+    /* Toggle menu icons */
+    #menu-open:checked ~ .mobile-menu-toggle-label {
+        display: none;
+    }
+    
+    #menu-open:checked ~ .mobile-menu-close-label {
+        display: flex;
+    }
+    
+    /* Full width menu items */
+    .topbar-menu-item {
+        width: 100%;
+        display: block;
+        margin: 0.5rem 1rem;
+        padding: 1rem;
+    }
+    
+    .topbar-menu-link {
+        width: 100%;
+        display: flex;
+    }
+    
+    .submenu-toggle-label {
+        width: 100%;
+    }
+    
+    .submenu-toggle-label > a {
+        width: 100%;
+        padding: 0.5rem;
+    }
+    
+    /* Dropdowns become accordion */
+    .topbar-dropdown,
+    .drop-menu-1 {
+        position: static;
+        opacity: 1;
+        visibility: visible;
+        display: none;
+        background-color: inherit;
+    }
+    
+    /* Show dropdown when checkbox checked */
+    .submenu-toggle:checked ~ .topbar-dropdown,
+    .submenu-toggle:checked ~ .drop-menu-1 {
+        display: block;
+    }
+    
+    /* Chevron rotation on mobile */
+    .submenu-toggle:checked ~ .submenu-toggle-label > i.bx-chevron-right {
+        transform: rotate(90deg);
+    }
+    
+    /* Remove hover states on mobile */
+    .main-navigation ul li:hover > .topbar-dropdown,
+    .main-navigation ul li:hover > .drop-menu-1 {
+        opacity: 0;
+        visibility: hidden;
+    }
+    
+    /* Show chevron icons on mobile */
+    .submenu-toggle-label > i.bx-chevron-right {
+        display: inline-block;
+    }
+    
+    /* Nested dropdowns */
+    .topbar-dropdown-level-2,
+    .drop-menu-2 {
+        position: static;
+        margin-left: 0;
+    }
+}
+
+@media screen and (min-width: 531px) {
+    /* Hide chevron on desktop (hover to expand) */
+    .submenu-toggle-label > i.bx-chevron-right {
+        display: none;
+    }
+}
+
+/* ===== ACCESSIBILITY ===== */
+
+/* Focus states */
+.topbar-menu-link:focus-visible {
+    outline: 2px solid;
+    outline-offset: 2px;
+    z-index: 1;
+}
+
+/* Screen reader only */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .topbar-menu-link {
+        border: 1px solid transparent;
+    }
+    
+    .topbar-menu-link:hover,
+    .topbar-menu-link:focus {
+        border-color: currentColor;
+    }
+    
+    .topbar-dropdown,
+    .drop-menu-1 {
+        border: 1px solid currentColor;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .topbar-menu-link,
+    .submenu-toggle-label > i.bx-chevron-right,
+    .topbar-dropdown,
+    .drop-menu-1 {
+        transition: none;
+    }
+}
