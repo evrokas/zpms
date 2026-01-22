@@ -5,13 +5,8 @@
 function operations_list($params) {
     global $kernel;
 
-    SecurityClass::require('operations-view-list');
+    if($errmsg=SecurityClass::require('operations-view-list'))return $errmsg;
 
-    // echopre(print_r($params,1));
-    // $pc = new patientsClass();
-    // $pat = $pc->getAll();
-
-    // $pat = patientsClass::sgetAll();
     if(array_key_exists("key", $params)) {
         $sort_key = $params['key'];
 
@@ -45,10 +40,61 @@ function operations_list($params) {
     // }
 
 
-    echopre("operations: " . print_r( $opers, 1));
-    // exit;
+    // echopre("operations: " . print_r( $opers, 1));
+    if(!count($opers)) {
+        return "No operations found!";
+    }
+    // $fieldNames = $opers[0]->getFields();
+    // echopre("fieldNames: " . print_r($fieldNames, 1));
 
-    $opersTable = formsClass::renderFormResults('operations');
+    $form = formsClass::getFormRenderArray("operations");
+    // echopre("form: " . print_r($form['inputs'], 1)); 
+
+    $fields = ['opdate', 'pname', 'opdiagnosis', 'opprocedure', 'clinic'];
+
+    $headerFields = array_filter($form['inputs'], function ($v) use ($fields) {
+        return (in_array($v['name'], $fields));
+    });
+
+
+    // echopre("header fields: " . print_r($headerFields, 1));
+    $headers = [];
+    foreach($headerFields as $hd) {
+        $headers[] = ['label' => $hd['label'], 'name' => $hd['name'] ];
+    }
+    // echopre("headers: " . print_r($headers, 1));
+
+    $data = [];
+    foreach($opers as $op) {
+        $row = [];
+        // echopre("op: " . print_r($op, 1));
+        $rr = $op->getAllFields();
+        foreach($fields as $fld) {
+            $r = $op->getFieldValue("get".$fld);
+
+            switch($fld) {
+                case 'opdate': 
+                    $r = formatDate($r);
+                    break;
+            }
+            
+            $row[] = $r;
+        }   
+        // echopre("row: " . print_r($row, 1));
+        // echopre("row2: " . print_r($rr, 1));
+        // $data[] = $row;
+        $data[] = $rr;
+    }
+    // echopre("data: " . print_r($data, 1));
+
+    return Renderer::render('operations_list.zetem', 
+            ['headers' => $headers,
+                'rowdata' => $data
+            ]
+        );
+
+/* 
+    $opersTable = formsClass::renderFormResults('operations', ['pname', 'pguid']);
 
     return $opersTable;
 
@@ -71,6 +117,7 @@ function operations_list($params) {
         ['pat_list' => $pp,
             // 'notice' => $kernel->ifelseStatus('patient_edit', '', true)
         ]);
+ */
 }
 
 function operations_search_post($params) {
@@ -157,53 +204,56 @@ function operations_list_search_ajax($params) {
 function operation_edit($params) {
     global $kernel;
 
-    if($errmsg=SecurityClass::require('patients-edit-patient'))return $errmsg;
+    if($errmsg=SecurityClass::require('operations-edit-operation'))return $errmsg;
 
     if(!isset($params['id'])) {
-        $kernel->addStatus('error', 'Ο φάκελος του ασθενή δεν βρέθηκε!');
-        return ("patients doesn't exist");
+        $kernel->addStatus('error', 'Ο φάκελος του ασθενή είναι λάθος!');
+        return ("operations doesn't exist");
     }
 
-    // $pc = new patientsClass();
-    // $pat = $pc->getById($params['id']);
-    // error_log("\n$params: " .print_r($params, 1)."\n");
-    $pat = patientsClass::sgetById( $params['id'] );
+    $op = new operationsClass([
+        'opdate' => getDBtime(),
+        'cuser' => $kernel->getUserName(),
+        'cdate' => getDBtime(),
+        'pname' => '',
+        'pdob' => '',
+        'opdiagnosis' => '',
+        'oprocedure' => '',
+        'clinic' => '',
+        'category' => '',
+        'surgeon1' => '',
+        'surgeon2' => '',
+        'anesthesiology' => '',
+        'invoice_status' => 'pending'
+    ]);
 
-    // echo "<pre>patient: " . print_r($pat, 1) . "</pre>";
-    $app_list = appointmentsClassEx::getAppointmentsForPatient($pat->getguid(), 'DESC');
-    // $loc = locationsClass::sgetAll();
-    $loc = locationsClassEx::sgetAll( $kernel->getCurrentLanguage() );
+    $opForm = formsClass::getFormRenderArray('operations');
+    $subBtn = generateFormButton('submit', 'Προσθήκη', 'new');
+    $opForm = formArrayAddButton($opForm, $subBtn);
 
-    $apprender = array();
-    $appdates = array();
-    foreach($app_list as $ap) {
-        
-        if($ap->getdeleted() == null) {
-            $apprender[] = [
-                'index' => count($apprender),
-                'markup' => Renderer::render('view_appointment.zetem', [
-                                                'action' => rel_url('/appointment/' . $ap->getid() . '/edit'),
-                                                'index' => count($apprender)+1,
-                                                'checked' => "checked",/*(!count($apprender)?"checked":""),*/
-                                                'id' => $params['id'], 
-                                                'patient' => $pat,
-                                                'appointment' => $ap,
-                                                'locations' => $loc
-                                            ]),
-                'attributes' => new Attributes()
-            ];
-            $appdates[] = [ 'index' => count($apprender), 'date' => $ap->getadate() ];
-        }
-    }
+    // $subBtn = generateFormButton('submit', 'Αναζήτηση ασθενή', 'patientsearch');
+    // $opForm = formArrayAddButton($opForm, $subBtn);
 
-    return (Renderer::render("edit_patient.zetem", [
-        'action' => 'edit', 
-        'id' => $params['id'], 
-        'patient' => $pat,
-        'appdates' => $appdates,
-        'appointments' => $apprender
-    ]));
+    $subBtn = generateFormButton('reset', 'Καθαρισμός', 'reset');
+    $opForm = formArrayAddButton($opForm, $subBtn);
+
+    // foreach($opForm['inputs'] as $key => $inp) {
+        // if($inp['label'] === 'Name' && $inp['name'] === 'pname') {
+            // echopre("found : " . print_r($inp, 1));
+            // $opForm['inputs'][$key]['attributes'] = ['class' => 'select2'];
+        // }
+    // }
+    $opForm['inputs'][0]['default'] = formatBrowserDate( time() );
+
+    setupFormActionHandler($opForm, 'operations_handler');
+
+    // $opForm = setupFormActionHandler($opForm, 'operations_handler');
+
+    // echopre("op form: " . print_r($opForm, 1));
+    $opForm = formsClass::renderFormArray( $opForm );
+    return $opForm;
 }
+
 function operation_edit_post($params) {
     global $kernel;
 
@@ -270,7 +320,7 @@ function operation_new($params) {
         'pname' => '',
         'pdob' => '',
         'opdiagnosis' => '',
-        'oprocedure' => '',
+        'opprocedure' => '',
         'clinic' => '',
         'category' => '',
         'surgeon1' => '',
@@ -282,9 +332,24 @@ function operation_new($params) {
     $opForm = formsClass::getFormRenderArray('operations');
     $subBtn = generateFormButton('submit', 'Προσθήκη', 'new');
     $opForm = formArrayAddButton($opForm, $subBtn);
-    $subBtn = generateFormButton('submit', 'Προσθήκη & Επεξεργασία', 'newedit');
+
+    // $subBtn = generateFormButton('submit', 'Αναζήτηση ασθενή', 'patientsearch');
+    // $opForm = formArrayAddButton($opForm, $subBtn);
+
+    $subBtn = generateFormButton('reset', 'Καθαρισμός', 'reset');
     $opForm = formArrayAddButton($opForm, $subBtn);
+
+    // foreach($opForm['inputs'] as $key => $inp) {
+        // if($inp['label'] === 'Name' && $inp['name'] === 'pname') {
+            // echopre("found : " . print_r($inp, 1));
+            // $opForm['inputs'][$key]['attributes'] = ['class' => 'select2'];
+        // }
+    // }
     $opForm['inputs'][0]['default'] = formatBrowserDate( time() );
+
+    setupFormActionHandler($opForm, 'operations_handler');
+
+    // $opForm = setupFormActionHandler($opForm, 'operations_handler');
 
     // echopre("op form: " . print_r($opForm, 1));
     $opForm = formsClass::renderFormArray( $opForm );
@@ -467,4 +532,179 @@ function ajax_update_operation_info($params) {
 
     error_log('\najax update_patient_info: note: ' . $_POST['patients-note']);
     return ("OK");
+}
+
+function operations_handler($params = array()) {
+  global $kernel;
+
+  echopre( "operations handler " . print_r($params, 1) . " POST: " . print_r($_POST, 1) );
+
+    $action = $_POST['submit'] ?? null;
+    switch( $action ) {
+        case 'new': 
+
+            $op = new operationsClass([
+                'opdate' => getDBtime(),
+                'guid' => $_POST['guid'] ?? guid(),
+                'pguid' => $_POST['guid'] ?? guid(),
+                'cuser' => $kernel->getUserName(),
+                'cdate' => getDBtime(),
+                'pname' => $_POST['pname'] ?? '<pname>',
+                'pdob' => getDBformattime( $_POST['pdob'] ?? null ),
+                'opdiagnosis' => $_POST['opdiagnosis'] ?? '<opdiagnosis>',
+                'opprocedure' => $_POST['opprocedure'] ?? '<oprocedure>',
+                'clinic' => suppliersClass::sgetAllFilter('suppliers', ['guid' => $_POST['clinic']])[0]->getname(),
+                'category' => $_POST['category'] ??  '<category>',
+                'surgeon1' => doctorsClass::sgetAllFilter('doctors', ['guid' => $_POST['surgeon1']])[0]->getdoctor_name(),
+                'surgeon2' => doctorsClass::sgetAllFilter('doctors', ['guid' => $_POST['surgeon2']])[0]->getdoctor_name(),
+                'anesthesiology' => doctorsClass::sgetAllFilter('doctors', ['guid' => $_POST['anesthesiology']])[0]->getdoctor_name(),
+                'invoice_status' => invoiceStatusClass::sgetAllFilter('invoicestatus', [ 'guid' => $_POST['invoice_status'] ])[0]->getstatus() ?? '<invoice_status>'
+            ]);
+            echopre("new operation: " . print_r($op, 1));
+            $op->insert();
+            $kernel->addStatus('notice', "Η επέμβαση του ασθενή <b>" . $_POST['pname'] . "</b> καταχωρήθηκε επιτυχώς.");
+            header('location: '.rel_url('/operations'));
+            exit;
+            break;
+
+        // case 'newedit': return 'new & edit operation'; break;
+    }
+
+    return null;
+    // echopre("operations_handler", print_r($params, 1));
+    return "operations handler for dispatcher " . print_r($params, 1) . " POST: " . print_r($_POST, 1);
+}
+
+
+
+// handle all invoices and payment invoices actions
+function invoices_handler($params = []) {
+  global $kernel;
+
+    echopre( "payments handler " . print_r($params, 1) . " POST: " . print_r($_POST, 1) );
+
+    $action = $_POST['submit'] ?? null;
+    switch( $action ) {
+        case 'new': 
+            $pay = new invoicesClass([
+                'guid' => guid(),
+                'cdate' => getDBtime(),
+                'cuser' => $kernel->getUserName(),
+                'patient_id' => $_POST['patient_id'] ?? '<patient_id>',
+                'inv_date' => getDBformattime( $_POST['inv_date'] ?? null ),
+                'total_amount' => $_POST['total_amount'] ?? 0,
+                'tax_amount' => $_POST['tax_amount'] ?? 0,
+                'inv_status' => $_POST['inv_status'] ?? '<inv_status>',
+                'payment_method' => $_POST['payment_method'] ?? '<payment_method>',
+                'supplier_id' => suppliersClass::sgetAllFilter('suppliers', ['guid' => $_POST['clinic']])[0]->getname()
+            ]);
+
+            echopre("new invoice: " . print_r($pay, 1));
+
+            // $pay->insert();
+            
+            break;
+        }
+
+}
+
+function paymentinvoices_list($params = array()) {
+    return "Payment Invoices List";
+}
+
+function paymentinvoices_new($params = array()) {
+    return "Payment Invoices Add";
+}
+
+function invoices_new($params = []) {
+  global $kernel;
+
+    if($errmsg=SecurityClass::require('finance-new-invoice'))return $errmsg;
+
+    // $op = new invoicesClass([
+    //     'opdate' => getDBtime(),
+    //     'cuser' => $kernel->getUserName(),
+    //     'cdate' => getDBtime(),
+    //     'pname' => '',
+    //     'pdob' => '',
+    //     'opdiagnosis' => '',
+    //     'oprocedure' => '',
+    //     'clinic' => '',
+    //     'category' => '',
+    //     'surgeon1' => '',
+    //     'surgeon2' => '',
+    //     'anesthesiology' => '',
+    //     'invoice_status' => 'pending'
+    // ]);
+
+    $invForm = formsClass::getFormRenderArray('invoices');
+    $subBtn = generateFormButton('submit', 'Προσθήκη', 'new');
+    $invForm = formArrayAddButton($invForm, $subBtn);
+
+    // $subBtn = generateFormButton('submit', 'Αναζήτηση ασθενή', 'patientsearch');
+    // $opForm = formArrayAddButton($opForm, $subBtn);
+
+    $subBtn = generateFormButton('reset', 'Καθαρισμός', 'reset');
+    $invForm = formArrayAddButton($invForm, $subBtn);
+
+    // foreach($invForm['inputs'] as $key => $inp) {
+        // if($inp['label'] === 'Name' && $inp['name'] === 'pname') {
+            // echopre("found : " . print_r($inp, 1));
+            // $invForm['inputs'][$key]['attributes'] = ['class' => 'select2'];
+        // }
+    // }
+    foreach($invForm['inputs'] as $index => $inp) {
+        if($inp['name'] === 'inv_date') $invForm['inputs'][$index]['default'] = formatBrowserDate( time() );
+    }
+
+    setupFormActionHandler($invForm, 'invoices_handler');
+
+    // $invForm = setupFormActionHandler($invForm, 'operations_handler');
+
+    // echopre("op form: " . print_r($invForm, 1));
+    $invForm = formsClass::renderFormArray( $invForm );
+    return $invForm;
+}
+
+function invoices_list($params = []) {
+    return "Invoices list";
+}
+
+/* 
+function pdf2text($filename) {
+    // Simple implementation to extract text from PDF
+    $content = shell_exec('pdftotext ' . escapeshellarg($filename) . ' -');
+    return $content ? $content : 'Error processing PDF';
+}
+ */
+
+
+function invoices_upload_new($params = []) {
+    global $kernel;
+    
+    $pdfscanner_path = __APPDIR__ . '/web/test/pr/pdfparse.php';
+    $tempFilePath = $_FILES['pdfFile']['tmp_name'];
+    error_log("temporary file name: " . $tempFilePath);
+    
+    $txtFilePath = tempnam('/tmp/', 'text');
+    shell_exec("pdftotext -layout $tempFilePath $txtFilePath");
+    
+    $scan = shell_exec("php $pdfscanner_path $txtFilePath");
+    $results = json_decode($scan, true);
+
+    $res =[
+        'document_type' => $results['document_type'],
+        'document_name' => $results['results']['document_type'],
+        'series' => $results['results']['series'],
+        'number' => $results['results']['invoice_number'],
+        'mark' => $results['results']['mark_number'],
+        'payment_method' => $results['results']['payment_method'],
+    ];
+    // $kernel->addStatus('notice', "pdf $tempFilePath uploaded, results: " . print_r($results, 1));
+    // $content = 
+    echo(json_encode($res, JSON_UNESCAPED_UNICODE));
+    // echo "file uploaded";
+    exit;
+    return "new file uploaded";
+
 }

@@ -120,8 +120,10 @@ function patients_list_search_ajax($params) {
         // error_log('dob ->' . $p->getpdob());
         $list[] = [
                 'id' => $p->getid(),
+                'guid' => $p->getguid(),
                 'name' => $p->getpname(),
                 'amka' => $p->getpamka(),
+                'dob' => formatBrowserDate($p->getpdob()),
                 // 'age' => DateTime::createFromFormat('Y-m-d h:m:s', $p->getpdob())->diff(new DateTime('now'))->y,
                 'tel' => $p->getptel(),
                 'link' => rel_url('/patient/' . $p->getid() . '/edit')
@@ -150,8 +152,8 @@ function patient_edit($params) {
     if($errmsg=SecurityClass::require('patients-edit-patient'))return $errmsg;
 
     if(!isset($params['id'])) {
-        $kernel->addStatus('error', 'Ο φάκελος του ασθενή δεν βρέθηκε!');
-        return ("patients doesn't exist");
+        $kernel->addStatus('error', 'Ο φάκελος του ασθενή είναι λάθος!');
+        return ("patient id doesn't exist");
     }
 
     // $pc = new patientsClass();

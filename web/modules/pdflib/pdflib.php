@@ -58,9 +58,9 @@ function pdflib_handler($params) {
 // Include pdf2text library
 // require 'pdf2text.php';
 
-function pdf2text($filename) {
+function pdf2text($filename, $options = '') {
     // Simple implementation to extract text from PDF
-    $content = shell_exec('pdftotext ' . escapeshellarg($filename) . ' -');
+    $content = shell_exec('pdftotext ' . $options . ' ' . escapeshellarg($filename) . ' -');
     return $content ? $content : 'Error processing PDF';
 }
 

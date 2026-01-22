@@ -66,7 +66,10 @@ if(search.length > 0) {
         if(el.value.length>0) {
             box2.style.display = 'block';
             // console.log(el.value);
-
+            tf = ev.target.closest('form');
+            // console.log(tf);
+            actionurl = tf.action;
+            console.log(tf.action);
             xhr.onreadystatechange = function() {
                 if((this.readyState == 4) && (this.status == 200)) {
                     var response = JSON.parse(this.responseText);
@@ -77,9 +80,11 @@ if(search.length > 0) {
                     console.log( response );
                     box2.innerHTML = '';
                     basepath = response['referer'];
+                    click_function = box2.dataset.selectrow;
+                    console.log( click_function );
 
                     list.forEach(el => {
-                        box2.innerHTML += "<li onclick=\"selectclick(this)\" data-url=\""+el['link']+"\"data-id=\""+el['id']+"\" data-name=\""+el['name']+"\">"+
+                        box2.innerHTML += "<li onclick=\""+click_function+"(this)\" data-url=\""+el['link']+"\"data-id=\""+el['id']+"\" data-name=\""+el['name']+"\" data-guid=\""+el['guid']+"\" data-dob=\""+el['dob']+"\">"+
                         "<span class=\"name\">"+el['name']+"</span>"+
                         // "<span class=\"age\">"+"["+el['age']+" έτη]"+"</span>"+
                         "<span class=\"tel\">"+"{Τηλ:"+el['tel']+"}"+"</span>"+
@@ -96,7 +101,8 @@ if(search.length > 0) {
             clearTimeout(timeout);
             timeout = setTimeout(function () {
                 // xhr.open("POST", '/apps/zeus/web/patients/searchajax/term');
-                xhr.open("POST", 'patients/searchajax/term');
+                // xhr.open("POST", 'patients/searchajax/term');
+                xhr.open("POST", actionurl);
                 xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
                 xhr.send("sterm=" + el.value);
             }, (el.value.length<2)?0:200);  /* if length is less than 2 send request immediately */
@@ -118,7 +124,64 @@ function selectclick(e){
     window.location.replace( basepath + e.dataset.url );
 }
 
+function selectclickoperation(e) {
+    // console.log( "Clicked "  + e.innerHTML);
+    search[0].value = e.dataset.name;    //innerHTML;
+    // document.getElementById();
+    box2.style.display = 'none';
 
+    console.log( window.location.href);
+    // console.log( basepath );
+    // console.log( basepath + e.dataset.url);
+    console.log( e.dataset.guid);
+
+    pguid = document.querySelector('input[name="pguid"]');
+    pname = document.querySelector('input[name="pname"]');
+    pdob = document.querySelector('input[name="pdob"]');
+
+    // console.log( pguid );
+    pguid.value = e.dataset.guid;
+    // console.log( pguid.value );
+
+    pname.value = e.dataset.name;
+    // console.log( pname.value );
+    
+    pdob.value = e.dataset.dob;
+    console.log( pdob, e.dataset.dob );
+
+
+
+
+    search[0].value = '';
+    // window.location.replace( basepath + e.dataset.url );
+}
+
+function populateForm(data) {
+    // Loop through all fields in the JSON response
+    for (const key in data) {
+        if (data.hasOwnProperty(key)) {
+            const field = form.querySelector(`input[name="${key}"]`);
+
+            if (field) {
+                // Handle different field types appropriately
+                switch (field.type) {
+                    case 'checkbox':
+                        field.checked = Boolean(data[key]);
+                        break;
+                    case 'radio':
+                        const radio = form.querySelector(`[name="${key}"][value="${data[key]}"]`);
+                        if (radio) radio.checked = true;
+                        break;
+                    case 'select-one':
+                        field.value = data[key] || '';
+                        break;
+                    default:
+                        field.value = data[key] || '';
+                }
+            }
+        }
+    }
+}
 /* add confirmation dialog to every trash icon */
 let trashelements = document.querySelectorAll('.patients-list a[confirmation]');
 if(trashelements.length>0) {

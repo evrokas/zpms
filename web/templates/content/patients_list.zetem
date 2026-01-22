@@ -11,13 +11,14 @@
 </div>
 
 <div class="search">
-    <form action="{{rel_url('patients/search')}}" method="post">
+    <form action="{{rel_url('patients/searchajax/term')}}" method="post">
+    <!-- <form action="{{rel_url('patients/search')}}" method="post"> -->
         <div class="input-div">
             <label for="search-term">{{t("Search")}}</label>
             <input type="text" class="select2" name="search-term" id="" autocomplete="off" value="{% if(isset($search_term))echo $search_term; %}">
         </div>
-        <div class="select-container">
-            <ul class="select-box" id="select-box">
+        <div class="select-container" >
+            <ul class="select-box" id="select-box" data-selectrow="selectclick">
                 <!-- <li>Opt 1</li> -->
                 <!-- <li>Opt 2</li> -->
                 <!-- <li>Opt 3</li> -->

@@ -16,6 +16,15 @@ table:
     - name: patient_id
       type: '@guid'
 
+    - name: series
+      type: text
+
+    - name: number
+      type: int
+
+    - name: mark
+      type: text
+
     - name: inv_date
       type: datetime
     
@@ -39,13 +48,25 @@ form:
   method: "post"
   action: "#"
   inputs:
+    - name: inv_date
+      label: "Invoice date"
+      type: date
+
     - name: patient_id
       label: "Patient Name"
       type: text
 
-    - name: inv_date
-      label: "Invoice date"
-      type: date
+    - name: series
+      label: "Series"
+      type: text
+
+    - name: number
+      label: "Number"
+      type: number
+
+    - name: mark
+      label: "MARK"
+      type: text
 
     - name: total_amount
       label: "Total amount"

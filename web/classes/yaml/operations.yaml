@@ -71,6 +71,8 @@ form:
     - name: pguid
       label: "Patient GUID"
       type: text
+      attributes:
+        disabled: true
 
     - name: pname
       label: "Name"
@@ -79,7 +81,7 @@ form:
 
     - name: pdob
       label: "Date of birth"
-      type: datetime
+      type: date
 
     - name: opdiagnosis
       label: "Diagnosis"
@@ -143,7 +145,7 @@ form:
         params:
           tableclass: invoiceStatusClass
           label: [status]
-          value: status
+          value: guid
 ---
 
       # options:

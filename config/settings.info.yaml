@@ -68,6 +68,15 @@ libraries:
     css:
       - qrgen:
         src: 'css/qrgenerator.css'
+  finance-library:
+    css:
+      - finance:
+        src: 'css/finance.css'
+    foot_script:
+      - finance:
+        defer:
+        type: "text/javascript"
+        src: "js/finance.js"
   textarea-autoexpand-library:
     foot_script:
       - textarea-autoexpand:
@@ -120,7 +129,8 @@ roles:
     operations-view-list,
     operations-new-operation,
     operations-delete-operation,
-    operations-edit-operation
+    operations-edit-operation,
+    finance-new-invoice
     ]
 
 
@@ -355,31 +365,63 @@ routes:
     title: 
       en: "Operation edit"
       gr: "Επεξεργασία χειρουργείoυ"
-    url: "/operation/{id}/edit"
+    url: "/operations/{id}/edit"
     handler: operation_edit
     method: get
   operation_edit_post:
     title: "operation edit"
-    url: "/operation/{id}/edit"
+    url: "/operations/{id}/edit"
     handler: operation_edit_post
     method: post
   operation_new:
     title: 
       en: "New operation"
       gr: "Νέο χειρουργείο"
-    url: /operation/new
+    url: /operations/new
     handler: operation_new
     method: get
   operation_new_post:
     title: "New operation"
-    url: /operation/new
+    url: /operations/new
     handler: operation_new_post
     method: post
   operation_delete:
     title: "operation delete"
-    url: "/operation/{id}/delete"
+    url: "/operations/{id}/delete"
     handler: operation_delete
-
+  finance_paymentsinvoices_list:
+    title:
+      en: "Payment Invoices List"
+      gr: "Λίστα Εντολών πληρωμών"
+    url: "/apps/finance/paymentinvoices_list"
+    method: get
+    handler: paymentinvoices_list
+  finance_paymentinvoices_new:
+    title: 
+      en: "New payment Invoices"
+      gr: "Νέα έντολή πληρωμής"
+    url: /apps/finance/new
+    method: get
+    handler: "paymentsinvoices_new"
+  finance_invoices_list:
+    title:
+      en: "Invoices List"
+      gr: "Λίστα παραστατικών"
+    url: "/apps/finance/invoices_list"
+    method: get
+    handler: invoices_list
+  finance_invoices_new:
+    title: 
+      en: "New invoice"
+      gr: "Νέο παραστατικό"
+    url: /apps/finance/invoices_new
+    method: get
+    handler: invoices_new
+  finance_invoice_upload_file:
+    title: "Invoice upload"
+    url: "/apps/finance/upload_invoice"
+    method: post
+    handler: invoices_upload_new
 
 regions:
   - header
@@ -474,7 +516,7 @@ menu:
           text: 
             gr: 'Νέο'
             en: 'New'
-          url: /operation/new
+          url: /operations/new
       # path: '/patients'
       # disabled: true
     - appointments:
@@ -483,6 +525,48 @@ menu:
         en: 'Appointments'
       url: '/appointments'
       disabled: true
+    - financial:
+      text:
+        gr: "Οικονομικά"
+        en: "Financial"
+      access: power-user
+      submenu:
+        - payment_invoices:
+          text:
+            gr: "Παραστατικά Πληρωμής"
+            en: "Payment invoices"
+          submenu:
+            - payment_invoices_new:
+              text:
+                gr: "Λίστα"
+                en: "List"
+              url: /apps/finance/paymentinvoices_list
+              access: power-user
+            - payment_invoices_list:
+              text:
+                gr: "Νέα"
+                en: "New"
+              url: /apps/finance/paymentinvoices_new
+              access: power-user
+        - invoices:
+          text:
+            gr: "Παραστατικά"
+            en: "Invoices"
+          # url: /apps/finance/invoices
+          access: power-user
+          submenu:
+            - invoices_list:
+              text:
+                gr: "Λίστα"
+                en: "List"
+              url: /apps/finance/invoices_list
+              access: power-user
+            - invoices_new:
+              text:
+                gr: "Νέο"
+                en: "New"
+              url: /apps/finance/invoices_new
+              access: power-user
     - applications:
       text:
         en: 'Apps'
@@ -510,11 +594,6 @@ menu:
             en: 'PDF Archive'
           url: /apps/pdflib
           access: power-user
-        - finance-module:
-          text:
-            gr: 'Οικονομικά Στοιχεία'
-            en: 'Finanace'
-          url: /apps/finance
 
 # Module site configuration
 #
@@ -527,6 +606,16 @@ menu:
 #           - arg1: value1
 #         access: [access_roles, to allow for route]
 modconf:
+  header:
+    display:
+      __all__:
+        arguments:
+          - page: "homepage"
+          # - page: "non-homepage"
+      homepage:
+        arguments:
+          - page: "homepage"
+    
   message:
     display:
       userprofile:
@@ -556,4 +645,4 @@ modules:
     - pdflib
     - language_selector
     - message
-    - finance
+    # - finance
