@@ -23,19 +23,20 @@ css:
     src: 'css/color-palette.css'
   # - navigation:
   #   src: 'css/navigation.css'
-  - navigation:
-    src: ['css/navigation-base.css',
-          'css/navigation-theme.css']
-  - styles:
-    src: 'css/styles.css'
-  - boxicons:
-    src: 'css/bx/css/boxicons.min.css'
   - designsystem:
     src: [
         'css/design/design-system.css',
         'css/design/layout.css',
         'css/design/components.css'
     ]
+
+  - navigation:
+    src: ['css/navigation-topbar-base.css',
+          'css/navigation-topbar-theme.css']
+  - styles:
+    src: 'css/styles.css'
+  - boxicons:
+    src: 'css/bx/css/boxicons.min.css'
   # - newstyles:
     # src: 'css/new-styles.css'
   # - breadcrumbs:
