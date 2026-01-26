@@ -1,5 +1,11 @@
 <div class="wrapper">
-    {% foreach($regions as $reg): %}
-        {{ $reg }}
-    {% endforeach %}
+    {{ $regions['header'] }}
+
+    {{ $regions['main_navigation'] }}
+
+    {{ $regions['notification'] }}
+
+    {{ $regions['main_content'] }}
+
+    {{ $regions['footer'] }}
 </div>
