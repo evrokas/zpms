@@ -4,11 +4,28 @@
    Layout, positioning, and responsive behavior
    No colors, shadows, or design-specific styling
    ===================================================== */
+::root {
+    --sidebar-width: 280px;
+    --topnav-height: 64px;
 
+}
 /* ===== SIDEBAR NAVIGATION AREA ===== */
 .sidebar-nav-area {
     display: block;
     width: 100%;
+
+        /* sidebar-navigation.html */
+        /* position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: var(--sidebar-width);
+        background-color: var(--bg-color);
+        border-right: 1px solid var(--border-color);
+        overflow-y: auto;
+        transition: transform var(--transition);
+        z-index: 1000; */
+
 }
 
 /* ===== SIDEBAR NAVIGATION CONTAINER ===== */
@@ -84,7 +101,8 @@
 
 /* Toggle label */
 .submenu-toggle-label {
-    display: block;
+    /* display: block; */
+    display: flex;
     width: 100%;
     cursor: pointer;
     user-select: none;
