@@ -792,3 +792,15 @@ function totp_handler($params) {
     echo json_encode( $output );
     exit();
 }
+
+
+
+class AdminController {
+    static function showRoutes() {
+        global $kernel;
+        $test = ['one' => 'first', 'two' => 'second'];
+        return Renderer::render('admin.zetem', ['routes' => 'all routes', 'msg' => $test]);
+        // $r = $kernel->getConfig('routes');
+        // return "Show routes in AdminController <pre>" . print_r($r, 1) . "</pre>";
+    }
+}
