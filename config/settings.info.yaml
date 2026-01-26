@@ -23,20 +23,19 @@ css:
     src: 'css/color-palette.css'
   # - navigation:
   #   src: 'css/navigation.css'
-  - designsystem:
-    src: [
-        'css/design/design-system.css',
-        'css/design/layout.css',
-        'css/design/components.css'
-    ]
 
-  - navigation:
-    src: ['css/navigation-topbar-base.css',
-          'css/navigation-topbar-theme.css']
+  # original styles css
   - styles:
     src: 'css/styles.css'
   - boxicons:
     src: 'css/bx/css/boxicons.min.css'
+
+  - designsystem:
+    src: [
+        'css/design/design-system.css',
+        'css/design/layout.css',
+        'css/design/components.css']
+
   # - newstyles:
     # src: 'css/new-styles.css'
   # - breadcrumbs:
@@ -125,6 +124,18 @@ libraries:
         type: 'text/javascript'
         src: 'js/pdf-preview.js'
         defer:
+  navigation-topbar:
+    css:
+      - topbar-css:
+        type: 'text/css'
+        src: ['css/navigation-topbar-base.css',
+              'css/navigation-topbar-theme.css']
+  navigation-sidebar:
+    css:
+      - sidebar-css:
+        type: 'text/src'
+        src: ['css/navigation-sidebar-base.css',
+              'css/navigation-sidebar-theme.css']
 
 
 # head_script:
