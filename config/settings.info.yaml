@@ -21,10 +21,8 @@ css:
     src: 'css/normalize.css'
   - colorpalette:
     src: 'css/color-palette.css'
-  # - navigation:
-  #   src: 'css/navigation.css'
-
-  # original styles css
+  - navigation:
+    src: 'css/navigation.css'
   - styles:
     src: 'css/styles.css'
   - boxicons:
