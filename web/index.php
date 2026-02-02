@@ -20,7 +20,7 @@ require_once(__FWDIR__ . '/bootstrap.php');
     $router = new RouterClass( $kernel->getConfig('routes') );
     // print_r( $router->getAllRoutes() );
 
-    Renderer::init($kernel->getConfig('templates'), false,  $kernel->safeGetConfig('template_cache_path'), $kernel->getConfig('enable_comments'));
+    Renderer::init($kernel->getConfig('templates'), false,  $kernel->safeGetConfig('template_cache_path'), $kernel->safeGetConfig('enable_template_comments'));
 
     $Request = new RequestClass($_SERVER);
     // $handlers = $Request->getQueryRoute();
@@ -796,11 +796,15 @@ function totp_handler($params) {
 
 
 class AdminController {
-    static function showRoutes() {
+    static function showRoutes($params) {
         global $kernel;
+
+        // echopre(print_r(getDebugTrace(), 1));
+
         $test = ['one' => 'first', 'two' => 'second'];
+        // echopre("test 123: " . print_r($test, 1));
         return Renderer::render('admin.zetem', ['routes' => 'all routes', 'msg' => $test]);
         // $r = $kernel->getConfig('routes');
-        // return "Show routes in AdminController <pre>" . print_r($r, 1) . "</pre>";
+        // return "Show routes in AdminController <pre>" . /* print_r($r, 1) . */ "</pre>";
     }
 }
