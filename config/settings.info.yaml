@@ -172,7 +172,7 @@ routes:
   admin_routes:
     title: "Routes"
     name: admin_routes
-    url: '/admin/routes'
+    url: "/admin/routes"
     handler: AdminController::showRoutes
   homepage:
     title: 
@@ -508,7 +508,7 @@ modules:
     - "/web/core/modules/"
     - "/web/modules/"
   modules:
-    - admin
+#    - admin
     - mainnavigation
     - notifications
     - header
