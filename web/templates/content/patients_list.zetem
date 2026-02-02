@@ -14,8 +14,19 @@
     <form action="{{rel_url('patients/search')}}" method="post">
         <div class="input-div">
             <label for="search-term">{{t("Search")}}</label>
-            <input type="text" class="select2 focus-primary" name="search-term" id="" autocomplete="off" placeholder="Αναζήτηση ασθενών..." value="{% if(isset($search_term))echo $search_term; %}">
-            <!-- <input type="text" class="select2" name="search-term" id="" autocomplete="off" value="{% if(isset($search_term))echo $search_term; %}"> -->
+            {% set $searchAttributes = new Attributes([
+                'type' => 'text',
+                'class' => 'select2 focus-primary',
+                'name' => 'search-term',
+                'autocomplete' => 'off',
+                'placeholder' => 'Αναζήτηση ασθενών...'
+                ]); %}
+            {% if isset($search_term) %}
+                {% $searchAttributes->addAttributeS('value', $search_term); %}
+            {% endif %}
+            <input {{attributes($searchAttributes)}}>
+            {# <input type="text" class="select2 focus-primary" name="search-term" id="" autocomplete="off" placeholder="Αναζήτηση ασθενών..." value="{% if(isset($search_term))echo $search_term; %}"> #}
+            {# <input type="text" class="select2" name="search-term" id="" autocomplete="off" value="{% if(isset($search_term))echo $search_term; %}"> #}
         </div>
         <div class="select-container">
             <ul class="select-box" id="select-box">
@@ -92,5 +103,3 @@
         </tbody>
     </table>
 </div>
-
-
