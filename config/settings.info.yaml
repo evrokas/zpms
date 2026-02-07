@@ -47,9 +47,31 @@ css:
 # setup multiple language support
 multilingual: true
 
+# Enhanced language configuration
 languages:
-  - en
-  - gr
+  en:
+    name: English
+    native_name: English
+    direction: ltr
+    locale: en_US
+    enabled: true
+  el:
+    name: Greek
+    native_name: Ελληνικά
+    direction: ltr
+    locale: el_GR
+    enabled: true
+
+# Language detection configuration
+language_detection:
+  default: el
+  priority:
+    - session   # Check session (primary)
+    - cookie    # Check cookie (persistent)
+    - user      # Check user profile (authenticated)
+    - query     # Check ?lang= parameter (manual override)
+    - browser   # Check browser header (first-time)
+    - default   # Fallback (configured default)
 
 # use libraries concept to attach different css/js to different pages
 libraries:
