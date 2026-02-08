@@ -1,0 +1,254 @@
+# English Translations for ZPMS
+# Uses nested structure with dot notation access
+# Example: t('nav.home') returns "Home"
+
+# Navigation
+nav:
+  home: Home
+  patients: Patients
+  appointments: Appointments
+  settings: Settings
+  contact: Contact
+  applications: Applications
+  logout: Logout
+  login: Login
+
+# Dashboard
+dashboard:
+  welcome: "Welcome back, {name}!"
+  welcome_default: "Welcome to ZPMS"
+  total_patients: Total Patients
+  total_appointments: Total Appointments
+  recent_activity: Recent Activity
+  quick_actions: Quick Actions
+  statistics: Statistics
+  overview: Overview
+
+# Patient Management
+patients:
+  title: Patients
+  list: Patient List
+  new: New Patient
+  edit: Edit Patient
+  delete: Delete Patient
+  view: View Patient
+  search: Search Patients
+  search_placeholder: "Search by name, ID, or phone..."
+  no_results: No patients found
+  total_count: "{count} patients total"
+
+  # Patient fields
+  fields:
+    id: Patient ID
+    name: Full Name
+    first_name: First Name
+    last_name: Last Name
+    email: Email
+    phone: Phone
+    address: Address
+    date_of_birth: Date of Birth
+    gender: Gender
+    notes: Notes
+    created_at: Created On
+    updated_at: Last Updated
+
+  # Patient actions
+  actions:
+    add_new: Add New Patient
+    save: Save Patient
+    cancel: Cancel
+    delete_confirm: "Are you sure you want to delete patient {name}?"
+    deleted_success: Patient deleted successfully
+    saved_success: Patient saved successfully
+    created_success: Patient created successfully
+
+# Appointments
+appointments:
+  title: Appointments
+  list: Appointment List
+  new: New Appointment
+  edit: Edit Appointment
+  delete: Delete Appointment
+  view: View Appointment
+  search: Search Appointments
+  no_results: No appointments found
+  upcoming: Upcoming Appointments
+  past: Past Appointments
+  today: Today's Appointments
+
+  # Appointment fields
+  fields:
+    id: Appointment ID
+    patient: Patient
+    date: Date
+    time: Time
+    duration: Duration
+    type: Type
+    status: Status
+    notes: Notes
+    created_at: Created On
+
+  # Appointment actions
+  actions:
+    schedule: Schedule Appointment
+    reschedule: Reschedule
+    cancel: Cancel Appointment
+    confirm: Confirm Appointment
+    complete: Mark Complete
+    cancel_confirm: "Are you sure you want to cancel this appointment?"
+    deleted_success: Appointment cancelled successfully
+    saved_success: Appointment saved successfully
+    created_success: Appointment scheduled successfully
+
+# Forms
+forms:
+  required_field: This field is required
+  invalid_email: Please enter a valid email address
+  invalid_phone: Please enter a valid phone number
+  invalid_date: Please enter a valid date
+  save: Save
+  cancel: Cancel
+  submit: Submit
+  reset: Reset
+  delete: Delete
+  edit: Edit
+  close: Close
+  back: Back
+  next: Next
+  previous: Previous
+  search: Search
+  filter: Filter
+  clear: Clear
+  select: Select
+  select_option: "-- Select an option --"
+  choose_file: Choose File
+  upload: Upload
+  download: Download
+  print: Print
+  export: Export
+  import: Import
+
+# Messages
+messages:
+  save_success: Changes saved successfully
+  delete_success: Item deleted successfully
+  delete_confirm: "Are you sure you want to delete {item}?"
+  error_occurred: An error occurred
+  loading: Loading...
+  processing: Processing...
+  no_data: No data available
+  access_denied: Access denied
+  not_found: Page not found
+  session_expired: Your session has expired. Please login again.
+
+  # Success messages
+  success:
+    created: "{item} created successfully"
+    updated: "{item} updated successfully"
+    deleted: "{item} deleted successfully"
+    saved: Changes saved
+
+  # Error messages
+  error:
+    general: Something went wrong
+    not_found: "{item} not found"
+    invalid_data: Invalid data provided
+    server_error: Server error occurred
+    network_error: Network connection error
+    validation_failed: Validation failed
+
+# Authentication
+auth:
+  login: Login
+  logout: Logout
+  username: Username
+  password: Password
+  remember_me: Remember Me
+  forgot_password: Forgot Password?
+  login_button: Sign In
+  logout_button: Sign Out
+  welcome: "Welcome, {name}"
+  login_success: Login successful
+  logout_success: Logout successful
+  login_failed: Invalid username or password
+  access_denied: You don't have permission to access this page
+
+# Settings
+settings:
+  title: Settings
+  general: General Settings
+  account: Account Settings
+  preferences: Preferences
+  language: Language
+  timezone: Timezone
+  notifications: Notifications
+  security: Security
+  privacy: Privacy
+  save_settings: Save Settings
+  settings_saved: Settings saved successfully
+
+# Applications
+apps:
+  qr_generator: QR Code Generator
+  pdf_library: PDF Archive
+  backups: Backups
+  generate: Generate
+  generated_success: Generated successfully
+
+# Common UI Elements
+ui:
+  yes: Yes
+  no: No
+  ok: OK
+  confirm: Confirm
+  cancel: Cancel
+  close: Close
+  open: Open
+  show: Show
+  hide: Hide
+  more: More
+  less: Less
+  all: All
+  none: None
+  select_all: Select All
+  deselect_all: Deselect All
+  actions: Actions
+  options: Options
+  status: Status
+  active: Active
+  inactive: Inactive
+  enabled: Enabled
+  disabled: Disabled
+
+# Date and Time
+datetime:
+  today: Today
+  yesterday: Yesterday
+  tomorrow: Tomorrow
+  now: Now
+  days: Days
+  hours: Hours
+  minutes: Minutes
+  seconds: Seconds
+  date_format: "Y-m-d"
+  time_format: "H:i"
+  datetime_format: "Y-m-d H:i:s"
+
+# Pluralization examples
+item_plural:
+  one: "{count} item"
+  other: "{count} items"
+
+patient_plural:
+  one: "{count} patient"
+  other: "{count} patients"
+
+appointment_plural:
+  one: "{count} appointment"
+  other: "{count} appointments"
+
+# Context examples
+bank@financial: Bank (Financial Institution)
+bank@river: River Bank
+date@calendar: Date
+date@romantic: Date (Meeting)

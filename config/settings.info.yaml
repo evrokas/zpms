@@ -66,12 +66,19 @@ languages:
 language_detection:
   default: el
   priority:
+    - url       # Check URL path prefix (/en/page or /el/page)
     - session   # Check session (primary)
     - cookie    # Check cookie (persistent)
     - user      # Check user profile (authenticated)
     - query     # Check ?lang= parameter (manual override)
     - browser   # Check browser header (first-time)
     - default   # Fallback (configured default)
+
+# Dictionary configuration (Phase 4)
+dictionary:
+  auto_register: true        # Auto-add new tokens when encountered
+  fallback_to_file: true     # Check YAML files if not in DB
+  prefer_database: false     # Prefer file-based over DB (false = check files first)
 
 # use libraries concept to attach different css/js to different pages
 libraries:

@@ -1,11 +1,14 @@
 <div class="wrapper">
     {{ $regions['header'] }}
 
-    {{ $regions['main_navigation'] }}
-
     {{ $regions['notification'] }}
+    <div class="main-region">
+        {{ $regions['main_navigation'] }}
 
-    {{ $regions['main_content'] }}
+        <div class="content-with-sidebar">
+            {{ $regions['main_content'] }}
+        </div>
+    </div>
 
     {{ $regions['footer'] }}
 </div>

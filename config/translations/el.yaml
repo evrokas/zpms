@@ -1,0 +1,254 @@
+# Greek Translations for ZPMS (Ελληνικά)
+# Uses nested structure with dot notation access
+# Example: t('nav.home') returns "Αρχική"
+
+# Navigation
+nav:
+  home: Αρχική
+  patients: Ασθενείς
+  appointments: Ραντεβού
+  settings: Ρυθμίσεις
+  contact: Επικοινωνία
+  applications: Εφαρμογές
+  logout: Αποσύνδεση
+  login: Είσοδος
+
+# Dashboard
+dashboard:
+  welcome: "Καλώς ήρθατε, {name}!"
+  welcome_default: "Καλώς ήρθατε στο ZPMS"
+  total_patients: Σύνολο Ασθενών
+  total_appointments: Σύνολο Ραντεβού
+  recent_activity: Πρόσφατη Δραστηριότητα
+  quick_actions: Γρήγορες Ενέργειες
+  statistics: Στατιστικά
+  overview: Επισκόπηση
+
+# Patient Management
+patients:
+  title: Ασθενείς
+  list: Λίστα Ασθενών
+  new: Νέος Ασθενής
+  edit: Επεξεργασία Ασθενή
+  delete: Διαγραφή Ασθενή
+  view: Προβολή Ασθενή
+  search: Αναζήτηση Ασθενών
+  search_placeholder: "Αναζήτηση με όνομα, ID ή τηλέφωνο..."
+  no_results: Δεν βρέθηκαν ασθενείς
+  total_count: "{count} ασθενείς συνολικά"
+
+  # Patient fields
+  fields:
+    id: ID Ασθενή
+    name: Πλήρες Όνομα
+    first_name: Όνομα
+    last_name: Επώνυμο
+    email: Email
+    phone: Τηλέφωνο
+    address: Διεύθυνση
+    date_of_birth: Ημερομηνία Γέννησης
+    gender: Φύλο
+    notes: Σημειώσεις
+    created_at: Δημιουργήθηκε
+    updated_at: Τελευταία Ενημέρωση
+
+  # Patient actions
+  actions:
+    add_new: Προσθήκη Νέου Ασθενή
+    save: Αποθήκευση Ασθενή
+    cancel: Ακύρωση
+    delete_confirm: "Είστε σίγουροι ότι θέλετε να διαγράψετε τον ασθενή {name};"
+    deleted_success: Ο ασθενής διαγράφηκε επιτυχώς
+    saved_success: Ο ασθενής αποθηκεύτηκε επιτυχώς
+    created_success: Ο ασθενής δημιουργήθηκε επιτυχώς
+
+# Appointments
+appointments:
+  title: Ραντεβού
+  list: Λίστα Ραντεβού
+  new: Νέο Ραντεβού
+  edit: Επεξεργασία Ραντεβού
+  delete: Διαγραφή Ραντεβού
+  view: Προβολή Ραντεβού
+  search: Αναζήτηση Ραντεβού
+  no_results: Δεν βρέθηκαν ραντεβού
+  upcoming: Επερχόμενα Ραντεβού
+  past: Παλαιά Ραντεβού
+  today: Σημερινά Ραντεβού
+
+  # Appointment fields
+  fields:
+    id: ID Ραντεβού
+    patient: Ασθενής
+    date: Ημερομηνία
+    time: Ώρα
+    duration: Διάρκεια
+    type: Τύπος
+    status: Κατάσταση
+    notes: Σημειώσεις
+    created_at: Δημιουργήθηκε
+
+  # Appointment actions
+  actions:
+    schedule: Προγραμματισμός Ραντεβού
+    reschedule: Αλλαγή Ραντεβού
+    cancel: Ακύρωση Ραντεβού
+    confirm: Επιβεβαίωση Ραντεβού
+    complete: Ολοκλήρωση
+    cancel_confirm: "Είστε σίγουροι ότι θέλετε να ακυρώσετε αυτό το ραντεβού;"
+    deleted_success: Το ραντεβού ακυρώθηκε επιτυχώς
+    saved_success: Το ραντεβού αποθηκεύτηκε επιτυχώς
+    created_success: Το ραντεβού προγραμματίστηκε επιτυχώς
+
+# Forms
+forms:
+  required_field: Αυτό το πεδίο είναι υποχρεωτικό
+  invalid_email: Παρακαλώ εισάγετε έγκυρη διεύθυνση email
+  invalid_phone: Παρακαλώ εισάγετε έγκυρο αριθμό τηλεφώνου
+  invalid_date: Παρακαλώ εισάγετε έγκυρη ημερομηνία
+  save: Αποθήκευση
+  cancel: Ακύρωση
+  submit: Υποβολή
+  reset: Επαναφορά
+  delete: Διαγραφή
+  edit: Επεξεργασία
+  close: Κλείσιμο
+  back: Πίσω
+  next: Επόμενο
+  previous: Προηγούμενο
+  search: Αναζήτηση
+  filter: Φίλτρο
+  clear: Καθαρισμός
+  select: Επιλογή
+  select_option: "-- Επιλέξτε μια επιλογή --"
+  choose_file: Επιλογή Αρχείου
+  upload: Μεταφόρτωση
+  download: Λήψη
+  print: Εκτύπωση
+  export: Εξαγωγή
+  import: Εισαγωγή
+
+# Messages
+messages:
+  save_success: Οι αλλαγές αποθηκεύτηκαν επιτυχώς
+  delete_success: Το στοιχείο διαγράφηκε επιτυχώς
+  delete_confirm: "Είστε σίγουροι ότι θέλετε να διαγράψετε {item};"
+  error_occurred: Παρουσιάστηκε σφάλμα
+  loading: Φόρτωση...
+  processing: Επεξεργασία...
+  no_data: Δεν υπάρχουν διαθέσιμα δεδομένα
+  access_denied: Δεν επιτρέπεται η πρόσβαση
+  not_found: Η σελίδα δεν βρέθηκε
+  session_expired: Η συνεδρία σας έληξε. Παρακαλώ συνδεθείτε ξανά.
+
+  # Success messages
+  success:
+    created: "Το {item} δημιουργήθηκε επιτυχώς"
+    updated: "Το {item} ενημερώθηκε επιτυχώς"
+    deleted: "Το {item} διαγράφηκε επιτυχώς"
+    saved: Οι αλλαγές αποθηκεύτηκαν
+
+  # Error messages
+  error:
+    general: Κάτι πήγε στραβά
+    not_found: "Το {item} δεν βρέθηκε"
+    invalid_data: Μη έγκυρα δεδομένα
+    server_error: Παρουσιάστηκε σφάλμα διακομιστή
+    network_error: Σφάλμα σύνδεσης δικτύου
+    validation_failed: Η επικύρωση απέτυχε
+
+# Authentication
+auth:
+  login: Είσοδος
+  logout: Αποσύνδεση
+  username: Όνομα Χρήστη
+  password: Κωδικός Πρόσβασης
+  remember_me: Να με θυμάσαι
+  forgot_password: Ξεχάσατε τον κωδικό;
+  login_button: Σύνδεση
+  logout_button: Αποσύνδεση
+  welcome: "Καλώς ήρθατε, {name}"
+  login_success: Επιτυχής σύνδεση
+  logout_success: Επιτυχής αποσύνδεση
+  login_failed: Μη έγκυρο όνομα χρήστη ή κωδικός
+  access_denied: Δεν έχετε δικαίωμα πρόσβασης σε αυτή τη σελίδα
+
+# Settings
+settings:
+  title: Ρυθμίσεις
+  general: Γενικές Ρυθμίσεις
+  account: Ρυθμίσεις Λογαριασμού
+  preferences: Προτιμήσεις
+  language: Γλώσσα
+  timezone: Ζώνη Ώρας
+  notifications: Ειδοποιήσεις
+  security: Ασφάλεια
+  privacy: Απόρρητο
+  save_settings: Αποθήκευση Ρυθμίσεων
+  settings_saved: Οι ρυθμίσεις αποθηκεύτηκαν επιτυχώς
+
+# Applications
+apps:
+  qr_generator: Δημιουργία Κωδικού QR
+  pdf_library: Καταχωρητήριο PDF
+  backups: Αντίγραφα Ασφαλείας
+  generate: Δημιουργία
+  generated_success: Δημιουργήθηκε επιτυχώς
+
+# Common UI Elements
+ui:
+  yes: Ναι
+  no: Όχι
+  ok: OK
+  confirm: Επιβεβαίωση
+  cancel: Ακύρωση
+  close: Κλείσιμο
+  open: Άνοιγμα
+  show: Εμφάνιση
+  hide: Απόκρυψη
+  more: Περισσότερα
+  less: Λιγότερα
+  all: Όλα
+  none: Κανένα
+  select_all: Επιλογή Όλων
+  deselect_all: Αποεπιλογή Όλων
+  actions: Ενέργειες
+  options: Επιλογές
+  status: Κατάσταση
+  active: Ενεργό
+  inactive: Ανενεργό
+  enabled: Ενεργοποιημένο
+  disabled: Απενεργοποιημένο
+
+# Date and Time
+datetime:
+  today: Σήμερα
+  yesterday: Χθες
+  tomorrow: Αύριο
+  now: Τώρα
+  days: Ημέρες
+  hours: Ώρες
+  minutes: Λεπτά
+  seconds: Δευτερόλεπτα
+  date_format: "d/m/Y"
+  time_format: "H:i"
+  datetime_format: "d/m/Y H:i:s"
+
+# Pluralization examples
+item_plural:
+  one: "{count} στοιχείο"
+  other: "{count} στοιχεία"
+
+patient_plural:
+  one: "{count} ασθενής"
+  other: "{count} ασθενείς"
+
+appointment_plural:
+  one: "{count} ραντεβού"
+  other: "{count} ραντεβού"
+
+# Context examples
+bank@financial: Τράπεζα (Χρηματοπιστωτικό Ίδρυμα)
+bank@river: Όχθη Ποταμού
+date@calendar: Ημερομηνία
+date@romantic: Ραντεβού (Συνάντηση)

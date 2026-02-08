@@ -22,6 +22,10 @@ require_once(__FWDIR__ . '/bootstrap.php');
 
     Renderer::init($kernel->getConfig('templates'), false,  $kernel->safeGetConfig('template_cache_path'), $kernel->safeGetConfig('enable_template_comments'));
 
+    // Register translation filters for ZETEM templates
+    require_once(__FWDIR__ . '/filters/TranslationFilters.php');
+    TranslationFilters::register();
+
     $Request = new RequestClass($_SERVER);
     // $handlers = $Request->getQueryRoute();
     // echopre('Request: ', print_r($Request, 1));
@@ -29,6 +33,28 @@ require_once(__FWDIR__ . '/bootstrap.php');
     // echo( "Method: " . $req->getMethod() . '  string: ' . $req->getQueryString() . "<br/>" );
     // print_r( $handlers );
     session_start();
+
+    // Extract language from URL path prefix (/en/page or /el/page)
+    $languageDetector = $kernel->getLanguageDetector();
+    if ($languageDetector) {
+        $requestUri = $_SERVER['REQUEST_URI'] ?? '';
+        $path = parse_url($requestUri, PHP_URL_PATH);
+        $query = parse_url($requestUri, PHP_URL_QUERY);
+
+        $extracted = $languageDetector->extractLanguageFromPath($path);
+
+        if ($extracted) {
+            // Language found in URL - set it and remove prefix
+            $kernel->setCurrentLanguage($extracted['lang']);
+
+            // Rebuild REQUEST_URI without language prefix
+            $_SERVER['REQUEST_URI'] = $extracted['path'];
+            if ($query) {
+                $_SERVER['REQUEST_URI'] .= '?' . $query;
+            }
+        }
+    }
+
     $kernel->isUserLoggedin();
     // if($kernel->isUserLoggedin()) {
         // echo "<pre>User has been logged in!</pre>";
@@ -42,11 +68,12 @@ require_once(__FWDIR__ . '/bootstrap.php');
 
 //    echopre('locations: ' . print_r($l->getFields(), 1));
 //    echopre('locations: ' . print_r(get_class_vars( 'locationsClass'),1) );
-    if(isset($_SESSION) && isset($_SESSION['CURRENT_LANGUAGE']))
-        $kernel->setCurrentLanguage( $_SESSION['CURRENT_LANGUAGE']);
-    else
-        $kernel->setCurrentLanguage('gr');
-    // $kernel->setCurrentLanguage('en');
+    // Language detection is now handled automatically by LanguageDetector
+    // Priority: URL prefix → Session → Cookie → User profile → Query param → Browser → Default
+    // Ensure language is detected and set
+    if (!isset($_SESSION['CURRENT_LANGUAGE'])) {
+        $kernel->getCurrentLanguage(); // This triggers detection and sets session
+    }
 
     ob_start();
 
