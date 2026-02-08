@@ -44,6 +44,36 @@ css:
     # src: "https://cdn.jsdelivr.net/npm/pikaday/css/pikaday.css"
 
 
+# File management system configuration
+file_system:
+  base_path: 'files'
+  streams:
+    public:
+      path: 'public'
+      web_accessible: true
+      url_prefix: '/files/public'
+    private:
+      path: 'private'
+      web_accessible: false
+      serve_route: '/files/get'
+    temp:
+      path: 'temp'
+      web_accessible: false
+      ttl: 86400        # 24 hours
+    cache:
+      path: 'cache'
+      web_accessible: false
+  asset_bundles:
+    css:
+      output: 'cache://bundles/app.css'
+    js:
+      output: 'cache://bundles/app.js'
+  cleanup:
+    temp_ttl: 86400     # 24 hours
+    run_on_request: false
+    run_on_cron: true
+
+
 # setup multiple language support
 multilingual: true
 
@@ -133,9 +163,6 @@ libraries:
         src: "."
   appointment-improvements:
     css:
-      - uploads:
-        type: 'text/css'
-        src: 'css/file-uploads.css'
       - appointments:
         type: 'text/css'
         src: 'css/appointment-improvements.css'
@@ -143,10 +170,6 @@ libraries:
       #   type: 'text/css'
       #   src: 'css/attachments-sidebar.css'
     foot_script:
-      - uploads:
-        type: 'text/javascript'
-        src: 'js/file-upload.js'
-        defer:
       - preview:
         type: 'text/javascript'
         src: 'js/pdf-preview.js'
@@ -171,7 +194,11 @@ foot_script:
   - scripts:
     type: "text/javascript"
     src: "js/scripts.js"
-    defer: 
+    defer:
+  - mobile-menu:
+    type: "text/javascript"
+    src: "js/mobile-menu.js"
+    defer:
   # - loader:
     # type:
     # src: "js/loader.js"
@@ -234,6 +261,12 @@ routes:
     title: "User logout"
     url: "/logout"
     handler: logout
+  files_get:
+    title: "Private file download"
+    url: "/files/get/{path}"
+    handler: handle_private_file
+    method: get
+    access: authenticated
   settings:
     title: 
       gr: "Ρυθμίσεις"

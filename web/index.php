@@ -820,6 +820,60 @@ function totp_handler($params) {
     exit();
 }
 
+/**
+ * Handle private file downloads with authentication check.
+ * Route: /files/get/{path}
+ */
+function handle_private_file($params) {
+    global $kernel;
+
+    // Require authentication
+    if ($errmsg = SecurityClass::require('authenticated')) {
+        return $errmsg;
+    }
+
+    $path = $params['path'] ?? '';
+    if (empty($path)) {
+        http_response_code(400);
+        echo 'Bad Request: File path is required';
+        exit;
+    }
+
+    // Resolve the private:// URI to real path
+    $fm = $kernel->getFileManager();
+    if (!$fm) {
+        http_response_code(500);
+        echo 'Internal Server Error: File manager not available';
+        exit;
+    }
+
+    $uri = 'private://' . $path;
+    try {
+        $real_path = $fm->resolvePath($uri);
+    } catch (RuntimeException $e) {
+        http_response_code(404);
+        echo 'Not Found: Invalid file path';
+        exit;
+    }
+
+    if (!file_exists($real_path) || !is_file($real_path)) {
+        http_response_code(404);
+        echo 'Not Found: File does not exist';
+        exit;
+    }
+
+    // Serve the file
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $mime  = $finfo->file($real_path);
+
+    header('Content-Type: ' . $mime);
+    header('Content-Length: ' . filesize($real_path));
+    header('Content-Disposition: inline; filename="' . basename($real_path) . '"');
+    header('X-Content-Type-Options: nosniff');
+    readfile($real_path);
+    exit;
+}
+
 
 
 class AdminController {

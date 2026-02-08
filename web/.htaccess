@@ -12,12 +12,16 @@
 #    RewriteBase /apps/zeus-devel/web/
 
     ErrorDocument 404 error.php
-    
-    # RewriteCond %{REQUEST_FILENAME} !-d
-    # RewriteCond %{REQUEST_FILENAME} !-f
-    # RewriteRule ^(.*)/$ index2.php?q=$1 [QSA,L,PT]
 
+    # File management system rules
+    # Block direct access to non-public file zones
+    RewriteRule ^files/(private|temp|cache)/ - [F,L]
 
+    # Serve public files directly if they exist
+    RewriteCond %{DOCUMENT_ROOT}/../files/public/$1 -f
+    RewriteRule ^files/public/(.+)$ ../files/public/$1 [L]
+
+    # Catch-all: route everything else through index.php
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^(.*)$ index.php?$1 [QSA,L,PT]
