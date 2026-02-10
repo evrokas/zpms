@@ -110,6 +110,12 @@ dictionary:
   fallback_to_file: true     # Check YAML files if not in DB
   prefer_database: false     # Prefer file-based over DB (false = check files first)
 
+# Language switcher configuration (Phase 10)
+language_switcher:
+  mode: path_prefix          # Mode: 'path_prefix' (uses /en/, /el/ URLs)
+  preserve_page: true        # Preserve current page path when switching languages
+  show_in_header: true       # Show language selector in header region
+
 # use libraries concept to attach different css/js to different pages
 libraries:
   loader-library:
@@ -211,12 +217,21 @@ roles:
   power-user: [
     patients-view-list,
     patients-new-patient,
-    patients-delete-patient, 
-    patients-edit-patient, 
+    patients-delete-patient,
+    patients-edit-patient,
     appointment-edit,
     pdflib-access,
-    backup-access
+    backup-access,
+    administer_translations
     ]
+
+permissions:
+  administer_translations:
+    title: Administer Translations
+    description: Manage translation dictionary entries
+    roles:
+      - administrator
+      - power-user
 
 
 # reduce analytics entries, by not logging localhost calls
@@ -230,6 +245,40 @@ routes:
     name: admin_routes
     url: "/admin/routes"
     handler: AdminController::showRoutes
+  translations_admin:
+    title: "Translations"
+    name: translations_admin
+    url: "/admin/translations"
+    handler: handle_translations_admin
+    access: administer_translations
+  translations_list:
+    title: "Translation List"
+    name: translations_list
+    url: "/admin/translations/list"
+    handler: handle_translations_list
+    method: get
+    access: administer_translations
+  translations_update:
+    title: "Update Translation"
+    name: translations_update
+    url: "/admin/translations/update"
+    handler: handle_translations_update
+    method: post
+    access: administer_translations
+  translations_export:
+    title: "Export Translations"
+    name: translations_export
+    url: "/admin/translations/export"
+    handler: handle_translations_export
+    method: get
+    access: administer_translations
+  translations_import:
+    title: "Import Translations"
+    name: translations_import
+    url: "/admin/translations/import"
+    handler: handle_translations_import
+    method: post
+    access: administer_translations
   homepage:
     title: 
       gr: "Αρχική"
@@ -515,6 +564,13 @@ menu:
         en: "Settings"
       url: '/settings'
       access: power-user
+      submenu:
+        - translations:
+          text:
+            gr: "Μεταφράσεις"
+            en: "Translations"
+          url: '/admin/translations'
+          access: administer_translations
     - contact:
       text:
         gr: 'Επικοινωνία'
@@ -576,6 +632,7 @@ modules:
     - header
     - breadcrumbs
     - userblock
+    - translation_admin
     - userprofile
     - htmltext
     - githash

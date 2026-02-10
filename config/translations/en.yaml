@@ -252,3 +252,39 @@ bank@financial: Bank (Financial Institution)
 bank@river: River Bank
 date@calendar: Date
 date@romantic: Date (Meeting)
+
+# Translation Administration
+admin:
+  translations:
+    title: Translation Management
+    import: Import
+    export: Export
+    search: Search
+    search_placeholder: Search translations...
+    language: Language
+    all_languages: All Languages
+    status: Status
+    all_statuses: All Statuses
+    translated: Translated
+    untranslated: Untranslated
+    apply_filters: Apply Filters
+    id: ID
+    actions: Actions
+    of: of
+    loading: Loading
+    showing: Showing
+    previous: Previous
+    next: Next
+    no_results: No translations found
+    no_results_desc: Try adjusting your search or filters
+    edit: Edit
+    save_error: Error saving translation
+    select_file: Please select a file
+    imported: Imported
+    failed: Failed
+    import_error: Error importing translations
+    export_translations: Export Translations
+    import_translations: Import Translations
+    format: Format
+    file: File
+    cancel: Cancel

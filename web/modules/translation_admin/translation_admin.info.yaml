@@ -1,0 +1,5 @@
+name: translation_admin
+title: Translation Administration
+description: Admin interface for managing translations
+version: 1.0
+template: translation_admin.zetem

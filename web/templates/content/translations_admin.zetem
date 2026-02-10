@@ -1,0 +1,446 @@
+{{ attach_library('design-system') }}
+
+<style>
+/* Include translation_admin.css inline for now */
+@import url('../modules/translation_admin/translation_admin.css');
+</style>
+
+<link rel="stylesheet" href="{{ rel_url('modules/translation_admin/translation_admin.css') }}">
+
+<div class="translation-admin">
+    <!-- Header -->
+    <div class="translation-admin-header">
+        <h1>{{ 'admin.translations.title' | t }}</h1>
+        <div class="translation-admin-actions">
+            <button class="btn btn-outline" onclick="showImportModal()">
+                <i class='bx bx-import'></i> {{ 'admin.translations.import' | t }}
+            </button>
+            <button class="btn btn-primary" onclick="showExportModal()">
+                <i class='bx bx-export'></i> {{ 'admin.translations.export' | t }}
+            </button>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="translation-stats">
+        {% foreach($stats as $lang => $stat): %}
+        <div class="stat-card">
+            <div class="stat-card-header">
+                <span class="stat-card-title">{{ $languages[$lang]['native_name'] ?? $lang }}</span>
+                <div class="stat-card-icon primary">
+                    <i class='bx bx-globe'></i>
+                </div>
+            </div>
+            <div class="stat-card-value">{{ $stat['translated'] }}</div>
+            <div class="stat-card-footer">
+                <span class="stat-card-percentage">{{ $stat['percentage'] }}%</span>
+                <span>{{ 'admin.translations.of' | t }} {{ $stat['total'] }} {{ 'admin.translations.translated' | t }}</span>
+            </div>
+        </div>
+        {% endforeach %}
+    </div>
+
+    <!-- Search and Filter Bar -->
+    <div class="translation-filters">
+        <div class="filter-group">
+            <label for="search">{{ 'admin.translations.search' | t }}:</label>
+            <input type="text" id="search" placeholder="{{ 'admin.translations.search_placeholder' | t }}">
+        </div>
+        <div class="filter-group">
+            <label for="language-filter">{{ 'admin.translations.language' | t }}:</label>
+            <select id="language-filter">
+                <option value="">{{ 'admin.translations.all_languages' | t }}</option>
+                {% foreach($languages as $code => $lang): %}
+                <option value="{{ $code }}">{{ $lang['native_name'] ?? $code }}</option>
+                {% endforeach %}
+            </select>
+        </div>
+        <div class="filter-group">
+            <label for="status-filter">{{ 'admin.translations.status' | t }}:</label>
+            <select id="status-filter">
+                <option value="">{{ 'admin.translations.all_statuses' | t }}</option>
+                <option value="translated">{{ 'admin.translations.translated' | t }}</option>
+                <option value="untranslated">{{ 'admin.translations.untranslated' | t }}</option>
+            </select>
+        </div>
+        <button class="btn btn-primary" onclick="applyFilters()">
+            <i class='bx bx-filter'></i> {{ 'admin.translations.apply_filters' | t }}
+        </button>
+    </div>
+
+    <!-- Translation Table -->
+    <div class="translation-table-wrapper">
+        <table class="translation-table">
+            <thead>
+                <tr>
+                    <th>{{ 'admin.translations.id' | t }}</th>
+                    {% foreach($languages as $code => $lang): %}
+                    <th>{{ $lang['native_name'] ?? $code }}</th>
+                    {% endforeach %}
+                    <th>{{ 'admin.translations.actions' | t }}</th>
+                </tr>
+            </thead>
+            <tbody id="translations-tbody">
+                <!-- Loaded via AJAX -->
+                <tr>
+                    <td colspan="{{ count($languages) + 2 }}" class="translation-loading">
+                        <div class="spinner"></div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Pagination -->
+        <div class="translation-pagination">
+            <div class="pagination-info" id="pagination-info">
+                {{ 'admin.translations.loading' | t }}...
+            </div>
+            <div class="pagination-controls" id="pagination-controls">
+                <!-- Loaded via JavaScript -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Export Modal -->
+<div id="export-modal" class="modal-overlay" style="display: none;">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>{{ 'admin.translations.export_translations' | t }}</h2>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label for="export-language">{{ 'admin.translations.language' | t }}:</label>
+                <select id="export-language">
+                    <option value="all">{{ 'admin.translations.all_languages' | t }}</option>
+                    {% foreach($languages as $code => $lang): %}
+                    <option value="{{ $code }}">{{ $lang['native_name'] ?? $code }}</option>
+                    {% endforeach %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="export-format">{{ 'admin.translations.format' | t }}:</label>
+                <select id="export-format">
+                    <option value="csv">CSV</option>
+                    <option value="yaml">YAML</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="hideExportModal()">{{ 'admin.translations.cancel' | t }}</button>
+            <button class="btn btn-primary" onclick="exportTranslations()">
+                <i class='bx bx-download'></i> {{ 'admin.translations.export' | t }}
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Import Modal -->
+<div id="import-modal" class="modal-overlay" style="display: none;">
+    <div class="modal">
+        <div class="modal-header">
+            <h2>{{ 'admin.translations.import_translations' | t }}</h2>
+        </div>
+        <div class="modal-body">
+            <div id="import-alert"></div>
+            <div class="form-group">
+                <label for="import-language">{{ 'admin.translations.language' | t }}:</label>
+                <select id="import-language">
+                    {% foreach($languages as $code => $lang): %}
+                    <option value="{{ $code }}">{{ $lang['native_name'] ?? $code }}</option>
+                    {% endforeach %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="import-format">{{ 'admin.translations.format' | t }}:</label>
+                <select id="import-format">
+                    <option value="csv">CSV</option>
+                    <option value="yaml">YAML</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="import-file">{{ 'admin.translations.file' | t }}:</label>
+                <input type="file" id="import-file" accept=".csv,.yaml,.yml">
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-ghost" onclick="hideImportModal()">{{ 'admin.translations.cancel' | t }}</button>
+            <button class="btn btn-primary" onclick="importTranslations()">
+                <i class='bx bx-upload'></i> {{ 'admin.translations.import' | t }}
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+// Translation Admin JavaScript
+let currentPage = 1;
+let currentSearch = '';
+let currentLanguage = '';
+let currentStatus = '';
+const perPage = 50;
+const availableLanguages = {{ json_encode(array_keys($languages)) }};
+
+// Load translations on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadTranslations();
+});
+
+// Apply filters
+function applyFilters() {
+    currentSearch = document.getElementById('search').value;
+    currentLanguage = document.getElementById('language-filter').value;
+    currentStatus = document.getElementById('status-filter').value;
+    currentPage = 1;
+    loadTranslations();
+}
+
+// Load translations via AJAX
+function loadTranslations() {
+    const params = new URLSearchParams({
+        page: currentPage,
+        per_page: perPage,
+        search: currentSearch,
+        language: currentLanguage,
+        status: currentStatus
+    });
+
+    fetch(`{{ rel_url('admin/translations/list') }}?${params}`)
+        .then(response => response.json())
+        .then(data => {
+            renderTranslations(data);
+            renderPagination(data);
+        })
+        .catch(error => {
+            console.error('Error loading translations:', error);
+            document.getElementById('translations-tbody').innerHTML =
+                '<tr><td colspan="' + (availableLanguages.length + 2) + '">Error loading translations</td></tr>';
+        });
+}
+
+// Render translations table
+function renderTranslations(data) {
+    const tbody = document.getElementById('translations-tbody');
+    tbody.innerHTML = '';
+
+    if (data.tokens.length === 0) {
+        tbody.innerHTML = `
+            <tr>
+                <td colspan="${availableLanguages.length + 2}" class="translation-empty">
+                    <div class="translation-empty-icon"><i class='bx bx-search'></i></div>
+                    <div class="translation-empty-title">{{ 'admin.translations.no_results' | t }}</div>
+                    <div class="translation-empty-description">{{ 'admin.translations.no_results_desc' | t }}</div>
+                </td>
+            </tr>
+        `;
+        return;
+    }
+
+    data.tokens.forEach(token => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${token.id}</td>
+            ${availableLanguages.map(lang => `
+                <td class="editable-cell"
+                    data-token="${escapeHtml(getTokenKey(token))}"
+                    data-lang="${lang}"
+                    onclick="editCell(this)">
+                    ${escapeHtml(token[lang] || '')}
+                </td>
+            `).join('')}
+            <td>
+                <div class="translation-actions">
+                    <button class="action-btn" onclick="editRow('${token.id}')" title="{{ 'admin.translations.edit' | t }}">
+                        <i class='bx bx-edit'></i>
+                    </button>
+                </div>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+// Get token key (first non-empty language value)
+function getTokenKey(token) {
+    for (const lang of availableLanguages) {
+        if (token[lang]) {
+            return token[lang];
+        }
+    }
+    return token.id;
+}
+
+// Render pagination
+function renderPagination(data) {
+    const info = document.getElementById('pagination-info');
+    const controls = document.getElementById('pagination-controls');
+
+    const start = (data.page - 1) * data.per_page + 1;
+    const end = Math.min(data.page * data.per_page, data.total);
+
+    info.textContent = `{{ 'admin.translations.showing' | t }} ${start}-${end} {{ 'admin.translations.of' | t }} ${data.total}`;
+
+    controls.innerHTML = '';
+
+    // Previous button
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'pagination-btn';
+    prevBtn.textContent = '‹ {{ 'admin.translations.previous' | t }}';
+    prevBtn.disabled = data.page <= 1;
+    prevBtn.onclick = () => { currentPage--; loadTranslations(); };
+    controls.appendChild(prevBtn);
+
+    // Page numbers
+    for (let i = 1; i <= Math.min(data.total_pages, 10); i++) {
+        const pageBtn = document.createElement('button');
+        pageBtn.className = 'pagination-btn' + (i === data.page ? ' active' : '');
+        pageBtn.textContent = i;
+        pageBtn.onclick = () => { currentPage = i; loadTranslations(); };
+        controls.appendChild(pageBtn);
+    }
+
+    // Next button
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'pagination-btn';
+    nextBtn.textContent = '{{ 'admin.translations.next' | t }} ›';
+    nextBtn.disabled = data.page >= data.total_pages;
+    nextBtn.onclick = () => { currentPage++; loadTranslations(); };
+    controls.appendChild(nextBtn);
+}
+
+// Edit cell inline
+function editCell(cell) {
+    if (cell.classList.contains('editing')) return;
+
+    const token = cell.dataset.token;
+    const lang = cell.dataset.lang;
+    const currentValue = cell.textContent.trim();
+
+    cell.classList.add('editing');
+    cell.innerHTML = `<input type="text" value="${escapeHtml(currentValue)}"
+                            onblur="saveCell(this)"
+                            onkeydown="handleCellKeydown(event, this)">`;
+    cell.querySelector('input').focus();
+}
+
+// Save cell
+function saveCell(input) {
+    const cell = input.parentElement;
+    const token = cell.dataset.token;
+    const lang = cell.dataset.lang;
+    const newValue = input.value;
+
+    // Save to server
+    fetch('{{ rel_url('admin/translations/update') }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            token: token,
+            language: lang,
+            translation: newValue
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            cell.classList.remove('editing');
+            cell.textContent = newValue;
+        } else {
+            alert('{{ 'admin.translations.save_error' | t }}');
+        }
+    })
+    .catch(error => {
+        console.error('Error saving translation:', error);
+        alert('{{ 'admin.translations.save_error' | t }}');
+    });
+}
+
+// Handle cell keydown
+function handleCellKeydown(event, input) {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        saveCell(input);
+    } else if (event.key === 'Escape') {
+        const cell = input.parentElement;
+        cell.classList.remove('editing');
+        loadTranslations(); // Reload to get original value
+    }
+}
+
+// Export functions
+function showExportModal() {
+    document.getElementById('export-modal').style.display = 'flex';
+}
+
+function hideExportModal() {
+    document.getElementById('export-modal').style.display = 'none';
+}
+
+function exportTranslations() {
+    const language = document.getElementById('export-language').value;
+    const format = document.getElementById('export-format').value;
+
+    window.location.href = `{{ rel_url('admin/translations/export') }}?language=${language}&format=${format}`;
+    hideExportModal();
+}
+
+// Import functions
+function showImportModal() {
+    document.getElementById('import-modal').style.display = 'flex';
+    document.getElementById('import-alert').innerHTML = '';
+}
+
+function hideImportModal() {
+    document.getElementById('import-modal').style.display = 'none';
+}
+
+function importTranslations() {
+    const language = document.getElementById('import-language').value;
+    const format = document.getElementById('import-format').value;
+    const fileInput = document.getElementById('import-file');
+
+    if (!fileInput.files.length) {
+        alert('{{ 'admin.translations.select_file' | t }}');
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', fileInput.files[0]);
+    formData.append('language', language);
+    formData.append('format', format);
+
+    fetch('{{ rel_url('admin/translations/import') }}', {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        const alertDiv = document.getElementById('import-alert');
+        if (data.error) {
+            alertDiv.innerHTML = `<div class="alert error"><i class='bx bx-error-circle alert-icon'></i>${data.error}</div>`;
+        } else {
+            alertDiv.innerHTML = `<div class="alert success"><i class='bx bx-check-circle alert-icon'></i>
+                {{ 'admin.translations.imported' | t }}: ${data.imported}, {{ 'admin.translations.failed' | t }}: ${data.failed}</div>`;
+            loadTranslations(); // Reload table
+            setTimeout(() => hideImportModal(), 2000);
+        }
+    })
+    .catch(error => {
+        console.error('Error importing translations:', error);
+        const alertDiv = document.getElementById('import-alert');
+        alertDiv.innerHTML = `<div class="alert error"><i class='bx bx-error-circle alert-icon'></i>{{ 'admin.translations.import_error' | t }}</div>`;
+    });
+}
+
+// Utility function
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function editRow(id) {
+    // Future enhancement: Open edit form for entire row
+    console.log('Edit row:', id);
+}
+</script>

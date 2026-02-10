@@ -252,3 +252,39 @@ bank@financial: Τράπεζα (Χρηματοπιστωτικό Ίδρυμα)
 bank@river: Όχθη Ποταμού
 date@calendar: Ημερομηνία
 date@romantic: Ραντεβού (Συνάντηση)
+
+# Translation Administration
+admin:
+  translations:
+    title: Διαχείριση Μεταφράσεων
+    import: Εισαγωγή
+    export: Εξαγωγή
+    search: Αναζήτηση
+    search_placeholder: Αναζήτηση μεταφράσεων...
+    language: Γλώσσα
+    all_languages: Όλες οι Γλώσσες
+    status: Κατάσταση
+    all_statuses: Όλες οι Καταστάσεις
+    translated: Μεταφρασμένα
+    untranslated: Αμετάφραστα
+    apply_filters: Εφαρμογή Φίλτρων
+    id: ID
+    actions: Ενέργειες
+    of: από
+    loading: Φόρτωση
+    showing: Εμφάνιση
+    previous: Προηγούμενο
+    next: Επόμενο
+    no_results: Δεν βρέθηκαν μεταφράσεις
+    no_results_desc: Δοκιμάστε να προσαρμόσετε την αναζήτηση ή τα φίλτρα
+    edit: Επεξεργασία
+    save_error: Σφάλμα αποθήκευσης μετάφρασης
+    select_file: Παρακαλώ επιλέξτε αρχείο
+    imported: Εισήχθησαν
+    failed: Απέτυχαν
+    import_error: Σφάλμα εισαγωγής μεταφράσεων
+    export_translations: Εξαγωγή Μεταφράσεων
+    import_translations: Εισαγωγή Μεταφράσεων
+    format: Μορφή
+    file: Αρχείο
+    cancel: Ακύρωση

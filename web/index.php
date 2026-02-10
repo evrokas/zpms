@@ -34,6 +34,9 @@ require_once(__FWDIR__ . '/bootstrap.php');
     // print_r( $handlers );
     session_start();
 
+    // Store original REQUEST_URI before rewriting
+    $_SERVER['ORIGINAL_REQUEST_URI'] = $_SERVER['REQUEST_URI'];
+
     // Extract language from URL path prefix (/en/page or /el/page)
     $languageDetector = $kernel->getLanguageDetector();
     if ($languageDetector) {
@@ -874,6 +877,290 @@ function handle_private_file($params) {
     exit;
 }
 
+/**
+ * Translation Administration Handlers
+ */
+
+/**
+ * Handle translation admin dashboard
+ * Route: /admin/translations
+ */
+function handle_translations_admin($params) {
+    global $kernel;
+
+    // Require administer_translations permission
+    if ($errmsg = SecurityClass::require('administer_translations')) {
+        return $errmsg;
+    }
+
+    // Get translation statistics
+    $stats = dictionaryClassEx::getTranslationStats();
+
+    // Get recent tokens
+    $recentTokens = dictionaryClassEx::getRecentTokens(10);
+
+    // Get configuration
+    $languages = $kernel->getConfig('languages');
+
+    return Renderer::render('content/translations_admin.zetem', [
+        'stats' => $stats,
+        'recent_tokens' => $recentTokens,
+        'languages' => $languages,
+        'current_language' => $kernel->getCurrentLanguage()
+    ]);
+}
+
+/**
+ * Handle translation list AJAX request
+ * Route: /admin/translations/list
+ */
+function handle_translations_list($params) {
+    global $kernel;
+
+    // Require administer_translations permission
+    if ($errmsg = SecurityClass::require('administer_translations')) {
+        header('Content-Type: application/json');
+        echo json_encode(['error' => 'Access denied']);
+        exit;
+    }
+
+    // Get query parameters
+    $search = $_GET['search'] ?? '';
+    $language = $_GET['language'] ?? '';
+    $status = $_GET['status'] ?? '';
+    $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
+    $perPage = isset($_GET['per_page']) ? (int)$_GET['per_page'] : 50;
+
+    // Get all tokens
+    $tokens = dictionaryClassEx::getAllTokens();
+    $languages = array_keys($kernel->getConfig('languages'));
+
+    // Filter by search
+    if (!empty($search)) {
+        $tokens = array_filter($tokens, function($token) use ($search, $languages) {
+            foreach ($languages as $lang) {
+                if (stripos($token[$lang] ?? '', $search) !== false) {
+                    return true;
+                }
+            }
+            return false;
+        });
+    }
+
+    // Filter by language and status
+    if (!empty($language) && !empty($status)) {
+        $tokens = array_filter($tokens, function($token) use ($language, $status) {
+            $flagColumn = $language . "_set";
+            if ($status === 'translated') {
+                return !empty($token[$language]) && ($token[$flagColumn] ?? 0) == 1;
+            } else if ($status === 'untranslated') {
+                return empty($token[$language]) || ($token[$flagColumn] ?? 0) == 0;
+            }
+            return true;
+        });
+    }
+
+    // Reset array keys after filtering
+    $tokens = array_values($tokens);
+
+    // Pagination
+    $total = count($tokens);
+    $totalPages = ceil($total / $perPage);
+    $offset = ($page - 1) * $perPage;
+    $paginatedTokens = array_slice($tokens, $offset, $perPage);
+
+    header('Content-Type: application/json');
+    echo json_encode([
+        'tokens' => $paginatedTokens,
+        'total' => $total,
+        'page' => $page,
+        'per_page' => $perPage,
+        'total_pages' => $totalPages
+    ]);
+    exit;
+}
+
+/**
+ * Handle translation update AJAX request
+ * Route: /admin/translations/update
+ */
+function handle_translations_update($params) {
+    global $kernel;
+
+    // Require administer_translations permission
+    if ($errmsg = SecurityClass::require('administer_translations')) {
+        header('Content-Type: application/json');
+        echo json_encode(['error' => 'Access denied']);
+        exit;
+    }
+
+    // Get POST data
+    $data = json_decode(file_get_contents('php://input'), true);
+    $token = $data['token'] ?? '';
+    $language = $data['language'] ?? '';
+    $translation = $data['translation'] ?? '';
+
+    if (empty($token) || empty($language)) {
+        header('Content-Type: application/json');
+        echo json_encode(['error' => 'Missing required parameters']);
+        exit;
+    }
+
+    // Update translation
+    $success = dictionaryClassEx::updateTranslation($token, $language, $translation);
+
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => $success,
+        'message' => $success ? 'Translation updated successfully' : 'Failed to update translation'
+    ]);
+    exit;
+}
+
+/**
+ * Handle translation export
+ * Route: /admin/translations/export
+ */
+function handle_translations_export($params) {
+    global $kernel;
+
+    // Require administer_translations permission
+    if ($errmsg = SecurityClass::require('administer_translations')) {
+        return $errmsg;
+    }
+
+    $format = $_GET['format'] ?? 'csv';
+    $language = $_GET['language'] ?? 'all';
+
+    if ($format === 'yaml') {
+        // Export to YAML
+        $yamlContent = dictionaryClassEx::exportToYAML($language);
+
+        header('Content-Type: application/x-yaml');
+        header('Content-Disposition: attachment; filename="translations_' . $language . '_' . date('Y-m-d') . '.yaml"');
+        echo $yamlContent;
+        exit;
+    } else {
+        // Export to CSV
+        $tokens = dictionaryClassEx::getAllTokens();
+        $languages = array_keys($kernel->getConfig('languages'));
+
+        // Create CSV header
+        if ($language === 'all') {
+            $header = array_merge(['ID', 'Token'], $languages);
+        } else {
+            $header = ['ID', 'Token', 'English', $language];
+        }
+
+        // Open output stream
+        $output = fopen('php://output', 'w');
+
+        header('Content-Type: text/csv');
+        header('Content-Disposition: attachment; filename="translations_' . $language . '_' . date('Y-m-d') . '.csv"');
+
+        // Write header
+        fputcsv($output, $header);
+
+        // Write data
+        foreach ($tokens as $token) {
+            if ($language === 'all') {
+                $row = [$token['id']];
+                // Use first non-empty language as token
+                foreach ($languages as $lang) {
+                    if (!empty($token[$lang])) {
+                        $row[] = $token[$lang];
+                        break;
+                    }
+                }
+                // Add all languages
+                foreach ($languages as $lang) {
+                    $row[] = $token[$lang] ?? '';
+                }
+            } else {
+                $row = [
+                    $token['id'],
+                    $token['en'] ?? $token[$languages[0]] ?? '',
+                    $token['en'] ?? '',
+                    $token[$language] ?? ''
+                ];
+            }
+            fputcsv($output, $row);
+        }
+
+        fclose($output);
+        exit;
+    }
+}
+
+/**
+ * Handle translation import
+ * Route: /admin/translations/import
+ */
+function handle_translations_import($params) {
+    global $kernel;
+
+    // Require administer_translations permission
+    if ($errmsg = SecurityClass::require('administer_translations')) {
+        header('Content-Type: application/json');
+        echo json_encode(['error' => 'Access denied']);
+        exit;
+    }
+
+    $format = $_POST['format'] ?? 'csv';
+    $language = $_POST['language'] ?? '';
+
+    if (empty($language)) {
+        header('Content-Type: application/json');
+        echo json_encode(['error' => 'Language is required']);
+        exit;
+    }
+
+    if (!isset($_FILES['file']) || $_FILES['file']['error'] !== UPLOAD_ERR_OK) {
+        header('Content-Type: application/json');
+        echo json_encode(['error' => 'No file uploaded']);
+        exit;
+    }
+
+    $tmpFile = $_FILES['file']['tmp_name'];
+
+    if ($format === 'yaml') {
+        // Import from YAML
+        $result = dictionaryClassEx::importFromYAML($language, $tmpFile);
+    } else {
+        // Import from CSV
+        $result = [
+            'imported' => 0,
+            'failed' => 0
+        ];
+
+        if (($handle = fopen($tmpFile, 'r')) !== FALSE) {
+            // Skip header row
+            fgetcsv($handle);
+
+            while (($data = fgetcsv($handle)) !== FALSE) {
+                if (count($data) >= 3) {
+                    $token = $data[1]; // Token column
+                    $translation = $data[count($data) - 1]; // Last column
+
+                    if (!empty($token) && !empty($translation)) {
+                        if (dictionaryClassEx::updateTranslation($token, $language, $translation)) {
+                            $result['imported']++;
+                        } else {
+                            $result['failed']++;
+                        }
+                    } else {
+                        $result['failed']++;
+                    }
+                }
+            }
+            fclose($handle);
+        }
+    }
+
+    header('Content-Type: application/json');
+    echo json_encode($result);
+    exit;
+}
 
 
 class AdminController {

@@ -1,0 +1,36 @@
+---
+table:
+  name: file_usage
+  class: fileUsageClass
+  fields:
+  - name: guid
+    type: '@guid'
+
+  - name: cdate
+    type: '@cdate'
+
+  - name: file_guid
+    type: char(36)
+
+  - name: entity_type
+    type: varchar(64)
+
+  - name: entity_id
+    type: char(36)
+
+  - name: usage_type
+    type: varchar(64)
+    default: '"attachment"'
+
+  - name: deleted
+    type: datetime
+    default: null
+...
+
+# - guid         usage record guid (UUID)
+# - cdate        when the reference was created
+# - file_guid    FK to files.guid
+# - entity_type  e.g. patient, appointment, billing
+# - entity_id    FK to the entity's guid
+# - usage_type   e.g. attachment, avatar, export
+# - deleted      soft-delete timestamp

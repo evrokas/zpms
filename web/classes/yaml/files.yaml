@@ -1,0 +1,52 @@
+---
+table:
+  name: files
+  class: filesClass
+  fields:
+  - name: guid
+    type: '@guid'
+
+  - name: cdate
+    type: '@cdate'
+
+  - name: cuser
+    type: '@cuser'
+
+  - name: furi
+    type: varchar(512)
+
+  - name: fpath
+    type: varchar(512)
+
+  - name: fname
+    type: varchar(255)
+
+  - name: fmime
+    type: varchar(128)
+
+  - name: fsize
+    type: int unsigned
+
+  - name: fhash
+    type: char(64)
+
+  - name: fstatus
+    type: enum('active','deleted','orphaned')
+    default: active
+
+  - name: deleted
+    type: datetime
+    default: null
+...
+
+# - guid     file record guid (UUID)
+# - cdate    record creation timestamp
+# - cuser    user who uploaded
+# - furi     stream wrapper URI, e.g. public://patient-docs/report.pdf
+# - fpath    resolved filesystem path at creation time
+# - fname    original filename
+# - fmime    MIME type
+# - fsize    file size in bytes
+# - fhash    SHA-256 hex digest for integrity verification
+# - fstatus  active | deleted | orphaned
+# - deleted  soft-delete timestamp
