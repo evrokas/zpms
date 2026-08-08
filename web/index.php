@@ -3,7 +3,16 @@
 include_once(__DIR__ . "/../config/db.php");       // load database parameters
 // require_once(__DIR__ . '/../../config/db.php');
 
+// Optional -- only present once an admin has set up the DocArc patient
+// lookup integration (see config/docarc_api.php.in). Guarded with
+// is_file() (unlike db.php above) since its absence is a normal,
+// supported state, not a fatal misconfiguration.
+if (is_file(__DIR__ . '/../config/docarc_api.php')) {
+    include_once(__DIR__ . '/../config/docarc_api.php');
+}
+
 require_once(__FWDIR__ . '/bootstrap.php');
+require_once(__DIR__ . '/api_patients.php');
 
 
     ini_set('session.gc_maxlifetime', 3600);

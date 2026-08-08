@@ -231,6 +231,11 @@ routes:
     url: "/patients/search"
     handler: patients_search_post
     method: post
+  patients_search_api:
+    title: "DocArc patient search API"
+    url: "/api/v1/patients/search/{term}"
+    handler: docarc_patients_search_api
+    method: get
   patient_edit:
     title: 
       en: "Patient edit"
