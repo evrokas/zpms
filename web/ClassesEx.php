@@ -52,7 +52,7 @@ class patientsClassEx extends patientsClass {
         } else return (null);
     }
     
-    static function search($aterm, $ascope = array()) {
+    static function search($aterm, $ascope = array(), $excludeDeleted = false, $limit = null) {
         $aterm = trim($aterm);
         $aterm = str_replace(['  '], [' '], $aterm);
         $terms = explode(' ', $aterm);
@@ -76,14 +76,23 @@ class patientsClassEx extends patientsClass {
         $reqs = implode(' OR ', $req);
 
         $sql = "SELECT * FROM patients WHERE " . $reqs;
+        if ($excludeDeleted) {
+            $sql .= " AND deleted IS NULL";
+        }
+        if ($limit !== null) {
+            $sql .= " LIMIT :limit";
+        }
         error_log("\nSQL request: " . $sql . "\n");
         /* (pname LIKE :term) OR (pname LIKE :term2)"; */
         $st = dbConnection::getConnection()->prepare( $sql );
         $st->bindValue(":term", $srch, PDO::PARAM_STR);
         $st->bindValue(":term2", $srch2, PDO::PARAM_STR);
+        if ($limit !== null) {
+            $st->bindValue(":limit", (int)$limit, PDO::PARAM_INT);
+        }
         $st->execute();
 
-        $list = array();        
+        $list = array();
         while( $row = $st->fetch() ) {
             $rclass = new patientsClass();
             $rclass->loadFields( $row );

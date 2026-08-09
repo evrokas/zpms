@@ -1,0 +1,17 @@
+<?php
+
+// API key that DocArc's ZPMS integration must present in the
+// X-DocArc-Api-Key request header when calling
+// GET /api/v1/patients/search/{term} (web/api_patients.php).
+//
+// Copy this file to docarc_api.php (gitignored, same pattern as
+// db.php.in -> db.php) and replace the placeholder below with a long
+// random value, e.g.:
+//   php -r "echo bin2hex(random_bytes(32)), PHP_EOL;"
+// Enter the exact same value under DocArc's Settings -> ZPMS Integration
+// -> API Key.
+//
+// Leave this file absent (or DOCARC_API_KEY blank) to disable the
+// endpoint -- web/api_patients.php checks defined()/non-empty first and
+// returns HTTP 503 rather than a fatal error.
+define('DOCARC_API_KEY', '<<key>>');
