@@ -34,6 +34,13 @@ function docarc_patients_search_api($params) {
         exit();
     }
 
+    if (!function_exists('mb_strlen')) {
+        error_log('[docarc-api] mbstring extension not available -- patient search request rejected');
+        http_response_code(503);
+        echo json_encode(['error' => 'unavailable']);
+        exit();
+    }
+
     // urldecode() mirrors the existing patients_list_search handler
     // (index.php) -- this router's {term} tokens arrive un-decoded.
     $term = trim(urldecode((string)($params['term'] ?? '')));
