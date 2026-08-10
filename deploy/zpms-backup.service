@@ -1,0 +1,23 @@
+# Reference systemd unit for ZPMS's nightly backup, for admins who prefer
+# systemd timers over cron.d/zpms-backup -- install one or the other, not
+# both. See deploy/zpms-backup.cron's header comment for the reasoning
+# behind the dedicated zpms-backup user referenced below.
+#
+# Install:
+#   sudo cp deploy/zpms-backup.service deploy/zpms-backup.timer /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now zpms-backup.timer
+#   systemctl list-timers zpms-backup.timer   # confirm it's scheduled
+#
+# Adjust User=/WorkingDirectory=/ExecStart= to match your actual deployment
+# root and backup user.
+[Unit]
+Description=ZPMS nightly backup
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=zpms-backup
+WorkingDirectory=/var/www/shtml/apps/zpms
+ExecStart=/var/www/shtml/apps/zpms/bin/backup.sh

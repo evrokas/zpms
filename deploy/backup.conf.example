@@ -1,0 +1,55 @@
+# Reference config for bin/backup.sh / bin/restore.sh.
+#
+# Install:
+#   sudo mkdir -p /etc/zpms
+#   sudo cp deploy/backup.conf.example /etc/zpms/backup.conf
+#   sudo $EDITOR /etc/zpms/backup.conf   # fill in the values below
+#   sudo chmod 600 /etc/zpms/backup.conf # readable only by the backup user
+#
+# This is a plain bash file, sourced directly by bin/backup.sh and
+# bin/restore.sh -- keep it valid shell (KEY=value, no spaces around =).
+# Point ZPMS_BACKUP_CONF at a different path instead of editing this one
+# in place if you want to test against a throwaway config.
+
+# --- Where backups go -----------------------------------------------------
+# The destination server and the base path under which bin/backup.sh
+# creates raw/{daily,weekly,monthly}/. The user only needs write access
+# under this one path -- it does not need to reach anywhere else on the
+# destination server. Recommended: a separate destination/user/key from
+# any other app's backups (e.g. DocArc's), so a compromise of one app's
+# backup path can't expose another's.
+BACKUP_REMOTE_USER=zpms-backup
+BACKUP_REMOTE_HOST=backup.example.com
+BACKUP_REMOTE_PATH=/srv/zpms-backups
+BACKUP_SSH_PORT=22
+
+# Path to the private key used to authenticate as BACKUP_REMOTE_USER (a
+# dedicated keypair for this purpose is strongly recommended -- see
+# deploy/zpms-backup.cron's header comment for why a dedicated
+# zpms-backup system user, separate from the web server user, is the
+# recommended setup). Leave blank to use ssh's own default key lookup.
+BACKUP_SSH_KEY=/home/zpms-backup/.ssh/id_ed25519
+
+# --- Retention (tiered daily/weekly/monthly) -------------------------------
+# How many generations to keep in each tier on the destination. Promotion
+# is existence-based (the first backup of a new ISO week/month is what gets
+# promoted), so these numbers are also this system's disclosed
+# GDPR-erasure-propagation bound -- see README.md's "Backups" section for
+# the worked example with these defaults (roughly: a deleted record can
+# remain recoverable from an old monthly generation for up to
+# BACKUP_KEEP_MONTHLY months). Lower these if your retention/erasure
+# obligations need a tighter bound; raise them for more disaster-recovery
+# depth.
+BACKUP_KEEP_DAILY=14
+BACKUP_KEEP_WEEKLY=8
+BACKUP_KEEP_MONTHLY=12
+
+# --- Extras -----------------------------------------------------------
+# Off by default: additionally loads each night's dump into a throwaway
+# scratch database and runs CHECK TABLE on every table before shipping --
+# a much stronger correctness guarantee than the cheap file-level checks
+# bin/backup.sh always runs, at the cost of real extra time/DB load every
+# night. A --single-transaction dump of a live, healthy database essentially
+# can't itself be structurally corrupt, so this is meant for admins who
+# want the stronger guarantee anyway, not a default recommendation.
+BACKUP_VERIFY_LOAD=false
