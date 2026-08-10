@@ -16,7 +16,11 @@ require_once(__DIR__ . '/api_patients.php');
 
 
     ini_set('session.gc_maxlifetime', 3600);
-    ini_set('session.cookie_lifetime', 3600);
+    // cookie_lifetime is deliberately no longer overridden here -- the PHP
+    // session cookie itself now always dies on browser close (lifetime 0,
+    // set explicitly in zeusfw_session_start() below); persistence across
+    // browser restarts is delegated entirely to the separate
+    // zeusfwrememberme cookie/user_tokens mechanism, same as DocArc.
 
     // Project Zeus - Patient Registration System
     // echo "<pre>";
@@ -37,7 +41,7 @@ require_once(__DIR__ . '/api_patients.php');
     // echo "<pre>" . print_r( $_SERVER, 1 ) . "</pre>";
     // echo( "Method: " . $req->getMethod() . '  string: ' . $req->getQueryString() . "<br/>" );
     // print_r( $handlers );
-    session_start();
+    zeusfw_session_start();
     $kernel->isUserLoggedin();
     // if($kernel->isUserLoggedin()) {
         // echo "<pre>User has been logged in!</pre>";

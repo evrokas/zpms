@@ -62,6 +62,48 @@
         </div>
     </form>
 
+    <div class="user-devices">
+        <h2>{{t("My Devices")}}</h2>
+        <p>{{t("Devices you've asked this app to remember you on.")}}</p>
+
+        {% if(count($devices) == 0): %}
+            <p>{{t("No remembered devices.")}}</p>
+        {% else: %}
+        <table>
+            <thead>
+            <tr>
+                <th>{{t("Device / Browser")}}</th>
+                <th>{{t("First Remembered")}}</th>
+                <th>{{t("Last Used")}}</th>
+                <th>{{t("Expires")}}</th>
+                <th>{{t("Actions")}}</th>
+            </tr>
+            </thead>
+            <tbody>
+            {% foreach($devices as $device): %}
+            <tr>
+                <td>
+                    {{{substr($device->getuseragent(), 0, 60)}}}
+                    {% if($device->getselector() == $current_selector): %}
+                        <span class="badge">{{t("This device")}}</span>
+                    {% endif %}
+                </td>
+                <td>{{{$device->getcdate()}}}</td>
+                <td>{{{$device->getlast_used_at() ? $device->getlast_used_at() : t("Never")}}}</td>
+                <td>{{{$device->getexpiry()}}}</td>
+                <td>
+                    <form action="{{rel_url('/profile')}}" method="post">
+                        <input type="hidden" name="action" value="revoke_device">
+                        <input type="hidden" name="token_id" value="{{(int)$device->getid()}}">
+                        <button type="submit">{{t("Revoke")}}</button>
+                    </form>
+                </td>
+            </tr>
+            {% endforeach %}
+            </tbody>
+        </table>
+        {% endif %}
+    </div>
 
     </div>
 </div>
