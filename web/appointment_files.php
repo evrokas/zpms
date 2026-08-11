@@ -246,12 +246,26 @@ function appointment_files_start_clean_output() {
     ob_start();
 }
 
-// Discards whatever this handler's own buffer level accumulated, without
-// disturbing any output buffering the framework itself may already have
-// active further out -- ob_end_clean() only ever closes the innermost
-// level.
+// Discards ALL active output buffering, not just the level
+// appointment_files_start_clean_output() opened. web/index.php itself
+// wraps every route dispatch in its own ob_start() -- opened before the
+// router ever calls into a handler, only closed via ob_end_flush() at the
+// very end of that file -- which every handler here bypasses by calling
+// exit() first. Closing only our own level left that outer buffer open:
+// readfile() below was writing straight into it instead of streaming to
+// the client, only flushed implicitly when PHP tore down the script at
+// exit() -- and anything else that had already landed in that buffer
+// before our handler ran would end up prepended ahead of the real file
+// bytes in the response body, corrupting it despite a numerically-correct
+// Content-Length computed from the file alone. (This was the actual cause
+// of a pasted image that displayed fine as a local preview -- built
+// straight from the pasted blob, no server round-trip involved -- but
+// came back corrupted from both the thumbnail and the full download.)
+// Looping until ob_get_level() is 0 guarantees a clean, directly-streamed
+// response no matter how many levels are stacked up by the time we get
+// here.
 function appointment_files_discard_buffer() {
-    if(ob_get_level() > 0) {
+    while(ob_get_level() > 0) {
         ob_end_clean();
     }
 }
