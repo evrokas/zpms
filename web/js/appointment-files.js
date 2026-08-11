@@ -19,6 +19,16 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initAppointmentFileSection(section) {
+    // Collapsed by default -- server-rendered already .is-expanded when
+    // the appointment has existing files (see view_appointment.zetem), so
+    // this only ever needs to toggle, never set the initial state.
+    const heading = section.querySelector('[data-toggle-attachments]');
+    if (heading) {
+        heading.addEventListener('click', function() {
+            section.classList.toggle('is-expanded');
+        });
+    }
+
     const form = section.querySelector('.file-upload-form');
     const dropzone = section.querySelector('[data-dropzone]');
     const input = section.querySelector('.file-input');
@@ -123,6 +133,7 @@ function uploadOneFile(file, uploadUrl, previewsContainer, existingFilesContaine
             if (result.ok && result.data && result.data.success) {
                 previewItem.remove();
                 appendExistingFileRow(existingFilesContainer, result.data.file);
+                updateFileCountBadge(existingFilesContainer.closest('.file-upload-section'));
             } else {
                 showPreviewError(previewItem, (result.data && result.data.error) || 'Η μεταφόρτωση απέτυχε');
             }
@@ -272,7 +283,18 @@ function handleDelegatedClick(e) {
             .then(function(response) { return response.json(); })
             .then(function(data) {
                 if (data && data.success && fileItem) {
+                    const section = fileItem.closest('.file-upload-section');
                     fileItem.remove();
+                    updateFileCountBadge(section);
+                    if (section) {
+                        const existingFiles = section.querySelector('.existing-files');
+                        if (existingFiles && !existingFiles.querySelector('.file-item') && !existingFiles.querySelector('.no-files')) {
+                            const noFiles = document.createElement('p');
+                            noFiles.className = 'no-files';
+                            noFiles.textContent = 'Δεν υπάρχουν συνημμένα αρχεία';
+                            existingFiles.appendChild(noFiles);
+                        }
+                    }
                 } else {
                     deleteBtn.disabled = false;
                     window.alert('Η διαγραφή απέτυχε');
@@ -310,6 +332,29 @@ function handleDelegatedClick(e) {
 
     // Any other click closes an open preview popup (outside-click dismiss).
     closeAllPreviews();
+}
+
+// Keeps the heading's file-count badge in sync after an upload/delete
+// completes without a page reload -- adds it on the first upload into an
+// empty section, removes it once the last file is deleted.
+function updateFileCountBadge(section) {
+    if (!section) return;
+    const heading = section.querySelector('.file-upload-section-heading');
+    if (!heading) return;
+
+    const count = section.querySelectorAll('.existing-files .file-item').length;
+    let badge = heading.querySelector('.file-count-badge');
+
+    if (count > 0) {
+        if (!badge) {
+            badge = document.createElement('span');
+            badge.className = 'file-count-badge';
+            heading.appendChild(badge);
+        }
+        badge.textContent = count;
+    } else if (badge) {
+        badge.remove();
+    }
 }
 
 function closeAllPreviews() {

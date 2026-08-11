@@ -15,6 +15,47 @@
     font-size: 1.1rem;
 }
 
+/* Collapsed by default, expanded by clicking the heading (or
+   server-rendered already expanded when the appointment has existing
+   files -- see view_appointment.zetem) -- toggled by appointment-files.js
+   adding/removing .is-expanded on .file-upload-section itself, so both
+   the body's visibility and the chevron's rotation are driven off that
+   one class. */
+.file-upload-section-heading {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    cursor: pointer;
+    user-select: none;
+}
+
+.file-upload-section-heading .toggle-icon {
+    transition: transform var(--transition-fast);
+}
+
+.file-upload-section.is-expanded .file-upload-section-heading .toggle-icon {
+    transform: rotate(90deg);
+}
+
+.file-count-badge {
+    margin-left: auto;
+    background-color: var(--primary);
+    color: white;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    line-height: 1;
+    padding: 0.25rem 0.55rem;
+}
+
+.file-upload-section-body {
+    display: none;
+    margin-top: var(--spacing);
+}
+
+.file-upload-section.is-expanded .file-upload-section-body {
+    display: block;
+}
+
 .file-upload-area {
     position: relative;
     margin-bottom: var(--spacing);
