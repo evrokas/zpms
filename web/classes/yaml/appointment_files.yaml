@@ -1,0 +1,57 @@
+---
+table:
+  name: appointment_files
+  class: appointmentFilesClass
+
+  fields:
+  - name: guid
+    type: '@guid'
+
+  - name: cdate
+    type: '@cdate'
+
+  - name: cuser
+    type: '@cuser'
+
+  - name: appointment_id
+    type: int
+    required: true
+
+  - name: file_name
+    type: varchar(255)
+    required: true
+
+  - name: file_path
+    type: text
+    required: true
+
+  - name: file_size
+    type: int
+    required: true
+
+  - name: mime_type
+    type: varchar(100)
+    required: true
+
+  - name: file_hash
+    type: char(64)
+    required: true
+
+...
+
+# - guid          attachment guid
+# - cdate         upload creation date
+# - cuser         uploading user
+# - appointment_id  numeric FK to appointments.id (this app's appointment
+#                   routes/handlers all address appointments by numeric id,
+#                   not guid)
+# - file_name     original client-supplied filename, for display only
+# - file_path     path on disk, relative to core_get_dir_in_lib('appointment_files'),
+#                 e.g. "Γιώργος Παπαδόπουλος_a3f9c21e/2026-08-11-2/xray.jpg" --
+#                 see appointment_files_resolve_storage_path() in
+#                 web/appointment_files.php. Persisted at upload time, never
+#                 recomputed, so download/delete are always consistent with
+#                 what's actually on disk.
+# - file_size     bytes, from the uploaded file
+# - mime_type     server-detected (finfo), never the client-supplied Content-Type
+# - file_hash     sha256 of the uploaded file's contents

@@ -107,13 +107,9 @@ libraries:
       #   type: 'text/css'
       #   src: 'css/attachments-sidebar.css'
     foot_script:
-      - uploads:
+      - appointment_files:
         type: 'text/javascript'
-        src: 'js/file-upload.js'
-        defer:
-      - preview:
-        type: 'text/javascript'
-        src: 'js/pdf-preview.js'
+        src: 'js/appointment-files.js'
         defer:
 
 
@@ -313,6 +309,23 @@ routes:
     url: "/appointment/{id}/newappointment"
     handler: patient_appointment_new_post
     method: post
+  appointment_file_upload:
+    title:
+      gr: "Μεταφόρτωση αρχείου ραντεβού"
+      en: "Appointment file upload"
+    url: "/appointment/{id}/files"
+    handler: appointment_file_upload
+    method: post
+  appointment_file_delete:
+    title: "Appointment file delete"
+    url: "/appointment/{id}/files/{fileid}/delete"
+    handler: appointment_file_delete
+    method: post
+  appointment_file_download:
+    title: "Appointment file download"
+    url: "/appointment/{id}/files/{fileid}/download"
+    handler: appointment_file_download
+    method: get
   qrgenerator:
     title:
       gr: "Δημιουργία κωδικού QR"

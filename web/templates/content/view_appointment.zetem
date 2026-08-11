@@ -80,42 +80,63 @@
             </div>
         </div>
 
-        <!-- NEW: File upload section for this appointment -->
-        <div class="file-upload-section">
-            <h5>Συνημμένα Αρχεία</h5>
-            <div class="file-upload-area">
-                <input type="file" id="file-upload-1" multiple accept="image/*,.pdf" class="file-input">
-                <label for="file-upload-1" class="file-upload-label">
+    </form>
+
+    <!-- Attachments for this appointment -- deliberately outside the form
+         above (own enctype/async submission timing, must not risk being
+         swept into the place/date/notes save). -->
+    <div class="file-upload-section">
+        <h5>Συνημμένα Αρχεία</h5>
+
+        <form class="file-upload-form" enctype="multipart/form-data"
+            data-upload-url="{{rel_url('/appointment/' . $appointment->getid() . '/files')}}">
+            <div class="file-upload-area" data-dropzone>
+                <input type="file" id="file-upload-{{$index}}" name="appointmentFile" multiple accept="image/*,.pdf" class="file-input">
+                <label for="file-upload-{{$index}}" class="file-upload-label">
                     <i class='bx bx-cloud-upload'></i>
                     <span>Επιλέξτε ή μεταφέρετε αρχεία εδώ</span>
                 </label>
             </div>
+        </form>
 
-            <!-- File previews container -->
-            <div class="file-previews" id="file-previews-1">
-                <!-- Preview items will be added here dynamically -->
-            </div>
-
-            <!-- Existing uploaded files (if any) -->
-            <div class="existing-files">
-                <p>existing files</p>
-                <!-- Example of existing file -->
-
-                <div class="file-item">
-                    <div class="file-preview">
-                        <img src="path/to/thumbnail.jpg" alt="File preview">
-                    </div>
-                    <div class="file-info">
-                        <span class="file-name">medical_report.pdf</span>
-                        <span class="file-size">2.4 MB</span>
-                    </div>
-                    <div class="file-actions">
-                        <button class="view-btn" data-file="path/to/file.pdf">Προβολή</button>
-                        <button class="delete-btn">Διαγραφή</button>
-                    </div>
-                </div>
-
-            </div>
+        <!-- Local previews for in-progress uploads -->
+        <div class="file-previews" id="file-previews-{{$index}}">
         </div>
-    </form>
+
+        <!-- Existing uploaded files -->
+        <div class="existing-files" id="existing-files-{{$index}}">
+            {% if(!isset($files) || count($files) == 0): %}
+            <p class="no-files">Δεν υπάρχουν συνημμένα αρχεία</p>
+            {% else: %}
+            {% foreach($files as $f): %}
+            <div class="file-item" data-file-id="{{$f->getid()}}">
+                <div class="file-preview-trigger">
+                    {% if(str_starts_with($f->getmime_type(), 'image/')): %}
+                    <div class="file-preview">
+                        <img src="{{rel_url('/appointment/' . $appointment->getid() . '/files/' . $f->getid() . '/download')}}" alt="{{{$f->getfile_name()}}}">
+                    </div>
+                    <div class="file-preview-popup">
+                        <img src="{{rel_url('/appointment/' . $appointment->getid() . '/files/' . $f->getid() . '/download')}}" alt="{{{$f->getfile_name()}}}">
+                    </div>
+                    {% else: %}
+                    <div class="file-preview pdf-preview">
+                        <i class='bx bxs-file-pdf'></i>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="file-info">
+                    <span class="file-name">{{{$f->getfile_name()}}}</span>
+                    <span class="file-size">{{appointment_files_format_size($f->getfile_size())}}</span>
+                </div>
+                <div class="file-actions">
+                    <button type="button" class="view-btn"
+                        data-file="{{rel_url('/appointment/' . $appointment->getid() . '/files/' . $f->getid() . '/download')}}">Προβολή</button>
+                    <button type="button" class="delete-btn"
+                        data-delete-url="{{rel_url('/appointment/' . $appointment->getid() . '/files/' . $f->getid() . '/delete')}}">Διαγραφή</button>
+                </div>
+            </div>
+            {% endforeach %}
+            {% endif %}
+        </div>
+    </div>
 </div>
