@@ -26,15 +26,43 @@ class UserProfileModule extends moduleClass {
 
         $user = UsersClassEx::getUserAccount( $u );
 
+        $devices = userTokensClassEx::getUserTokens($u);
+        $currentSelector = null;
+        $cookie = filter_input(INPUT_COOKIE, 'zeusfwrememberme');
+        if($cookie) {
+            $parsed = userTokensClassEx::parse_token($cookie);
+            if($parsed) {
+                $currentSelector = $parsed[0];
+            }
+        }
+
         return $this->RenderTemplate([
             'user' => $user,
             $user->getactive()?'checked="checked"':'',
             $user->getExpired()?'checked="checked"':'',
-            'totp_activated' => true
+            'totp_activated' => true,
+            'devices' => $devices,
+            'current_selector' => $currentSelector,
         ]);
     }
 
     function run($params = array()) {
+        global $kernel;
+
+        // Devices section's per-row Revoke button -- posts back to /profile
+        // with action=revoke_device + token_id. The rest of this page's
+        // (disabled/read-only) form has no 'action' field at all, so this
+        // check can't collide with anything else this route already does.
+        if($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'revoke_device') {
+            $u = $kernel->getUserName();
+            $id = (int)($_POST['token_id'] ?? 0);
+            if($u && $id) {
+                userTokensClassEx::delete_by_id_for_uname($id, $u);
+            }
+            header('location: ' . rel_url('/profile'));
+            exit();
+        }
+
         // echopre("UserProfile module::run()");
         return $this->render($params);
     }

@@ -1,0 +1,14 @@
+# Pairs with deploy/zpms-backup.service -- see that file's header for
+# install instructions. Fires nightly at 02:00 local server time, with a
+# randomized delay to avoid every scheduled task on the box waking at
+# exactly the same second.
+[Unit]
+Description=Run ZPMS's nightly backup
+
+[Timer]
+OnCalendar=*-*-* 02:00:00
+RandomizedDelaySec=300
+Persistent=true
+
+[Install]
+WantedBy=timers.target
