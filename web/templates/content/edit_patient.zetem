@@ -148,7 +148,7 @@
 
         <div class="appointment-entries">
 
-            <div class="appointment-dates">
+            <ul class="appointment-dates">
                 {% foreach($appdates as $ad): %}
                     <li>
                         <a href="#app-{{$ad['index']}}">
@@ -156,7 +156,7 @@
                         </a>
                     </li>
                 {% endforeach %}
-            </div>            
+            </ul>
 
 
 
@@ -164,8 +164,8 @@
                 {% foreach($appointments as $ap): %}
                     <li data-index="{{$ap['index']}}">{{$ap['markup']}}</li>
                 {% endforeach %}
-            </ul`>
-        </div>            
+            </ul>
+        </div>
 
 
     {% endif %}

@@ -1,9 +1,14 @@
 
-/* Appointment dates navigation */
+/* Appointment dates navigation -- a real <ul> (was previously bare <li>
+   elements inside a <div>, invalid HTML), so browser default list
+   padding/markers need resetting same as .patient-appointments-list
+   does elsewhere in this app. */
 .appointment-dates {
     display: flex;
     gap: var(--spacing-sm);
-    margin-bottom: var(--spacing);
+    margin: 0 0 var(--spacing) 0;
+    padding: 0;
+    list-style: none;
     flex-wrap: wrap;
 }
 
@@ -29,15 +34,23 @@
 
 /* Responsive adjustments for appointments */
 @media screen and (max-width: 768px) {
-    .edit-appointment .input-header {
-        flex-direction: column;
+    /* .input-header (date + place) is a sibling of .edit-appointment in
+       the real markup, not a descendant, and is CSS Grid (see
+       .appointment-entry .input-header in styles.css) rather than flex
+       -- the previous rules here (".edit-appointment .input-header")
+       matched nothing and flex-direction wouldn't have worked anyway.
+       Target the actual selector and collapse the grid to one column
+       so date and place stack to full width instead of each being
+       squeezed into a 200px-minimum half. */
+    .appointment-entry .input-header {
+        grid-template-columns: 1fr;
     }
-    
-    .edit-appointment .input-header > .input-div {
-        min-width: 100%;
+
+    .appointment-entry .input-header .input-div {
+        min-width: 0;
     }
-    
+
     .appointment-dates {
         justify-content: center;
     }
-}   
+}

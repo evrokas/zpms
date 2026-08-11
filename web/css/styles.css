@@ -115,7 +115,12 @@ body {
 }
 
 .wrapper {
-    max-width: max(900px, 80%);
+    /* Caps at 900px on desktop, shrinks to fit narrow viewports on
+       mobile -- this was previously max(900px, 80%), which always
+       evaluates to at least 900px on anything narrower than 1125px
+       wide, forcing the whole app to render at >=900px and horizontally
+       scroll on every phone regardless of any other responsive CSS. */
+    max-width: min(900px, 100%);
     margin: auto;
 }
 
@@ -575,15 +580,14 @@ form .input-div {
     .edit-patient .buttons {
         flex-direction: column;
     }
-    
-    .appointment-entry .edit-appointment .input-header {
-        flex-direction: column;
-    }
-    
-    .appointment-entry .edit-appointment .input-header > .input-div {
-        width: 100% !important;
-        margin-bottom: var(--spacing);
-    }
+
+    /* Appointment card date/place header responsiveness lives in
+       appointment-improvements.css (the library-scoped file that
+       actually owns it) -- the rules that used to be here targeted
+       ".edit-appointment .input-header", which matches nothing:
+       .input-header is a sibling of .edit-appointment in the real
+       markup, not a descendant, and flex-direction had no effect
+       against .input-header's actual display:grid layout anyway. */
 
     .section-header-grid-2x1 {
         flex-direction: column;

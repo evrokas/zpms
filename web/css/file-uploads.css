@@ -25,6 +25,7 @@
     display: flex;
     align-items: center;
     gap: var(--spacing-sm);
+    padding: var(--spacing-xs) 0;
     cursor: pointer;
     user-select: none;
 }
@@ -113,6 +114,7 @@
 .clipboard-paste-row {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: var(--spacing-sm);
     margin-bottom: var(--spacing);
 }
@@ -293,6 +295,12 @@
 
 .file-info {
     flex: 1;
+    /* Without this, a flex item with flex:1 can't shrink below its
+       content's intrinsic width -- a long filename (this app routinely
+       has Greek scanned-document names) would otherwise force .file-item
+       wider than its container instead of eliding, pushing .file-actions
+       off-screen on a narrow phone. */
+    min-width: 0;
 }
 
 .file-name {
@@ -300,6 +308,9 @@
     font-weight: 500;
     margin-bottom: 0.25rem;
     color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .file-size {
@@ -378,4 +389,49 @@
 .file-preview-trigger:hover .file-preview-popup,
 .file-preview-trigger.is-active .file-preview-popup {
     visibility: visible;
+}
+
+/* Mobile: bigger tap targets, and existing-file rows wrap their actions
+   onto their own line instead of squeezing thumbnail + name + two
+   buttons into one row. No JS changes needed for any of this -- the
+   click/tap-to-toggle .is-active logic in appointment-files.js already
+   works the same regardless of how the popup below is positioned. */
+@media screen and (max-width: 480px) {
+    .file-item {
+        flex-wrap: wrap;
+    }
+
+    .file-actions {
+        flex-basis: 100%;
+        justify-content: flex-end;
+        margin-top: var(--spacing-sm);
+    }
+
+    .view-btn, .delete-btn {
+        padding: 0.6rem 0.9rem;
+        font-size: 0.85rem;
+    }
+
+    /* .file-preview-popup is normally position:absolute anchored to its
+       50px-wide trigger via `left: 0` -- on a narrow screen the trigger
+       is commonly close enough to the edge that a 320px-wide popup runs
+       off-screen with nothing to clip or reposition it. Below this
+       breakpoint it becomes a centered, viewport-width-capped overlay
+       instead, so it can never run off-screen regardless of where the
+       trigger sits on the page. */
+    .file-preview-popup {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        bottom: auto;
+        transform: translate(-50%, -50%);
+        max-width: calc(100vw - 2rem);
+        max-height: calc(100vh - 2rem);
+        z-index: 1000;
+    }
+
+    .file-preview-popup img {
+        max-width: 100%;
+        max-height: calc(100vh - 4rem);
+    }
 }

@@ -1,5 +1,6 @@
 {% attach_library('textarea-autoexpand-library') %}
 {% attach_library('appointment-improvements') %}
+{% attach_library('loader-library') %}
 
 <!-- <hr> -->
 <div class="appointment-entry" id="app-{{$index}}">
@@ -34,35 +35,6 @@
 
         <div class="appointment-wrapper">
             <div class="edit-appointment">
-
-                {#
-                <div class="input-header">
-                    <div class="input-div">
-                        <!-- <label for="patient-date">Ημ/νια & Ώρα ραντεβού</label> -->
-                        <!-- <input type="datetime-local" loader="app-loader-{{$index}}" name="appointment-date" id="" value="{{$appointment->getadate()}}"> -->
-                        <label for="patient-date">Ημ/νια & Ώρα ραντεβού</label>
-                        <input type="date" loader="app-loader-{{$index}}" name="appointment-date-{{$index}}" id=""
-                            role="date-picker" value="{{formatBrowserDate($appointment->getadate())}}">
-                        <!-- <label for="patient-dob">Ημ/νια Γεννήσεως</label> -->
-                        <!-- <input type="date" name="patient-dob" id="" role="date-picker" value="{{formatDate($patient->getpdob())}}"> -->
-                    </div>
-
-                    <div class="input-div">
-                        <label for="appointment-place">Περιοχή</label>
-                        <!-- <input type="text" name="appointment-place" id=""  value="{{$appointment->getaplace()}}"> -->
-
-                        <!-- {% if(isset($locations)): %} -->
-                        <select name="appointment-place" loader="app-loader-{{$index}}">
-                            {% foreach($locations as $loc): %}
-                            <!-- {{ $loc->getname() }} - {{ $loc->getmachinename() }} {{$appointment->getaplace()}} -->
-                            <option value="{{$loc->getmachinename()}}" {{($loc->getname() ==
-                                $appointment->getaplace())?"selected":""}}>{{$loc->getname()}}</option>
-                            {% endforeach %}
-                        </select>
-                        <!-- {% endif %} -->
-                    </div>
-                </div>
-                #}
 
                 <div class="input-div input-notes">
                     <label for="appointment-notes">Σημειώσεις</label>
