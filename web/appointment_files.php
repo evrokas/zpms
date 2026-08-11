@@ -149,22 +149,23 @@ function appointment_files_resolve_storage_path(array $appointment, string $pati
     return [$dir . '/' . $filename, $relativePath];
 }
 
-// Generates a small JPEG preview (fit within
-// APPOINTMENT_FILE_THUMBNAIL_MAX_DIMENSION x same, aspect ratio preserved)
-// for an image file, saved in a "thumbs/" subfolder alongside the
-// original -- e.g. "<patient>/<date>/thumbs/xray.jpg" next to
-// "<patient>/<date>/xray.jpg". Returns the thumbnail's path relative to
-// the appointment_files library dir, or null if a thumbnail couldn't be
-// made (GD missing, unreadable/corrupt/unsupported image) -- never
-// throws, since a missing thumbnail just means
-// appointment_file_thumbnail() falls back to serving the full original.
-function appointment_files_generate_thumbnail(string $absoluteSourcePath, string $relativeSourcePath): ?string {
+// Attempts to fully decode $absoluteSourcePath as an image -- unlike the
+// finfo_file() check in appointment_file_upload(), which only sniffs the
+// first few header bytes, this actually reads the whole file through GD.
+// A file can pass finfo's sniff yet still fail here if the data is
+// truncated/corrupted mid-stream -- observed in practice with some
+// clipboard-paste sources (e.g. iOS Safari's async Clipboard API handing
+// back incomplete image bytes despite a valid-looking header). Returns a
+// GD image resource (EXIF-orientation-corrected for JPEGs) on success, or
+// null if the data doesn't actually decode as a real image, or GD isn't
+// installed at all.
+function appointment_files_decode_image(string $absoluteSourcePath) {
     if(!extension_loaded('gd')) {
         return null;
     }
 
     $data = @file_get_contents($absoluteSourcePath);
-    if($data === false) {
+    if($data === false || $data === '') {
         return null;
     }
 
@@ -173,8 +174,8 @@ function appointment_files_generate_thumbnail(string $absoluteSourcePath, string
         return null;
     }
 
-    // Correct JPEG EXIF orientation (phone camera photos) before resizing
-    // -- GD strips EXIF metadata when re-encoding, so without this the
+    // Correct JPEG EXIF orientation (phone camera photos) -- GD strips
+    // EXIF metadata when re-encoding, so without this a generated
     // thumbnail would silently lose whatever rotation the browser would
     // otherwise have applied to the original.
     if(function_exists('exif_read_data')) {
@@ -190,12 +191,24 @@ function appointment_files_generate_thumbnail(string $absoluteSourcePath, string
         }
     }
 
-    $srcWidth = imagesx($source);
-    $srcHeight = imagesy($source);
-    if($srcWidth <= 0 || $srcHeight <= 0) {
+    if(imagesx($source) <= 0 || imagesy($source) <= 0) {
         imagedestroy($source);
         return null;
     }
+
+    return $source;
+}
+
+// Saves a small JPEG preview of an already-decoded image (fit within
+// APPOINTMENT_FILE_THUMBNAIL_MAX_DIMENSION x same, aspect ratio
+// preserved) in a "thumbs/" subfolder alongside the original -- e.g.
+// "<patient>/<date>/thumbs/xray.jpg" next to "<patient>/<date>/xray.jpg".
+// Returns the thumbnail's path relative to the appointment_files library
+// dir, or null if it couldn't be written (e.g. a disk/permissions issue
+// -- doesn't affect the already-saved original either way).
+function appointment_files_save_thumbnail($source, string $relativeSourcePath): ?string {
+    $srcWidth = imagesx($source);
+    $srcHeight = imagesy($source);
 
     $scale = min(1, APPOINTMENT_FILE_THUMBNAIL_MAX_DIMENSION / max($srcWidth, $srcHeight));
     $dstWidth = max(1, (int)round($srcWidth * $scale));
@@ -208,7 +221,6 @@ function appointment_files_generate_thumbnail(string $absoluteSourcePath, string
     $white = imagecolorallocate($thumb, 255, 255, 255);
     imagefill($thumb, 0, 0, $white);
     imagecopyresampled($thumb, $source, 0, 0, 0, 0, $dstWidth, $dstHeight, $srcWidth, $srcHeight);
-    imagedestroy($source);
 
     $thumbRelativeDir = dirname($relativeSourcePath) . '/thumbs';
     $thumbAbsoluteDir = core_get_dir_in_lib('appointment_files') . '/' . $thumbRelativeDir;
@@ -311,7 +323,24 @@ function appointment_file_upload($params) {
     }
 
     $isImage = str_starts_with($mimeType, 'image/');
-    $thumbnailPath = $isImage ? appointment_files_generate_thumbnail($destPath, $relativePath) : null;
+    $thumbnailPath = null;
+
+    if($isImage && extension_loaded('gd')) {
+        $decoded = appointment_files_decode_image($destPath);
+        if(!$decoded) {
+            // finfo only sniffs the header, so a file can pass that check
+            // and still not be a real, complete image -- seen with
+            // corrupted/truncated data from some clipboard-paste sources
+            // (e.g. iOS Safari). Reject outright rather than silently
+            // archiving a file staff can never actually open (which
+            // would otherwise show up as an unexplained broken-image
+            // placeholder with no way to view it either).
+            unlink($destPath);
+            appointment_files_json(['success' => false, 'error' => 'corrupt or unreadable image data -- please try again'], 400);
+        }
+        $thumbnailPath = appointment_files_save_thumbnail($decoded, $relativePath);
+        imagedestroy($decoded);
+    }
 
     $entry = new appointmentFilesClass([
         'guid' => guid(),
