@@ -302,11 +302,24 @@ form .input-div {
         padding: 0;
     }
 
+    /* Grid instead of flex so the field and its .inline-icons overlay
+       (below) can share one grid cell -- see the icon-positioning rule
+       further down for why this replaces flex's "static position"
+       fallback, which broke once .input-div stacked into a column on
+       mobile (max-width: 470px, further below). */
+    form .input-div {
+        display: grid;
+        grid-template-columns: 13rem 1fr;
+        align-items: center;
+    }
+
     /* NEW input styles */
     form .input-div select,
     form .input-div input,
     form .input-div .date-picker-input span,
     form .input-div textarea {
+        grid-column: 2;
+        grid-row: 1;
         flex-grow: 1;
         padding: 8px 12px;
         line-height: 19px;
@@ -329,6 +342,8 @@ form .input-div {
     }
 
     form .input-div label {
+        grid-column: 1;
+        grid-row: 1;
         width: 13rem;
         text-align: right;
         font-weight: 600;
@@ -336,13 +351,18 @@ form .input-div {
     }
 
     form .input-div.input-notes {
-        flex-direction: column;
+        grid-template-columns: 1fr;
         align-items: flex-start;
         gap: 0.2rem;
     }
 
     form .input-div.input-notes label {
         text-align: left;
+    }
+
+    form .input-div.input-notes textarea {
+        grid-column: 1;
+        grid-row: 2;
     }
 
     form .input-div input::placeholder {
@@ -357,14 +377,21 @@ form .input-div {
     form .input-div input[name="patient-telephone"],
     form .input-div input[name="patient-email"] {
         position: relative;
+        /* Reserves room for up to 3 simultaneously-visible icons
+           (worst case: telephone's valid-or-invalid + phone-call +
+           copy) so a long value can never visually run underneath the
+           overlay. */
+        padding-right: 6.5rem;
 
         &~.inline-icons {
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            position: absolute;
+            grid-column: 2;
+            grid-row: 1;
+            justify-self: end;
+            align-self: center;
             font-size: 1.5rem;
-            right: 1rem;
 
             img,
             i.valid,
@@ -550,19 +577,30 @@ form .input-div {
 
 @media screen and (max-width: 470px) {
     .edit-patient form {
-        .input-attachments {
-            width: unset;
-        }
-
         .input-div {
-            flex-direction: column;
+            grid-template-columns: 1fr;
             gap: 0;
             align-items: flex-start;
         }
 
         .input-div label {
+            grid-column: 1;
+            grid-row: 1;
             width: auto;
             text-align: left;
+        }
+
+        /* Field and its .inline-icons overlay stay in the same shared
+           cell (row 2) even stacked under the label -- .inline-icons'
+           own align-self: center (set above, unconditional) keeps it
+           centered on the input regardless of this container's
+           align-items: flex-start, which only affects the label row. */
+        .input-div select,
+        .input-div input,
+        .input-div textarea,
+        .input-div .inline-icons {
+            grid-column: 1;
+            grid-row: 2;
         }
     }
 
