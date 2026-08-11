@@ -391,6 +391,7 @@ form .input-div {
             grid-row: 1;
             justify-self: end;
             align-self: center;
+            margin-right: 1.25rem;
             /* Without this, .inline-icons is invisible: it used to be
                position:absolute, which always paints above static
                in-flow content regardless of DOM order -- as a plain
