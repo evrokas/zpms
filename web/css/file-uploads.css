@@ -69,6 +69,41 @@
     font-weight: 500;
 }
 
+.clipboard-paste-row {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    margin-bottom: var(--spacing);
+}
+
+.paste-clipboard-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    padding: 0.4rem 0.75rem;
+    border: 1px solid var(--primary);
+    border-radius: var(--border-radius-sm);
+    background-color: white;
+    color: var(--primary);
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+}
+
+.paste-clipboard-btn:hover:not(:disabled) {
+    background-color: rgba(var(--primary-rgb), 0.05);
+}
+
+.paste-clipboard-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.paste-status {
+    font-size: 0.8rem;
+    color: var(--dark-gray);
+}
+
 /* File previews */
 .file-previews {
     display: grid;

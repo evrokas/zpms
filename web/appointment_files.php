@@ -33,6 +33,13 @@ const APPOINTMENT_FILE_ALLOWED_MIME_EXTENSIONS = [
     'application/pdf' => 'pdf',
 ];
 
+// Thumbnails are always re-encoded as JPEG (no alpha channel needed for a
+// compact list preview) and capped to fit within this box, matching the
+// existing .file-preview-popup CSS's own max-width/max-height so the
+// hover preview never has to upscale or waste bytes.
+const APPOINTMENT_FILE_THUMBNAIL_MAX_DIMENSION = 320;
+const APPOINTMENT_FILE_THUMBNAIL_JPEG_QUALITY = 80;
+
 // Sanitizes a patient's name for use as a filesystem directory component:
 // strips path separators/control characters, trims stray dots/spaces (both
 // of which are unsafe or meaningless as a trailing directory-name
@@ -142,6 +149,80 @@ function appointment_files_resolve_storage_path(array $appointment, string $pati
     return [$dir . '/' . $filename, $relativePath];
 }
 
+// Generates a small JPEG preview (fit within
+// APPOINTMENT_FILE_THUMBNAIL_MAX_DIMENSION x same, aspect ratio preserved)
+// for an image file, saved in a "thumbs/" subfolder alongside the
+// original -- e.g. "<patient>/<date>/thumbs/xray.jpg" next to
+// "<patient>/<date>/xray.jpg". Returns the thumbnail's path relative to
+// the appointment_files library dir, or null if a thumbnail couldn't be
+// made (GD missing, unreadable/corrupt/unsupported image) -- never
+// throws, since a missing thumbnail just means
+// appointment_file_thumbnail() falls back to serving the full original.
+function appointment_files_generate_thumbnail(string $absoluteSourcePath, string $relativeSourcePath): ?string {
+    if(!extension_loaded('gd')) {
+        return null;
+    }
+
+    $data = @file_get_contents($absoluteSourcePath);
+    if($data === false) {
+        return null;
+    }
+
+    $source = @imagecreatefromstring($data);
+    if(!$source) {
+        return null;
+    }
+
+    // Correct JPEG EXIF orientation (phone camera photos) before resizing
+    // -- GD strips EXIF metadata when re-encoding, so without this the
+    // thumbnail would silently lose whatever rotation the browser would
+    // otherwise have applied to the original.
+    if(function_exists('exif_read_data')) {
+        $exif = @exif_read_data($absoluteSourcePath);
+        $orientation = is_array($exif) ? ($exif['Orientation'] ?? null) : null;
+        if(in_array((int)$orientation, [3, 6, 8], true)) {
+            $angle = [3 => 180, 6 => -90, 8 => 90][(int)$orientation];
+            $rotated = imagerotate($source, $angle, 0);
+            if($rotated !== false) {
+                imagedestroy($source);
+                $source = $rotated;
+            }
+        }
+    }
+
+    $srcWidth = imagesx($source);
+    $srcHeight = imagesy($source);
+    if($srcWidth <= 0 || $srcHeight <= 0) {
+        imagedestroy($source);
+        return null;
+    }
+
+    $scale = min(1, APPOINTMENT_FILE_THUMBNAIL_MAX_DIMENSION / max($srcWidth, $srcHeight));
+    $dstWidth = max(1, (int)round($srcWidth * $scale));
+    $dstHeight = max(1, (int)round($srcHeight * $scale));
+
+    $thumb = imagecreatetruecolor($dstWidth, $dstHeight);
+    // White background under any transparency (e.g. a pasted PNG
+    // screenshot) -- the thumbnail is always saved as JPEG, which has no
+    // alpha channel.
+    $white = imagecolorallocate($thumb, 255, 255, 255);
+    imagefill($thumb, 0, 0, $white);
+    imagecopyresampled($thumb, $source, 0, 0, 0, 0, $dstWidth, $dstHeight, $srcWidth, $srcHeight);
+    imagedestroy($source);
+
+    $thumbRelativeDir = dirname($relativeSourcePath) . '/thumbs';
+    $thumbAbsoluteDir = core_get_dir_in_lib('appointment_files') . '/' . $thumbRelativeDir;
+    appointment_files_mkdir($thumbAbsoluteDir);
+
+    $baseName = pathinfo($relativeSourcePath, PATHINFO_FILENAME) . '.jpg';
+    $thumbFilename = appointment_files_dedupe_filename($thumbAbsoluteDir, $baseName);
+
+    $ok = imagejpeg($thumb, $thumbAbsoluteDir . '/' . $thumbFilename, APPOINTMENT_FILE_THUMBNAIL_JPEG_QUALITY);
+    imagedestroy($thumb);
+
+    return $ok ? ($thumbRelativeDir . '/' . $thumbFilename) : null;
+}
+
 // Starts an explicit output buffer for the current handler -- protects
 // the response from stray output (zeusfw's core_get_dir_in_lib()/
 // core_get_file_in_lib() unconditionally echopre()'s "Create folder: ..."
@@ -229,6 +310,9 @@ function appointment_file_upload($params) {
         appointment_files_json(['success' => false, 'error' => 'upload failed'], 500);
     }
 
+    $isImage = str_starts_with($mimeType, 'image/');
+    $thumbnailPath = $isImage ? appointment_files_generate_thumbnail($destPath, $relativePath) : null;
+
     $entry = new appointmentFilesClass([
         'guid' => guid(),
         'cdate' => getDBtime(),
@@ -239,10 +323,9 @@ function appointment_file_upload($params) {
         'file_size' => $upload['size'],
         'mime_type' => $mimeType,
         'file_hash' => hash_file('sha256', $destPath),
+        'thumbnail_path' => $thumbnailPath,
     ]);
     $entry->insert();
-
-    $isImage = str_starts_with($mimeType, 'image/');
 
     appointment_files_json([
         'success' => true,
@@ -253,6 +336,7 @@ function appointment_file_upload($params) {
             'mime_type' => $mimeType,
             'is_image' => $isImage,
             'download_url' => rel_url('/appointment/' . $ap->getid() . '/files/' . $entry->getid() . '/download'),
+            'thumbnail_url' => rel_url('/appointment/' . $ap->getid() . '/files/' . $entry->getid() . '/thumbnail'),
             'delete_url' => rel_url('/appointment/' . $ap->getid() . '/files/' . $entry->getid() . '/delete'),
         ],
     ]);
@@ -274,17 +358,23 @@ function appointment_file_delete($params) {
         appointment_files_json(['success' => false, 'error' => 'file not found'], 404);
     }
 
-    $absolutePath = core_get_dir_in_lib('appointment_files') . '/' . $file->getfile_path();
+    $baseDir = core_get_dir_in_lib('appointment_files');
+    $absolutePath = $baseDir . '/' . $file->getfile_path();
+    $thumbnailPath = $file->getthumbnail_path();
+    $absoluteThumbnailPath = $thumbnailPath ? ($baseDir . '/' . $thumbnailPath) : null;
 
     // Delete the DB row first -- the UI's view of "deleted" is
-    // authoritative even if the unlink below fails for some reason; an
-    // orphaned file with no DB reference is harmless clutter, not a
+    // authoritative even if the unlink calls below fail for some reason;
+    // orphaned files with no DB reference are harmless clutter, not a
     // correctness problem (same ordering rationale used elsewhere in
     // this codebase for hard deletes).
     $file->delete();
 
     if(is_file($absolutePath)) {
         unlink($absolutePath);
+    }
+    if($absoluteThumbnailPath && is_file($absoluteThumbnailPath)) {
+        unlink($absoluteThumbnailPath);
     }
 
     appointment_files_json(['success' => true]);
@@ -314,6 +404,56 @@ function appointment_file_download($params) {
     appointment_files_discard_buffer();
     header('Content-Type: ' . $file->getmime_type());
     header('Content-Disposition: inline; filename="' . addslashes($file->getfile_name()) . '"');
+    header('Content-Length: ' . filesize($absolutePath));
+    readfile($absolutePath);
+    exit();
+}
+
+// Always returns *something* displayable, so the frontend never has to
+// branch on whether a thumbnail actually exists: serves the generated
+// thumbnail when present, otherwise falls back to the full original --
+// covers PDFs (no thumbnail by design), uploads made before this column
+// existed, and any image whose thumbnail generation failed or was
+// skipped (GD unavailable).
+function appointment_file_thumbnail($params) {
+    appointment_files_start_clean_output();
+
+    if(($ret = SecurityClass::require('appointment-edit'))) {
+        appointment_files_abort(401);
+    }
+
+    if(!isset($params['id']) || !isset($params['fileid'])) {
+        appointment_files_abort(404);
+    }
+
+    $file = appointmentFilesClassEx::sgetByIdForAppointment($params['fileid'], $params['id']);
+    if(!$file) {
+        appointment_files_abort(404);
+    }
+
+    $baseDir = core_get_dir_in_lib('appointment_files');
+    $thumbnailPath = $file->getthumbnail_path();
+
+    $absolutePath = null;
+    $mimeType = null;
+    if($thumbnailPath && is_file($baseDir . '/' . $thumbnailPath)) {
+        $absolutePath = $baseDir . '/' . $thumbnailPath;
+        $mimeType = 'image/jpeg';
+    } else {
+        $originalPath = $baseDir . '/' . $file->getfile_path();
+        if(is_file($originalPath)) {
+            $absolutePath = $originalPath;
+            $mimeType = $file->getmime_type();
+        }
+    }
+
+    if(!$absolutePath) {
+        appointment_files_abort(404);
+    }
+
+    appointment_files_discard_buffer();
+    header('Content-Type: ' . $mimeType);
+    header('Content-Disposition: inline');
     header('Content-Length: ' . filesize($absolutePath));
     readfile($absolutePath);
     exit();

@@ -51,6 +51,52 @@ function initAppointmentFileSection(section) {
         dropzone.classList.remove('dropzone-active');
         handleFiles(e.dataTransfer.files, uploadUrl, previews, existingFiles);
     });
+
+    const pasteBtn = section.querySelector('[data-paste-clipboard]');
+    const pasteStatus = section.querySelector('[data-paste-status]');
+    if (pasteBtn) {
+        if (!navigator.clipboard || !navigator.clipboard.read) {
+            pasteBtn.disabled = true;
+            pasteBtn.title = 'Δεν υποστηρίζεται από αυτόν τον browser';
+        } else {
+            pasteBtn.addEventListener('click', function() {
+                pasteImageFromClipboard(pasteBtn, pasteStatus, uploadUrl, previews, existingFiles);
+            });
+        }
+    }
+}
+
+// "Paste from clipboard" button -- reads an image straight off the OS
+// clipboard (e.g. a screenshot) via the async Clipboard API, synthesizes a
+// filename since a pasted image has none, and feeds it through the exact
+// same uploadOneFile() pipeline as a click-selected or dropped file.
+function pasteImageFromClipboard(button, statusEl, uploadUrl, previewsContainer, existingFilesContainer) {
+    if (statusEl) statusEl.textContent = '';
+    button.disabled = true;
+
+    navigator.clipboard.read().then(function(items) {
+        for (let i = 0; i < items.length; i++) {
+            const imageType = items[i].types.find(function(t) { return t.indexOf('image/') === 0; });
+            if (imageType) {
+                items[i].getType(imageType).then(function(blob) {
+                    uploadOneFile(blobToFile(blob, imageType), uploadUrl, previewsContainer, existingFilesContainer);
+                });
+                return;
+            }
+        }
+        if (statusEl) statusEl.textContent = 'Δεν βρέθηκε εικόνα στο πρόχειρο';
+    }).catch(function() {
+        if (statusEl) statusEl.textContent = 'Δεν ήταν δυνατή η πρόσβαση στο πρόχειρο -- ελέγξτε τα δικαιώματα του browser';
+    }).finally(function() {
+        button.disabled = false;
+    });
+}
+
+function blobToFile(blob, mimeType) {
+    const extensions = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp', 'image/gif': 'gif' };
+    const ext = extensions[mimeType] || 'png';
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    return new File([blob], 'pasted-image-' + stamp + '.' + ext, { type: mimeType });
 }
 
 // Shared by both the click-to-browse `change` event and the `drop` event --
@@ -153,9 +199,14 @@ function appendExistingFileRow(existingFilesContainer, file) {
     const trigger = document.createElement('div');
     trigger.className = 'file-preview-trigger';
     if (file.is_image) {
+        // The small list icon and the hover popup both use the generated
+        // thumbnail (server falls back to the full image itself if one
+        // wasn't made) -- only the View button and "open in new tab"
+        // pull the full-size original.
+        const thumbUrl = file.thumbnail_url || file.download_url;
         trigger.innerHTML =
-            '<div class="file-preview"><img src="' + file.download_url + '" alt="' + escapeHtml(file.file_name) + '"></div>' +
-            '<div class="file-preview-popup"><img src="' + file.download_url + '" alt="' + escapeHtml(file.file_name) + '"></div>';
+            '<div class="file-preview"><img src="' + thumbUrl + '" alt="' + escapeHtml(file.file_name) + '"></div>' +
+            '<div class="file-preview-popup"><img src="' + thumbUrl + '" alt="' + escapeHtml(file.file_name) + '"></div>';
     } else {
         trigger.innerHTML = "<div class=\"file-preview pdf-preview\"><i class='bx bxs-file-pdf'></i></div>";
     }

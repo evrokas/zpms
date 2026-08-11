@@ -37,6 +37,9 @@ table:
     type: char(64)
     required: true
 
+  - name: thumbnail_path
+    type: text
+
 ...
 
 # - guid          attachment guid
@@ -55,3 +58,14 @@ table:
 # - file_size     bytes, from the uploaded file
 # - mime_type     server-detected (finfo), never the client-supplied Content-Type
 # - file_hash     sha256 of the uploaded file's contents
+# - thumbnail_path  nullable, same "relative to core_get_dir_in_lib('appointment_files')"
+#                 convention as file_path, e.g. ".../thumbs/xray.jpg" -- a
+#                 small JPEG generated at upload time for image files only
+#                 (see appointment_files_generate_thumbnail()). NULL for
+#                 PDFs, for uploads made before this column existed, or if
+#                 generation failed/GD wasn't available -- in every one of
+#                 those cases appointment_file_thumbnail() falls back to
+#                 serving the full original, so the frontend never needs to
+#                 branch on whether a thumbnail actually exists. Stored on
+#                 the filesystem like every other file in this app, not as
+#                 a DB blob.

@@ -99,6 +99,13 @@
             </div>
         </form>
 
+        <div class="clipboard-paste-row">
+            <button type="button" class="paste-clipboard-btn" data-paste-clipboard>
+                <i class='bx bx-clipboard'></i> Επικόλληση εικόνας από το πρόχειρο
+            </button>
+            <span class="paste-status" data-paste-status></span>
+        </div>
+
         <!-- Local previews for in-progress uploads -->
         <div class="file-previews" id="file-previews-{{$index}}">
         </div>
@@ -113,10 +120,10 @@
                 <div class="file-preview-trigger">
                     {% if(str_starts_with($f->getmime_type(), 'image/')): %}
                     <div class="file-preview">
-                        <img src="{{rel_url('/appointment/' . $appointment->getid() . '/files/' . $f->getid() . '/download')}}" alt="{{{$f->getfile_name()}}}">
+                        <img src="{{rel_url('/appointment/' . $appointment->getid() . '/files/' . $f->getid() . '/thumbnail')}}" alt="{{{$f->getfile_name()}}}">
                     </div>
                     <div class="file-preview-popup">
-                        <img src="{{rel_url('/appointment/' . $appointment->getid() . '/files/' . $f->getid() . '/download')}}" alt="{{{$f->getfile_name()}}}">
+                        <img src="{{rel_url('/appointment/' . $appointment->getid() . '/files/' . $f->getid() . '/thumbnail')}}" alt="{{{$f->getfile_name()}}}">
                     </div>
                     {% else: %}
                     <div class="file-preview pdf-preview">

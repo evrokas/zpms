@@ -326,6 +326,11 @@ routes:
     url: "/appointment/{id}/files/{fileid}/download"
     handler: appointment_file_download
     method: get
+  appointment_file_thumbnail:
+    title: "Appointment file thumbnail"
+    url: "/appointment/{id}/files/{fileid}/thumbnail"
+    handler: appointment_file_thumbnail
+    method: get
   qrgenerator:
     title:
       gr: "Δημιουργία κωδικού QR"
