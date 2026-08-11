@@ -391,7 +391,25 @@ form .input-div {
             grid-row: 1;
             justify-self: end;
             align-self: center;
+            /* Without this, .inline-icons is invisible: it used to be
+               position:absolute, which always paints above static
+               in-flow content regardless of DOM order -- as a plain
+               grid item (no position) that guarantee is gone, and the
+               input (a replaced element) paints over it instead. */
+            z-index: 1;
             font-size: 1.5rem;
+
+            /* Overrides the grid-column/grid-row above, not a separate
+               lower-specificity rule -- a standalone mobile rule here
+               would lose to the (more specific, due to the input[name=...]
+               attribute selector above) desktop placement and never
+               actually apply. Nesting inside the same selector keeps
+               specificity identical, so cascade order decides and this
+               wins. */
+            @media screen and (max-width: 470px) {
+                grid-column: 1;
+                grid-row: 2;
+            }
 
             img,
             i.valid,
@@ -590,15 +608,14 @@ form .input-div {
             text-align: left;
         }
 
-        /* Field and its .inline-icons overlay stay in the same shared
-           cell (row 2) even stacked under the label -- .inline-icons'
-           own align-self: center (set above, unconditional) keeps it
-           centered on the input regardless of this container's
-           align-items: flex-start, which only affects the label row. */
+        /* .inline-icons' own mobile override lives with its desktop
+           placement (nested @media inside the icon-positioning rule
+           further up) rather than here -- a standalone rule in this
+           block has lower specificity than that rule and would never
+           actually win. */
         .input-div select,
         .input-div input,
-        .input-div textarea,
-        .input-div .inline-icons {
+        .input-div textarea {
             grid-column: 1;
             grid-row: 2;
         }
