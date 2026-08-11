@@ -189,7 +189,7 @@ class appointmentsClassEx extends appointmentsClass {
 
         $st->execute();
 
-        $list = array();        
+        $list = array();
         while( $row = $st->fetch() ) {
             $rclass = new appointmentsClass( "appointments" );
             $rclass->loadFields( $row );
@@ -197,5 +197,74 @@ class appointmentsClassEx extends appointmentsClass {
         }
 
         return ($list);
+    }
+
+    // 1-based position of $appointmentId among the same patient's
+    // appointments that fall on the same calendar date, ordered by id --
+    // used by appointment_files_resolve_storage_path() (web/appointment_files.php)
+    // to decide whether a date folder needs a "-2"/"-3"/... suffix.
+    static function getSameDayPositionForPatient($pguid, $date, $appointmentId): int {
+        $sql = "SELECT id FROM appointments WHERE pguid=:pguid AND deleted IS NULL AND DATE(adate)=:adate ORDER BY id ASC";
+        $st = dbConnection::getConnection()->prepare( $sql );
+        $st->bindValue(":pguid", $pguid, PDO::PARAM_STR);
+        $st->bindValue(":adate", $date, PDO::PARAM_STR);
+        $st->execute();
+
+        $position = 1;
+        while( $row = $st->fetch() ) {
+            if((int)$row['id'] === (int)$appointmentId) {
+                return $position;
+            }
+            $position++;
+        }
+
+        // appointment not found among non-deleted same-day rows (e.g. it
+        // was itself soft-deleted) -- fall back to "1st" rather than 0
+        return 1;
+    }
+}
+
+// Attachments (photos/scanned documents) uploaded against a specific
+// appointment -- see web/appointment_files.php for upload/delete/download
+// and CLAUDE.md's appointment-files section for the on-disk layout this
+// class's queries support.
+class appointmentFilesClassEx extends appointmentFilesClass {
+
+    // All attachments for one appointment, newest first -- powers the
+    // "existing files" list on view_appointment.zetem.
+    static function getFilesForAppointment($appointmentId): array {
+        $sql = "SELECT * FROM appointment_files WHERE appointment_id=:appointment_id ORDER BY cdate DESC";
+        $st = dbConnection::getConnection()->prepare( $sql );
+        $st->bindValue(":appointment_id", $appointmentId, PDO::PARAM_INT);
+        $st->execute();
+
+        $list = array();
+        while( $row = $st->fetch() ) {
+            $rclass = new appointmentFilesClass();
+            $rclass->loadFields( $row );
+            $list[] = $rclass;
+        }
+
+        return ($list);
+    }
+
+    // IDOR-guarded single-file lookup for delete/download -- a file id
+    // alone is never enough, it must also belong to the appointment named
+    // in the URL, same guard shape as
+    // userTokensClassEx::delete_by_id_for_uname()'s WHERE id=:id AND
+    // uname=:uname (zeusfw/core/ClassExFW.php).
+    static function sgetByIdForAppointment($fileId, $appointmentId) {
+        $sql = "SELECT * FROM appointment_files WHERE id=:id AND appointment_id=:appointment_id";
+        $st = dbConnection::getConnection()->prepare( $sql );
+        $st->bindValue(":id", $fileId, PDO::PARAM_INT);
+        $st->bindValue(":appointment_id", $appointmentId, PDO::PARAM_INT);
+        $st->execute();
+        $row = $st->fetch();
+
+        if($row) {
+            $rclass = new appointmentFilesClass();
+            $rclass->loadFields( $row );
+            return $rclass;
+        } else return (null);
     }
 }

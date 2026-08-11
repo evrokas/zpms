@@ -13,6 +13,7 @@ if (is_file(__DIR__ . '/../config/docarc_api.php')) {
 
 require_once(__FWDIR__ . '/bootstrap.php');
 require_once(__DIR__ . '/api_patients.php');
+require_once(__DIR__ . '/appointment_files.php');
 
 
     ini_set('session.gc_maxlifetime', 3600);
@@ -282,7 +283,8 @@ require_once(__DIR__ . '/api_patients.php');
                                                     'id' => $params['id'], 
                                                     'patient' => $pat,
                                                     'appointment' => $ap,
-                                                    'locations' => $loc
+                                                    'locations' => $loc,
+                                                    'files' => appointmentFilesClassEx::getFilesForAppointment($ap->getid())
                                                 ]),
                     'attributes' => new Attributes()
                 ];

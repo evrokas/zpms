@@ -6,8 +6,6 @@
     border: 1px dashed var(--medium-gray);
     border-radius: var(--border-radius-md);
     background-color: var(--light-gray);
-
-    display: none;
 }
 
 .file-upload-section h5 {
@@ -47,6 +45,15 @@
 
 .file-upload-label:hover {
     background-color: rgba(var(--primary-rgb), 0.05);
+    border-color: var(--primary-dark);
+    box-shadow: var(--shadow-primary-sm);
+}
+
+/* Toggled by appointment-files.js on dragover/dragenter/dragleave/drop --
+   click-to-browse itself needs no JS-driven styling, it's handled by the
+   label's native `for` behavior. */
+.file-upload-area.dropzone-active .file-upload-label {
+    background-color: rgba(var(--primary-rgb), 0.08);
     border-color: var(--primary-dark);
     box-shadow: var(--shadow-primary-sm);
 }
@@ -146,9 +153,28 @@
     background-color: var(--error);
 }
 
+.preview-status {
+    font-size: 0.75rem;
+    padding: 0 var(--spacing-sm) var(--spacing-sm);
+}
+
+.preview-item.preview-error {
+    border-color: var(--error);
+}
+
+.preview-item.preview-error .preview-status {
+    color: var(--error);
+}
+
 /* Existing files */
 .existing-files {
     margin-top: var(--spacing-md);
+}
+
+.no-files {
+    color: var(--dark-gray);
+    font-size: 0.85rem;
+    font-style: italic;
 }
 
 .file-item {
@@ -235,4 +261,45 @@
 
 .delete-btn:hover {
     background-color: var(--error-dark);
+}
+
+/* File preview on hover/click -- see CLAUDE.md's appointment-files
+   section. .file-preview-trigger wraps an existing file's small
+   thumbnail/icon (.file-preview); for an image file it also contains a
+   larger .file-preview-popup pointed at the same download URL, revealed
+   on hover (desktop) or by toggling .is-active (click/tap, added by
+   appointment-files.js -- the touch-friendly fallback where :hover
+   doesn't apply). A PDF trigger has no popup, so neither rule ever
+   matches for it -- clicking it just opens the file in a new tab instead
+   (handled entirely in JS). */
+.file-preview-trigger {
+    position: relative;
+    cursor: pointer;
+}
+
+.file-preview-popup {
+    visibility: hidden;
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 8px);
+    z-index: 30;
+    padding: var(--spacing-sm);
+    background-color: white;
+    border: 1px solid var(--medium-gray);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-base);
+    pointer-events: none;
+}
+
+.file-preview-popup img {
+    display: block;
+    max-width: 320px;
+    max-height: 320px;
+    width: auto;
+    height: auto;
+}
+
+.file-preview-trigger:hover .file-preview-popup,
+.file-preview-trigger.is-active .file-preview-popup {
+    visibility: visible;
 }
