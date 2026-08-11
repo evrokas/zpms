@@ -142,7 +142,37 @@ function appointment_files_resolve_storage_path(array $appointment, string $pati
     return [$dir . '/' . $filename, $relativePath];
 }
 
+// Starts an explicit output buffer for the current handler -- protects
+// the response from stray output (zeusfw's core_get_dir_in_lib()/
+// core_get_file_in_lib() unconditionally echopre()'s "Create folder: ..."
+// the first time a directory doesn't exist yet; a PHP notice/warning if
+// display_errors happens to be on; etc.) landing in front of what must be
+// a clean JSON body or file stream. Call as the very first line of every
+// handler below.
+function appointment_files_start_clean_output() {
+    ob_start();
+}
+
+// Discards whatever this handler's own buffer level accumulated, without
+// disturbing any output buffering the framework itself may already have
+// active further out -- ob_end_clean() only ever closes the innermost
+// level.
+function appointment_files_discard_buffer() {
+    if(ob_get_level() > 0) {
+        ob_end_clean();
+    }
+}
+
+// Discard-then-abort for appointment_file_download()'s early-exit paths,
+// which have no JSON body to build via appointment_files_json().
+function appointment_files_abort(int $status) {
+    appointment_files_discard_buffer();
+    http_response_code($status);
+    exit();
+}
+
 function appointment_files_json($data, int $status = 200) {
+    appointment_files_discard_buffer();
     http_response_code($status);
     header('Content-Type: application/json');
     echo json_encode($data);
@@ -151,6 +181,7 @@ function appointment_files_json($data, int $status = 200) {
 
 function appointment_file_upload($params) {
     global $kernel;
+    appointment_files_start_clean_output();
 
     if(($ret = SecurityClass::require('appointment-edit'))) {
         appointment_files_json(['success' => false, 'error' => 'unauthorized'], 401);
@@ -228,6 +259,8 @@ function appointment_file_upload($params) {
 }
 
 function appointment_file_delete($params) {
+    appointment_files_start_clean_output();
+
     if(($ret = SecurityClass::require('appointment-edit'))) {
         appointment_files_json(['success' => false, 'error' => 'unauthorized'], 401);
     }
@@ -258,28 +291,27 @@ function appointment_file_delete($params) {
 }
 
 function appointment_file_download($params) {
+    appointment_files_start_clean_output();
+
     if(($ret = SecurityClass::require('appointment-edit'))) {
-        http_response_code(401);
-        exit();
+        appointment_files_abort(401);
     }
 
     if(!isset($params['id']) || !isset($params['fileid'])) {
-        http_response_code(404);
-        exit();
+        appointment_files_abort(404);
     }
 
     $file = appointmentFilesClassEx::sgetByIdForAppointment($params['fileid'], $params['id']);
     if(!$file) {
-        http_response_code(404);
-        exit();
+        appointment_files_abort(404);
     }
 
     $absolutePath = core_get_dir_in_lib('appointment_files') . '/' . $file->getfile_path();
     if(!is_file($absolutePath)) {
-        http_response_code(404);
-        exit();
+        appointment_files_abort(404);
     }
 
+    appointment_files_discard_buffer();
     header('Content-Type: ' . $file->getmime_type());
     header('Content-Disposition: inline; filename="' . addslashes($file->getfile_name()) . '"');
     header('Content-Length: ' . filesize($absolutePath));
