@@ -835,7 +835,34 @@ require_once(__DIR__ . '/appointment_files.php');
 
             // echopre("qrtext: " . $_POST['qrtext']);
             // POST method
-            shell_exec("rm -f cache/qr-*");
+
+            // Previously built as a raw shell string with $_POST values
+            // interpolated directly into it -- classic command injection
+            // (e.g. a crafted imagetype value could run arbitrary shell
+            // commands). Fixed two ways: every option is validated
+            // against the exact choices genqr.zetem's <select> elements
+            // offer, falling back to that field's own default on
+            // anything else, and the command itself is invoked via
+            // proc_open() with an argument array -- matching docarc's
+            // docarc_generate_qr_png() -- so argv reaches qrencode
+            // directly with no shell ever parsing these values,
+            // regardless of what's in them.
+            $allowedImageTypes = ['png', 'svg'];
+            $allowedDpi = ['75', '100', '150', '200', '300', '600'];
+            $allowedMargins = ['1', '2', '3', '4', '5', '6'];
+            $allowedErrorCorrection = ['L', 'M', 'Q', 'H'];
+
+            $imagetype = in_array($_POST['imagetype'] ?? '', $allowedImageTypes, true) ? $_POST['imagetype'] : 'png';
+            $imagedpi = in_array($_POST['imagedpi'] ?? '', $allowedDpi, true) ? $_POST['imagedpi'] : '150';
+            $margins = in_array($_POST['margins'] ?? '', $allowedMargins, true) ? $_POST['margins'] : '3';
+            $errorcorrection = in_array($_POST['errorcorrection'] ?? '', $allowedErrorCorrection, true) ? $_POST['errorcorrection'] : 'Q';
+
+            // Fixed string, no user input involved -- but shelling out for
+            // a plain glob+delete is unnecessary, so this no longer does
+            // either. array_map('unlink', ...) over glob()'s own matches
+            // already only touches files that exist, same as -f's
+            // "don't error on missing" behavior.
+            array_map('unlink', glob('cache/qr-*') ?: []);
             $file = tempnam('cache', 'qr-image-');
             $str = tempnam('cache', 'qr-text-');
             $filename = array_reverse( explode('/', $file) )[0];
@@ -844,16 +871,22 @@ require_once(__DIR__ . '/appointment_files.php');
             // $str = 'cache/qr-text';
 
             file_put_contents($str, $_POST['qrtext']);
-            
-            $errorcorrection = $_POST['errorcorrection'];
-            $imagedpi = $_POST['imagedpi'];
-            $imagetype = $_POST['imagetype'];
-            $margins = $_POST['margins'];
 
-            $cmd = "qrencode --type=$imagetype --level=$errorcorrection --dpi=$imagedpi --margin=$margins -r $str -o $file";
-            echopre("$cmd");
-            $s = shell_exec( $cmd );
-            // echopre("shell_exec() output: $s");
+            $command = ['qrencode', '--type=' . $imagetype, '--level=' . $errorcorrection, '--dpi=' . $imagedpi, '--margin=' . $margins, '-r', $str, '-o', $file];
+            echopre(print_r($command, 1));
+
+            $descriptors = [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
+            $process = proc_open($command, $descriptors, $pipes);
+            if(is_resource($process)) {
+                fclose($pipes[0]);
+                stream_get_contents($pipes[1]);
+                fclose($pipes[1]);
+                $stderr = stream_get_contents($pipes[2]);
+                fclose($pipes[2]);
+                $exitCode = proc_close($process);
+                // echopre("qrencode exit code: $exitCode, stderr: $stderr");
+            }
+
             return Renderer::render('genqr.zetem', ['qrimage' => $filename,'qrtext' => $_POST['qrtext']]);
         }
     }

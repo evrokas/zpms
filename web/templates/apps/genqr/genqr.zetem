@@ -69,7 +69,7 @@
     <div class="output">
         {% if(isset($qrimage)): %}
             <div class="text">
-                Text: <span>{{$qrtext}}</span>
+                Text: <span>{{{$qrtext}}}</span>
             </div>
             <div class="qrimage">
                 <img src="{{$qrimage|cache_asset}}" id="qrimage" alt="Generated QR image">
