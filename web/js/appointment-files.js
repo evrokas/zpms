@@ -122,6 +122,7 @@ function uploadOneFile(file, uploadUrl, previewsContainer, existingFilesContaine
 
     const formData = new FormData();
     formData.append('appointmentFile', file);
+    formData.append('csrf_token', csrfToken());
 
     fetch(uploadUrl, { method: 'POST', body: formData })
         .then(function(response) {
@@ -279,7 +280,7 @@ function handleDelegatedClick(e) {
         const fileItem = deleteBtn.closest('.file-item');
         deleteBtn.disabled = true;
 
-        fetch(url, { method: 'POST' })
+        fetch(url, { method: 'POST', headers: { 'X-CSRF-Token': csrfToken() } })
             .then(function(response) { return response.json(); })
             .then(function(data) {
                 if (data && data.success && fileItem) {

@@ -43,6 +43,22 @@ require_once(__DIR__ . '/appointment_files.php');
     // echo( "Method: " . $req->getMethod() . '  string: ' . $req->getQueryString() . "<br/>" );
     // print_r( $handlers );
     zeusfw_session_start();
+
+    // Opt in to CSRF enforcement on the shared login_post() -- see
+    // csrfClass::$enforceLogin's docblock (zeusfw core/lib/Csrf.php).
+    // Safe to do unconditionally: web/templates/content/login.zetem
+    // (zpms's own override of the core login form) always renders
+    // csrf_field() now, so every real login submission already carries
+    // a valid token.
+    csrfClass::enableLoginProtection();
+
+    // Same reasoning for the shared webforms dispatcher -- see
+    // csrfClass::$enforceWebforms's docblock. generateHTMLForm() already
+    // renders csrf_field() into every DB-defined webform unconditionally
+    // (framework-wide, harmless for apps that don't check it); this just
+    // tells processform() to actually verify it for zpms's own webforms.
+    csrfClass::enableWebformProtection();
+
     $kernel->isUserLoggedin();
     // if($kernel->isUserLoggedin()) {
         // echo "<pre>User has been logged in!</pre>";
@@ -305,6 +321,16 @@ require_once(__DIR__ . '/appointment_files.php');
 
         SecurityClass::require('patients-edit-patient');
 
+        if(!csrfClass::verifyRequest()) {
+            if(isset($_POST['use_ajax'])) {
+                echo "FAILED";
+                exit();
+            }
+            $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
+            header('location: '.rel_url('/patients'));
+            exit();
+        }
+
         if(isset($_POST['delete'])) {
             $kernel->addStatus('warning', 'Η επεξεργασία του φακέλου ακυρώθηκε.');
             header('location: '.rel_url('/patients'));
@@ -416,13 +442,19 @@ require_once(__DIR__ . '/appointment_files.php');
         SecurityClass::require('patients-new-patient');
 
         error_log('\nAjax request: '. $kernel->isAjaxRequest()?"true":"false" . "\n");
-        
+
         if(isset($_POST['use_ajax'])) {
             echo "REJECTED";
             exit();
         }
 
         if(!isset($_POST['submit']) && !isset($_POST['submitedit']))exit();
+
+        if(!csrfClass::verifyRequest()) {
+            $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
+            header('location: '.rel_url('/patient/new'));
+            exit();
+        }
 
         // echo "this is the post version<br/>";
         $pc = new patientsClass([
@@ -550,6 +582,16 @@ require_once(__DIR__ . '/appointment_files.php');
         global $kernel;
 
         SecurityClass::require('appointment-edit');
+
+        if(!csrfClass::verifyRequest()) {
+            if(key_exists('use_ajax', $_POST)) {
+                echo "FAILED";
+                exit();
+            }
+            $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
+            header('location: '.rel_url('/appointments'));
+            exit();
+        }
 
         if(isset($_POST['delete'])) {
             // $kernel->addStatus('warning', 'Η επεξεργασία του φακέλου ακυρώθηκε.');
@@ -685,6 +727,12 @@ require_once(__DIR__ . '/appointment_files.php');
     function patient_appointment_new_post($params) {
         global $kernel;
 
+        if(!csrfClass::verifyRequest()) {
+            $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
+            header('location: '.rel_url('/patient/'.$params['id'].'/edit'));
+            exit();
+        }
+
         // error_log("<pre>patient_appointment_new_post: ".print_r($params, 1)."</pre>");
         // error_log("\nPatient id: " );
         if(isset($_POST['cancel'])) {
@@ -783,6 +831,8 @@ require_once(__DIR__ . '/appointment_files.php');
             return Renderer::render('genqr.zetem', []);
 
         } else {
+            if(($err = csrfClass::requireValid()))return $err;
+
             // echopre("qrtext: " . $_POST['qrtext']);
             // POST method
             shell_exec("rm -f cache/qr-*");

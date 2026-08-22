@@ -5,6 +5,7 @@
 <!-- <hr> -->
 <div class="appointment-entry" id="app-{{$index}}">
     <form action="{{$action}}" method="post">
+        {{ csrf_field() }}
         <div class="input-header">
             <div class="input-div" role="rendezvouz">
                 <!-- <label for="patient-date">Ημ/νια & Ώρα ραντεβού</label> -->

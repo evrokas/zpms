@@ -294,6 +294,10 @@ function appointment_file_upload($params) {
         appointment_files_json(['success' => false, 'error' => 'unauthorized'], 401);
     }
 
+    if(!csrfClass::verifyRequest()) {
+        appointment_files_json(['success' => false, 'error' => 'invalid csrf token'], 403);
+    }
+
     if(!isset($params['id'])) {
         appointment_files_json(['success' => false, 'error' => 'appointment not found'], 404);
     }
@@ -390,6 +394,10 @@ function appointment_file_delete($params) {
 
     if(($ret = SecurityClass::require('appointment-edit'))) {
         appointment_files_json(['success' => false, 'error' => 'unauthorized'], 401);
+    }
+
+    if(!csrfClass::verifyRequest()) {
+        appointment_files_json(['success' => false, 'error' => 'invalid csrf token'], 403);
     }
 
     if(!isset($params['id']) || !isset($params['fileid'])) {

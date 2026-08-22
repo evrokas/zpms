@@ -54,6 +54,12 @@ class UserProfileModule extends moduleClass {
         // (disabled/read-only) form has no 'action' field at all, so this
         // check can't collide with anything else this route already does.
         if($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'revoke_device') {
+            if(!csrfClass::verifyRequest()) {
+                $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
+                header('location: ' . rel_url('/profile'));
+                exit();
+            }
+
             $u = $kernel->getUserName();
             $id = (int)($_POST['token_id'] ?? 0);
             if($u && $id) {

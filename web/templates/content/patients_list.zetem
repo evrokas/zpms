@@ -12,6 +12,7 @@
 
 <div class="search">
     <form action="{{rel_url('patients/search')}}" method="post">
+        {{ csrf_field() }}
         <div class="input-div">
             <label for="search-term">{{t("Search")}}</label>
             <input type="text" class="select2 focus-primary" name="search-term" id="" autocomplete="off" placeholder="Αναζήτηση ασθενών..." value="{% if(isset($search_term))echo $search_term; %}">

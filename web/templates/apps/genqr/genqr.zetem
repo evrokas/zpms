@@ -10,6 +10,7 @@
 
 <div class="genqr">
     <form action="/apps/genqr" method="post">
+        {{ csrf_field() }}
         <!-- <label for="qrtext">Text</label> -->
         <input type="text" name="qrtext" id="qrtext" placeholder="Enter the text to be encoded">
         <div class="options">

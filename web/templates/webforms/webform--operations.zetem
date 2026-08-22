@@ -4,6 +4,7 @@
 <div class="patient-selection">
     <div class="search">
         <form action="{{rel_url('patients/searchajax/term')}}" method="post">
+            {{ csrf_field() }}
             <div class="input-div">
                 <label for="search-term">{{t("Search")}}</label>
                 <input type="text" class="select2" name="search-term" id="" autocomplete="off" value="{% if(isset($search_term))echo $search_term; %}">

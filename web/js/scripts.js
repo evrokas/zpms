@@ -12,6 +12,17 @@
 
 // console.log('scripts.js is loaded!');
 
+// Shared by every fetch()/XHR call in this app that mutates state -- reads
+// the per-session token the page shell renders into <meta name="csrf-token">
+// (web/templates/page/main.zetem). A <form method="post"> instead carries
+// its own hidden csrf_token field (csrf_field(), server-rendered) and needs
+// no JS at all; this helper is only for calls that build their own
+// FormData/JSON body by hand, so the hidden field never gets included
+// automatically.
+function csrfToken() {
+    var meta = document.querySelector('meta[name="csrf-token"]');
+    return meta ? meta.content : '';
+}
 
 function adjustSubmenuJustification() {
     const menuItems = document.querySelectorAll('.submenu-item');

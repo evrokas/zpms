@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+
+    {% if(isset($meta))foreach($meta as $metaline): %}
+        <meta {{ $metaline }}>
+    {% endforeach; %}
+
+    {# check to see if there is title defined in yaml #}
+    {% if(isset($title)): %}
+        <title>{{ $title }}</title>
+    {% endif %}
+
+    {% if(isset($links))foreach($links as $link): %}
+        <link {{$link->getAttributes()}}>
+    {% endforeach; %}
+
+    {% foreach($head_links as $hlink): %}
+        <script head_links {{$hlink->getAttributes()}}></script>
+    {% endforeach %}
+
+    {#
+    {% if(isset($head_scripts))foreach($head_scripts as $scrpt): %}
+        <script head_scripts type="{{$scrpt['type']}}" src="{{rel_url($scrpt['src'])}}"></script>
+    {% endforeach; %}
+    #}
+</head>
+<body>
+
+    {% if(isset($fonts))foreach($fonts as $font): %}
+    <style type="text/css">
+        @font-face {
+            font-family: "{{ $font['font-family'] }}";
+            src: url( "{{ rel_url( $font['url']) }}" ) {% if(isset($font['format'])): %} format("{{$font['format'] }}") {% endif %};
+        }
+    </style>
+    {% endforeach %}
+
+
+    {% include page.zetem %}
+
+    {% if(isset($foot_links))foreach($foot_links as $link): %}
+        <script foot_links {{$link->getAttributes()}}></script>
+    {% endforeach; %}
+
+</body>

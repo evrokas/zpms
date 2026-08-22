@@ -4,6 +4,7 @@
     Userid: {{$user->getuname()}}
 
     <form action="#" method="post">
+        {{ csrf_field() }}
         <div class="fields">
             <label for="useractive">User account active</label>
             <input type="checkbox" name="useractive" disabled {{ ($user->getactive()==1)?"checked":"" }}>
@@ -27,6 +28,7 @@
     </form>
 
     <form action="#" method="post">
+        {{ csrf_field() }}
         <div class="totp">
         <h2>TOTP security</h2>
         {% if(!$totp_activated): %}
@@ -93,6 +95,7 @@
                 <td>{{{$device->getexpiry()}}}</td>
                 <td>
                     <form action="{{rel_url('/profile')}}" method="post">
+                        {{ csrf_field() }}
                         <input type="hidden" name="action" value="revoke_device">
                         <input type="hidden" name="token_id" value="{{(int)$device->getid()}}">
                         <button type="submit">{{t("Revoke")}}</button>

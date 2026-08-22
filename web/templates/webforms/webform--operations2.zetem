@@ -3,6 +3,7 @@
 
 
 <form action="/apps/zpms/web/webform/processform/95bb1452-b2ed-4a4e-971b-efa8cf632407" method="post" class="webform">
+    {{ csrf_field() }}
     <div class="form_elements">
 
         <label>Operation date</label>

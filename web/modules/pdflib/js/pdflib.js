@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const uploadFile = (file) => {
         const formData = new FormData();
         formData.append("pdfFile", file);
+        formData.append("csrf_token", csrfToken());
 
         resultDiv.textContent = "Uploading file... Please wait.";
 

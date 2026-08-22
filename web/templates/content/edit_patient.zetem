@@ -9,6 +9,7 @@
         <h4>Επεξεργασία στοιχείων ασθενή</h4>
     </div>
     <form action="{{$action}}" method="post">
+        {{ csrf_field() }}
 
         {#
             <div class="input-div">

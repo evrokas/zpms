@@ -4,6 +4,7 @@
     <div class="pdflib-container">
         <h1>Upload PDF File</h1>
         <form id="uploadForm" action="pdflib-process" method="post" enctype="multipart/form-data">
+            {{ csrf_field() }}
             <label for="pdfFile">Choose a PDF file or drag and drop it below:</label>
             <!-- <input type="file" id="pdfFile" name="pdfFile" accept="application/pdf" required> -->
             <!-- <div id="dropZone">Drag and drop your PDF file here</div> -->

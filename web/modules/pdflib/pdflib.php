@@ -116,6 +116,15 @@ function pdflib_process($params) {
 
     SecurityClass::require('pdflib-access');
 
+    if (!csrfClass::verifyRequest()) {
+        global $kernel;
+        $results = 'Invalid CSRF token';
+        $kernel->addStatus('error', $results);
+        http_response_code(403);
+        echo json_encode($results);
+        exit();
+    }
+
     if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['pdfFile'])) {
 
         $fileName = basename(basename($_FILES['pdfFile']['name']));

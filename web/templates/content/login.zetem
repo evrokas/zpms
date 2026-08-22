@@ -3,7 +3,8 @@
         {{t("Enter your credentials to login")}}    
     </div>    
 
-    <form action="{{$action}}" method="post">    
+    <form action="{{$action}}" method="post">
+        {{ csrf_field() }}
         <div class="field">
             <label for="username">{{t("Username")}}</label>
             <input type="text" name="username" id="username">
