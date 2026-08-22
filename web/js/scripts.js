@@ -376,3 +376,79 @@ function dobChange(e) {
 
 }
 
+
+/* live duplicate-name check on the "new patient" form -- see
+ * patient_new_check_name() in index.php. Only ever finds a
+ * [data-check-duplicate] input on the /patient/new page, so this whole
+ * block is a no-op everywhere else. */
+function escapeHtml(str) {
+    if(str === null || str === undefined) return '';
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+let duplicateCheckInput = document.querySelector('[data-check-duplicate]');
+let duplicateCheckBox = document.getElementById('duplicate-warning');
+
+if(duplicateCheckInput && duplicateCheckBox) {
+    let duplicateCheckTimeout;
+
+    function renderDuplicateWarning(matches) {
+        if(!matches || matches.length === 0) {
+            duplicateCheckBox.style.display = 'none';
+            duplicateCheckBox.innerHTML = '';
+            return;
+        }
+
+        let html = '<p>' + (matches.length > 1
+            ? 'Βρέθηκαν ήδη ασθενείς με αυτό το όνομα:'
+            : 'Υπάρχει ήδη ασθενής με αυτό το όνομα:') + '</p><ul>';
+
+        matches.forEach(m => {
+            html += '<li>'
+                + '<span class="name">' + escapeHtml(m.name) + '</span>'
+                + '<span class="amka">ΑΜΚΑ: ' + escapeHtml(m.amka || '—') + '</span>'
+                + '<a class="load-existing" href="' + escapeHtml(m.link) + '">Φόρτωση φακέλου</a>'
+                + '</li>';
+        });
+
+        html += '</ul>';
+
+        duplicateCheckBox.innerHTML = html;
+        duplicateCheckBox.style.display = 'block';
+    }
+
+    duplicateCheckInput.addEventListener('input', (ev) => {
+        clearTimeout(duplicateCheckTimeout);
+
+        let term = ev.target.value.trim();
+        if(term.length < 2) {
+            renderDuplicateWarning([]);
+            return;
+        }
+
+        duplicateCheckTimeout = setTimeout(() => {
+            let url = window.location.pathname.replace(/\/?$/, '/') + 'namecheck';
+
+            fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'pname=' + encodeURIComponent(term)
+            })
+            .then(res => res.json())
+            .then(data => renderDuplicateWarning(data.matches))
+            .catch(err => console.log('duplicate name check failed', err));
+        }, 300);
+    });
+
+    /* clicking a match navigates away and abandons whatever else was
+     * typed into the new-patient form so far -- confirm first */
+    duplicateCheckBox.addEventListener('click', (ev) => {
+        let link = ev.target.closest('a.load-existing');
+        if(!link) return;
+
+        if(!confirm('Υπάρχει ήδη ασθενής με αυτό το όνομα. Θέλετε να φορτώσετε τον υπάρχοντα φάκελο ασθενή; Τα στοιχεία που καταχωρήσατε δεν θα αποθηκευτούν.')) {
+            ev.preventDefault();
+        }
+    });
+}
+

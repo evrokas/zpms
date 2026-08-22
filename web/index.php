@@ -453,6 +453,48 @@ require_once(__DIR__ . '/appointment_files.php');
         exit();
     }
 
+    /**
+     * Live duplicate-name check for the "new patient" form
+     * (edit_patient.zetem, action=='new'). Called on every keystroke
+     * (debounced client-side, see [data-check-duplicate] in scripts.js)
+     * so staff creating a patient record are warned before they save a
+     * second record for someone already on file, and can jump straight
+     * to the existing one instead. Name-only scope (unlike the general
+     * patients_list_search_ajax, which also matches ptel/pamka) since a
+     * phone/AMKA coincidence isn't a "same patient name" duplicate.
+     */
+    function patient_new_check_name($params) {
+        header('Content-Type: application/json');
+
+        if (SecurityClass::require('patients-new-patient')) {
+            http_response_code(401);
+            echo json_encode(['matches' => []]);
+            exit();
+        }
+
+        $term = trim((string)($_POST['pname'] ?? ''));
+
+        if (mb_strlen($term) < 2) {
+            echo json_encode(['matches' => []]);
+            exit();
+        }
+
+        $found = patientsClassEx::search($term, ['pname'], true, 8);
+
+        $matches = [];
+        foreach ((array)$found as $p) {
+            $matches[] = [
+                'id' => $p->getid(),
+                'name' => $p->getpname(),
+                'amka' => $p->getpamka(),
+                'link' => rel_url('/patient/' . $p->getid() . '/edit'),
+            ];
+        }
+
+        echo json_encode(['matches' => $matches]);
+        exit();
+    }
+
     function appointments_list($params) {
         global $kernel;
 

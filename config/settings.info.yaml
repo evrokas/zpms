@@ -256,6 +256,11 @@ routes:
     url: /patient/new
     handler: patient_new_post
     method: post
+  patient_new_namecheck:
+    title: "New patient duplicate name check"
+    url: /patient/new/namecheck
+    handler: patient_new_check_name
+    method: post
   patient_delete:
     title: "Patient delete"
     url: "/patient/{id}/delete"

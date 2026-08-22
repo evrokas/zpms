@@ -21,12 +21,17 @@
 
         <div class="input-div">
             <label for="patient-name">Όνομα ασθενή</label>
-            <input type="text" name="patient-name" loader="info-loader" id="" value="{{$patient->getpname()}}" placeholder="όνομα ασθενούς">
+            <input type="text" name="patient-name" loader="info-loader" id="" value="{{$patient->getpname()}}" placeholder="όνομα ασθενούς"
+                {% if($action == 'new'): %}data-check-duplicate="1" autocomplete="off"{% endif %}>
 
             <div class="inline-icons">
                 <i class="bx bx-copy" data-copy-text="{{$patient->getpname()}}" onclick0="copyStr('{{$patient->getpname()}}')"></i>
             </div>
         </div>
+
+        {% if($action == 'new'): %}
+            <div class="duplicate-warning" id="duplicate-warning" style="display:none;"></div>
+        {% endif %}
 <!-- 
         <div class="input-div">
             <label for="patient-dob">Ημ/νια Γεννήσεως</label>
