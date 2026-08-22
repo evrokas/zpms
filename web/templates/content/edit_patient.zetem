@@ -22,11 +22,11 @@
 
         <div class="input-div">
             <label for="patient-name">Όνομα ασθενή</label>
-            <input type="text" name="patient-name" loader="info-loader" id="" value="{{$patient->getpname()}}" placeholder="όνομα ασθενούς"
+            <input type="text" name="patient-name" loader="info-loader" id="" value="{{{$patient->getpname()}}}" placeholder="όνομα ασθενούς"
                 {% if($action == 'new'): %}data-check-duplicate="1" autocomplete="off"{% endif %}>
 
             <div class="inline-icons">
-                <i class="bx bx-copy" data-copy-text="{{$patient->getpname()}}" onclick0="copyStr('{{$patient->getpname()}}')"></i>
+                <i class="bx bx-copy" data-copy-text="{{{$patient->getpname()}}}"></i>
             </div>
         </div>
 
@@ -77,13 +77,13 @@
             {# 
                 <input type="text" name="patient-amka" loader="info-loader" validator="amka" value="{{$patient->getpamka()}}" placeholder="ΑΜΚΑ ασθενούς">
             #}
-            <input type="text" name="patient-amka" loader="info-loader" validator="amka" value="{{$patient->getpamka()}}" placeholder="ΑΜΚΑ ασθενούς">
-            
+            <input type="text" name="patient-amka" loader="info-loader" validator="amka" value="{{{$patient->getpamka()}}}" placeholder="ΑΜΚΑ ασθενούς">
+
             <div class="inline-icons">
                 <i class='valid bx bx-check' style='color:#00ff00'  ></i>
                 <i class='not-valid bx bx-error' style='color:#ff0000'  ></i>
-                
-                <i class="bx bx-copy" data-copy-text="{{$patient->getpamka()}}" onclick0="copyStr0('{{$patient->getpamka()}}')"></i>
+
+                <i class="bx bx-copy" data-copy-text="{{{$patient->getpamka()}}}"></i>
             </div>
 
             <!-- <img class="valid" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAABAklEQVRIS+2TSwrCMBRFU9A1qCj4W4ao+3AD4tSNOHPg3IX4w034RUXdgxDPsxE/mCaonbVwG2iac9+7fQ1UzFcQM18lBs6Ek4jCiLTKcG8xMr33zH6PSKsc0AmqojYmg2eT3wy0ygMbowpaoDoGp/8YhPAZKtrgYvRdB57waAOturwwpITzy4d7jWVpYjnafojPHWjV4UAfCaCJycFMS4F1amJZszbY29vg9g60yrI5RyW0RTWUQiMD35jKI+GuiKRaAcqESLVpJM9WpisnPNpAdvUNKDMuncjlXfk9NvcUPUzkjMy5V+X+BmEnZe4X4Lv7Qd/V3YEvyfJeYuAMMPaIrlEoNRkz68QbAAAAAElFTkSuQmCC"/> -->
@@ -92,37 +92,37 @@
 
         <div class="input-div">
             <label for="patient-telephone">Τηλέφωνο</label>
-            <input type="text" name="patient-telephone" loader="info-loader" validator="telephone" value="{{$patient->getptel()}}" placeholder="τηλέφωνο ασθενούς">
+            <input type="text" name="patient-telephone" loader="info-loader" validator="telephone" value="{{{$patient->getptel()}}}" placeholder="τηλέφωνο ασθενούς">
 
             <div class="inline-icons">
                 <i class='valid bx bx-check' style='color:#00ff00'  ></i>
                 <i class='not-valid bx bx-error' style='color:#ff0000'  ></i>
-                
-                <a href="tel:{{$patient->getptel()}}"><i class="bx bx-phone-call"></i></a>
-                <i class="bx bx-copy" data-copy-text="{{$patient->getptel()}}"onclick="copyStr0('{{$patient->getptel()}}')"></i>
+
+                <a href="tel:{{{$patient->getptel()}}}"><i class="bx bx-phone-call"></i></a>
+                <i class="bx bx-copy" data-copy-text="{{{$patient->getptel()}}}"></i>
             </div>
         </div>
 
         <div class="input-div">
             <label for="patient-email">Email</label>
-            <input type="text" name="patient-email" loader="info-loader" validator="email" value="{{$patient->getpemail()}}" placeholder="email ασθενούς">
-            
+            <input type="text" name="patient-email" loader="info-loader" validator="email" value="{{{$patient->getpemail()}}}" placeholder="email ασθενούς">
+
                 <div class="inline-icons">
                     <i class='valid bx bx-check' style='color:#00ff00'  ></i>
                     <i class='not-valid bx bx-error' style='color:#ff0000'  ></i>
-                    
-                    <i class="bx bx-copy" onclick="copyStr('{{$patient->getpemail()}}')"></i>
+
+                    <i class="bx bx-copy" data-copy-text="{{{$patient->getpemail()}}}"></i>
                 </div>
         </div>
 
         <div class="input-div">
             <label for="patient-address">Διεύθυνση</label>
-            <input type="text" name="patient-address" loader="info-loader" id=""  value="{{$patient->getpaddr()}}" placeholder="διεύθυνση ασθενούς">
+            <input type="text" name="patient-address" loader="info-loader" id=""  value="{{{$patient->getpaddr()}}}" placeholder="διεύθυνση ασθενούς">
         </div>
 
         <div class="input-div">
             <label for="patient-note">Σημειώσεις</label>
-            <textarea name="patient-note" loader="info-loader" autoexpand id="" rows="5" placeholder="σημειώσεις">{{$patient->getpnote()}}</textarea>
+            <textarea name="patient-note" loader="info-loader" autoexpand id="" rows="5" placeholder="σημειώσεις">{{{$patient->getpnote()}}}</textarea>
         </div>
         <div class="buttons">
             <input type="submit" name="submit" value="Αποθήκευση">

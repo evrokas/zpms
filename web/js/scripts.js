@@ -164,6 +164,20 @@ function copyStr0(astr) {
     console.log( astr );
 }
 
+// Delegated handler for [data-copy-text] copy icons -- reads the value via
+// getAttribute() rather than having it embedded in an inline onclick="..."
+// JS string. That distinction matters: the browser HTML-decodes an
+// attribute's contents *before* handing it to the JS parser, so even a
+// fully HTML-escaped value embedded in onclick="copyStr('...')" can still
+// contain a literal quote by the time it's parsed as code, breaking out of
+// the string. Reading the same value back out of a plain attribute never
+// re-parses it as anything but text, so this is safe regardless of content.
+document.querySelectorAll('[data-copy-text]').forEach(function(el) {
+    el.addEventListener('click', function() {
+        navigator.clipboard.writeText(el.getAttribute('data-copy-text') || '');
+    });
+});
+
 
 // input validation code
 let validatorArray = [];
