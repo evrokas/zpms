@@ -25,7 +25,7 @@ class TestFixtures {
             // Space-separated role string (SecurityClass::processRoles()) --
             // 'power-user' maps to a real permission array in
             // config/settings.info.yaml's roles: block (patients CRUD,
-            // appointment-edit, pdflib/backup access) and, unlike
+            // appointment-edit, backup access) and, unlike
             // 'administrator', is never passed anywhere that expects an
             // array where the config only supplies the string 'all'.
             'roles' => 'power-user',

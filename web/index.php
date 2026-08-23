@@ -59,6 +59,19 @@ require_once(__DIR__ . '/appointment_files.php');
     // tells processform() to actually verify it for zpms's own webforms.
     csrfClass::enableWebformProtection();
 
+    // Opt in to the brute-force lockout on the shared login_post() -- see
+    // LoginSecurityClass's docblock (zeusfw core/lib/UserLogin.php). Safe
+    // to enable unconditionally: every account starts at wrongpasscount=0,
+    // so this can't retroactively lock anyone out, it only starts counting
+    // failed attempts from here on. Deliberately NOT also calling
+    // enableAccountStatusEnforcement() here -- that one requires first
+    // confirming every real account in this server's users table actually
+    // has active=1 and expired=0 set (see the same docblock for why an
+    // account can be working today without that being true), which needs
+    // a human with production DB access to check, not something this
+    // change can safely assume.
+    LoginSecurityClass::enableLockout();
+
     $kernel->isUserLoggedin();
     // if($kernel->isUserLoggedin()) {
         // echo "<pre>User has been logged in!</pre>";
@@ -411,6 +424,20 @@ require_once(__DIR__ . '/appointment_files.php');
 
         SecurityClass::require('patients-delete-patient');
 
+        // Was a plain GET link (a bare <a href>, no server-side check at
+        // all beyond the role) -- deleting a patient record (and cascading
+        // their appointments below) from a mere GET request is a classic
+        // CSRF hole: a crafted link, <img> tag, or malicious page could
+        // silently delete a record for any logged-in staff member who just
+        // loads it. Now POST-only (see config/settings.info.yaml) with a
+        // real CSRF token, submitted via the small form patients_list.zetem
+        // now renders instead of a bare link.
+        if(!csrfClass::verifyRequest()) {
+            $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
+            header('location: '.rel_url('/patients'));
+            exit();
+        }
+
         $pat = patientsClass::sgetById($params['id']);
 
         $dtime = getDBtime();    // make delete time same for patient and appointments
@@ -543,12 +570,14 @@ require_once(__DIR__ . '/appointment_files.php');
         }
 
         if(isset($_POST['delete'])) {
-            // $kernel->addStatus('warning', 'Η επεξεργασία του φακέλου ακυρώθηκε.');
-            $kernel->pushRouteHistory($_SERVER['HTTP_REFERER']);
-            // $kernel->addStatus('warning', 'Ο αποστολέας της εντολής είναι: '.$_SERVER['HTTP_REFERER']);
-            header('location: '.rel_url('/appointment/'.$params['id'].'/delete'));
-            exit();
-        }            
+            // CSRF was already verified above, in this same request -- delete
+            // directly instead of redirecting through a second GET hop to
+            // /appointment/{id}/delete, which used to have no CSRF check of
+            // its own (that route now requires POST + a token too, so a
+            // plain redirect here wouldn't even satisfy it anymore -- see
+            // appointment_perform_delete()).
+            appointment_perform_delete($params['id']);
+        }
 
         if(!isset($params['id'])) {
             return ("patients doesn't exist");
@@ -594,11 +623,17 @@ require_once(__DIR__ . '/appointment_files.php');
     }
 
 
-    function appointment_delete($params) {
+    // Shared by appointment_delete() (the direct route -- CSRF-checked
+    // there) and appointment_edit_post()'s delete branch above (CSRF
+    // already checked earlier in that same request) -- actually performs
+    // the soft-delete and redirects, so a delete triggered from the inline
+    // appointment card no longer needs a second GET hop through a
+    // separate route to do the real work.
+    function appointment_perform_delete($id) {
         global $kernel;
 
         $ap = new appointmentsClass();
-        $app = $ap->getById($params['id']);
+        $app = $ap->getById($id);
         $app->setdeleted( getDBtime() );
         $app->update();
 
@@ -606,18 +641,33 @@ require_once(__DIR__ . '/appointment_files.php');
 
         $kernel->addStatus('warning', 'Το ραντεβού διαγράφθηκε με επιτυχία.');
 
-        $s = $kernel->popRouteHistory();
-
-        if(!$s) {
-            // No pushed history to return to (e.g. a direct/bookmarked
-            // GET) -- appointments are always viewed from inside their
-            // patient's own record now, so that's the sane fallback
-            // destination rather than a standalone appointments list.
-            $pat = patientsClassEx::sgetByGuid($app->getpguid());
-            $s = $pat ? rel_url('/patient/'.$pat->getid().'/edit') : rel_url('/patients');
-        }
+        // Appointments are always viewed from inside their patient's own
+        // record, so that's always the right place to land back on --
+        // resolved directly from the just-deleted appointment's own
+        // pguid, rather than trusting a Referer/route-history value that
+        // could be missing, spoofed, or simply wrong.
+        $pat = patientsClassEx::sgetByGuid($app->getpguid());
+        $s = $pat ? rel_url('/patient/'.$pat->getid().'/edit') : rel_url('/patients');
         header('location: '.$s);
         exit();
+    }
+
+    function appointment_delete($params) {
+        global $kernel;
+
+        SecurityClass::require('appointment-edit');
+
+        // Was a plain GET link with no CSRF check of its own -- a crafted
+        // link/<img>/malicious page could silently delete an appointment
+        // for any logged-in staff member who just loaded it. Now POST-only
+        // (see config/settings.info.yaml) with a real CSRF token.
+        if(!csrfClass::verifyRequest()) {
+            $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
+            header('location: '.rel_url('/patients'));
+            exit();
+        }
+
+        appointment_perform_delete($params['id']);
     }
 
     function patient_appointment_new($params) {

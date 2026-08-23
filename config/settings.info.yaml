@@ -135,7 +135,6 @@ roles:
     patients-delete-patient, 
     patients-edit-patient, 
     appointment-edit,
-    pdflib-access,
     backup-access
     ]
 
@@ -265,6 +264,7 @@ routes:
     title: "Patient delete"
     url: "/patient/{id}/delete"
     handler: patient_delete
+    method: post
   appointment_edit_post:
     title: "Appointment edit"
     url: "/appointment/{id}/edit"
@@ -274,6 +274,7 @@ routes:
     title: "Appointment delete"
     url: "/appointment/{id}/delete"
     handler: appointment_delete
+    method: post
   patient_appointment_new:
     title: "New patient appointment"
     url: "/appointment/{id}/newappointment"
@@ -436,12 +437,6 @@ menu:
             gr: 'Δημιουργία κωδικού QR'
             en: 'Generate QR code'
           url: /apps/genqr
-        - pdflib-module:
-          text:
-            gr: 'Καταχωρητήριο PDF'
-            en: 'PDF Archive'
-          url: /apps/pdflib
-          access: power-user
         - backup:
           text:
             gr: "Αντίγραφα Ασφαλείας"
@@ -489,7 +484,6 @@ modules:
     - content
     - location
     - datepicker
-    - pdflib
     - language_selector
     - message
     - backup

@@ -21,8 +21,8 @@ dedicated, disposable test database — never the live one. See
 one or the other manually, neither is auto-applied by anything in this
 repo), takes a consistent MySQL dump (`mysqldump --single-transaction`, so
 InnoDB doesn't need locking for a consistent snapshot) and hardlinks
-`web/files/` (the app's upload/library store — e.g. `web/files/pdflib/`
-invoice/receipt scans) alongside it, then ships both off-site via rsync
+`web/files/` (the app's upload/library store — e.g. appointment
+attachments) alongside it, then ships both off-site via rsync
 over SSH using rotating `--link-dest` generations: `daily/` (kept 14 by
 default), promoted into `weekly/` (8) and `monthly/` (12) using the first
 generation of each new ISO week/month, so a missed cron night never leaves

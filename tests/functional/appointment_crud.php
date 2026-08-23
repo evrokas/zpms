@@ -101,10 +101,15 @@ function zpms_functional_appointment_crud(TestRunner $runner, TestHttpClient $ht
         $apptId = $GLOBALS['zpms_test_appointment_id'] ?? null;
         assert_not_null($apptId, 'previous test did not record an appointment id');
 
-        $res = $http->get("/appointment/$apptId/delete");
-        assert_equal(302, $res['status'], "delete-appointment GET did not redirect (got {$res['status']})");
-
+        // Deletion is a POST + CSRF token now, not a bare GET link.
         $patientId = $GLOBALS['zpms_test_appt_patient_id'];
+        $page = $http->get("/patient/$patientId/edit");
+        $token = TestHttpClient::extractCsrfToken($page['body']);
+        assert_not_null($token, 'no csrf_token field found on the patient record');
+
+        $res = $http->post("/appointment/$apptId/delete", ['csrf_token' => $token]);
+        assert_equal(302, $res['status'], "delete-appointment POST did not redirect (got {$res['status']})");
+
         assert_contains("/patient/$patientId/edit", (string)$res['location'], 'delete-appointment did not redirect back to the patient record');
 
         $row = dbConnection::getConnection()
@@ -133,8 +138,12 @@ function zpms_functional_appointment_crud(TestRunner $runner, TestHttpClient $ht
         ]);
         $ap->insert();
 
-        $res = $http->get('/patient/' . $p->getid() . '/delete');
-        assert_equal(302, $res['status'], "delete-patient GET did not redirect (got {$res['status']})");
+        $page = $http->get('/patient/' . $p->getid() . '/edit');
+        $token = TestHttpClient::extractCsrfToken($page['body']);
+        assert_not_null($token, 'no csrf_token field found on the fixture patient record');
+
+        $res = $http->post('/patient/' . $p->getid() . '/delete', ['csrf_token' => $token]);
+        assert_equal(302, $res['status'], "delete-patient POST did not redirect (got {$res['status']})");
 
         $row = dbConnection::getConnection()
             ->query('SELECT deleted FROM appointments WHERE id = ' . $ap->getid())

@@ -79,7 +79,10 @@
                     {% endif %}
                 </td>
                 <td class="actions" data-column="actions">
-                    <a class="icon-btn icon-btn-danger" href="{{rel_url('/patient/'.$pat['id'].'/delete')}}" confirmation title="{{t('Delete')}}"><i class="bx bx-trash"></i></a>
+                    <form class="inline-delete-form" method="post" action="{{rel_url('/patient/'.$pat['id'].'/delete')}}" confirmation>
+                        {{ csrf_field() }}
+                        <button type="submit" class="icon-btn icon-btn-danger" title="{{t('Delete')}}"><i class="bx bx-trash"></i></button>
+                    </form>
                 </td>
             </tr>
             {% endforeach %}

@@ -786,6 +786,21 @@ form .input-div {
     color: var(--error-dark);
 }
 
+/* .icon-btn is also used on a plain <button> now (the patient-delete
+   action needs a real POST + CSRF token, not a bare <a href>) -- reset
+   the browser's default button chrome so it renders identically to the
+   <a> version used elsewhere. */
+button.icon-btn {
+    border: none;
+    background: none;
+    font: inherit;
+    cursor: pointer;
+}
+
+.inline-delete-form {
+    display: inline-flex;
+}
+
 .patients-list table td[data-column="name"] {
     font-weight: 600;
     width: auto;

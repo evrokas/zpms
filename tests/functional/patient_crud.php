@@ -79,8 +79,15 @@ function zpms_functional_patient_crud(TestRunner $runner, TestHttpClient $http):
         $id = $GLOBALS['zpms_test_patient_id'] ?? null;
         assert_not_null($id, 'previous test did not record a patient id');
 
-        $res = $http->get("/patient/$id/delete");
-        assert_equal(302, $res['status'], "delete-patient GET did not redirect (got {$res['status']})");
+        // Deletion is a POST + CSRF token now, not a bare GET link -- see
+        // patients_list.zetem's delete form. The token is session-wide, so
+        // any already-rendered page's copy works; /patients renders one.
+        $listPage = $http->get('/patients');
+        $token = TestHttpClient::extractCsrfToken($listPage['body']);
+        assert_not_null($token, 'no csrf_token field found on /patients');
+
+        $res = $http->post("/patient/$id/delete", ['csrf_token' => $token]);
+        assert_equal(302, $res['status'], "delete-patient POST did not redirect (got {$res['status']})");
 
         $row = dbConnection::getConnection()
             ->query("SELECT deleted FROM patients WHERE id = $id")
