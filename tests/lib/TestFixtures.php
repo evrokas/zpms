@@ -1,14 +1,18 @@
 <?php
 /* Shared setup helpers for the functional (HTTP-level) test suites --
- * creating a login-capable test user (there's no user-management UI to
- * drive for this, so it goes directly through the entity class) and
- * logging that user in through the real HTTP login form, exactly the way
- * a person would. */
+ * creating a login-capable test user and logging that user in through the
+ * real HTTP login form, exactly the way a person would. */
 class TestFixtures {
     const USERNAME = 'zpms_test_user';
     const PASSWORD = 'ZpmsTest!Passw0rd';
 
-    /** Inserts a `power-user` test account directly (no admin UI exists to create one via HTTP). */
+    /**
+     * Inserts a `power-user` test account directly through the entity
+     * class rather than the /admin/users HTTP UI (web/admin_crud.php) --
+     * that UI needs an already-logged-in users-manage account to reach at
+     * all, so it can't bootstrap the very first test account this suite
+     * uses to log in with.
+     */
     static function createTestUser(): void {
         TestSchema::assertSafeToMutate();
 

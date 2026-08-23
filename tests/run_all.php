@@ -55,6 +55,7 @@ require_once __DIR__ . '/functional/patient_crud.php';
 require_once __DIR__ . '/functional/appointment_crud.php';
 require_once __DIR__ . '/functional/auth_csrf.php';
 require_once __DIR__ . '/functional/file_upload.php';
+require_once __DIR__ . '/functional/admin_crud.php';
 
 // Fresh database + a login-capable test account, every run -- see
 // TestSchema::reset()'s own docblock for why this matters.
@@ -85,6 +86,27 @@ try {
     $authRunner = new TestRunner('Auth + CSRF');
     zpms_functional_auth_csrf($authRunner, $server->baseUrl());
     $ok = $authRunner->run() && $ok;
+
+    // Fresh server for this suite, rather than the same long-lived one
+    // the four suites above already ran dozens of requests through --
+    // php -S's single-process dev server reliably became unresponsive
+    // (every further request timing out, including a bare unauthenticated
+    // GET /login) a couple of requests into this suite specifically when
+    // it ran on the shared, already-busy server, but never when the exact
+    // same suite ran against its own fresh one (confirmed by running it
+    // standalone). Restarting between suites costs under a second and
+    // sidesteps whatever that dev-server-only degradation is -- it isn't
+    // specific to anything this suite's requests do differently from the
+    // others, and a real deployment never runs under php -S anyway.
+    $server->stop();
+    $server = new TestServer();
+    $server->start();
+
+    // Its own is_superuser client too -- the plain power-user $http above
+    // is not granted users-manage.
+    $adminCrudRunner = new TestRunner('Admin CRUD (users/roles/permissions)');
+    zpms_functional_admin_crud($adminCrudRunner, $server->baseUrl());
+    $ok = $adminCrudRunner->run() && $ok;
 } finally {
     $server->stop();
 }

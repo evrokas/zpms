@@ -23,3 +23,16 @@
 <p>
     {{$doctors}}
 </p>
+
+{% if($show_user_management): %}
+<hr>
+
+<h3 style="text-align: center">User &amp; Role Management</h3>
+<p style="text-align: center">
+    <a href="{{rel_url('/admin/users')}}">Users</a> &middot;
+    <a href="{{rel_url('/admin/roles')}}">Roles</a> &middot;
+    <a href="{{rel_url('/admin/permissions')}}">Permissions</a> &middot;
+    <a href="{{rel_url('/admin/role_permissions')}}">Role Permissions</a> &middot;
+    <a href="{{rel_url('/admin/user_roles')}}">User Roles</a>
+</p>
+{% endif %}

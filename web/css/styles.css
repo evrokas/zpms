@@ -801,6 +801,55 @@ button.icon-btn {
     display: inline-flex;
 }
 
+/* Tab strip linking between the 5 admin-managed entities (users, roles,
+   permissions, role_permissions, user_roles) -- web/templates/content/
+   admin_list.zetem. */
+.admin-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin: 0 1.5rem 1rem;
+}
+
+.admin-tab {
+    padding: 0.4rem 0.9rem;
+    border-radius: var(--border-radius);
+    border: 1.5px solid var(--medium-gray);
+    color: var(--dark-gray);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+}
+
+.admin-tab:hover {
+    background-color: var(--light-gray);
+    color: var(--text);
+}
+
+.admin-tab-active {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    color: white;
+}
+
+/* Same neutral/secondary treatment as .buttons input[type="submit"]
+   .btn-secondary above, extended to a plain <a> -- admin_form.zetem's
+   Cancel link is a link (back to the list), not a form submit. */
+a.btn-secondary {
+    display: inline-block;
+    padding: 0.6rem 1.2rem;
+    border-radius: var(--border-radius);
+    background-color: white;
+    color: var(--dark-gray);
+    border: 1.5px solid var(--medium-gray);
+    text-decoration: none;
+}
+
+a.btn-secondary:hover {
+    background-color: var(--light-gray);
+    border-color: var(--dark-gray);
+    color: var(--text);
+}
+
 .patients-list table td[data-column="name"] {
     font-weight: 600;
     width: auto;

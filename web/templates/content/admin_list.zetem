@@ -1,0 +1,52 @@
+{% attach_library('boxicons') %}
+
+<div class="patients-header">
+    <h2 class="page-title">{{{$entity_label}}}</h2>
+    <a class="btn-add-patient" href="{{rel_url('/admin/'.$entity.'/new')}}">
+        <i class="bx bx-plus"></i> Add new
+    </a>
+</div>
+
+<div class="admin-tabs">
+    {% foreach($entities as $key => $def): %}
+        <a href="{{rel_url('/admin/'.$key)}}" class="admin-tab{% if($key == $entity): %} admin-tab-active{% endif %}">{{{$def['label']}}}</a>
+    {% endforeach %}
+</div>
+
+<div class="admin-list patients-list">
+    {% if(count($rows) == 0): %}
+        <div class="patients-empty">
+            <i class="bx bx-inbox"></i>
+            <p>No {{{$entity_label}}} found.</p>
+        </div>
+    {% else: %}
+    <div class="settings-table-scroll">
+    <table>
+        <thead>
+            <tr>
+            {% foreach($columns as $col): %}
+                <th>{{{$col}}}</th>
+            {% endforeach %}
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% foreach($rows as $row): %}
+            <tr>
+                {% foreach($row as $value): %}
+                <td>{{{$value}}}</td>
+                {% endforeach %}
+                <td class="actions">
+                    <a class="icon-btn" href="{{rel_url('/admin/'.$entity.'/'.$row[0].'/edit')}}" title="Edit"><i class="bx bx-edit"></i></a>
+                    <form class="inline-delete-form" method="post" action="{{rel_url('/admin/'.$entity.'/'.$row[0].'/delete')}}" confirmation>
+                        {{ csrf_field() }}
+                        <button type="submit" class="icon-btn icon-btn-danger" title="Delete"><i class="bx bx-trash"></i></button>
+                    </form>
+                </td>
+            </tr>
+            {% endforeach %}
+        </tbody>
+    </table>
+    </div>
+    {% endif %}
+</div>

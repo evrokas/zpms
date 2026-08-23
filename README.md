@@ -26,11 +26,21 @@ bugs in the previous system this replaced — most importantly, every
 permission check silently passed for any logged-in user regardless of
 role, so this isn't just a schema cleanup.
 
-There's no admin UI for this yet — grant/revoke a role directly via
-`user_rolesClassEx::assignRole($userId, $roleId, $actingUsername)` /
-`removeRole($userId, $roleId)` (`web/rbac.php`), the same way accounts
-themselves are created today (see `tests/lib/TestFixtures.php` for the
-shape of a direct-insert account).
+**Admin UI:** list/add/edit/delete for users and all four RBAC tables
+lives at `/admin/{entity}` (`entity` is `users`, `permissions`, `roles`,
+`role_permissions`, or `user_roles`) — linked from Settings under "User &
+Role Management" for anyone who can see it. Gated behind its own
+`users-manage` permission, deliberately **not** granted to `power-user` by
+default (see `ZPMS_PERM_USERS_MANAGE`'s comment in `web/rbac.php`): this
+page can create a new `is_superuser` role and assign it to any account,
+including its own operator's, so treat it as more sensitive than the
+`settings-manage`-gated Clinics/Doctors pages. Grant it explicitly (via
+the User Roles page itself, or `user_rolesClassEx::assignRole(...)`
+directly) to whichever accounts should have it — an `is_superuser` account
+(the seeded `administrator` role) always has it implicitly and needs no
+explicit grant. One generic engine (`web/admin_crud.php`) drives all five
+entities from a metadata array rather than five near-duplicated pages;
+see that file's own docblock for the shape.
 
 **Deploying this for the first time / to a server still on the old
 scheme:** the new tables must exist before the app code that uses them

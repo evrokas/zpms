@@ -107,6 +107,12 @@ const ZPMS_PERM_PATIENTS_DELETE_PATIENT = 'patients-delete-patient';
 const ZPMS_PERM_APPOINTMENT_EDIT = 'appointment-edit';
 const ZPMS_PERM_BACKUP_ACCESS = 'backup-access';
 const ZPMS_PERM_SETTINGS_MANAGE = 'settings-manage';
+// Deliberately NOT granted to power-user by default (see
+// web/rbac_seed.php) -- this is the one permission that can grant every
+// other one, transitively, by letting its holder create a new
+// is_superuser role and assign it to themselves. Reserve it for
+// is_superuser accounts, or grant it explicitly and deliberately.
+const ZPMS_PERM_USERS_MANAGE = 'users-manage';
 
 // Every permission slug above, in one place -- the single list
 // bin/migrate_roles.php seeds into the permissions table and the
@@ -123,6 +129,7 @@ function zpms_all_permission_slugs(): array {
         ZPMS_PERM_APPOINTMENT_EDIT,
         ZPMS_PERM_BACKUP_ACCESS,
         ZPMS_PERM_SETTINGS_MANAGE,
+        ZPMS_PERM_USERS_MANAGE,
     ];
 }
 

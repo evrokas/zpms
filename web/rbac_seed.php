@@ -12,8 +12,9 @@
 // Matches config/settings.info.yaml's *former* roles: block exactly, as a
 // one-time snapshot taken when this system was introduced -- not
 // something that stays in sync automatically afterward; edit role
-// permissions going forward via role_permissionsClassEx/a future admin UI,
-// not by editing this array and re-running the migration.
+// permissions going forward via the /admin/role_permissions admin UI
+// (web/admin_crud.php) or role_permissionsClassEx directly, not by
+// editing this array and re-running the migration.
 //
 // 'user' only ever had patients-view-list in practice
 // (appointments-view-list was listed in the old YAML but never actually
@@ -61,6 +62,7 @@ function zpms_permission_label_seed(): array {
         ZPMS_PERM_APPOINTMENT_EDIT => 'Create/edit/delete appointments and their attachments',
         ZPMS_PERM_BACKUP_ACCESS => 'View backup status',
         ZPMS_PERM_SETTINGS_MANAGE => 'Manage clinics/doctors reference data',
+        ZPMS_PERM_USERS_MANAGE => 'Manage user accounts and roles/permissions',
     ];
 }
 

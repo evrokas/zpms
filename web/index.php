@@ -15,6 +15,7 @@ require_once(__FWDIR__ . '/bootstrap.php');
 require_once(__DIR__ . '/api_patients.php');
 require_once(__DIR__ . '/appointment_files.php');
 require_once(__DIR__ . '/rbac.php');
+require_once(__DIR__ . '/admin_crud.php');
 
 
     ini_set('session.gc_maxlifetime', 3600);
@@ -775,7 +776,15 @@ require_once(__DIR__ . '/rbac.php');
             'clinics' => formsClass::renderForm('clinics'),
 
             'doctors_table' => formsClass::renderFormResults('doctors'),
-            'doctors' => formsClass::renderForm('doctors')
+            'doctors' => formsClass::renderForm('doctors'),
+
+            // A settings-manage holder doesn't necessarily also have
+            // users-manage (deliberately not granted to power-user by
+            // default -- see ZPMS_PERM_USERS_MANAGE's own comment in
+            // web/rbac.php), so this link is only shown when the current
+            // user actually has it, rather than to everyone who can reach
+            // this page at all.
+            'show_user_management' => zpms_user_has_permission(ZPMS_PERM_USERS_MANAGE),
         ]);
 
     }

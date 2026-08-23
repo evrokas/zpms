@@ -116,7 +116,7 @@ if(trashelements.length>0) {
 /* same confirmation, for a delete action that's now a real POST form
    (needs a CSRF token, so it can't be a bare <a href> anymore) instead
    of a link -- intercepts submit instead of click. */
-let trashforms = document.querySelectorAll('.patients-list form[confirmation]');
+let trashforms = document.querySelectorAll('.patients-list form[confirmation], .admin-list form[confirmation]');
 if(trashforms.length>0) {
     trashforms.forEach(el => {
         el.addEventListener('submit', (e) => {

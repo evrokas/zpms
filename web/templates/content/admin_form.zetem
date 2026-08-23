@@ -1,0 +1,43 @@
+{% attach_library('loader-library'); %}
+
+<div class="edit-patient">
+    <div class="header">
+        <h4>{% if($action == 'new'): %}New {{{$entity_label}}}{% else: %}Edit {{{$entity_label}}}{% endif %}</h4>
+    </div>
+
+    <form method="post" action="{% if($action == 'new'): %}{{rel_url('/admin/'.$entity.'/new')}}{% else: %}{{rel_url('/admin/'.$entity.'/'.$id.'/edit')}}{% endif %}">
+        {{ csrf_field() }}
+
+        {% foreach($fields as $field): %}
+        <div class="input-div">
+            <label for="f-{{{$field['name']}}}">{{{$field['label']}}}{% if(!empty($field['required']) || (!empty($field['required_on_create']) && $action == 'new')): %} *{% endif %}</label>
+
+            {% if($field['type'] == 'password'): %}
+                <input type="password" name="{{{$field['name']}}}" id="f-{{{$field['name']}}}" autocomplete="new-password"
+                    placeholder="{% if($action == 'new'): %}password{% else: %}leave blank to keep the current password{% endif %}"
+                    {% if(!empty($field['required_on_create']) && $action == 'new'): %}required{% endif %}>
+
+            {% elseif($field['type'] == 'checkbox'): %}
+                <input type="checkbox" name="{{{$field['name']}}}" id="f-{{{$field['name']}}}" value="1" {% if($field['value']): %}checked{% endif %}>
+
+            {% elseif($field['type'] == 'select'): %}
+                <select name="{{{$field['name']}}}" id="f-{{{$field['name']}}}">
+                    <option value="">—</option>
+                    {% foreach($field['options'] as $optId => $optLabel): %}
+                        <option value="{{{$optId}}}" {% if((int)$field['value'] === $optId): %}selected{% endif %}>{{{$optLabel}}}</option>
+                    {% endforeach %}
+                </select>
+
+            {% else: %}
+                <input type="text" name="{{{$field['name']}}}" id="f-{{{$field['name']}}}" value="{{{$field['value']}}}"
+                    {% if(!empty($field['required'])): %}required{% endif %}>
+            {% endif %}
+        </div>
+        {% endforeach %}
+
+        <div class="buttons">
+            <input type="submit" name="submit" value="Save">
+            <a href="{{rel_url('/admin/'.$entity)}}" class="btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
