@@ -59,6 +59,27 @@
     }
 }
 
+@media screen and (max-width: 600px) {
+    .genqr form .options {
+        grid-template-columns: 1fr;
+    }
+
+    .genqr form .options .inputraw {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .genqr form .options .inputraw label {
+        text-align: left;
+        width: auto;
+    }
+
+    .genqr form .options .inputraw select,
+    .genqr form .options .inputraw input {
+        width: 100%;
+    }
+}
+
 .output {
     display: flex;
     flex-direction: column;

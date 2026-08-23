@@ -151,10 +151,8 @@ label[for="menu-open"] {
     justify-content: end;
     font-size: 2rem;
     line-height: 2rem;
-    ;
     width: 100%;
     vertical-align: middle;
-    outline: 1px solid black;
     background-color: var(--main-navigation-menu-level-0-background-color);
     color: var(--main-navigation-menu-level-0-link-color);
 }
@@ -247,7 +245,7 @@ label[for="menu-open"] {
     }
 
     .main-navigation ul {
-        background-color: #939be4;
+        background-color: var(--main-navigation-menu-level-0-background-color);
         display: none;
         flex-direction: column;
         justify-items: center;

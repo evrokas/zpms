@@ -127,6 +127,14 @@
         }
         .el-filename {
             align-items: flex-start;
+            /* the middle grid column ("auto") sizes to this element's
+               content by default -- an unbroken long scanned-document
+               filename would force the whole 3-column grid wider than
+               its container on a narrow phone. Elide instead. */
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
         }
         .el-filename:hover {
             text-decoration: underline;

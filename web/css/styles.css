@@ -964,6 +964,24 @@ form .input-div {
     list-style: none;
 }
 
+.appointment-list-actions a {
+    display: inline-flex;
+    align-items: center;
+    background-color: var(--primary);
+    color: white;
+    padding: 0.6rem var(--spacing);
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-decoration: none;
+    box-shadow: var(--shadow-primary-sm);
+    transition: all var(--transition-fast);
+}
+
+.appointment-list-actions a:hover {
+    background-color: var(--primary-light);
+}
+
 .patient-appointments-list>li {
     padding: 0.2rem;
 }
@@ -980,33 +998,71 @@ form .input-div {
     width: 90%;
 }
 
+@media screen and (max-width: 470px) {
+    .appointments-list table {
+        display: block;
+        overflow-x: auto;
+        width: 100%;
+    }
+}
+
 .appointments-list table thead {
-    background-color: rgb(85, 85, 85);
+    background-color: var(--primary);
     color: white;
 }
 
 .appointments-list table tr {
-    height: 1.5rem;
     line-height: 1.5rem;
     justify-content: center;
 }
 
 .appointments-list table tr:nth-child(even) {
-    background-color: rgb(170, 166, 166);
-    color: rgb(47, 47, 47);
+    background-color: var(--light-gray);
+    color: var(--text);
 }
 
 .appointments-list table td {
-    padding: 0.2rem 0.4rem;
+    padding: 0.5rem 0.6rem;
+}
+
+.appointments-list table th {
+    padding: 0.5rem 0.6rem;
 }
 
 .appointments-list table td.actions {
     display: flex;
-    justify-content: space-evenly;
+    gap: var(--spacing-sm);
+    justify-content: center;
+}
+
+.appointments-list table td.actions a {
+    padding: 0.3rem 0.6rem;
+    border-radius: var(--border-radius-sm);
+    color: white !important;
+    text-decoration: none;
+    font-size: 0.85rem;
+}
+
+.appointments-list table td.actions a:first-child {
+    background-color: var(--primary);
+}
+
+.appointments-list table td.actions a:last-child {
+    background-color: var(--error);
 }
 
 .appointments-list table td[data-column="place"] {
     text-align: center;
+}
+
+/* Wraps the clinics/doctors admin tables on settings.zetem, generated
+   by the shared zeusfw webform-results renderer (WebForms.php /
+   FormElement.php) as a bare <table> with no width handling of its
+   own. Always on (not gated behind a media query) -- overflow-x:auto
+   is a no-op whenever the table already fits, and only scrolls when it
+   doesn't, so this is safe at any viewport width. */
+.settings-table-scroll {
+    overflow-x: auto;
 }
 
 .notification {

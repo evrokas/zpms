@@ -44,6 +44,74 @@
     }
 }
 
+/* .invoices-list / .paymentinvoices-list (invoices_list.zetem,
+   paymentinvoices_list.zetem) had no CSS at all -- a bare unstyled
+   <table>, which on a narrow phone has no way to avoid squeezing every
+   column into an unreadable sliver. Same baseline look as
+   .operations-list above so all three finance tables read as one
+   family, not three different, inconsistent styles. */
+.invoices-list,
+.paymentinvoices-list {
+    padding: 1rem;
+    margin: auto;
+}
+
+.invoices-list table,
+.paymentinvoices-list table {
+    width: 100%;
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+
+.invoices-list th,
+.paymentinvoices-list th {
+    border-bottom: 1px solid black;
+    padding: 0.4rem;
+    text-align: left;
+}
+
+.invoices-list td,
+.paymentinvoices-list td {
+    padding: 0.4rem;
+}
+
+.invoices-list tbody tr,
+.paymentinvoices-list tbody tr {
+    border-bottom: 1px solid #222;
+}
+
+/* A row of free-text financial columns can't be usefully stacked on a
+   narrow phone without a much bigger redesign, so -- same as
+   .patients-list table in styles.css -- it scrolls horizontally
+   within its own box instead of squeezing every column down until the
+   content wraps into an unreadable sliver. */
+@media screen and (max-width: 700px) {
+    .operations-list table,
+    .invoices-list table,
+    .paymentinvoices-list table {
+        display: block;
+        overflow-x: auto;
+    }
+
+    /* Free-text cells (diagnosis, procedure, client name) can wrap, so
+       without this the auto table-layout algorithm above just keeps
+       shrinking every column to fit the screen instead of ever
+       triggering the scroll -- the result is a diagnosis column one
+       word wide and six lines tall, not an actually overflowing
+       table. Forcing cells not to wrap gives every column its natural
+       reading width and lets the table (not the wording inside it)
+       be the thing that goes wider than the screen, so it's the whole
+       row that scrolls into view rather than the words within a cell. */
+    .operations-list table td,
+    .operations-list table th,
+    .invoices-list table td,
+    .invoices-list table th,
+    .paymentinvoices-list table td,
+    .paymentinvoices-list table th {
+        white-space: nowrap;
+    }
+}
+
 /* new operation webform */
 .webform input[name="pguid"] {
     ;

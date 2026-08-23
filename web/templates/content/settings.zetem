@@ -6,7 +6,7 @@
 
 <p>
     <h3 style="text-align: center">Clinics Table</h3>
-    {{$clinics_table}}
+    <div class="settings-table-scroll">{{$clinics_table}}</div>
 </p>
 
 <hr>
@@ -17,7 +17,7 @@
 
 <p>
     <h3 style="text-align: center">Doctors Table</h3>
-    {{$doctors_table}}
+    <div class="settings-table-scroll">{{$doctors_table}}</div>
 </p>
 
 <p>
