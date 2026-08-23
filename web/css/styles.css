@@ -34,29 +34,8 @@ html {
     }
 }
 
-/* OLD :root variables - keeping for reference */
-/*
-:root {
-    --basic-dark-color: #036379;
-    --main-navigation-menu-level-0-background-color: var(--basic-dark-color);
-    --main-navigation-menu-level-0-background-color: var(--basic-dark-color);
-    --main-navigation-menu-level-0-link-color: #fff; 
-    --main-navigation-menu-level-0-hover-background-color: #d7d7f1;
-    --main-navigation-menu-level-0-hover-text-color: #000;
-
-    --main-navigation-menu-level-1-background-color: var(--basic-dark-color);
-    --main-navigation-menu-level-1-link-color: #fff; 
-    --main-navigation-menu-level-1-hover-background-color: #d7d7f1;
-    --main-navigation-menu-level-1-hover-text-color: #131f8a;
-
-    --main-navigation-menu-level-2-background-color: #d7d7f1;
-    --main-navigation-menu-level-2-link-color: #fff; 
-    --main-navigation-menu-level-2-hover-background-color: #131f8a;
-    --main-navigation-menu-level-2-hover-text-color: #d7d7f1;
-}
-*/
-
-/* NEW :root variables using updated color palette */
+/* Navigation-menu color variables, sourced from color-palette.css's
+   --primary/--primary-light/--primary-dark rather than a hardcoded hex. */
 :root {
     --basic-dark-color: var(--primary);
     --main-navigation-menu-level-0-background-color: var(--primary);
@@ -75,14 +54,6 @@ html {
     --main-menu-level-2-hover-text-color: #fff;
 }
 
-/* OLD body styles - keeping for reference */
-/*
-body {
-    margin: 0 0.5rem;
-}
-*/
-
-/* NEW body styles */
 body {
     margin: 0 0.5rem;
     background-color: var(--light-gray);
@@ -129,21 +100,6 @@ body {
     margin: auto;
 }
 
-/* OLD header styles - keeping for reference */
-/*
-.header {
-    display: flex;
-    align-items: center;
-    justify-items: center;
-    gap: 2rem;
-    padding: 1rem;
-    background-color: #036379;
-    color: white;
-    justify-content: left;
-}
-*/
-
-/* NEW header styles */
 .header {
     display: flex;
     align-items: center;
@@ -177,17 +133,6 @@ body {
     box-shadow: var(--shadow-sm);
 }
 
-/* OLD region-footer styles - keeping for reference */
-/*
-.region-footer {
-    margin: 2rem 0;
-    padding: 1rem 0.5rem;
-    background-color: black;
-    color: white;
-}
-*/
-
-/* NEW region-footer styles */
 .region-footer {
     margin: 2rem 0;
     padding: 1rem 0.5rem;
@@ -209,7 +154,6 @@ form .buttons {
     gap: var(--spacing-sm);
 }
 
-/* NEW form button styles */
 form .buttons button,
 form .buttons input[type="submit"] {
     background-color: var(--primary);
@@ -298,18 +242,6 @@ form .input-div {
         color: var(--text);
     }
 
-    /* OLD input styles - keeping for reference */
-    /*
-    form .input-div select,
-    form .input-div input,
-    form .input-div .date-picker-input span,
-    form .input-div textarea {
-        flex-grow: 1;
-        padding: 1px 2px;
-        line-height: 19px;
-    }
-    */
-
     form .input-div .date-picker-input input {
         margin: 0;
         padding: 0;
@@ -326,7 +258,6 @@ form .input-div {
         align-items: center;
     }
 
-    /* NEW input styles */
     form .input-div select,
     form .input-div input,
     form .input-div .date-picker-input span,
@@ -545,21 +476,6 @@ form .input-div {
         flex-direction: column;
         gap: var(--spacing);
     }
-
-    /* 
-    .input-div {
-        display: flex;
-        flex-direction: row;
-        gap: var(--spacing-sm);
-    }
-
-    .input-div label {
-        font-weight: 500;
-        color: var(--dark-gray);
-        text-align: left;
-        width: auto;
-    } */
-
 
     .input-div input,
     .input-div select,
@@ -971,9 +887,6 @@ form .input-div {
     }
 }
 
-/* The rest of the original styles.css content continues below with the same structure */
-/* Only updating the specific rules that were modified in new-styles.css */
-
 .edit-patient .header {
     text-align: center;
     margin-bottom: var(--spacing-md);
@@ -988,12 +901,6 @@ form .input-div {
     margin: 0;
     font-size: 1.4rem;
 }
-
-
-/* .edit-patient form {
-    display: flex;
-    flex-direction: column;
-} */
 
 .patient-appointments {
     padding: 1rem;

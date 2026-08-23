@@ -2,12 +2,7 @@
 
 ls = document.getElementById('location-selector');
 
-//console.log( ls );
-
 ls.addEventListener('change', (e) => {
-    // console.log('selection changed', ls.value);
-    // console.log('location selector: ', ls);
-    // console.log('location selector: ', ls.dataset.ajaxCallback);
     url = ls.dataset.ajaxCallback;
 
     var fdata = new FormData();

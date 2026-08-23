@@ -1,17 +1,4 @@
 
-// var field = document.getElementById('datepicker');
-//     if(field != null) {
-
-//         var picker = new Pikaday({
-//         onSelect: function(date) {
-//                 field.value = picker.toString();
-//             }
-//         });
-//         field.parentNode.insertBefore(picker.el, field.nextSibling);
-//     }
-
-// console.log('scripts.js is loaded!');
-
 // Shared by every fetch()/XHR call in this app that mutates state -- reads
 // the per-session token the page shell renders into <meta name="csrf-token">
 // (web/templates/page/main.zetem). A <form method="post"> instead carries
@@ -59,7 +46,6 @@ if (window.visualViewport) {
 
 
 search = document.querySelectorAll('.select2');
-// console.log( search );
 
 var xhr = new XMLHttpRequest(),
     box2 = document.getElementById('select-box');
@@ -68,7 +54,6 @@ var basepath = '';
 
 if(search.length > 0) {
     var el = search[0];
-    // console.log( 'attach event for select2 node change');
     el.addEventListener('keyup', (ev) => {
         if(ev.key == "Escape") {
             box2.style.display = 'none';
@@ -76,7 +61,6 @@ if(search.length > 0) {
         }
         if(el.value.length>0) {
             box2.style.display = 'block';
-            // console.log(el.value);
 
             xhr.onreadystatechange = function() {
                 if((this.readyState == 4) && (this.status == 200)) {
@@ -84,7 +68,6 @@ if(search.length > 0) {
                     var list = response['list'];
 
                     console.log("AJAX response: ");
-                    // console.log( $list);
                     console.log( response );
                     box2.innerHTML = '';
                     basepath = response['referer'];
@@ -92,21 +75,15 @@ if(search.length > 0) {
                     list.forEach(el => {
                         box2.innerHTML += "<li onclick=\"selectclick(this)\" data-url=\""+el['link']+"\"data-id=\""+el['id']+"\" data-name=\""+el['name']+"\">"+
                         "<span class=\"name\">"+el['name']+"</span>"+
-                        // "<span class=\"age\">"+"["+el['age']+" έτη]"+"</span>"+
                         "<span class=\"tel\">"+"{Τηλ:"+el['tel']+"}"+"</span>"+
                         "<span class=\"amka\">"+"ΑΜΚΑ: "+el['amka']+"</span>"+
                         "</li>";
                     })
-                    
-                    // $list.forEach(el => {
-                    //     box.value += el['name'] + "\n";
-                    // });
                 }
             }
 
             clearTimeout(timeout);
             timeout = setTimeout(function () {
-                // xhr.open("POST", '/apps/zeus/web/patients/searchajax/term');
                 xhr.open("POST", 'patients/searchajax/term');
                 xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
                 xhr.send("sterm=" + el.value);
@@ -117,15 +94,10 @@ if(search.length > 0) {
     });
 }
 
-function selectclick(e){ 
-    // console.log( "Clicked "  + e.innerHTML);
-    search[0].value = e.dataset.name;    //innerHTML;
-    // document.getElementById();
+function selectclick(e){
+    search[0].value = e.dataset.name;
     box2.style.display = 'none';
 
-    // console.log( window.location.href);
-    // console.log( basepath );
-    // console.log( basepath + e.dataset.url);
     window.location.replace( basepath + e.dataset.url );
 }
 
@@ -184,7 +156,6 @@ let validatorArray = [];
 
 // find all elements that have validator attribute
 validatorList = document.querySelectorAll('input[validator]');
-// console.log( validatorList );
 
 function validateEmail(email) {
     return email.length>3;
@@ -210,10 +181,8 @@ const validatorHandlers = [
             return 2;
         } else
         if(validateEmail(value)) {
-            // vinp.classList.add('valid');
-            return 1; 
+            return 1;
         } else {
-            // vinp.classList.add('not-valid');
             return 0;
         }
     }}
@@ -224,41 +193,28 @@ function validatorUpdateClass(target, result) {
 
     switch( result ) {
         case 0: // not-valid
-            // console.log('not-valid: ', target);
             target.classList.add('not-valid');
         break;
         case 1: // valid
-            // console.log('valid: ', target);
             target.classList.add('valid');
         break;
         case 2: // special do not add valid/not-valid class
-            // console.log('special: ', target);
         break;
     }
 }
 
 // initialize validator element event and setup initial appearance of elements
 validatorList.forEach(vi => {
-    // console.log(vi);
     validatorArray.push(vi);
 
     vi.addEventListener('input', (ev) => {
-        // console.log(ev);
-        // console.log('validator: ' + ev.target.attributes.validator.value)
-
         handler = validatorHandlers.find(h => h.name === ev.target.attributes.validator.value);
-        // console.log('found validator handler: ', handler);
-
         res = handler.cb(ev.target.value);
-        // console.log( 'testing for validator handler result', res)
         validatorUpdateClass(ev.target, res);
     })
 
     handler = validatorHandlers.find(h => h.name === vi.attributes.validator.value);
-    // console.log('initial found validator handler: ', handler);
-
     res = handler.cb(vi.value);
-    // console.log( 'initial testing for validator handler result', res)
     validatorUpdateClass(vi, res);
 });
 
@@ -285,12 +241,8 @@ async function totp_action(action) {
             modal.classList.remove('open');
             break;
         case 'activate':
-            call_totp_action(action).then(result => { 
+            call_totp_action(action).then(result => {
                 console.log( result );
-                // return result;
-                // const imgElement = document.createElement('img');
-                // imgElement.src = result;
-                // imgElement.alt = 'Fetched Image';
                 document.getElementById('qrimg').src = "data:image/png;base64,"+result.qrdata;
             });
         
@@ -366,9 +318,7 @@ function dateAgo(date) {
     var startDate = new Date(date);
     var diffDate = new Date(new Date() - startDate);
     return ((diffDate.toISOString().slice(0, 4) - 1970) + "y " +
-        diffDate.getMonth() + "m "
-        //  + (diffDate.getDate()-1) + "D"
-        );
+        diffDate.getMonth() + "m ");
 }
 
 function isDateValid(dateStr) {
@@ -376,12 +326,9 @@ function isDateValid(dateStr) {
 }
 
 function dobChange(e) {
-    // console.log('dob change: ' , e.attributes['agefield']);
     target=document.getElementById(e.attributes['agefield'].nodeValue);
-    // console.log(target);
 
     ymd = e.value.split('-');
-    // console.log('ymd', ymd);
     dobDate = new Date(ymd[2],ymd[1],ymd[0]);
 
     if(isDateValid(dobDate)

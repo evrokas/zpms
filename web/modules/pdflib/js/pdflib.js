@@ -1,8 +1,3 @@
-// document.getElementById("uploadForm").addEventListener("submit", function (e) {
-//     const resultDiv = document.getElementById("result");
-//     resultDiv.textContent = "Processing file... Please wait.";
-// });
-
 document.addEventListener("DOMContentLoaded", () => {
     const uploadForm = document.getElementById("uploadForm");
     const pdfFileInput = document.getElementById("pdfFile");

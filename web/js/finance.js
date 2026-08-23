@@ -23,21 +23,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     try {
                         resp = JSON.parse(data);
                         resultDiv.innerHTML = data;
-
-                        // console.log("response:" , resp);
-                        // pname = document.querySelector('.webform .form_elements input[name="patient_id"');
-                        // pname.value = data.
                         console.log(resp.document_type);
-        
                     } catch(e) {
                         resultDiv.innerHTML = e;
                         console.error(e);
                     }
                 }
-
-
-
-                // location.reload();
             })
             .catch((error) => {
                 resultDiv.textContent = "An error occurred during upload.";
