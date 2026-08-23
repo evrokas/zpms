@@ -19,3 +19,19 @@ template_cache_path: "cache/"
 
 # library path for stored files
 libpath: files/
+
+# Turn off optional framework-provided packages/modules for this
+# site/deployment by listing their package name here -- see zeusfw's
+# core/zeusfw.info.yaml (routes:/disabled_packages: comments) and
+# core/lib/Packages.php for the full mechanism. Safe to list a package
+# here even if config/settings.info.yaml (or a future site) also lists
+# it -- entries accumulate across every config layer, they never
+# override each other, so a package disabled at any one layer stays
+# disabled regardless of what any other layer says.
+#
+# Packages currently available: `admin_user_crud` (the /admin/{entity}
+# users/roles/permissions management UI). Enabled by default -- this app
+# actively uses it (see README.md's "Roles and permissions" section), so
+# it stays out of this list; uncomment to turn it off for this site:
+# disabled_packages: [admin_user_crud]
+disabled_packages: []

@@ -487,6 +487,11 @@ modconf:
           access: authenticated
       
 
+# App-specific-only overrides for framework packages/modules can also go
+# here as `disabled_packages: [...]` (accumulates safely with
+# config/site.info.yaml's own list of the same name -- see that file's
+# comments, and zeusfw's core/lib/Packages.php, for the full mechanism).
+# Not used currently -- this app wants every registered package enabled.
 modules:
   path:
     - "/web/core/modules/"

@@ -40,9 +40,15 @@ lives at `/admin/{entity}` (`entity` is `users`, `permissions`, `roles`,
 `role_permissions`, or `user_roles`) — linked from Settings under "User &
 Role Management" for anyone who can see it. This UI is also framework-
 provided (`web/core/modules/admin/admin_crud.php`, one generic engine
-driving all five entities from a metadata array), reached via the `admin`
-module this app already lists under `config/settings.info.yaml`'s
-`modules:`. Gated behind the framework's own `ZEUSFW_PERM_MANAGE_USERS`
+driving all five entities from a metadata array). Its routes are
+registered by the framework itself in `web/core/zeusfw.info.yaml` —
+unconditionally, independent of this (or any) app's own module opt-ins —
+as the `admin_user_crud` package; it can be turned off for this
+deployment via `config/site.info.yaml`'s `disabled_packages:` list (empty
+by default here, since this app actively uses the page — see that file's
+own comments, and `web/core/lib/Packages.php`, for the general
+enable/disable mechanism any future framework package uses the same way).
+Gated behind the framework's own `ZEUSFW_PERM_MANAGE_USERS`
 permission (slug `users-manage`, seeded by this app under that same
 string value), deliberately **not** granted to `power-user` by default:
 this page can create a new `is_superuser` role and assign it to any
