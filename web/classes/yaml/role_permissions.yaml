@@ -1,0 +1,39 @@
+---
+table:
+  name: role_permissions
+  class: role_permissionsClass
+
+  fields:
+  - name: guid
+    type: '@guid'
+
+  - name: cdate
+    type: '@cdate'
+
+  - name: cuser
+    type: '@cuser'
+
+  - name: role_id
+    type: int
+    required: true
+
+  - name: permission_id
+    type: int
+    required: true
+
+...
+
+# Many-to-many join: which permissions (permissions.id) a role (roles.id)
+# grants. No DB-level FOREIGN KEY constraint -- this framework's maker
+# doesn't generate them for any table (see e.g. appointments.pguid, a plain
+# CHAR(36) with no real FK either); referential integrity is maintained at
+# the application level, same convention as everywhere else in this app.
+# A role with is_superuser=1 (roles.is_superuser) needs no rows here at
+# all -- zpms_user_has_permission() (web/rbac.php) short-circuits on that
+# flag before ever consulting this table.
+#
+# - guid            row guid
+# - cdate           creation date
+# - cuser           creating user (system/migration script for the seeded rows)
+# - role_id         roles.id
+# - permission_id   permissions.id

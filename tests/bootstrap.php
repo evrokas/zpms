@@ -124,6 +124,15 @@ ob_start();
 require_once __FWDIR__ . '/bootstrap.php';
 ob_end_clean();
 
+// Not part of the framework bootstrap above (app-specific) -- web/index.php
+// requires these itself for the spawned TestServer's own process, but the
+// test RUNNER process (this one) needs them too, since TestFixtures::
+// createTestUser() calls into web/rbac_seed.php directly rather than over
+// HTTP (there's no user-management UI/route to drive for this -- see that
+// function's own comment).
+require_once ZPMS_TEST_APPDIR . '/web/rbac.php';
+require_once ZPMS_TEST_APPDIR . '/web/rbac_seed.php';
+
 require_once __DIR__ . '/lib/HttpClient.php';
 require_once __DIR__ . '/lib/ServerManager.php';
 

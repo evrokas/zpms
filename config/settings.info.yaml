@@ -124,20 +124,26 @@ foot_script:
     # type:
     # src: "js/loader.js"
   
+# Valid role-name tokens for route-level `access:` (below) and the nav
+# menu's own `access:` gating -- SecurityClass::userIsPermitted()/
+# processRoles() (zeusfw core) only ever check role *identity* against
+# this block's keys, never read the values. Real user role assignments
+# and role->permission mappings live in the permissions/roles/
+# role_permissions/user_roles DB tables now (see web/rbac.php and
+# bin/migrate_roles.php) -- this block used to double as that mapping
+# (per-role permission arrays, e.g. 'power-user: [patients-view-list, ...]'),
+# but zpms no longer calls SecurityClass::require() anywhere (see
+# web/rbac.php's docblock for the two real bugs that motivated moving off
+# of it), so those arrays were dead weight and are gone. 'authenticated'
+# here means "any logged-in user" for `access:` purposes only -- unrelated
+# to (and not affected by) SecurityClass::require()'s own, separate
+# "authenticated" special case documented in web/rbac.php.
 roles:
-  anonymous: anonymous
-  administrator: all
-  authenticated: authenticated_content
-  user: [patients-view-list, appointments-view-list]
-  power-user: [
-    patients-view-list,
-    patients-new-patient,
-    patients-delete-patient,
-    patients-edit-patient,
-    appointment-edit,
-    backup-access,
-    settings-manage
-    ]
+  anonymous: []
+  administrator: []
+  authenticated: []
+  user: []
+  power-user: []
 
 
 # reduce analytics entries, by not logging localhost calls

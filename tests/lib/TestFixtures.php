@@ -24,15 +24,24 @@ class TestFixtures {
             'active' => 1,
             'expired' => 0,
             'wrongpasscount' => 0,
-            // Space-separated role string (SecurityClass::processRoles()) --
-            // 'power-user' maps to a real permission array in
-            // config/settings.info.yaml's roles: block (patients CRUD,
-            // appointment-edit, backup access) and, unlike
-            // 'administrator', is never passed anywhere that expects an
-            // array where the config only supplies the string 'all'.
+            // This legacy column is no longer what actually grants
+            // permissions (see web/rbac.php) -- kept populated anyway so
+            // this fixture also exercises zeusfw_app_resolve_user_roles()'s
+            // fallback path and so a from-scratch bin/migrate_roles.php
+            // run against this same test database has something real to
+            // migrate. The real grant is the user_roles row assigned below.
             'roles' => 'power-user',
         ]);
         $u->insert();
+
+        // Same seeding bin/migrate_roles.php runs against a real deploy --
+        // idempotent, so calling it here on every test run is harmless.
+        // zpms_require_permission() (web/rbac.php) checks user_roles
+        // directly, never the legacy column above, so without this line
+        // every permission check in the suite would fail regardless of
+        // that column's value.
+        $seeded = zpms_seed_permissions_and_roles(false, function () {});
+        user_rolesClassEx::assignRole((int)$u->getid(), $seeded['roleIdsByName']['power-user'], 'test-fixture');
     }
 
     /** Logs in through the real /login form (scrapes the CSRF token like a browser would) and returns the client. */

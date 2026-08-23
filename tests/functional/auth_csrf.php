@@ -35,6 +35,120 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
         assert_contains('401', $res['body'], 'an unauthenticated POST to /webform/processform/... was not refused');
     });
 
+    $runner->add('a logged-in account with the plain user role cannot delete a patient', function () use ($baseUrl) {
+        // The actual bug this whole system replaces: SecurityClass::require()
+        // (zeusfw core) special-cases any role literally named
+        // 'authenticated' as an unconditional pass for ANY permission, and
+        // Kernel::loginUser() unconditionally adds that role to every
+        // logged-in user's session -- so in the old system, EVERY
+        // permission check silently passed for ANY logged-in user
+        // regardless of their actual role. zpms_require_permission()
+        // (web/rbac.php) has no such bypass; this proves it by creating an
+        // account with only the 'user' role (patients-view-list only, no
+        // delete) and confirming it's actually refused.
+        TestSchema::assertSafeToMutate();
+
+        $uname = 'zpms_test_plain_user';
+        $password = 'PlainUser!Passw0rd';
+        $u = new usersClass([
+            'name' => 'Plain User Test Account',
+            'email' => 'zpms-test-plain-user@example.invalid',
+            'uname' => $uname,
+            'upass' => password_hash($password, PASSWORD_DEFAULT),
+            'active' => 1,
+            'expired' => 0,
+            'wrongpasscount' => 0,
+            'roles' => 'user',
+        ]);
+        $u->insert();
+
+        $userRole = rolesClassEx::sgetByName('user');
+        assert_not_null($userRole, "the 'user' role was not seeded -- did TestFixtures::createTestUser() run first?");
+        user_rolesClassEx::assignRole((int)$u->getid(), (int)$userRole->getid(), 'test-fixture');
+
+        $http = new TestHttpClient($baseUrl);
+        $loginPage = $http->get('/login');
+        $token = TestHttpClient::extractCsrfToken($loginPage['body']);
+        $loginRes = $http->post('/login', ['csrf_token' => $token, 'username' => $uname, 'password' => $password]);
+        assert_contains('/profile', (string)$loginRes['location'], 'login with the plain-user account did not succeed');
+
+        // Can still view the patient list (patients-view-list, granted).
+        $listPage = $http->get('/patients');
+        assert_equal(200, $listPage['status'], 'plain-user account could not view the patient list');
+        assert_not_contains('401', $listPage['body'], 'plain-user account was refused a permission it does have');
+
+        // Cannot reach clinics management (settings-manage, not granted).
+        $settingsPage = $http->get('/apps/edit_clinics');
+        assert_contains('401', $settingsPage['body'], 'plain-user account was NOT refused settings-manage -- the permission bypass bug is back');
+
+        // Cannot delete a patient (patients-delete-patient, not granted) --
+        // set up a throwaway patient via a power-user-equivalent direct
+        // insert (not through this account, which can't create one either).
+        $p = new patientsClass([
+            'guid' => guid(), 'cuser' => 'test-fixture', 'cdate' => getDBtime(),
+            'pname' => 'Ασθενής Για Δικαιώματα', 'pdob' => '1990-01-01 00:00:00',
+            'pamka' => '44444444444', 'ptel' => '', 'paddr' => '', 'pemail' => '', 'pnote' => '',
+        ]);
+        $p->insert();
+
+        // The token itself is session-wide, not tied to a specific page --
+        // /patient/{id}/edit would be the natural place to scrape one from,
+        // but this account can't reach it (patients-edit-patient isn't
+        // granted either), so /patients (already confirmed reachable above)
+        // supplies an equally valid token.
+        $editToken = TestHttpClient::extractCsrfToken($listPage['body']);
+        assert_not_null($editToken, 'no csrf_token field found on /patients (as seen by the plain-user account)');
+
+        $delRes = $http->post('/patient/' . $p->getid() . '/delete', ['csrf_token' => $editToken]);
+        assert_contains('401', $delRes['body'], 'plain-user account was NOT refused patients-delete-patient -- the permission bypass bug is back');
+
+        $row = dbConnection::getConnection()
+            ->query('SELECT deleted FROM patients WHERE id = ' . $p->getid())
+            ->fetch();
+        assert_null($row['deleted'], 'the patient was deleted despite the acting account lacking patients-delete-patient');
+    });
+
+    $runner->add('a logged-in administrator (is_superuser) account passes every permission check', function () use ($baseUrl) {
+        // The old system's 'administrator: all' config value crashed with a
+        // fatal TypeError the moment any permission check actually reached
+        // it (in_array() against the literal string "all" -- confirmed by
+        // direct test; see web/rbac.php's docblock) -- so no account with
+        // that role could ever function. is_superuser (roles.is_superuser)
+        // is the correctly-implemented replacement: confirms it grants
+        // access to a permission-gated page (settings-manage) without
+        // crashing and without needing any role_permissions rows at all.
+        TestSchema::assertSafeToMutate();
+
+        $uname = 'zpms_test_admin_user';
+        $password = 'AdminUser!Passw0rd';
+        $u = new usersClass([
+            'name' => 'Admin Test Account',
+            'email' => 'zpms-test-admin@example.invalid',
+            'uname' => $uname,
+            'upass' => password_hash($password, PASSWORD_DEFAULT),
+            'active' => 1,
+            'expired' => 0,
+            'wrongpasscount' => 0,
+            'roles' => 'administrator',
+        ]);
+        $u->insert();
+
+        $adminRole = rolesClassEx::sgetByName('administrator');
+        assert_not_null($adminRole, "the 'administrator' role was not seeded -- did TestFixtures::createTestUser() run first?");
+        assert_equal(1, (int)$adminRole->getis_superuser(), "the 'administrator' role is not marked is_superuser");
+        user_rolesClassEx::assignRole((int)$u->getid(), (int)$adminRole->getid(), 'test-fixture');
+
+        $http = new TestHttpClient($baseUrl);
+        $loginPage = $http->get('/login');
+        $token = TestHttpClient::extractCsrfToken($loginPage['body']);
+        $loginRes = $http->post('/login', ['csrf_token' => $token, 'username' => $uname, 'password' => $password]);
+        assert_contains('/profile', (string)$loginRes['location'], 'login with the administrator account did not succeed');
+
+        $settingsPage = $http->get('/apps/edit_clinics');
+        assert_equal(200, $settingsPage['status'], 'administrator account did not get 200 from /apps/edit_clinics');
+        assert_not_contains('401', $settingsPage['body'], 'administrator (is_superuser) account was refused settings-manage');
+    });
+
     $runner->add('login with the wrong password is rejected', function () use ($baseUrl) {
         $http = new TestHttpClient($baseUrl);
         $loginPage = $http->get('/login');

@@ -14,6 +14,59 @@ auth/file-upload functional tests driven over real HTTP against a
 dedicated, disposable test database — never the live one. See
 `tests/README.md` for one-time setup and the safety design.
 
+## Roles and permissions
+
+Staff accounts (the `users` table) are authorized via a standard
+role-based model: `permissions` (the fixed set of things the app actually
+checks — `patients-view-list`, `appointment-edit`, etc.), `roles` (named,
+assignable bundles like `power-user`), `role_permissions` (which
+permissions a role grants), and `user_roles` (which roles a user has).
+See `web/rbac.php`'s own docblock for the full design, including two real
+bugs in the previous system this replaced — most importantly, every
+permission check silently passed for any logged-in user regardless of
+role, so this isn't just a schema cleanup.
+
+There's no admin UI for this yet — grant/revoke a role directly via
+`user_rolesClassEx::assignRole($userId, $roleId, $actingUsername)` /
+`removeRole($userId, $roleId)` (`web/rbac.php`), the same way accounts
+themselves are created today (see `tests/lib/TestFixtures.php` for the
+shape of a direct-insert account).
+
+**Deploying this for the first time / to a server still on the old
+scheme:** the new tables must exist before the app code that uses them
+does, and every existing account needs an actual `user_roles` row before
+it can pass any permission check again (it can still log in either way —
+only fine-grained permission checks are affected, not authentication
+itself):
+
+```sh
+# 1. Generate + load the new tables (same steps your normal deploy
+#    already runs for any schema change in this app — there's no
+#    migration runner, so this part is manual):
+cd web/classes
+php ../core/maker/maker.php spill:class:all
+php ../core/maker/maker.php update:bootstrap
+php ../core/maker/maker.php spill:sql:all
+mysql -u <user> -p <db> < sql/permissions.sql
+mysql -u <user> -p <db> < sql/roles.sql
+mysql -u <user> -p <db> < sql/role_permissions.sql
+mysql -u <user> -p <db> < sql/user_roles.sql
+
+# 2. Preview the migration (writes nothing):
+cd ../..
+php bin/migrate_roles.php --dry-run
+
+# 3. Apply it -- seeds permissions/roles/role_permissions and transfers
+#    every user's existing users.roles value into a user_roles row:
+php bin/migrate_roles.php --yes
+```
+
+`bin/migrate_roles.php --dry-run` prints exactly what it would do,
+including a warning for any account whose legacy `roles` value doesn't
+match a known role name (nothing is ever silently dropped — see the
+script's own header comment). It's idempotent, so re-running it after
+fixing something it flagged is safe.
+
 ## Backups
 
 `bin/backup.sh`, run nightly via cron/systemd (reference configs:

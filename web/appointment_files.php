@@ -6,11 +6,15 @@
  * and /root/.claude/plans/zpms-project-is-a-purrfect-kay.md for the full
  * design. Modeled on web/modules/pdflib/pdflib.php, the one confirmed-
  * working file upload feature in this app, but deliberately does not
- * replicate two of its gaps: it checks $_FILES[...]['error'] before
- * treating an upload as present, and it checks SecurityClass::require()'s
- * return value instead of ignoring it (most existing call sites in this
- * codebase, including appointment_edit_post(), do not check it -- that is
- * a pre-existing fail-open bug, not a pattern to copy).
+ * replicate one of its gaps: it checks $_FILES[...]['error'] before
+ * treating an upload as present. It also, unlike most call sites
+ * elsewhere in this app at the time this file was written, checked
+ * SecurityClass::require()'s return value rather than discarding it --
+ * that discipline turned out not to matter in practice, since that
+ * function itself always returned success for any logged-in user
+ * regardless of role (a real, separate bug in zeusfw core; see
+ * web/rbac.php's docblock for the full story and zpms_require_permission(),
+ * used here now, which has neither problem).
  *
  * Storage layout is a human-browsable tree under
  * core_get_dir_in_lib('appointment_files'):
@@ -290,7 +294,7 @@ function appointment_file_upload($params) {
     global $kernel;
     appointment_files_start_clean_output();
 
-    if(($ret = SecurityClass::require('appointment-edit'))) {
+    if(($ret = zpms_require_permission(ZPMS_PERM_APPOINTMENT_EDIT))) {
         appointment_files_json(['success' => false, 'error' => 'unauthorized'], 401);
     }
 
@@ -392,7 +396,7 @@ function appointment_file_upload($params) {
 function appointment_file_delete($params) {
     appointment_files_start_clean_output();
 
-    if(($ret = SecurityClass::require('appointment-edit'))) {
+    if(($ret = zpms_require_permission(ZPMS_PERM_APPOINTMENT_EDIT))) {
         appointment_files_json(['success' => false, 'error' => 'unauthorized'], 401);
     }
 
@@ -452,7 +456,7 @@ function appointment_files_content_disposition($disposition, string $originalFil
 function appointment_file_download($params) {
     appointment_files_start_clean_output();
 
-    if(($ret = SecurityClass::require('appointment-edit'))) {
+    if(($ret = zpms_require_permission(ZPMS_PERM_APPOINTMENT_EDIT))) {
         appointment_files_abort(401);
     }
 
@@ -487,7 +491,7 @@ function appointment_file_download($params) {
 function appointment_file_thumbnail($params) {
     appointment_files_start_clean_output();
 
-    if(($ret = SecurityClass::require('appointment-edit'))) {
+    if(($ret = zpms_require_permission(ZPMS_PERM_APPOINTMENT_EDIT))) {
         appointment_files_abort(401);
     }
 

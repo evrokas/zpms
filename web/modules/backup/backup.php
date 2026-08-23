@@ -19,7 +19,7 @@ class backupModule extends moduleClass {
     }
 
     function run($params = array()) {
-        if(($ret = SecurityClass::require('backup-access')))return $ret;
+        if(($ret = zpms_require_permission(ZPMS_PERM_BACKUP_ACCESS)))return $ret;
         return $this->render($params);
     }
 
