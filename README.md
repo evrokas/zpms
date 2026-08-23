@@ -41,7 +41,7 @@ lives at `/admin/{entity}` (`entity` is `users`, `permissions`, `roles`,
 Role Management" for anyone who can see it. This UI is also framework-
 provided (`web/core/modules/admin/admin_crud.php`, one generic engine
 driving all five entities from a metadata array). Its routes are
-registered by the framework itself in `web/core/zeusfw.info.yaml` —
+registered by the framework itself in `web/core/config/zeusfw.info.yaml` —
 unconditionally, independent of this (or any) app's own module opt-ins —
 as the `admin_user_crud` package; it can be turned off for this
 deployment via `config/site.info.yaml`'s `disabled_packages:` list (empty

@@ -22,7 +22,7 @@ libpath: files/
 
 # Turn off optional framework-provided packages/modules for this
 # site/deployment by listing their package name here -- see zeusfw's
-# core/zeusfw.info.yaml (routes:/disabled_packages: comments) and
+# core/config/zeusfw.info.yaml (routes:/disabled_packages: comments) and
 # core/lib/Packages.php for the full mechanism. Safe to list a package
 # here even if config/settings.info.yaml (or a future site) also lists
 # it -- entries accumulate across every config layer, they never
