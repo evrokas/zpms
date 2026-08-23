@@ -16,6 +16,25 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
         assert_not_contains('Δοκιμαστική', $res['body'], '/patients leaked patient data to a logged-out request');
     });
 
+    $runner->add('an unauthenticated request to the clinics management route is refused', function () use ($baseUrl) {
+        // clinics_edit() (web/index.php) used to have no SecurityClass::require()
+        // call at all -- a logged-out visitor who knew the URL got the
+        // clinics management form directly. Now gated behind settings-manage.
+        $http = new TestHttpClient($baseUrl);
+        $res = $http->get('/apps/edit_clinics');
+        assert_contains('401', $res['body'], '/apps/edit_clinics did not show the 401/unauthorized page when logged out');
+    });
+
+    $runner->add('an unauthenticated POST to the webform processor is refused', function () use ($baseUrl) {
+        // formsClass::processform() (zeusfw core) has no permission check
+        // of its own -- the route-level access: on webforms_post
+        // (config/settings.info.yaml) is what actually protects the
+        // clinics/doctors reference-data forms it's used for in this app.
+        $http = new TestHttpClient($baseUrl);
+        $res = $http->post('/webform/processform/anything', ['submit' => '1']);
+        assert_contains('401', $res['body'], 'an unauthenticated POST to /webform/processform/... was not refused');
+    });
+
     $runner->add('login with the wrong password is rejected', function () use ($baseUrl) {
         $http = new TestHttpClient($baseUrl);
         $loginPage = $http->get('/login');
@@ -30,6 +49,49 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
         assert_not_equal('/profile', (string)$res['location'], 'login succeeded with a wrong password');
     });
 
+    $runner->add('a successful login upgrades a legacy sha256 password hash to bcrypt', function () use ($baseUrl) {
+        TestSchema::assertSafeToMutate();
+
+        // A second, single-purpose account (not TestFixtures::USERNAME --
+        // that one is already logged in, and thus already upgraded, by the
+        // shared $http client run_all.php sets up before any suite runs).
+        // Seeds upass as a raw sha256 hex digest (the old storage format)
+        // to confirm login_post() (zeusfw core) both accepts it and
+        // transparently rehashes it in place, so every account migrates
+        // off the weak format the first time its owner logs in, with no
+        // separate migration step required.
+        $uname = 'zpms_test_legacy_hash_user';
+        $password = 'LegacyHash!Passw0rd';
+        $u = new usersClass([
+            'name' => 'Legacy Hash Test User',
+            'email' => 'zpms-test-legacy@example.invalid',
+            'uname' => $uname,
+            'upass' => hash('sha256', $password),
+            'active' => 1,
+            'expired' => 0,
+            'wrongpasscount' => 0,
+            'roles' => 'power-user',
+        ]);
+        $u->insert();
+
+        $before = dbConnection::getConnection()
+            ->query("SELECT upass FROM users WHERE uname = '$uname'")
+            ->fetch();
+        assert_equal(1, preg_match('/^[a-f0-9]{64}$/', $before['upass']), 'fixture user did not start on the legacy sha256 format');
+
+        $http = new TestHttpClient($baseUrl);
+        $loginPage = $http->get('/login');
+        $token = TestHttpClient::extractCsrfToken($loginPage['body']);
+        $res = $http->post('/login', ['csrf_token' => $token, 'username' => $uname, 'password' => $password]);
+        assert_contains('/profile', (string)$res['location'], 'login with the legacy-hash account did not succeed');
+
+        $after = dbConnection::getConnection()
+            ->query("SELECT upass FROM users WHERE uname = '$uname'")
+            ->fetch();
+        assert_equal(1, preg_match('/^\$2y\$/', $after['upass']), 'upass was not rehashed to bcrypt after a successful login');
+        assert_not_equal($before['upass'], $after['upass'], 'upass is unchanged after login');
+    });
+
     $runner->add('login with correct credentials establishes a session', function () use ($baseUrl) {
         $http = new TestHttpClient($baseUrl);
         TestFixtures::loginAsTestUser($http);
@@ -37,6 +99,18 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
         $profile = $http->get('/patients');
         assert_equal(200, $profile['status'], 'GET /patients did not return 200 after login');
         assert_not_contains('401', $profile['body'], '/patients still shows the 401 page after a successful login');
+    });
+
+    $runner->add('a logged-in power-user can still reach clinics management', function () use ($baseUrl) {
+        // Confirms settings-manage (granted to power-user, see
+        // config/settings.info.yaml) preserves existing access -- this is
+        // a permission-scoping fix, not a lockout of current staff.
+        $http = new TestHttpClient($baseUrl);
+        TestFixtures::loginAsTestUser($http);
+
+        $res = $http->get('/apps/edit_clinics');
+        assert_equal(200, $res['status'], 'GET /apps/edit_clinics did not return 200 for a logged-in power-user');
+        assert_not_contains('401', $res['body'], '/apps/edit_clinics still shows the 401 page for a logged-in power-user');
     });
 
     $runner->add('a POST without a CSRF token is rejected and does not write data', function () use ($baseUrl) {

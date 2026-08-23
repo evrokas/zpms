@@ -103,9 +103,17 @@ class patientsClassEx extends patientsClass {
     }
 
     static function getPatientsByLastAppointment($order) {
+        // Concatenated directly into the SQL string below (ORDER BY takes
+        // no bind parameter in any DB driver) -- the one caller today
+        // (web/index.php's patients_list()) already restricts $order to
+        // '0'/'1' before calling this, but that's the caller's own
+        // decision, not something this function can rely on. Defaulting
+        // any unrecognized value to a fixed, safe direction closes that
+        // gap for any future caller that doesn't pre-validate.
         switch($order) {
             case '0': $order = "DESC"; break;
             case '1': $order = "ASC"; break;
+            default: $order = "ASC";
         }
 
 
@@ -159,9 +167,12 @@ class patientsClassEx extends patientsClass {
     }
 
     static function getPatientsByName($order = 'ASC') {
+        // See getPatientsByLastAppointment()'s comment above -- same
+        // defense-in-depth reasoning applies here.
         switch($order) {
             case '0': $order = "DESC"; break;
             case '1': $order = "ASC"; break;
+            default: $order = "ASC";
         }
 
         // sql statement extracted from ChatGPT (!!)

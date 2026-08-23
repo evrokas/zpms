@@ -132,10 +132,11 @@ roles:
   power-user: [
     patients-view-list,
     patients-new-patient,
-    patients-delete-patient, 
-    patients-edit-patient, 
+    patients-delete-patient,
+    patients-edit-patient,
     appointment-edit,
-    backup-access
+    backup-access,
+    settings-manage
     ]
 
 
@@ -329,6 +330,14 @@ routes:
     url: "/webform/processform/{guid}"
     handler: formsClass::processform
     method: post
+    # zpms only ever wires up the clinics/doctors reference-data forms (see
+    # settings() / clinics_edit() in web/index.php) -- formsClass::processform()
+    # itself (zeusfw core, shared by every webform on every app on this
+    # framework) has no permission check of its own, so this route-level
+    # access: is what actually protects it here. Router.php checks this
+    # before dispatch, same mechanism already used by the settings/backup
+    # menu entries above.
+    access: power-user
   webforms_view:
     title: "View Webform"
     url: "/webform/viewform/{formname}"

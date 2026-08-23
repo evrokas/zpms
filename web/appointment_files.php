@@ -431,6 +431,24 @@ function appointment_file_delete($params) {
     appointment_files_json(['success' => true]);
 }
 
+// Builds a Content-Disposition header value that's correct for non-ASCII
+// (routinely Greek) filenames. A bare `addslashes()`'d name inside plain
+// filename="..." only protects against breaking out of the quotes -- it
+// doesn't declare an encoding, so a browser that takes the bytes literally
+// (rather than guessing UTF-8) can mangle or mis-save the name. Sends both
+// a sanitized-ASCII filename= fallback and an RFC 6266 filename*=UTF-8''...
+// parameter, so a browser that understands the modern form uses the real
+// name and one that doesn't still gets a safe, if less pretty, fallback.
+function appointment_files_content_disposition($disposition, string $originalFilename): string {
+    $asciiFallback = preg_replace('/[^\x20-\x7E]/', '_', $originalFilename);
+    $asciiFallback = str_replace(['"', '\\'], '_', $asciiFallback);
+    if($asciiFallback === '') {
+        $asciiFallback = 'file';
+    }
+    return $disposition . '; filename="' . $asciiFallback . '"'
+        . "; filename*=UTF-8''" . rawurlencode($originalFilename);
+}
+
 function appointment_file_download($params) {
     appointment_files_start_clean_output();
 
@@ -454,7 +472,7 @@ function appointment_file_download($params) {
 
     appointment_files_discard_buffer();
     header('Content-Type: ' . $file->getmime_type());
-    header('Content-Disposition: inline; filename="' . addslashes($file->getfile_name()) . '"');
+    header('Content-Disposition: ' . appointment_files_content_disposition('inline', $file->getfile_name()));
     header('Content-Length: ' . filesize($absolutePath));
     readfile($absolutePath);
     exit();

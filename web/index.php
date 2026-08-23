@@ -386,7 +386,7 @@ require_once(__DIR__ . '/appointment_files.php');
         }
 
         if($res) {
-            $kernel->addStatus('notice', 'Ο φάκελος του ασθενή <b>' . $pat->getpname() . '</b> έχει αποθηκευτεί.');
+            $kernel->addStatus('notice', 'Ο φάκελος του ασθενή <b>' . htmlspecialchars($pat->getpname(), ENT_QUOTES, 'UTF-8') . '</b> έχει αποθηκευτεί.');
         } else {
             $kernel->addStatus('error', 'Αδυναμία αποθήκευσης φακέλου.');
         }
@@ -456,7 +456,7 @@ require_once(__DIR__ . '/appointment_files.php');
 
         // $pat->delete();
 
-        $kernel->addStatus('warning', 'Ο φάκελος του ασθενή <b>'.$pat->getpname() . '</b> διαγράφθηκε με επιτυχία.');
+        $kernel->addStatus('warning', 'Ο φάκελος του ασθενή <b>'.htmlspecialchars($pat->getpname(), ENT_QUOTES, 'UTF-8') . '</b> διαγράφθηκε με επιτυχία.');
         header('location: '.rel_url('/patients'));
         exit();
     }
@@ -502,7 +502,7 @@ require_once(__DIR__ . '/appointment_files.php');
 
         $pc->insert();
 
-        $kernel->addStatus('notice', 'Δημιουργήθηκε νέος φάκελος για τον ασθενή <b>' . $pc->getpname() . '</b>');
+        $kernel->addStatus('notice', 'Δημιουργήθηκε νέος φάκελος για τον ασθενή <b>' . htmlspecialchars($pc->getpname(), ENT_QUOTES, 'UTF-8') . '</b>');
 
         if(isset($_POST['submitedit']))
             header('location: '.rel_url('/patient/'.$pc->getid().'/edit'));
@@ -758,7 +758,13 @@ require_once(__DIR__ . '/appointment_files.php');
     function settings($params) {
         global $kernel;
 
-        if(($errmsg=SecurityClass::require('patients-new-patient')))return $errmsg;
+        // Clinics/Doctors reference-data management (below) is a distinct
+        // capability from the day-to-day patients-new-patient permission --
+        // it used to reuse that permission, which meant any staff who could
+        // register a new patient could also edit clinic/doctor reference
+        // data. Gated on its own settings-manage permission now (see
+        // config/settings.info.yaml's power-user role).
+        if(($errmsg=SecurityClass::require('settings-manage')))return $errmsg;
 
         // $dbclinics = formsClass::getForm('clinics');
         // $dbdoctors = formsClass::getForm('doctors');
@@ -872,6 +878,12 @@ require_once(__DIR__ . '/appointment_files.php');
 function clinics_edit($params) {
     // echopre("Edit clinics");
 
+    // This route previously had no permission check at all -- anyone who
+    // could reach /apps/edit_clinics (no menu link, but reachable directly)
+    // got the clinics management form with zero auth. Same settings-manage
+    // permission as settings() above, which renders the same form.
+    if(($errmsg=SecurityClass::require('settings-manage')))return $errmsg;
+
     $dbForm = formsClass::renderForm('clinics');
     // $dbForm = formsClass::renderForm('operations');
 
@@ -887,11 +899,26 @@ function totp_handler($params) {
     $tfile = core_get_temp_filename('temp_qrcode.png');
     $str ="QR TEST CODE";
 
-    $cmd0 =  "qrencode -o $tfile --size=10 " . escapeshellarg($str);
-    $cmd = escapeshellcmd( $cmd0 );
-    error_log("shell command: " . $cmd);
+    // Previously a single string run through escapeshellcmd() after $str
+    // alone had been escapeshellarg()'d -- every value here is currently
+    // hardcoded/internally generated so it isn't exploitable today, but
+    // that string-escaping combination is exactly the fragile pattern that
+    // broke in app_generate_qr() before it was fixed (see that function's
+    // own comment). Same fix here: proc_open() with an argument array, so
+    // no shell ever parses these values regardless of what's in them.
+    $command = ['qrencode', '-o', $tfile, '--size=10', $str];
+    error_log("qrencode command: " . print_r($command, 1));
 
-    shell_exec( $cmd );
+    $descriptors = [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
+    $process = proc_open($command, $descriptors, $pipes);
+    if(is_resource($process)) {
+        fclose($pipes[0]);
+        stream_get_contents($pipes[1]);
+        fclose($pipes[1]);
+        $stderr = stream_get_contents($pipes[2]);
+        fclose($pipes[2]);
+        proc_close($process);
+    }
     if(!file_exists($tfile)) {
         $output = ['result' => 'failed',
                     'error' => 'failed to create qr image',

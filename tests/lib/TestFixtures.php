@@ -16,8 +16,10 @@ class TestFixtures {
             'name' => 'ZPMS Test User',
             'email' => 'zpms-test@example.invalid',
             'uname' => self::USERNAME,
-            // usersClassEx::getUser() matches on sha256(password) -- see
-            // web/ClassesEx.php -- same hashing login_post() itself uses.
+            // Legacy unsalted-sha256 format -- login_post() (zeusfw core)
+            // accepts this format and transparently rehashes to bcrypt on
+            // first successful login, so this also exercises that upgrade
+            // path every time the suite runs.
             'upass' => hash('sha256', self::PASSWORD),
             'active' => 1,
             'expired' => 0,
