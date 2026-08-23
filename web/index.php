@@ -527,57 +527,6 @@ require_once(__DIR__ . '/appointment_files.php');
         exit();
     }
 
-    function appointments_list($params) {
-        global $kernel;
-
-        // SecurityClass::require('appointments-view-list');
-        if(($errmsg=SecurityClass::require('appointments-view-list')))return $errmsg;
-
-        $app = new appointmentsClass();
-        $ap = $app->getAll();
-        // $apnt = $ap->getAll();
-        // echo "<pre>";
-        // print_r( $pat );
-        // echo "</pre>";
-        $pp = array();
-        foreach($ap as $appoint) {
-            $pat = patientsClassEx::sgetByGuid( $appoint->getpguid());
-
-            if(($appoint->getdeleted() == null) &&
-                ($pat->getdeleted() == null)) 
-                {
-
-
-                $pp[] = ['id' => $appoint->getid(),
-                        'adate' => $appoint->getadate(),
-                        'pname' => $pat->getpname(),
-                        'aplace' => $appoint->getaplace()
-                    ];
-            }
-        }
-
-        return Renderer::render("appointments_list.zetem",
-            ['app_list' => $pp,
-                // 'notice' => $kernel->ifelseStatus('patient_edit', '', true)
-            ]);
-    }
-
-
-    function appointment_edit($params) {
-        global $kernel;
-
-        if(!isset($params['id'])) {
-            $kernel->addStatus('error', 'Το ραντεβού δεν βρέθηκε!');
-            return ("patients doesn't exist");
-        }
-
-        $loc = locationsClassEx::sgetAll( $kernel->getCurrentLanguage() );
-
-        $ap = new appointmentsClass();
-        $app = $ap->getById($params['id']);
-        return (Renderer::render("edit_appointment.zetem", ['action' => 'edit', 'id' => $params['id'], 'appointment' => $app, 'locations' => $loc]));
-        
-    }
     function appointment_edit_post($params) {
         global $kernel;
 
@@ -589,7 +538,7 @@ require_once(__DIR__ . '/appointment_files.php');
                 exit();
             }
             $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
-            header('location: '.rel_url('/appointments'));
+            header('location: '. $_SERVER['HTTP_REFERER']);
             exit();
         }
 
@@ -639,32 +588,6 @@ require_once(__DIR__ . '/appointment_files.php');
     }
 
 
-    function appointment_new($params) {
-        global $kernel;
-
-
-        // $loc = locationsClass::sgetAll();
-        $loc = locationsClassEx::sgetAll( $kernel->getCurrentLanguage() );
-
-        $ap = new appointmentsClass([
-            'adate' => getDBtime(),
-            'aplace' => ''
-        ]);
-        
-        // error_log('\nREFERER: '. $_SERVER['HTTP_REFERER']."\n");
-
-        // $pat = $pc->getById($params['id']);
-        return (Renderer::render("edit_appointment.zetem", ['action' => 'new', 'id' => null, 'appointment' => $ap, 'locations' => $loc]));
-    }
-
-    function appointment_new_post($params) {
-        global $kernel;
-
-
-        $kernel->addStatus('warning', 'Η επεξεργασία του ραντεβού ακυρώθηκε.');
-        header('location: '.rel_url($_SERVER['HTTP_REFERER']));
-    }
-
     function appointment_delete($params) {
         global $kernel;
 
@@ -676,21 +599,19 @@ require_once(__DIR__ . '/appointment_files.php');
         // $app->delete();
 
         $kernel->addStatus('warning', 'Το ραντεβού διαγράφθηκε με επιτυχία.');
-        $kernel->addStatus('warning', 'Εάν θέλετε να ακυρώσετε την διαγραφή, κάντε κλικ ' .
-                            '<a href="'.rel_url('/appointment/'.$params['id'].'/recover').'">εδώ</a>.'
-                                );
-
 
         $s = $kernel->popRouteHistory();
-        // $kernel->addStatus('warning', 'History route: ' . print_r($s, 1));
 
-        if(!$s)$s = rel_url('/appointments');
+        if(!$s) {
+            // No pushed history to return to (e.g. a direct/bookmarked
+            // GET) -- appointments are always viewed from inside their
+            // patient's own record now, so that's the sane fallback
+            // destination rather than a standalone appointments list.
+            $pat = patientsClassEx::sgetByGuid($app->getpguid());
+            $s = $pat ? rel_url('/patient/'.$pat->getid().'/edit') : rel_url('/patients');
+        }
         header('location: '.$s);
         exit();
-    }
-
-    function appointment_recover($params) {
-        return 'recover appointment ' . $params['id'];
     }
 
     function patient_appointment_new($params) {

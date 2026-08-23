@@ -265,45 +265,15 @@ routes:
     title: "Patient delete"
     url: "/patient/{id}/delete"
     handler: patient_delete
-  appointments:
-    title:
-      gr: "Εφαρμογές"
-      en: "Appointments"
-    url: /appointments
-    handler: appointments_list
-    # access: authenticated user
-  appointment_edit:
-    title:
-      gr: "Επεξεργασία ραντεβού"
-      en: "Appointment edit"
-    url: "/appointment/{id}/edit"
-    handler: appointment_edit
-    method: get
   appointment_edit_post:
     title: "Appointment edit"
     url: "/appointment/{id}/edit"
     handler: appointment_edit_post
     method: post
-  appointment_new:
-    title:
-      gr: "Νέο ραντεβού"
-      en: "New appointment"
-    url: "/appointment/new"
-    handler: appointment_new
-    method: get
-  appointment_new_post:
-    title: "New appointment"
-    url: "/appointment/new"
-    handler: appointment_new_post
-    method: post
   appointment_delete:
     title: "Appointment delete"
     url: "/appointment/{id}/delete"
     handler: appointment_delete
-  appointment_recover:
-    title: "Appointment recover"
-    url: "/appointment/{id}/recover"
-    handler: appointment_recover
   patient_appointment_new:
     title: "New patient appointment"
     url: "/appointment/{id}/newappointment"
@@ -445,12 +415,6 @@ menu:
             en: 'New'
           url: /patient/new
       # path: '/patients'
-    - appointments:
-      text:
-        gr: 'Ραντεβού'
-        en: 'Appointments'
-      url: '/appointments'
-      disabled: true
     - settings:
       text:
         gr: "Ρυθμίσεις"

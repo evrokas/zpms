@@ -6,6 +6,5 @@ Selected location is: {{$location}}
 
 <ul>
     <li>Select <a href="{{rel_url('/patients')}}">Patients</a> for show patient list</li>
-    <li>Select <a href="{{rel_url('/appointments')}}">Appointments</a> for show apppointment list</li>
 </ul>
 
