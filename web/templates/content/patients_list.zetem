@@ -1,22 +1,18 @@
 {% attach_library('boxicons') %}
 
-<div class="page-title">
-    <h2>{{t("Patients")}}</h2>
-</div>
-
-<div class="patient-list-actions">
-    <ul>
-        <li><a href="{{rel_url('/patient/new')}}"">{{t("Add new patient")}}</a></li>
-    </ul>
+<div class="patients-header">
+    <h2 class="page-title">{{t("Patients")}}</h2>
+    <a class="btn-add-patient" href="{{rel_url('/patient/new')}}">
+        <i class="bx bx-plus"></i>{{t("Add new patient")}}
+    </a>
 </div>
 
 <div class="search">
     <form action="{{rel_url('patients/search')}}" method="post">
         {{ csrf_field() }}
         <div class="input-div">
-            <label for="search-term">{{t("Search")}}</label>
-            <input type="text" class="select2 focus-primary" name="search-term" id="" autocomplete="off" placeholder="Αναζήτηση ασθενών..." value="{% if(isset($search_term))echo htmlspecialchars($search_term, ENT_QUOTES, 'UTF-8'); %}">
-            <!-- <input type="text" class="select2" name="search-term" id="" autocomplete="off" value="{% if(isset($search_term))echo $search_term; %}"> -->
+            <i class="bx bx-search search-icon"></i>
+            <input type="text" class="select2 focus-primary" name="search-term" id="" autocomplete="off" aria-label="{{t('Search')}}" placeholder="Αναζήτηση με όνομα, ΑΜΚΑ ή τηλέφωνο&hellip;" value="{% if(isset($search_term))echo htmlspecialchars($search_term, ENT_QUOTES, 'UTF-8'); %}">
         </div>
         <div class="select-container">
             <ul class="select-box" id="select-box">
@@ -25,16 +21,15 @@
                 <!-- <li>Opt 3</li> -->
             </ul>
         </div>
-        <!-- <div class="buttons">
-            <button type="submit" name="search" value="search">Search</button>
-        </div> -->
-
-        <!-- <p>
-            <textarea name="search-response" id="search-response" cols="30" rows="10"></textarea>
-        </p> -->
     </form>
 </div>
 <div class="patients-list">
+    {% if(count($pat_list) == 0): %}
+        <div class="patients-empty">
+            <i class="bx bx-user-plus"></i>
+            <p>{{t("No patients found.")}}</p>
+        </div>
+    {% else: %}
     <table>
         <thead>
             <!-- <th>#</th> -->
@@ -84,14 +79,12 @@
                     {% endif %}
                 </td>
                 <td class="actions" data-column="actions">
-                    
-                    <!-- <a href="{{rel_url('/patient/'.$pat['id'].'/edit')}}">edit</a> -->
-                    <a href="{{rel_url('/patient/'.$pat['id'].'/delete')}}" confirmation><i class="bx bx-trash"></i></a>
+                    <a class="icon-btn icon-btn-danger" href="{{rel_url('/patient/'.$pat['id'].'/delete')}}" confirmation title="{{t('Delete')}}"><i class="bx bx-trash"></i></a>
                 </td>
             </tr>
             {% endforeach %}
         </tbody>
     </table>
+    {% endif %}
 </div>
-
 

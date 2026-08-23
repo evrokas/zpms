@@ -3,7 +3,12 @@
     padding: 0;
     box-sizing: border-box;
     text-decoration: none;
-    font-family: 'Roboto Slab', sans-serif;
+    font-family: var(--font-body);
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-heading);
+    font-weight: 600;
 }
 
 html {
@@ -276,13 +281,21 @@ form .input-div {
         box-shadow: var(--shadow-primary-base);
     }
 
-    .buttons input[name="delete"] {
-        background-color: var(--error);
-        color: white;
+    /* "Ακύρωση" (Cancel) submits with name="delete" (see the PHP handler),
+       but visually this is a secondary/neutral action, not a destructive
+       one -- it discards the edit and returns to the list, nothing gets
+       deleted. Styling it in --error red next to the primary Save button
+       read as a warning for an action that isn't dangerous. */
+    .buttons input[type="submit"].btn-secondary {
+        background-color: white;
+        color: var(--dark-gray);
+        border: 1.5px solid var(--medium-gray);
     }
 
-    .buttons input[name="delete"]:hover {
-        background-color: var(--error-dark);
+    .buttons input[type="submit"].btn-secondary:hover {
+        background-color: var(--light-gray);
+        border-color: var(--dark-gray);
+        color: var(--text);
     }
 
     /* OLD input styles - keeping for reference */
@@ -474,6 +487,21 @@ form .input-div {
         /* position: relative; */
     }
 
+}
+
+/* Computed-age display next to the DOB field (dobChange() in scripts.js
+   fills its text). ID selector so it wins over the ".inline-icons span"
+   font-size rule above regardless of nesting -- was previously bare
+   text with no visual treatment of its own, which read as broken/
+   floating rather than as a deliberate computed value. */
+#age_field {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--primary-dark);
+    background: rgba(var(--primary-rgb), 0.1);
+    padding: 0.25rem 0.6rem;
+    border-radius: 999px;
+    white-space: nowrap;
 }
 
 .appointment-entry {
@@ -671,60 +699,100 @@ form .input-div {
 
 /* patients forms */
 
+.patients-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing);
+    margin: 0.5rem 1rem var(--spacing);
+    flex-wrap: wrap;
+}
+
 .page-title {
-    text-align: center;
-    margin-bottom: var(--spacing);
-    color: var(--primary);
+    color: var(--primary-dark);
+    font-size: 1.6rem;
+    margin: 0;
+}
+
+.btn-add-patient {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    background-color: var(--primary);
+    color: white;
+    padding: 0.6rem var(--spacing);
+    border-radius: var(--border-radius);
+    font-weight: 600;
+    font-size: 0.95rem;
+    box-shadow: var(--shadow-primary-sm);
+    transition: all var(--transition-fast);
+    white-space: nowrap;
+}
+
+.btn-add-patient i {
+    font-size: 1.15rem;
+}
+
+.btn-add-patient:hover {
+    background-color: var(--primary-light);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-primary-md);
 }
 
 .search {
-    margin: 1rem 1rem 0rem;
+    margin: 0 1rem var(--spacing);
     background: white;
-    padding: var(--spacing);
+    padding: 0.75rem var(--spacing);
     border-radius: var(--border-radius);
     box-shadow: var(--shadow-sm);
 }
 
-.search .input-div label {
-    text-align: left;
-    width: auto;
-    font-weight: 600;
+.search .input-div {
+    position: relative;
+    display: block;
+}
+
+.search .search-icon {
+    position: absolute;
+    left: 0.9rem;
+    top: 50%;
+    transform: translateY(-50%);
     color: var(--dark-gray);
+    font-size: 1.1rem;
+    pointer-events: none;
 }
 
 .search .input-div input {
-    padding: 8px 12px;
+    width: 100%;
+    padding: 0.65rem 0.8rem 0.65rem 2.5rem;
     border: 1px solid var(--medium-gray);
     border-radius: var(--border-radius-sm);
     transition: all var(--transition-fast);
+    font-size: 0.95rem;
 }
 
 .search .input-div input:focus {
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(3, 99, 121, 0.1);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
     outline: none;
 }
 
-.patient-list-actions ul {
-    padding: 1rem 2rem 0.2rem;
-    list-style: none;
+.patients-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+    padding: var(--spacing-xl) var(--spacing);
+    color: var(--dark-gray);
 }
 
-/* NEW patient list actions styles */
-.patient-list-actions a {
-    display: inline-block;
-    background-color: var(--primary);
-    color: white;
-    padding: var(--spacing-sm) var(--spacing);
-    border-radius: var(--border-radius);
-    text-decoration: none;
-    transition: all var(--transition-fast);
+.patients-empty i {
+    font-size: 2.5rem;
+    color: var(--medium-gray);
 }
 
-.patient-list-actions a:hover {
-    background-color: var(--primary-light);
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
+.patients-empty p {
+    font-size: 1rem;
 }
 
 .patients-list {
@@ -753,14 +821,11 @@ form .input-div {
 }
 
 .patients-list table tr {
-    height: 1.5rem;
-    line-height: 1.5rem;
-    justify-content: center;
     transition: background-color var(--transition-fast);
 }
 
 .patients-list table tr:hover {
-    background-color: rgba(3, 99, 121, 0.05);
+    background-color: rgba(var(--primary-rgb), 0.05);
 }
 
 .patients-list table tr:nth-child(even) {
@@ -768,26 +833,41 @@ form .input-div {
 }
 
 .patients-list table td {
-    padding: 0.6rem 0.4rem;
+    padding: 0.85rem 0.75rem;
     border-bottom: 1px solid var(--medium-gray);
 }
 
 .patients-list table td.actions {
     display: flex;
-    justify-content: space-evenly;
+    justify-content: center;
     gap: 8px;
 }
 
-.patients-list table td.actions a,
-.patients-list table td.actions a:visited {
-    color: var(--error);
-    text-decoration: inherit;
-    transition: color var(--transition-fast);
+/* Icon-only action buttons (delete, etc.) -- a circular hover target
+   rather than a bare colored glyph, so the click affordance is visible
+   before the pointer is already on top of it. */
+.icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    color: var(--dark-gray);
+    transition: all var(--transition-fast);
 }
 
-.patients-list table td.actions a:hover {
+.icon-btn:hover {
+    background-color: var(--medium-gray);
+}
+
+.icon-btn-danger {
+    color: var(--error);
+}
+
+.icon-btn-danger:hover {
+    background-color: rgba(var(--error-rgb), 0.12);
     color: var(--error-dark);
-    transform: scale(1.1);
 }
 
 .patients-list table td[data-column="name"] {
@@ -846,6 +926,8 @@ form .input-div {
 .patients-list table td[data-column="lastapp"] {
     text-align: center;
     width: max-content;
+    color: var(--dark-gray);
+    font-variant-numeric: tabular-nums;
 }
 
 .patients-list table td[data-column="actions"] {
@@ -918,20 +1000,36 @@ form .input-div {
     text-align: center;
 }
 
+.patient-appointments a {
+    text-decoration: none;
+}
+
 .patient-appointments .new-appointment {
-    border: 1px solid black;
-    width: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: auto;
+    min-width: 14rem;
     margin: auto;
-    padding: 0.3rem;
-    border-radius: 5px;
+    padding: 0.65rem 1.5rem;
+    border-radius: var(--border-radius);
+    border: 1.5px solid var(--primary);
+    color: var(--primary);
+    font-weight: 600;
+    transition: all var(--transition-fast);
+}
+
+.patient-appointments .new-appointment::before {
+    content: "\ebc0"; /* bx-plus, confirmed against web/css/bx/css/boxicons.min.css */
+    font-family: boxicons;
+    font-size: 1.1rem;
 }
 
 .patient-appointments .new-appointment:hover {
-    background-color: darkslategrey;
-}
-
-.patient-appointments .new-appointment:hover a {
+    background-color: var(--primary);
     color: white;
+    box-shadow: var(--shadow-primary-sm);
 }
 
 
@@ -1074,66 +1172,139 @@ ul.patient-appointments-list {
     gap: 8px;
 }
 
-/* login page */
+/* login page -- a calm, centered card rather than a plain bordered box
+   sitting in normal document flow (the old layout left a large dead
+   whitespace gap below it on anything taller than the form itself). */
 .login-page {
-    width: 60%;
-    margin: auto;
-    padding: 1rem;
+    min-height: calc(100vh - 6rem);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--spacing-lg) var(--spacing);
+    background:
+        radial-gradient(circle at 15% 15%, rgba(var(--primary-rgb), 0.08), transparent 45%),
+        radial-gradient(circle at 85% 85%, rgba(var(--primary-rgb), 0.06), transparent 45%);
+    border-radius: var(--border-radius-lg);
+}
+
+.login-card {
+    width: 100%;
+    max-width: 26rem;
+    background: white;
+    padding: var(--spacing-xl) var(--spacing-lg);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-primary-lg);
+}
+
+.login-brand {
     display: flex;
     flex-direction: column;
     align-items: center;
-    border: 1px solid black;
-    border-radius: 5px;
+    gap: 0.6rem;
+    margin-bottom: 0.4rem;
 }
 
-.login-page .title {
-    font-size: 1.1rem;
+.login-brand img {
+    width: 3.25rem;
+    height: 3.25rem;
+    border-radius: 50%;
+}
+
+.login-brand h1 {
+    font-size: 1.35rem;
     font-weight: 600;
-    margin-bottom: 1rem;
+    color: var(--primary-dark);
+    letter-spacing: -0.01em;
+}
+
+.login-brand h1 span {
+    color: var(--primary-light);
+    font-weight: 500;
+}
+
+.login-subtitle {
+    text-align: center;
+    color: var(--dark-gray);
+    font-size: 0.92rem;
+    margin-bottom: var(--spacing-lg);
 }
 
 .login-page form .field {
     display: flex;
-    justify-content: center;
-    font-size: 1rem;
-    margin: 1rem;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: var(--spacing);
 }
 
 .login-page form .field label {
-    width: 7rem;
-    text-align: right;
-    padding: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--dark-gray);
 }
 
-.login-page form .field label[for="rememberme"] {
-    width: unset;
+.login-page form input[type="text"],
+.login-page form input[type="password"] {
+    font-size: 1rem;
+    padding: 0.65rem 0.8rem;
+    border: 1px solid var(--medium-gray);
+    border-radius: var(--border-radius-sm);
+    transition: all var(--transition-fast);
+    width: 100%;
 }
 
-.login-page form .field.justify-right {
+.login-page form input[type="text"]:focus,
+.login-page form input[type="password"]:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.12);
+    outline: none;
+}
+
+.login-page form .field-remember {
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+    margin: var(--spacing) 0 var(--spacing-lg);
+}
+
+.login-page form .field-remember input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--primary);
+}
+
+.login-page form .field-remember label {
+    font-weight: 400;
+    color: var(--text);
+}
+
+.login-page .buttons {
     display: block;
-    margin: 0 auto;
-    text-align: center;
-}
-
-@media screen and (max-width: 500px) {
-    .login-page form .field {
-        flex-direction: column;
-    }
-
-    .login-page form .field label {
-        text-align: left
-    }
-}
-
-.login-page form input {
-    font-size: 1.1rem;
 }
 
 .login-page .buttons button {
-    font-size: 1.2rem;
-    padding: 0.3rem 2rem;
-    border-radius: 5px;
-    margin-top: 1rem;
+    width: 100%;
+    font-size: 1.05rem;
+    font-weight: 600;
+    padding: 0.8rem;
+    border: none;
+    border-radius: var(--border-radius);
+    background-color: var(--primary);
+    color: white;
+    cursor: pointer;
+    box-shadow: var(--shadow-primary-sm);
+    transition: all var(--transition-fast);
+}
+
+.login-page .buttons button:hover {
+    background-color: var(--primary-light);
+    box-shadow: var(--shadow-primary-base);
+    transform: translateY(-1px);
+}
+
+@media screen and (max-width: 500px) {
+    .login-card {
+        padding: var(--spacing-lg) var(--spacing);
+    }
 }
 
 /* ******** list box select2 ******* */

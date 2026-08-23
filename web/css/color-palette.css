@@ -13,11 +13,20 @@
   --secondary-dark: #388E3C;  /* Dark success states */
   --secondary-rgb: 76, 175, 80; /* RGB values for transparency */
   
-  /* Neutral Colors - Gray Family */
-  --light-gray: #f8f9fa;
-  --medium-gray: #e9ecef;
-  --dark-gray: #495057;
-  --text: #212529;
+  /* Neutral Colors - Gray Family. Slightly teal-biased rather than pure
+     gray, so they read as chosen to go with --primary rather than an
+     unconsidered default -- same variable names/usage everywhere else in
+     this file, only the hex values shifted. */
+  --light-gray: #f5f8f8;
+  --medium-gray: #e3ebec;
+  --dark-gray: #47585c;
+  --text: #182427;
+
+  /* Typography -- see templates/page/main.zetem for the Google Fonts
+     link. Real fallback stacks so a blocked font request still lands on
+     a reasonable system face rather than the browser default. */
+  --font-body: 'IBM Plex Sans', 'Segoe UI', Arial, sans-serif;
+  --font-heading: 'IBM Plex Serif', Georgia, 'Times New Roman', serif;
   
   /* Semantic Colors */
   --success: var(--secondary);

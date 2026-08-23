@@ -6,7 +6,7 @@
 
 <div class="edit-patient">    
     <div class="header">
-        <h4>Επεξεργασία στοιχείων ασθενή</h4>
+        <h4>{% if($action == 'new'): %}Νέος Ασθενής{% else: %}Επεξεργασία Στοιχείων Ασθενή{% endif %}</h4>
     </div>
     <form action="{{$action}}" method="post">
         {{ csrf_field() }}
@@ -51,7 +51,7 @@
                 <div class="inline-icons">
                     <!-- <i class='valid bx bx-check' style='color:#00ff00'  ></i> -->
                     <i class='not-valid bx bx-error' style='color:#ff0000'  ></i>
-                    <span for="dob-age" id="age_field" style="width: max-content;" disabled">Ηλικία</label>
+                    <span id="age_field" class="age-badge">Ηλικία</span>
                 </div>
 
                 <!-- <input type="text" style="width: 1rem" disabled name="dob-age" id="age_field" value=""> -->
@@ -130,7 +130,7 @@
             {% if($action == 'new'): %}
                 <input type="submit" name="submitedit" value="Αποθήκευση & Επεξεργασία">
             {% else: %}
-                <input type="submit" name="delete" value="Ακύρωση">
+                <input type="submit" name="delete" value="Ακύρωση" class="btn-secondary">
             {% endif %}
 
             <button hidden type="button" loader="info-loader" onclick="field_update(this)">Update</button>
