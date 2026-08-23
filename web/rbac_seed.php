@@ -13,16 +13,17 @@
 // one-time snapshot taken when this system was introduced -- not
 // something that stays in sync automatically afterward; edit role
 // permissions going forward via the /admin/role_permissions admin UI
-// (web/admin_crud.php) or role_permissionsClassEx directly, not by
-// editing this array and re-running the migration.
+// (zeusfw core's core/modules/admin/admin_crud.php) or
+// role_permissionsClassEx directly, not by editing this array and
+// re-running the migration.
 //
 // 'user' only ever had patients-view-list in practice
 // (appointments-view-list was listed in the old YAML but never actually
 // checked anywhere in code -- see web/rbac.php's docblock -- so it's
 // deliberately not carried forward as a real permission here).
 // 'administrator' needs no permissions list at all -- is_superuser bypasses
-// the permission check entirely, see zpms_user_has_permission() in
-// web/rbac.php.
+// the permission check entirely, see rbacClass::isPermitted() in
+// zeusfw's core/lib/Rbac.php.
 function zpms_role_seed_definitions(): array {
     return [
         'user' => [
@@ -62,7 +63,7 @@ function zpms_permission_label_seed(): array {
         ZPMS_PERM_APPOINTMENT_EDIT => 'Create/edit/delete appointments and their attachments',
         ZPMS_PERM_BACKUP_ACCESS => 'View backup status',
         ZPMS_PERM_SETTINGS_MANAGE => 'Manage clinics/doctors reference data',
-        ZPMS_PERM_USERS_MANAGE => 'Manage user accounts and roles/permissions',
+        ZEUSFW_PERM_MANAGE_USERS => 'Manage user accounts and roles/permissions',
     ];
 }
 

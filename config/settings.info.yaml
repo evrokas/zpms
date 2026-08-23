@@ -344,36 +344,12 @@ routes:
     # before dispatch, same mechanism already used by the settings/backup
     # menu entries above.
     access: power-user
-  admin_list:
-    title: "Admin: list"
-    url: "/admin/{entity}"
-    handler: admin_list
-    method: get
-  admin_new:
-    title: "Admin: new"
-    url: "/admin/{entity}/new"
-    handler: admin_new
-    method: get
-  admin_new_post:
-    title: "Admin: new"
-    url: "/admin/{entity}/new"
-    handler: admin_new_post
-    method: post
-  admin_edit:
-    title: "Admin: edit"
-    url: "/admin/{entity}/{id}/edit"
-    handler: admin_edit
-    method: get
-  admin_edit_post:
-    title: "Admin: edit"
-    url: "/admin/{entity}/{id}/edit"
-    handler: admin_edit_post
-    method: post
-  admin_delete:
-    title: "Admin: delete"
-    url: "/admin/{entity}/{id}/delete"
-    handler: admin_delete
-    method: post
+  # admin_list/admin_new/admin_new_post/admin_edit/admin_edit_post/
+  # admin_delete used to be defined here -- they're now provided by
+  # zeusfw core's own admin module (core/modules/admin/admin.yaml),
+  # live-injected into the router since 'admin' is already listed under
+  # modules: below. Defining them here too would collide (same route
+  # keys/URLs) and corrupt the merged route table.
   webforms_view:
     title: "View Webform"
     url: "/webform/viewform/{formname}"

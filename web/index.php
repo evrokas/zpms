@@ -15,7 +15,6 @@ require_once(__FWDIR__ . '/bootstrap.php');
 require_once(__DIR__ . '/api_patients.php');
 require_once(__DIR__ . '/appointment_files.php');
 require_once(__DIR__ . '/rbac.php');
-require_once(__DIR__ . '/admin_crud.php');
 
 
     ini_set('session.gc_maxlifetime', 3600);
@@ -139,7 +138,7 @@ require_once(__DIR__ . '/admin_crud.php');
     function patients_list($params) {
         global $kernel;
 
-        if(($errmsg = zpms_require_permission(ZPMS_PERM_PATIENTS_VIEW_LIST)))return $errmsg;
+        if(($errmsg = rbacClass::require(ZPMS_PERM_PATIENTS_VIEW_LIST)))return $errmsg;
 
         // echopre(print_r($params,1));
         // $pc = new patientsClass();
@@ -200,7 +199,7 @@ require_once(__DIR__ . '/admin_crud.php');
     }
 
     function patients_search_post($params) {
-        if(($errmsg = zpms_require_permission(ZPMS_PERM_PATIENTS_VIEW_LIST)))return $errmsg;
+        if(($errmsg = rbacClass::require(ZPMS_PERM_PATIENTS_VIEW_LIST)))return $errmsg;
 
         if(strlen($_POST['search-term'])>0) {
             header('location: '.rel_url('/patients/search/'.urlencode($_POST['search-term'])));
@@ -212,7 +211,7 @@ require_once(__DIR__ . '/admin_crud.php');
     }
 
     function patients_list_search($params) {
-        if(($errmsg = zpms_require_permission(ZPMS_PERM_PATIENTS_VIEW_LIST)))return $errmsg;
+        if(($errmsg = rbacClass::require(ZPMS_PERM_PATIENTS_VIEW_LIST)))return $errmsg;
 
         $pat = patientsClassEx::search(urldecode($params['term']));
 
@@ -242,7 +241,7 @@ require_once(__DIR__ . '/admin_crud.php');
     }
 
     function patients_list_search_ajax($params) {
-        if(($errmsg = zpms_require_permission(ZPMS_PERM_PATIENTS_VIEW_LIST)))return $errmsg;
+        if(($errmsg = rbacClass::require(ZPMS_PERM_PATIENTS_VIEW_LIST)))return $errmsg;
 
         $arg = $_POST['sterm'];
         // error_log("\nAjax request: ". print_r($arg, 1) . "\n");;
@@ -283,7 +282,7 @@ require_once(__DIR__ . '/admin_crud.php');
     function patient_edit($params) {
         global $kernel;
 
-        if(($errmsg = zpms_require_permission(ZPMS_PERM_PATIENTS_EDIT_PATIENT)))return $errmsg;
+        if(($errmsg = rbacClass::require(ZPMS_PERM_PATIENTS_EDIT_PATIENT)))return $errmsg;
 
         if(!isset($params['id'])) {
             $kernel->addStatus('error', 'Ο φάκελος του ασθενή δεν βρέθηκε!');
@@ -334,7 +333,7 @@ require_once(__DIR__ . '/admin_crud.php');
     function patient_edit_post($params) {
         global $kernel;
 
-        if(($errmsg = zpms_require_permission(ZPMS_PERM_PATIENTS_EDIT_PATIENT)))return $errmsg;
+        if(($errmsg = rbacClass::require(ZPMS_PERM_PATIENTS_EDIT_PATIENT)))return $errmsg;
 
         if(!csrfClass::verifyRequest()) {
             if(isset($_POST['use_ajax'])) {
@@ -405,7 +404,7 @@ require_once(__DIR__ . '/admin_crud.php');
     function patient_new($params) {
         global $kernel;
 
-        if(($errmsg = zpms_require_permission(ZPMS_PERM_PATIENTS_NEW_PATIENT)))return $errmsg;
+        if(($errmsg = rbacClass::require(ZPMS_PERM_PATIENTS_NEW_PATIENT)))return $errmsg;
 
         $pc = new patientsClass([
             'pname' => '', //randomAlpha(12, 2),
@@ -424,7 +423,7 @@ require_once(__DIR__ . '/admin_crud.php');
     function patient_delete($params) {
         global $kernel;
 
-        if(($errmsg = zpms_require_permission(ZPMS_PERM_PATIENTS_DELETE_PATIENT)))return $errmsg;
+        if(($errmsg = rbacClass::require(ZPMS_PERM_PATIENTS_DELETE_PATIENT)))return $errmsg;
 
         // Was a plain GET link (a bare <a href>, no server-side check at
         // all beyond the role) -- deleting a patient record (and cascading
@@ -468,7 +467,7 @@ require_once(__DIR__ . '/admin_crud.php');
         global $kernel;
 
 
-        if(($errmsg = zpms_require_permission(ZPMS_PERM_PATIENTS_NEW_PATIENT)))return $errmsg;
+        if(($errmsg = rbacClass::require(ZPMS_PERM_PATIENTS_NEW_PATIENT)))return $errmsg;
 
         error_log('\nAjax request: '. $kernel->isAjaxRequest()?"true":"false" . "\n");
 
@@ -527,7 +526,7 @@ require_once(__DIR__ . '/admin_crud.php');
     function patient_new_check_name($params) {
         header('Content-Type: application/json');
 
-        if (zpms_require_permission(ZPMS_PERM_PATIENTS_NEW_PATIENT)) {
+        if (rbacClass::require(ZPMS_PERM_PATIENTS_NEW_PATIENT)) {
             http_response_code(401);
             echo json_encode(['matches' => []]);
             exit();
@@ -559,7 +558,7 @@ require_once(__DIR__ . '/admin_crud.php');
     function appointment_edit_post($params) {
         global $kernel;
 
-        if(($errmsg = zpms_require_permission(ZPMS_PERM_APPOINTMENT_EDIT)))return $errmsg;
+        if(($errmsg = rbacClass::require(ZPMS_PERM_APPOINTMENT_EDIT)))return $errmsg;
 
         if(!csrfClass::verifyRequest()) {
             if(key_exists('use_ajax', $_POST)) {
@@ -657,7 +656,7 @@ require_once(__DIR__ . '/admin_crud.php');
     function appointment_delete($params) {
         global $kernel;
 
-        if(($errmsg = zpms_require_permission(ZPMS_PERM_APPOINTMENT_EDIT)))return $errmsg;
+        if(($errmsg = rbacClass::require(ZPMS_PERM_APPOINTMENT_EDIT)))return $errmsg;
 
         // Was a plain GET link with no CSRF check of its own -- a crafted
         // link/<img>/malicious page could silently delete an appointment
@@ -766,7 +765,7 @@ require_once(__DIR__ . '/admin_crud.php');
         // register a new patient could also edit clinic/doctor reference
         // data. Gated on its own settings-manage permission now (see
         // bin/migrate_roles.php's role seed data).
-        if(($errmsg = zpms_require_permission(ZPMS_PERM_SETTINGS_MANAGE)))return $errmsg;
+        if(($errmsg = rbacClass::require(ZPMS_PERM_SETTINGS_MANAGE)))return $errmsg;
 
         // $dbclinics = formsClass::getForm('clinics');
         // $dbdoctors = formsClass::getForm('doctors');
@@ -780,11 +779,11 @@ require_once(__DIR__ . '/admin_crud.php');
 
             // A settings-manage holder doesn't necessarily also have
             // users-manage (deliberately not granted to power-user by
-            // default -- see ZPMS_PERM_USERS_MANAGE's own comment in
-            // web/rbac.php), so this link is only shown when the current
-            // user actually has it, rather than to everyone who can reach
-            // this page at all.
-            'show_user_management' => zpms_user_has_permission(ZPMS_PERM_USERS_MANAGE),
+            // default -- see ZEUSFW_PERM_MANAGE_USERS's own comment in
+            // zeusfw's core/lib/Rbac.php), so this link is only shown when
+            // the current user actually has it, rather than to everyone
+            // who can reach this page at all.
+            'show_user_management' => rbacClass::isPermitted(ZEUSFW_PERM_MANAGE_USERS),
         ]);
 
     }
@@ -794,7 +793,7 @@ require_once(__DIR__ . '/admin_crud.php');
     function ajax_update_patient_info($params) {
         global $kernel;
 
-        if(($errmsg = zpms_require_permission(ZPMS_PERM_PATIENTS_EDIT_PATIENT)))return $errmsg;
+        if(($errmsg = rbacClass::require(ZPMS_PERM_PATIENTS_EDIT_PATIENT)))return $errmsg;
 
         $pat = patientsClass::sgetById($params['id']);
 
@@ -892,7 +891,7 @@ function clinics_edit($params) {
     // could reach /apps/edit_clinics (no menu link, but reachable directly)
     // got the clinics management form with zero auth. Same settings-manage
     // permission as settings() above, which renders the same form.
-    if(($errmsg = zpms_require_permission(ZPMS_PERM_SETTINGS_MANAGE)))return $errmsg;
+    if(($errmsg = rbacClass::require(ZPMS_PERM_SETTINGS_MANAGE)))return $errmsg;
 
     $dbForm = formsClass::renderForm('clinics');
     // $dbForm = formsClass::renderForm('operations');

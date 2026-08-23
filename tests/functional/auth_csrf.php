@@ -42,10 +42,11 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
         // Kernel::loginUser() unconditionally adds that role to every
         // logged-in user's session -- so in the old system, EVERY
         // permission check silently passed for ANY logged-in user
-        // regardless of their actual role. zpms_require_permission()
-        // (web/rbac.php) has no such bypass; this proves it by creating an
-        // account with only the 'user' role (patients-view-list only, no
-        // delete) and confirming it's actually refused.
+        // regardless of their actual role. rbacClass::require() (zeusfw
+        // core/lib/Rbac.php) has no such bypass; this proves it by
+        // creating an account with only the 'user' role
+        // (patients-view-list only, no delete) and confirming it's
+        // actually refused.
         TestSchema::assertSafeToMutate();
 
         $uname = 'zpms_test_plain_user';

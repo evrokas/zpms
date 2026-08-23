@@ -8,10 +8,11 @@ class TestFixtures {
 
     /**
      * Inserts a `power-user` test account directly through the entity
-     * class rather than the /admin/users HTTP UI (web/admin_crud.php) --
-     * that UI needs an already-logged-in users-manage account to reach at
-     * all, so it can't bootstrap the very first test account this suite
-     * uses to log in with.
+     * class rather than the /admin/users HTTP UI (zeusfw core's
+     * core/modules/admin/admin_crud.php) -- that UI needs an
+     * already-logged-in users-manage account to reach at all, so it can't
+     * bootstrap the very first test account this suite uses to log in
+     * with.
      */
     static function createTestUser(): void {
         TestSchema::assertSafeToMutate();
@@ -40,7 +41,7 @@ class TestFixtures {
 
         // Same seeding bin/migrate_roles.php runs against a real deploy --
         // idempotent, so calling it here on every test run is harmless.
-        // zpms_require_permission() (web/rbac.php) checks user_roles
+        // rbacClass::require() (zeusfw core/lib/Rbac.php) checks user_roles
         // directly, never the legacy column above, so without this line
         // every permission check in the suite would fail regardless of
         // that column's value.

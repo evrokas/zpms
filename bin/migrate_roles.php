@@ -1,12 +1,14 @@
 #!/usr/bin/env php
 <?php
 /*
- * Seeds the modernized permissions/roles/role_permissions tables (see
- * web/classes/yaml/{permissions,roles,role_permissions,user_roles}.yaml and
- * web/rbac.php's own docblock for the full design/rationale) and transfers
- * every existing user's role assignment out of the legacy users.roles
- * column (a single CHAR(36) field holding a raw, space-separated string
- * like "power-user") into the new user_roles join table.
+ * Seeds the modernized permissions/roles/role_permissions tables (schema
+ * now lives in zeusfw core -- core/classes/yaml/{permissions,roles,
+ * role_permissions,user_roles}.yaml -- see core/lib/Rbac.php's docblock
+ * for the engine and web/rbac.php's own docblock for this app's own
+ * permission vocabulary) and transfers every existing user's role
+ * assignment out of the legacy users.roles column (a single CHAR(36) field
+ * holding a raw, space-separated string like "power-user") into the new
+ * user_roles join table.
  *
  * The actual seeding/migration logic lives in web/rbac_seed.php (shared
  * with tests/lib/TestFixtures.php, so tests exercise the exact same code
@@ -33,23 +35,25 @@
  * (e.g. config/db.test.php) to migrate a test database instead.
  *
  * Schema prerequisite: the permissions/roles/role_permissions/user_roles
- * tables must already exist (run the same spill:class:all / update:
- * bootstrap / spill:sql:all steps your normal deploy process uses --
- * see tests/lib/TestSchema.php's regenerateClasses() for the exact
- * commands -- then load the generated web/classes/sql/{permissions,roles,
- * role_permissions,user_roles}.sql files into the live database by hand;
- * this framework has no migration runner, so that step is manual, same
- * as every other schema change in this app).
+ * tables must already exist -- they're defined in zeusfw core now (run
+ * the same spill:class:all / update:bootstrap / spill:sql:all steps your
+ * normal deploy process uses, with cwd=<zeusfw>/core/classes -- see
+ * tests/lib/TestSchema.php's regenerateClasses() for the exact commands
+ * -- then load the generated <zeusfw>/core/classes/sql/{permissions,
+ * roles,role_permissions,user_roles}.sql files into the live database by
+ * hand; this framework has no migration runner, so that step is manual,
+ * same as every other schema change in this app).
  *
  * IMPORTANT -- deployment ordering: once this app's code is deployed with
- * web/rbac.php in place, zpms_require_permission() checks the user_roles
- * table directly for every permission check (it never falls back to the
- * legacy users.roles column for that -- only login's *session* role list,
- * used solely for route-level access:, falls back). Any account that
- * hasn't been through this script yet will fail every permission check
- * after that point (patient view/edit/delete, appointment edit, backups,
- * settings) even though it can still log in. Run this script with --yes
- * as part of the SAME deploy that ships web/rbac.php, not some time after.
+ * web/rbac.php in place, rbacClass::require() (zeusfw core/lib/Rbac.php)
+ * checks the user_roles table directly for every permission check (it
+ * never falls back to the legacy users.roles column for that -- only
+ * login's *session* role list, used solely for route-level access:, falls
+ * back). Any account that hasn't been through this script yet will fail
+ * every permission check after that point (patient view/edit/delete,
+ * appointment edit, backups, settings) even though it can still log in.
+ * Run this script with --yes as part of the SAME deploy that ships
+ * web/rbac.php, not some time after.
  */
 
 if (PHP_SAPI !== 'cli') {

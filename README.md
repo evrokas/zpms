@@ -20,50 +20,63 @@ Staff accounts (the `users` table) are authorized via a standard
 role-based model: `permissions` (the fixed set of things the app actually
 checks — `patients-view-list`, `appointment-edit`, etc.), `roles` (named,
 assignable bundles like `power-user`), `role_permissions` (which
-permissions a role grants), and `user_roles` (which roles a user has).
-See `web/rbac.php`'s own docblock for the full design, including two real
-bugs in the previous system this replaced — most importantly, every
-permission check silently passed for any logged-in user regardless of
-role, so this isn't just a schema cleanup.
+permissions a role grants), and `user_roles` (which roles a user has). The
+*engine* — this schema, the `rolesClassEx`/`permissionsClassEx`/
+`role_permissionsClassEx`/`user_rolesClassEx` extension classes, and the
+`rbacClass::isPermitted()`/`rbacClass::require()` permission-check
+functions — lives in the shared ZeusFW framework
+(`web/core/lib/Rbac.php`, `web/core/ClassExFW.php`,
+`web/core/classes/yaml/{roles,permissions,role_permissions,
+user_roles}.yaml`), the same "defined once in core" pattern already used
+for the `users` table — see that file's own docblock for the full design,
+including two real bugs in the previous system this replaced (most
+importantly, every permission check silently passed for any logged-in
+user regardless of role). This app only owns its own permission
+*vocabulary*: the `ZPMS_PERM_*` constants + `zpms_all_permission_slugs()`
+in `web/rbac.php`, and the seed role/label data in `web/rbac_seed.php`.
 
 **Admin UI:** list/add/edit/delete for users and all four RBAC tables
 lives at `/admin/{entity}` (`entity` is `users`, `permissions`, `roles`,
 `role_permissions`, or `user_roles`) — linked from Settings under "User &
-Role Management" for anyone who can see it. Gated behind its own
-`users-manage` permission, deliberately **not** granted to `power-user` by
-default (see `ZPMS_PERM_USERS_MANAGE`'s comment in `web/rbac.php`): this
-page can create a new `is_superuser` role and assign it to any account,
-including its own operator's, so treat it as more sensitive than the
-`settings-manage`-gated Clinics/Doctors pages. Grant it explicitly (via
-the User Roles page itself, or `user_rolesClassEx::assignRole(...)`
+Role Management" for anyone who can see it. This UI is also framework-
+provided (`web/core/modules/admin/admin_crud.php`, one generic engine
+driving all five entities from a metadata array), reached via the `admin`
+module this app already lists under `config/settings.info.yaml`'s
+`modules:`. Gated behind the framework's own `ZEUSFW_PERM_MANAGE_USERS`
+permission (slug `users-manage`, seeded by this app under that same
+string value), deliberately **not** granted to `power-user` by default:
+this page can create a new `is_superuser` role and assign it to any
+account, including its own operator's, so treat it as more sensitive than
+the `settings-manage`-gated Clinics/Doctors pages. Grant it explicitly
+(via the User Roles page itself, or `user_rolesClassEx::assignRole(...)`
 directly) to whichever accounts should have it — an `is_superuser` account
 (the seeded `administrator` role) always has it implicitly and needs no
-explicit grant. One generic engine (`web/admin_crud.php`) drives all five
-entities from a metadata array rather than five near-duplicated pages;
-see that file's own docblock for the shape.
+explicit grant.
 
 **Deploying this for the first time / to a server still on the old
-scheme:** the new tables must exist before the app code that uses them
+scheme:** the RBAC tables must exist before the app code that uses them
 does, and every existing account needs an actual `user_roles` row before
 it can pass any permission check again (it can still log in either way —
 only fine-grained permission checks are affected, not authentication
 itself):
 
 ```sh
-# 1. Generate + load the new tables (same steps your normal deploy
-#    already runs for any schema change in this app — there's no
-#    migration runner, so this part is manual):
-cd web/classes
-php ../core/maker/maker.php spill:class:all
-php ../core/maker/maker.php update:bootstrap
-php ../core/maker/maker.php spill:sql:all
+# 1. Generate + load the RBAC tables -- these live in the ZeusFW
+#    framework checkout now (web/core, vendored per your normal deploy
+#    process), not this app's own web/classes/. Same steps your normal
+#    deploy already runs for any zeusfw core schema change — there's no
+#    migration runner, so this part is manual:
+cd web/core/classes
+php ../maker/maker.php spill:class:all
+php ../maker/maker.php update:bootstrap
+php ../maker/maker.php spill:sql:all
 mysql -u <user> -p <db> < sql/permissions.sql
 mysql -u <user> -p <db> < sql/roles.sql
 mysql -u <user> -p <db> < sql/role_permissions.sql
 mysql -u <user> -p <db> < sql/user_roles.sql
 
 # 2. Preview the migration (writes nothing):
-cd ../..
+cd -
 php bin/migrate_roles.php --dry-run
 
 # 3. Apply it -- seeds permissions/roles/role_permissions and transfers

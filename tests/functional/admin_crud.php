@@ -1,11 +1,13 @@
 <?php
 /* End-to-end, HTTP-level regression coverage for the generic admin list/
- * add/edit/delete UI (web/admin_crud.php) covering users and the RBAC
- * tables (permissions/roles/role_permissions/user_roles). Uses its own
- * is_superuser account (users-manage is deliberately not granted to
- * power-user -- see ZPMS_PERM_USERS_MANAGE's own comment in web/rbac.php)
- * rather than the shared, already-logged-in power-user client the other
- * functional suites use. */
+ * add/edit/delete UI (zeusfw core's core/modules/admin/admin_crud.php,
+ * framework-level as of the RBAC-engine migration -- see zeusfw's own
+ * CLAUDE.md entry) covering users and the RBAC tables (permissions/roles/
+ * role_permissions/user_roles). Uses its own is_superuser account
+ * (users-manage, i.e. ZEUSFW_PERM_MANAGE_USERS, is deliberately not
+ * granted to power-user -- see web/rbac.php's own comment) rather than
+ * the shared, already-logged-in power-user client the other functional
+ * suites use. */
 
 function zpms_functional_admin_crud(TestRunner $runner, string $baseUrl): void {
     $runner->add('set up an is_superuser test account', function () {
