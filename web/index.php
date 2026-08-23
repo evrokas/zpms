@@ -557,7 +557,13 @@ require_once(__DIR__ . '/appointment_files.php');
         $ap = appointmentsClass::sgetById($params['id']);
         // error_log("\bFound appointment: " . print_r($ap, 1) . "\n");
         // $ap->setaplace($_POST['appointment-place']);
-        $ap->setaplace((locationsClassEx::getbyMachineName($_POST['appointment-place'], $kernel->getCurrentLanguage()))->getname());
+        // Null-safe -- same pattern already used by patient_appointment_new_post()
+        // for this identical lookup. A machine name with no matching row (empty
+        // locations table, or one deleted between page load and submit) used to
+        // be an uncaught fatal error (getname() on null) instead of just saving
+        // an empty place, a real crash on a plain edit-and-save.
+        $loc = locationsClassEx::getbyMachineName($_POST['appointment-place'], $kernel->getCurrentLanguage());
+        $ap->setaplace($loc ? $loc->getname() : '');
 
         // we cannot search for appointment-date, because of special handling of
         // date fields in the view page, we must search for appointmenet-date-?

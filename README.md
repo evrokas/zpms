@@ -1,6 +1,19 @@
 # zpms
 Zeus Patient Management System
 
+## Regression tests
+
+Run before every update to the live app:
+
+```sh
+bin/run_tests.sh
+```
+
+Static PHP/JS/CSS/template consistency checks, then patient/appointment/
+auth/file-upload functional tests driven over real HTTP against a
+dedicated, disposable test database — never the live one. See
+`tests/README.md` for one-time setup and the safety design.
+
 ## Backups
 
 `bin/backup.sh`, run nightly via cron/systemd (reference configs:

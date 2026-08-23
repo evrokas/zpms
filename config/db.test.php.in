@@ -1,0 +1,25 @@
+<?php
+// Template for the regression test suite's OWN database config --
+// completely separate from config/db.php (the real, live database).
+//
+// Copy this file to config/db.test.php and fill in a database that:
+//   1. Is NOT the live/production database, ever.
+//   2. Has "test" in its name (tests/bootstrap.php refuses to start
+//      otherwise -- see tests/README.md's "Safety" section for why).
+//   3. Nothing else depends on -- the test suite DROPS and recreates
+//      this entire database on every run.
+//
+// A separate MySQL user (not the live app's DB_USER) is strongly
+// recommended, granted privileges on this database only, so that even a
+// bug in the test suite itself has no credential path to the real data.
+
+if(!defined('__APPDIR__'))
+  define("__APPDIR__", dirname(__DIR__));
+
+if(!defined('__FWDIR__'))
+  define("__FWDIR__", __APPDIR__ . "/web/core");
+
+define('DB_HOST', 'localhost');
+define('DB_USER', '<<test_user>>');
+define('DB_PASS', '<<test_pass>>');
+define('DB_NAME', '<<db>>_test');

@@ -1,6 +1,7 @@
 web/core
 fw
 config/db.php
+config/db.test.php
 config/docarc_api.php
 config/site.info.yaml
 sql/admin.sql

@@ -137,6 +137,8 @@ class patientsClassEx extends patientsClass {
                         FROM
                             appointments
                     ) app ON pat.guid = app.pguid AND app.rn = 1
+                WHERE
+                    pat.deleted IS NULL
                 ORDER BY
                     order_date " . $order; /* DESC"; */
 
@@ -163,7 +165,7 @@ class patientsClassEx extends patientsClass {
         }
 
         // sql statement extracted from ChatGPT (!!)
-        $sql = "SELECT * FROM patients ORDER BY pname " . $order;
+        $sql = "SELECT * FROM patients WHERE deleted IS NULL ORDER BY pname " . $order;
         $st = dbConnection::getConnection()->prepare( $sql );
         $st->execute();
 
