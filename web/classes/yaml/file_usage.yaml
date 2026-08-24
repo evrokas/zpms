@@ -20,7 +20,7 @@ table:
 
   - name: usage_type
     type: varchar(64)
-    default: '"attachment"'
+    default: 'attachment'
 
   - name: deleted
     type: datetime

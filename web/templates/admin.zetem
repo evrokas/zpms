@@ -1,0 +1,26 @@
+<h2>Admin page</h2>
+
+<pre>
+    <em>Printing routes</em>
+    {{rel_url($routes)}}
+</pre>
+
+<p>
+    Also: <br>
+    one -> {{$msg.one}}
+    <br>
+    two -> {{$msg.two}}
+    <br>
+</p>
+{% for $act in $msg %}
+<ul>
+    <li>
+        action: {{ $act }}
+    </li>
+</ul>
+
+
+{% endfor %}
+
+{#
+    #}

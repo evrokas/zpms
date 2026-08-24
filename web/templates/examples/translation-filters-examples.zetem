@@ -1,0 +1,194 @@
+{#
+    ZETEM Translation Filters - Usage Examples
+
+    This file demonstrates how to use translation filters in ZETEM templates.
+    These examples show both the old and new syntax for multilingual content.
+#}
+
+{# ============================================================================
+   BASIC TRANSLATION
+   ============================================================================ #}
+
+{# Old syntax (still works) - using getLangText() function #}
+<h1>{{ getLangText($pageTitle) }}</h1>
+
+{# New syntax (recommended) - using translation keys from YAML files #}
+<h1>{{ 'nav.home' | t }}</h1>
+<h2>{{ 'dashboard.welcome_default' | t }}</h2>
+
+{# Verbose alias #}
+<p>{{ 'dashboard.overview' | translate }}</p>
+
+
+{# ============================================================================
+   ARRAY-BASED TRANSLATIONS (Backward Compatible)
+   ============================================================================ #}
+
+{# For existing array-based language values in routes, menus, etc. #}
+{# Array format: {en: "English text", el: "Ελληνικά κείμενο"} #}
+
+{# Old way #}
+{{ getLangText($menuItem['text']) }}
+
+{# New way (using lang_text filter) #}
+{{ $menuItem['text'] | lang_text }}
+{{ $route['title'] | lang_text }}
+
+
+{# ============================================================================
+   TRANSLATION WITH PARAMETERS
+   ============================================================================ #}
+
+{# Replace {name} placeholder with actual value #}
+<p>{{ 'dashboard.welcome' | t_params({'name': $userName}) }}</p>
+
+{# Multiple parameters #}
+<p>{{ 'messages.delete_confirm' | t_params({'item': $itemName}) }}</p>
+
+{# Parameters with count #}
+<p>{{ 'patients.total_count' | t_params({'count': $totalPatients}) }}</p>
+
+
+{# ============================================================================
+   PLURALIZATION
+   ============================================================================ #}
+
+{# Display "1 patient" or "5 patients" based on count #}
+<span>{{ 'patient' | t_plural(1) }}</span>
+{# Output: "1 patient" #}
+
+<span>{{ 'patient' | t_plural(5) }}</span>
+{# Output: "5 patients" #}
+
+{# With variable count #}
+<p>{{ 'appointment' | t_plural($appointmentCount) }}</p>
+
+{# Pluralization with additional parameters #}
+<p>{{ 'item' | t_plural($count, {'type': $itemType}) }}</p>
+
+
+{# ============================================================================
+   CONTEXT-AWARE TRANSLATION
+   ============================================================================ #}
+
+{# Disambiguate words with multiple meanings #}
+<p>{{ 'bank' | t_context('financial') }}</p>
+{# Output: "Bank (Financial Institution)" #}
+
+<p>{{ 'bank' | t_context('river') }}</p>
+{# Output: "River Bank" #}
+
+<p>{{ 'date' | t_context('calendar') }}</p>
+{# Output: "Date" #}
+
+<p>{{ 'date' | t_context('romantic') }}</p>
+{# Output: "Date (Meeting)" #}
+
+
+{# ============================================================================
+   COMMON USE CASES
+   ============================================================================ #}
+
+{# Navigation Menu #}
+<nav>
+    <a href="/">{{ 'nav.home' | t }}</a>
+    <a href="/patients">{{ 'nav.patients' | t }}</a>
+    <a href="/appointments">{{ 'nav.appointments' | t }}</a>
+</nav>
+
+{# Form Labels #}
+<label>{{ 'patients.fields.first_name' | t }}</label>
+<input type="text" placeholder="{{ 'patients.search_placeholder' | t }}">
+
+{# Buttons #}
+<button>{{ 'forms.save' | t }}</button>
+<button>{{ 'forms.cancel' | t }}</button>
+
+{# Success Messages #}
+<div class="alert success">
+    {{ 'messages.save_success' | t }}
+</div>
+
+{# Error Messages with Parameters #}
+<div class="alert error">
+    {{ 'messages.error.not_found' | t_params({'item': 'Patient'}) }}
+</div>
+
+{# Confirmation Dialogs #}
+<div class="confirm-dialog">
+    <p>{{ 'patients.actions.delete_confirm' | t_params({'name': $patient->getname()}) }}</p>
+    <button>{{ 'ui.yes' | t }}</button>
+    <button>{{ 'ui.no' | t }}</button>
+</div>
+
+{# Dynamic Content with Count #}
+<h2>{{ 'patients.title' | t }} ({{ 'patient' | t_plural($totalPatients) }})</h2>
+
+{# Table Headers #}
+<table>
+    <thead>
+        <tr>
+            <th>{{ 'patients.fields.id' | t }}</th>
+            <th>{{ 'patients.fields.name' | t }}</th>
+            <th>{{ 'patients.fields.email' | t }}</th>
+            <th>{{ 'patients.fields.phone' | t }}</th>
+            <th>{{ 'ui.actions' | t }}</th>
+        </tr>
+    </thead>
+</table>
+
+
+{# ============================================================================
+   COMBINED WITH OTHER FILTERS
+   ============================================================================ #}
+
+{# Translation + Uppercase #}
+<h1>{{ 'nav.home' | t | upper }}</h1>
+
+{# Translation + Escape HTML #}
+<div>{{ $userInput | t | escape }}</div>
+
+{# Translation with params + Capitalize #}
+<p>{{ 'dashboard.welcome' | t_params({'name': $userName}) | capitalize }}</p>
+
+
+{# ============================================================================
+   CONDITIONAL TRANSLATIONS
+   ============================================================================ #}
+
+{# Show different message based on count #}
+{% if $patientCount == 0 %}
+    <p>{{ 'patients.no_results' | t }}</p>
+{% else %}
+    <p>{{ 'patient' | t_plural($patientCount) }}</p>
+{% endif %}
+
+
+{# ============================================================================
+   LOOP WITH TRANSLATIONS
+   ============================================================================ #}
+
+<ul class="language-selector">
+{% foreach(['en', 'el'] as $langCode): %}
+    <li>
+        <a href="?lang={{ $langCode }}">
+            {{ 'settings.language' | t }} - {{ $langCode | upper }}
+        </a>
+    </li>
+{% endforeach %}
+</ul>
+
+
+{# ============================================================================
+   MIGRATION PATH
+   ============================================================================ #}
+
+{# Old code (Phase 0 - Original) #}
+{{ getLangText($item['title']) }}
+<?php echo getLangText($route['name']); ?>
+
+{# New code (Phase 3 - ZETEM filters) #}
+{{ $item['title'] | lang_text }}
+{{ 'nav.home' | t }}
+
+{# Both syntaxes work simultaneously during migration! #}
