@@ -1,14 +1,79 @@
-<div class="wrapper">
-    {{ $regions['header'] }}
+<div class="app-container">
 
-    {{ $regions['notification'] }}
-    <div class="main-region">
-        {{ $regions['main_navigation'] }}
+    {# Mobile backdrop #}
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
 
-        <div class="content-with-sidebar">
-            {{ $regions['main_content'] }}
+    {# ── Left Sidebar ── #}
+    <aside class="app-sidebar" id="appSidebar">
+
+        <div class="sidebar-brand">
+            <a href="{{ rel_url('/') }}" class="sidebar-brand-link">
+                <div class="sidebar-brand-icon">
+                    <i class="bx bxs-heart-circle"></i>
+                </div>
+                <div class="sidebar-brand-text">
+                    <span class="sidebar-brand-name">ZPMS</span>
+                    <span class="sidebar-brand-tagline">Patient Management</span>
+                </div>
+            </a>
         </div>
+
+        <div class="sidebar-nav-wrap">
+            {{ $regions['main_navigation'] }}
+        </div>
+
+        <div class="sidebar-bottom">
+            <div class="sidebar-bottom-user">
+                <i class="bx bx-user-circle sidebar-bottom-icon"></i>
+                <div class="sidebar-bottom-info">
+                    {{ $regions['header'] }}
+                </div>
+            </div>
+        </div>
+
+    </aside>
+
+    {# ── Main Area ── #}
+    <div class="app-main" id="appMain">
+
+        <div class="app-topbar">
+            <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+                <span></span><span></span><span></span>
+            </button>
+            {{ $regions['topbar'] }}
+            <div class="topbar-right">
+                {{ $regions['notification'] }}
+            </div>
+        </div>
+
+        <main class="app-content-area">
+            {{ $regions['main_content'] }}
+        </main>
+
+        {{ $regions['footer'] }}
+
     </div>
 
-    {{ $regions['footer'] }}
 </div>
+<script>
+(function() {
+    var sidebar  = document.getElementById('appSidebar');
+    var toggle   = document.getElementById('sidebarToggle');
+    var backdrop = document.getElementById('sidebarBackdrop');
+    function open()  { sidebar.classList.add('is-open'); backdrop.classList.add('is-visible'); }
+    function close() { sidebar.classList.remove('is-open'); backdrop.classList.remove('is-visible'); }
+    if (toggle)   toggle.addEventListener('click', function() { sidebar.classList.contains('is-open') ? close() : open(); });
+    if (backdrop) backdrop.addEventListener('click', close);
+
+    /* Submenu accordion: close all other submenus when one is opened */
+    document.querySelectorAll('.submenu-toggle').forEach(function(toggle) {
+        toggle.addEventListener('change', function() {
+            if (this.checked) {
+                document.querySelectorAll('.submenu-toggle').forEach(function(other) {
+                    if (other !== toggle) other.checked = false;
+                });
+            }
+        });
+    });
+})();
+</script>

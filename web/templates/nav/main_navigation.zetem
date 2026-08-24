@@ -1,0 +1,10 @@
+{#
+    Sidebar navigation template (ZPMS app override)
+    Variant: sidebar — renders the menu inside the app sidebar nav area
+#}
+<nav class="sidebar-nav" role="navigation" aria-label="Main navigation">
+    {% include show_menu.zetem %}
+    <ul {{ attributes($menu_attributes) }}>
+        {% show_menu($menu, 1) %}
+    </ul>
+</nav>

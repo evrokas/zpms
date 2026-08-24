@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="{{ $language_metadata['html_lang'] ?? $current_language ?? 'en' }}">
+
+<head>
+    {% if(isset($meta))foreach($meta as $metaline): %}
+        <meta {{ $metaline }}>
+    {% endforeach; %}
+
+    {# SEO: Canonical URL #}
+    {% if(isset($seo_tags['canonical'])): %}
+        {{ $seo_tags['canonical'] }}
+    {% endif %}
+
+    {# SEO: Hreflang alternate language links #}
+    {% if(isset($seo_tags['hreflang'])): %}
+        {{ $seo_tags['hreflang'] }}
+    {% endif %}
+
+    {# SEO: Open Graph locale tags #}
+    {% if(isset($seo_tags['og_locale'])): %}
+        {{ $seo_tags['og_locale'] }}
+    {% endif %}
+
+    {% if(isset($title)): %}
+        <title>{{ $title }}</title>
+    {% endif %}
+
+    {% if(isset($links))foreach($links as $link): %}
+        <link {{$link->getAttributes()}}>
+    {% endforeach; %}
+
+    {% foreach($head_links as $hlink): %}
+        <script {{$hlink->getAttributes()}}></script>
+    {% endforeach %}
+</head>
+<body>
+
+    {% if(isset($fonts))foreach($fonts as $font): %}
+    <style type="text/css">
+        @font-face {
+            font-family: "{{ $font['font-family'] }}";
+            src: url( "{{ rel_url( $font['url']) }}" ) {% if(isset($font['format'])): %} format("{{$font['format'] }}") {% endif %};
+        }
+    </style>
+    {% endforeach %}
+
+    {# Include the resolved page template (supports per-route overrides like page--login.zetem) #}
+    {% include $page_template %}
+
+    {% if(isset($foot_links))foreach($foot_links as $link): %}
+        <script foot_links {{$link->getAttributes()}}></script>
+    {% endforeach; %}
+
+</body>
+</html>
