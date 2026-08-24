@@ -1,0 +1,40 @@
+---
+table:
+  name: dicom_images
+  class: dicom_imagesClass
+  extention: __APPDIR__ . '/web/dicom_imagesClassEx.php'
+
+  fields:
+  - name: series_id
+    type: int
+
+  - name: instance_number
+    type: int
+    default: 0
+
+  - name: sop_instance_uid
+    type: varchar(128)
+    default: null
+
+  - name: dcm_filename
+    type: varchar(255)
+
+  - name: thumb_filename
+    type: varchar(255)
+    default: null
+
+  - name: full_filename
+    type: varchar(255)
+    default: null
+
+  - name: width
+    type: int
+    default: null
+
+  - name: height
+    type: int
+    default: null
+
+  - name: created_at
+    type: '@cdate'
+...

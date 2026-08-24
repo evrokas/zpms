@@ -1,0 +1,87 @@
+{% attach_library('dicom-library') %}
+{% attach_library('boxicons') %}
+
+<div class="dicom-page">
+
+<div class="dicom-viewer-header">
+    <div class="dicom-viewer-title">
+        <h2>
+            {{$exam->getpatient_name() ?: 'Unknown'}} —
+            {{$exam->getstudy_desc() ?: 'Exam #' . $exam->getid()}}
+            {% if $exam->getstudy_date() %}
+                ({{$exam->getstudy_date()}})
+            {% endif %}
+        </h2>
+    </div>
+    <div class="dicom-viewer-actions">
+        {% if !isset($readonly) || !$readonly %}
+            <button id="share-btn" class="action-btn" data-exam-id="{{$exam->getid()}}">
+                <i class="bx bx-share-alt"></i> {{t("Share")}}
+            </button>
+        {% endif %}
+        <a href="{{rel_url('/dicom')}}" class="action-btn">
+            <i class="bx bx-arrow-back"></i> {{t("Back")}}
+        </a>
+    </div>
+</div>
+
+<div class="dicom-exam-meta">
+    {% if $exam->getmodality() %}
+        <span class="filter-chip">{{$exam->getmodality()}}</span>
+    {% endif %}
+    {% if $exam->getaccession_no() %}
+        <span class="dicom-meta-item">Acc#: {{$exam->getaccession_no()}}</span>
+    {% endif %}
+    <span class="dicom-meta-item">{{$exam->getfile_count()}} {{t("files")}}</span>
+</div>
+
+<div id="series-tabs" class="dicom-series-tabs"></div>
+
+<div id="thumb-grid" class="dicom-thumb-grid"></div>
+
+{# Share dialog (hidden) #}
+<div id="share-dialog" class="dicom-share-dialog" style="display:none;">
+    <div class="dicom-share-dialog-content">
+        <h3>{{t("Share Link")}}</h3>
+        <input type="text" id="share-url" readonly>
+        <button id="share-copy-btn" class="action-btn">{{t("Copy")}}</button>
+        <button id="share-close-btn" class="action-btn">{{t("Close")}}</button>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var examData = {{ $exam_data }};
+    DicomViewer.init(examData);
+
+    {% if !isset($readonly) || !$readonly %}
+    var shareBtn = document.getElementById('share-btn');
+    if (shareBtn) {
+        shareBtn.addEventListener('click', function() {
+            var examId = this.dataset.examId;
+            var fd = new FormData();
+            fetch('{{ rel_url("/dicom/share/") }}' + examId, {
+                method: 'POST', body: fd
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                document.getElementById('share-url').value = data.url;
+                document.getElementById('share-dialog').style.display = 'flex';
+            });
+        });
+
+        document.getElementById('share-copy-btn').addEventListener('click', function() {
+            var input = document.getElementById('share-url');
+            input.select();
+            document.execCommand('copy');
+        });
+
+        document.getElementById('share-close-btn').addEventListener('click', function() {
+            document.getElementById('share-dialog').style.display = 'none';
+        });
+    }
+    {% endif %}
+});
+</script>
+
+</div>{# /.dicom-page #}

@@ -36,8 +36,8 @@ css:
 
   # - newstyles:
     # src: 'css/new-styles.css'
-  # - breadcrumbs:
-    # src: 'css/breadcrumbs.css'
+  - breadcrumbs:
+    src: 'css/breadcrumbs.css'
   # - utils:
     # src: 'css/loader.css'
   # - pikaday:
@@ -222,7 +222,10 @@ roles:
     appointment-edit,
     pdflib-access,
     backup-access,
-    administer_translations
+    administer_translations,
+    dicom-view,
+    dicom-upload,
+    dicom-share
     ]
 
 permissions:
@@ -306,6 +309,10 @@ routes:
     url: "/login"
     handler: login_post
     method: post
+  sso_complete:
+    url: "/login/sso-complete"
+    handler: sso_complete_handler
+    method: get
   logout:
     title: "User logout"
     url: "/logout"
@@ -478,6 +485,7 @@ routes:
 regions:
   - header
   - main_navigation
+  - topbar
   - notification
   - main_content
   - footer
@@ -514,6 +522,7 @@ structure:
         - githash
         - language_selector
     - location
+  topbar:
     - breadcrumbs
   main_navigation:
     - mainnavigation
@@ -598,6 +607,12 @@ menu:
             en: "Backups"
           url: /apps/backup
           access: power-user
+        - dicom:
+          text:
+            gr: "DICOM Απεικονίσεις"
+            en: "DICOM Imaging"
+          url: /dicom
+          access: power-user
 
 
 
@@ -641,6 +656,7 @@ modules:
     - location
     - datepicker
     - pdflib
+    - dicom
     - language_selector
     - message
     - backup

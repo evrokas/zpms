@@ -1,0 +1,405 @@
+/* ===== DICOM MODULE ===== */
+
+/* ── Page layout container ── */
+.dicom-page {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    max-width: 100%;
+}
+
+/* ── Table horizontal scroll ── */
+.table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.table-scroll table {
+    width: 100%;
+    min-width: 600px;
+    border-collapse: collapse;
+}
+
+.table-scroll thead {
+    background: linear-gradient(135deg, var(--primary-600) 0%, var(--primary-700) 100%);
+    color: white;
+}
+
+.table-scroll thead th {
+    padding: var(--space-3) var(--space-4);
+    text-align: left;
+    font-weight: 600;
+    font-size: var(--text-sm);
+    white-space: nowrap;
+}
+
+.table-scroll tbody td {
+    padding: var(--space-3) var(--space-4);
+    border-bottom: 1px solid var(--slate-100);
+    font-size: var(--text-sm);
+    color: var(--slate-800);
+}
+
+.table-scroll tbody tr:hover {
+    background-color: var(--slate-50);
+}
+
+.table-scroll td.actions {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+}
+
+.table-scroll td.actions a {
+    color: var(--primary-600);
+    font-size: 1.2rem;
+    transition: color 0.2s;
+}
+
+.table-scroll td.actions a:hover {
+    color: var(--primary-800);
+}
+
+
+
+/* ── Dropzone ── */
+.dicom-dropzone {
+    border: 2px dashed var(--slate-300);
+    border-radius: var(--radius-xl);
+    padding: var(--space-12) var(--space-6);
+    text-align: center;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.dicom-dropzone:hover,
+.dicom-dropzone.drag-over {
+    border-color: var(--primary-500);
+    background: var(--primary-50);
+}
+
+.dicom-dropzone-icon {
+    font-size: 3rem;
+    color: var(--slate-400);
+    margin-bottom: var(--space-4);
+}
+
+.dicom-dropzone.drag-over .dicom-dropzone-icon {
+    color: var(--primary-500);
+}
+
+.dicom-dropzone-text {
+    font-size: var(--text-lg);
+    font-weight: var(--font-weight-medium);
+    color: var(--slate-700);
+    margin-bottom: var(--space-2);
+}
+
+.dicom-dropzone-hint {
+    font-size: var(--text-sm);
+    color: var(--slate-500);
+}
+
+.dicom-browse-btn {
+    display: inline-block;
+    margin-top: var(--space-4);
+    cursor: pointer;
+}
+
+/* ── File info ── */
+.dicom-file-info {
+    padding: var(--space-3) 0;
+    font-size: var(--text-sm);
+    color: var(--slate-600);
+}
+
+/* ── Progress bar ── */
+.dicom-progress {
+    margin: var(--space-4) 0;
+}
+
+.dicom-progress-bar {
+    height: 8px;
+    background: var(--slate-200);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.dicom-progress-fill {
+    height: 100%;
+    background: var(--primary-600);
+    border-radius: var(--radius-full);
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.dicom-progress-info {
+    display: flex;
+    justify-content: space-between;
+    margin-top: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--slate-600);
+}
+
+/* ── Upload actions ── */
+.dicom-upload-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    margin-top: var(--space-6);
+    padding-top: var(--space-4);
+    border-top: 1px solid var(--slate-200);
+}
+
+/* ── Viewer header ── */
+.dicom-viewer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: var(--space-4);
+    flex-wrap: wrap;
+    gap: var(--space-3);
+}
+
+.dicom-viewer-title h2 {
+    margin: 0;
+    font-size: var(--text-xl);
+}
+
+.dicom-viewer-actions {
+    display: flex;
+    gap: var(--space-2);
+}
+
+.dicom-exam-meta {
+    display: flex;
+    gap: var(--space-3);
+    align-items: center;
+    margin-bottom: var(--space-4);
+    font-size: var(--text-sm);
+    color: var(--slate-600);
+}
+
+/* ── Series tabs ── */
+.dicom-series-tabs {
+    display: flex;
+    gap: var(--space-2);
+    margin-bottom: var(--space-6);
+    flex-wrap: wrap;
+}
+
+/* ── Thumbnail grid ── */
+.dicom-thumb-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: var(--space-3);
+}
+
+.dicom-thumb {
+    position: relative;
+    border: 1px solid var(--slate-200);
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    aspect-ratio: 1;
+    background: var(--slate-100);
+}
+
+.dicom-thumb:hover {
+    border-color: var(--primary-400);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.dicom-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.dicom-thumb-label {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: var(--space-1);
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    font-size: var(--text-xs);
+    text-align: center;
+}
+
+/* ── Lightbox ── */
+.dicom-lightbox {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+}
+
+.dicom-lightbox.active {
+    display: flex;
+}
+
+.dicom-lightbox-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.9);
+}
+
+.dicom-lightbox-content {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    max-width: 95vw;
+    max-height: 95vh;
+}
+
+.dicom-lightbox-close {
+    position: absolute;
+    top: -2rem;
+    right: 0;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 2rem;
+    cursor: pointer;
+    z-index: 1;
+}
+
+.dicom-lightbox-prev,
+.dicom-lightbox-next {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    color: white;
+    font-size: 3rem;
+    padding: var(--space-4) var(--space-2);
+    cursor: pointer;
+    border-radius: var(--radius-md);
+    transition: background var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.dicom-lightbox-prev:hover,
+.dicom-lightbox-next:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.dicom-lightbox-img-wrap {
+    max-width: 80vw;
+    max-height: 85vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dicom-lightbox-img-wrap img {
+    max-width: 100%;
+    max-height: 85vh;
+    object-fit: contain;
+}
+
+.dicom-lightbox-info {
+    position: absolute;
+    bottom: -2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    color: white;
+    font-size: var(--text-sm);
+}
+
+/* ── Share dialog ── */
+.dicom-share-dialog {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.dicom-share-dialog-content {
+    background: white;
+    padding: var(--space-6);
+    border-radius: var(--radius-xl);
+    min-width: 24rem;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+}
+
+.dicom-share-dialog-content input[type="text"] {
+    width: 100%;
+    padding: var(--space-3);
+    border: 1px solid var(--slate-300);
+    border-radius: var(--radius-md);
+    font-family: monospace;
+    font-size: var(--text-sm);
+}
+
+/* ── Status badges ── */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    padding: var(--space-1) var(--space-2);
+    border-radius: var(--radius-full);
+    font-size: var(--text-xs);
+    font-weight: var(--font-weight-medium);
+}
+
+.badge.success {
+    background: var(--success-100);
+    color: var(--success-700);
+}
+
+.badge.warning {
+    background: var(--warning-100);
+    color: var(--warning-700);
+}
+
+.badge.danger {
+    background: var(--danger-100);
+    color: var(--danger-700);
+}
+
+/* ── Card ── */
+.card {
+    background: white;
+    border: 1px solid var(--slate-200);
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+}
+
+.card-body {
+    padding: var(--space-6);
+}
+
+/* ── Action btn primary ── */
+.action-btn.primary {
+    background: var(--primary-600);
+    color: white;
+    border-radius: var(--radius-md);
+    padding: var(--space-2) var(--space-4);
+    border: none;
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+
+.action-btn.primary:hover {
+    background: var(--primary-700);
+}
+
+.action-btn.primary:disabled {
+    background: var(--slate-300);
+    cursor: not-allowed;
+}
+
+/* ── Meta item ── */
+.dicom-meta-item {
+    color: var(--slate-600);
+}

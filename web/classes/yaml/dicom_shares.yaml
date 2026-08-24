@@ -1,0 +1,32 @@
+---
+table:
+  name: dicom_shares
+  class: dicom_sharesClass
+  extention: __APPDIR__ . '/web/dicom_sharesClassEx.php'
+
+  fields:
+  - name: exam_id
+    type: int
+
+  - name: token
+    type: varchar(64)
+
+  - name: created_by
+    type: int
+    default: null
+
+  - name: expires_at
+    type: datetime
+    default: null
+
+  - name: view_count
+    type: int
+    default: 0
+
+  - name: is_active
+    type: tinyint
+    default: 1
+
+  - name: created_at
+    type: '@cdate'
+...

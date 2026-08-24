@@ -1,0 +1,3 @@
+name=dicom
+template=dicom.zetem
+class=dicomModule

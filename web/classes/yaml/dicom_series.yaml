@@ -1,0 +1,41 @@
+---
+table:
+  name: dicom_series
+  class: dicom_seriesClass
+  extention: __APPDIR__ . '/web/dicom_seriesClassEx.php'
+
+  fields:
+  - name: exam_id
+    type: int
+
+  - name: series_uid
+    type: varchar(128)
+    default: null
+
+  - name: series_number
+    type: int
+    default: null
+
+  - name: series_desc
+    type: varchar(255)
+    default: null
+
+  - name: modality
+    type: varchar(16)
+    default: null
+
+  - name: frame_count
+    type: int
+    default: 0
+
+  - name: images_path
+    type: varchar(512)
+    default: null
+
+  - name: status
+    type: varchar(20)
+    default: 'pending'
+
+  - name: created_at
+    type: '@cdate'
+...

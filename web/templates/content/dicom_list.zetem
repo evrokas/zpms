@@ -1,0 +1,117 @@
+{% attach_library('dicom-library') %}
+{% attach_library('boxicons') %}
+
+<div class="dicom-page">
+
+<div class="page-title">
+    <h2>{{t("DICOM Imaging")}}</h2>
+</div>
+
+<div class="filter-bar">
+    <div class="filter-group" id="modality-filters">
+        <button class="filter-chip active" data-modality="">{{t("All")}}</button>
+        <button class="filter-chip" data-modality="CT">CT</button>
+        <button class="filter-chip" data-modality="MR">MR</button>
+        <button class="filter-chip" data-modality="XR">XR</button>
+        <button class="filter-chip" data-modality="US">US</button>
+    </div>
+    <div style="margin-left: auto;">
+        <a href="{{rel_url('/dicom/upload')}}" class="action-btn">
+            <i class="bx bx-upload"></i> {{t("Upload")}}
+        </a>
+    </div>
+</div>
+
+<div class="table-wrapper">
+  <div class="table-scroll">
+    <table>
+        <thead>
+            <tr>
+                <th>{{t("Patient")}}</th>
+                <th>{{t("Study")}}</th>
+                <th>{{t("Date")}}</th>
+                <th>{{t("Modality")}}</th>
+                <th>{{t("Files")}}</th>
+                <th>{{t("Status")}}</th>
+                <th>{{t("Actions")}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if count($exams) > 0 %}
+                {% foreach($exams as $exam): %}
+                <tr data-modality="{{$exam->getmodality()}}">
+                    <td>{{$exam->getpatient_name() ?: '—'}}</td>
+                    <td>
+                        <a href="{{rel_url('/dicom/view/' . $exam->getid())}}">
+                            {{$exam->getstudy_desc() ?: 'Exam #' . $exam->getid()}}
+                        </a>
+                    </td>
+                    <td>{{$exam->getstudy_date() ?: '—'}}</td>
+                    <td><span class="filter-chip">{{$exam->getmodality() ?: '—'}}</span></td>
+                    <td>{{$exam->getfile_count()}}</td>
+                    <td>
+                        {% if $exam->getstatus() === 'ready' %}
+                            <span class="badge success">{{t("Ready")}}</span>
+                        {% elseif $exam->getstatus() === 'processing' %}
+                            <span class="badge warning">{{t("Processing")}}</span>
+                        {% elseif $exam->getstatus() === 'error' %}
+                            <span class="badge danger" title="{{$exam->geterror_message()}}">{{t("Error")}}</span>
+                        {% else %}
+                            <span class="badge">{{$exam->getstatus()}}</span>
+                        {% endif %}
+                    </td>
+                    <td class="actions">
+                        <a href="{{rel_url('/dicom/view/' . $exam->getid())}}"><i class="bx bx-show"></i></a>
+                        <a href="{{rel_url('/dicom/exam/' . $exam->getid() . '/delete')}}" confirmation>
+                            <i class="bx bx-trash"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% endforeach %}
+            {% else %}
+                <tr>
+                    <td colspan="7">
+                        <div class="empty-state">
+                            <div class="empty-state-icon"><i class="bx bx-image"></i></div>
+                            <div class="empty-state-title">{{t("No DICOM exams")}}</div>
+                            <div class="empty-state-description">{{t("Upload a DICOM file or ZIP to get started")}}</div>
+                        </div>
+                    </td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+  </div>{# /.table-scroll #}
+</div>{# /.table-wrapper #}
+
+{% if $total_pages > 1 %}
+<div class="pagination">
+    {% if $page > 1 %}
+        <a href="{{rel_url('/dicom/page/' . ($page-1))}}" class="pagination-btn">&laquo;</a>
+    {% endif %}
+    {% for $i = 1; $i <= $total_pages; $i++ %}
+        <a href="{{rel_url('/dicom/page/' . $i)}}" class="pagination-btn {{ ($i === $page) ? 'active' : '' }}">{{$i}}</a>
+    {% endfor %}
+    {% if $page < $total_pages %}
+        <a href="{{rel_url('/dicom/page/' . ($page+1))}}" class="pagination-btn">&raquo;</a>
+    {% endif %}
+</div>
+{% endif %}
+
+</div>{# /.dicom-page #}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var filters = document.querySelectorAll('#modality-filters .filter-chip');
+    filters.forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            filters.forEach(function(b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            var mod = btn.dataset.modality;
+            document.querySelectorAll('tbody tr[data-modality]').forEach(function(row) {
+                row.style.display = (!mod || row.dataset.modality === mod) ? '' : 'none';
+            });
+        });
+    });
+});
+</script>

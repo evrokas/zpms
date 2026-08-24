@@ -1,0 +1,97 @@
+routes:
+  dicom-list:
+    title:
+      gr: "DICOM Απεικονίσεις"
+      en: "DICOM Imaging"
+    name: dicom_list
+    url: ["/dicom", "/dicom/page/{page}"]
+    handler: dicom_list
+    access: dicom-view
+    method: get
+
+  dicom-upload:
+    title:
+      gr: "Μεταφόρτωση DICOM"
+      en: "DICOM Upload"
+    name: dicom_upload
+    url: /dicom/upload
+    handler: dicom_upload
+    access: dicom-upload
+    method: get
+
+  dicom-upload-init:
+    title: "DICOM upload init"
+    name: dicom_upload_init
+    url: /dicom/upload/init
+    handler: dicom_upload_init
+    access: dicom-upload
+    method: post
+
+  dicom-upload-chunk:
+    title: "DICOM upload chunk"
+    name: dicom_upload_chunk
+    url: /dicom/upload/chunk
+    handler: dicom_upload_chunk
+    access: dicom-upload
+    method: post
+
+  dicom-upload-finalize:
+    title: "DICOM upload finalize"
+    name: dicom_upload_finalize
+    url: /dicom/upload/finalize
+    handler: dicom_upload_finalize
+    access: dicom-upload
+    method: post
+
+  dicom-view:
+    title:
+      gr: "Προβολή εξέτασης"
+      en: "View Exam"
+    name: dicom_view
+    url: /dicom/view/{id}
+    handler: dicom_view_exam
+    access: dicom-view
+    method: get
+
+  dicom-image:
+    title: "DICOM image serve"
+    name: dicom_image
+    url: /dicom/image/{series_id}/{type}/{filename}
+    handler: dicom_serve_image
+    method: get
+
+  dicom-share-create:
+    title: "Create DICOM share"
+    name: dicom_share_create
+    url: /dicom/share/{id}
+    handler: dicom_share_create
+    access: dicom-share
+    method: post
+
+  dicom-shared:
+    title: "Shared DICOM exam"
+    name: dicom_shared
+    url: /dicom/shared/{token}
+    handler: dicom_shared_view
+    method: get
+
+  dicom-delete:
+    title: "Delete DICOM exam"
+    name: dicom_delete
+    url: /dicom/exam/{id}/delete
+    handler: dicom_delete_exam
+    access: dicom-delete
+    method: get
+
+libraries:
+  dicom-library:
+    css:
+      - dicom:
+        src: "@app/css/dicom.css"
+    foot_script:
+      - dicom-upload:
+        src: "@app/js/dicom-upload.js"
+        defer:
+      - dicom-viewer:
+        src: "@app/js/dicom-viewer.js"
+        defer:

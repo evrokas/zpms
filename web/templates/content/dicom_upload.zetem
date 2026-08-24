@@ -1,0 +1,43 @@
+{% attach_library('dicom-library') %}
+{% attach_library('boxicons') %}
+
+<div class="dicom-page">
+
+<div class="page-title">
+    <h2>{{t("DICOM Upload")}}</h2>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div id="upload-dropzone" class="dicom-dropzone">
+            <div class="dicom-dropzone-icon"><i class="bx bx-cloud-upload"></i></div>
+            <p class="dicom-dropzone-text">{{t("Drag & drop DICOM or ZIP file here")}}</p>
+            <p class="dicom-dropzone-hint">{{t("Allowed")}}: {{$allowed_ext}} | {{t("Max")}}: {{$max_size_mb}} MB</p>
+            <label class="action-btn dicom-browse-btn">
+                {{t("Browse Files")}}
+                <input type="file" id="upload-file-input" accept=".dcm,.zip,.gz" hidden>
+            </label>
+        </div>
+
+        <div id="upload-file-info" class="dicom-file-info"></div>
+
+        <div id="upload-progress" class="dicom-progress" style="display:none;">
+            <div class="dicom-progress-bar">
+                <div id="upload-bar" class="dicom-progress-fill"></div>
+            </div>
+            <div class="dicom-progress-info">
+                <span id="upload-pct">0%</span>
+                <span id="upload-status"></span>
+            </div>
+        </div>
+
+        <div class="dicom-upload-actions">
+            <a href="{{rel_url('/dicom')}}" class="action-btn">{{t("Cancel")}}</a>
+            <button id="upload-btn" class="action-btn primary" disabled>
+                <i class="bx bx-upload"></i> {{t("Upload")}}
+            </button>
+        </div>
+    </div>
+</div>
+
+</div>{# /.dicom-page #}

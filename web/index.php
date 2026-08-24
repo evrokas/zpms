@@ -1163,6 +1163,19 @@ function handle_translations_import($params) {
 }
 
 
+function sso_complete_handler($params) {
+    global $kernel;
+    if (!isset($_SESSION['sso_pending_login'])) {
+        header('location: ' . rel_url('/login'));
+        exit();
+    }
+    $pending = $_SESSION['sso_pending_login'];
+    unset($_SESSION['sso_pending_login']);
+    $kernel->loginUser($pending['uname'], $pending['roles']);
+    header('location: ' . rel_url('/'));
+    exit();
+}
+
 class AdminController {
     static function showRoutes($params) {
         global $kernel;

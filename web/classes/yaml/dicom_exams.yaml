@@ -1,0 +1,68 @@
+---
+table:
+  name: dicom_exams
+  class: dicom_examsClass
+  extention: __APPDIR__ . '/web/dicom_examsClassEx.php'
+
+  fields:
+  - name: study_uid
+    type: varchar(128)
+    default: null
+
+  - name: patient_name
+    type: varchar(255)
+    default: null
+
+  - name: patient_id_dcm
+    type: varchar(64)
+    default: null
+
+  - name: study_date
+    type: date
+    default: null
+
+  - name: study_time
+    type: time
+    default: null
+
+  - name: study_desc
+    type: varchar(255)
+    default: null
+
+  - name: accession_no
+    type: varchar(64)
+    default: null
+
+  - name: modality
+    type: varchar(16)
+    default: null
+
+  - name: file_count
+    type: int
+    default: 0
+
+  - name: disk_size
+    type: bigint
+    default: 0
+
+  - name: storage_path
+    type: varchar(512)
+
+  - name: status
+    type: varchar(20)
+    default: "uploading"
+
+  - name: error_message
+    type: text
+    default: null
+
+  - name: uploaded_by
+    type: int
+    default: 0
+
+  - name: created_at
+    type: '@cdate'
+
+  - name: updated_at
+    type: '@cdate'
+...

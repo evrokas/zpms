@@ -1,0 +1,12 @@
+{% attach_library('boxicons') %}
+
+<div class="empty-state" style="padding: var(--space-16) var(--space-6);">
+    <div class="empty-state-icon"><i class="bx bx-error-circle"></i></div>
+    {% if $error === 'expired' %}
+        <div class="empty-state-title">{{t("Link Expired")}}</div>
+        <div class="empty-state-description">{{t("This shared link has expired and is no longer valid.")}}</div>
+    {% else %}
+        <div class="empty-state-title">{{t("Not Found")}}</div>
+        <div class="empty-state-description">{{t("This shared link is invalid or the exam has been removed.")}}</div>
+    {% endif %}
+</div>
