@@ -1,0 +1,27 @@
+CREATE TABLE `billing` (
+  `id` INTEGER NOT NULL AUTO_INCREMENT UNIQUE,
+  `guid` CHAR(36) NOT NULL,
+  `cdate` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `cuser` CHAR(32) NOT NULL,
+  `patientname` text DEFAULT NULL ,
+  `operationdate` datetime DEFAULT current_timestamp,
+  `operationtype` text DEFAULT NULL ,
+  `surgeon` text DEFAULT NULL ,
+  `anesthesia` text DEFAULT NULL ,
+  `insurance` text DEFAULT NULL ,
+  `amount` decimal(10,2) DEFAULT NULL ,
+  `assistantpayment` decimal(10,2) DEFAULT NULL ,
+  `anesthesiapayment` decimal(10,2) DEFAULT NULL ,
+  `invoiceamount` decimal(10,2) DEFAULT NULL ,
+  `invoicedate` datetime DEFAULT NULL ,
+  `invoicenumber` int DEFAULT NULL ,
+  `invoicepaymentdate` datetime DEFAULT NULL ,
+  `invoicepatientpart` decimal(10,2) DEFAULT NULL ,
+  `invoicepatientpartpayment` datetime DEFAULT NULL ,
+  `fees_pdf` text DEFAULT NULL ,
+  `invoice_pdf` text DEFAULT NULL ,
+  `invoicepatient_pdf` text DEFAULT NULL ,
+  `bank` text DEFAULT NULL ,
+
+  PRIMARY KEY (id) 
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
