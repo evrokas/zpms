@@ -1,178 +1,152 @@
 
 {% attach_library('loader-library'); %}
-{# {% attach_library('datepicker-library'); %} #}
-{# {% attach_library('pikaday-library'); %} #}
 {% attach_library('textarea-expandable-library'); %}
 
-<div class="edit-patient">    
-    <div class="header">
-        <h4>Επεξεργασία στοιχείων ασθενή</h4>
-    </div>
+<div class="edit-patient">
     <form action="{{$action}}" method="post">
 
-        {#
-            <div class="input-div">
-            {% if($action != 'new'): %}
-                <p>Patient GUID: {{$patient->getguid()}}
-                </p>
-            {% endif %}
+        <div class="card mb-lg">
+            <div class="card-header">
+                <h3 class="card-title">{{t("Personal Information")}}</h3>
             </div>
-        #}
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <div class="input-div">
+                            <label for="patient-name">{{t("Patient Name")}}</label>
+                            <input type="text" name="patient-name" loader="info-loader" id="" value="{{$patient->getpname()}}" placeholder="{{t('patient name')}}">
+                            <div class="inline-icons">
+                                <i class="bx bx-copy" data-copy-text="{{$patient->getpname()}}" onclick0="copyStr('{{$patient->getpname()}}')"></i>
+                            </div>
+                        </div>
+                    </div>
 
-        <div class="input-div">
-            <label for="patient-name">Όνομα ασθενή</label>
-            <input type="text" name="patient-name" loader="info-loader" id="" value="{{$patient->getpname()}}" placeholder="όνομα ασθενούς">
+                    <div class="form-group">
+                        <div class="input-div">
+                            <label for="patient-dob">{{t("Date of Birth")}}</label>
+                            <input type="text" name="patient-dob" id="datepicker" loader="info-loader" value="{{$patient->getpdob()| date('d-m-Y')}}" onkeyup="dobChange(this)" agefield="age_field">
+                            <div class="inline-icons">
+                                <i class='not-valid bx bx-error' style='color:#ff0000'></i>
+                                <span for="dob-age" id="age_field" style="width: max-content;" disabled>{{t("Age")}}</span>
+                            </div>
+                        </div>
+                    </div>
 
-            <div class="inline-icons">
-                <i class="bx bx-copy" data-copy-text="{{$patient->getpname()}}" onclick0="copyStr('{{$patient->getpname()}}')"></i>
-            </div>
-        </div>
-<!-- 
-        <div class="input-div">
-            <label for="patient-dob">Ημ/νια Γεννήσεως</label>
-            <input type="datetime-local" name="patient-dob" id="" value="{{formatDate($patient->getpdob())}}">
-            <input type="text" name="patient-dob" id="datepicker" value="{{$patient->getpdob()}}">
-        </div>
-    -->
-        
-        <!-- <div class="dob-field"> -->
-
-            <div class="input-div">
-                <label for="patient-dob">Ημ/νια Γεννήσεως</label>
-                <!-- <input type="date" name="patient-dob" id="" value="{{formatDate($patient->getpdob())}}"> -->
-                <input type="text" name="patient-dob" id="datepicker" loader="info-loader" value="{{$patient->getpdob()| date('d-m-Y')}}" onkeyup="dobChange(this)" agefield="age_field">
-                
-                <div class="inline-icons">
-                    <!-- <i class='valid bx bx-check' style='color:#00ff00'  ></i> -->
-                    <i class='not-valid bx bx-error' style='color:#ff0000'  ></i>
-                    <span for="dob-age" id="age_field" style="width: max-content;" disabled">Ηλικία</label>
+                    <div class="form-group">
+                        <div class="input-div">
+                            <label for="patient-amka">{{t("AMKA")}}</label>
+                            <input type="text" name="patient-amka" loader="info-loader" validator="amka" value="{{$patient->getpamka()}}" placeholder="{{t('AMKA')}}">
+                            <div class="inline-icons">
+                                <i class='valid bx bx-check' style='color:#00ff00'></i>
+                                <i class='not-valid bx bx-error' style='color:#ff0000'></i>
+                                <i class="bx bx-copy" data-copy-text="{{$patient->getpamka()}}" onclick0="copyStr0('{{$patient->getpamka()}}')"></i>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-
-                <!-- <input type="text" style="width: 1rem" disabled name="dob-age" id="age_field" value=""> -->
-            </div>
-
-        <!-- </div> -->
-   
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                dobChange(document.getElementById('datepicker'));
-            });
-        </script>
-
-{# 
-        <div class="input-div">
-                <label for="patient-dob">Ημ/νια Γεννήσεως</label>
-                <input type="date" name="patient-dob" id="" role="date-picker" loader="info-loader" value="{{$patient->getpdob() | date('Y-m-d') }}">
-            <!-- <input type="text" name="patient-dob" id="datepicker" value="{{$patient->getpdob()}}"> -->
-        </div>
- #}
-        <div class="input-div">
-            <label for="patient-amka">ΑΜΚΑ</label>
-            {# 
-                <input type="text" name="patient-amka" loader="info-loader" validator="amka" value="{{$patient->getpamka()}}" placeholder="ΑΜΚΑ ασθενούς">
-            #}
-            <input type="text" name="patient-amka" loader="info-loader" validator="amka" value="{{$patient->getpamka()}}" placeholder="ΑΜΚΑ ασθενούς">
-            
-            <div class="inline-icons">
-                <i class='valid bx bx-check' style='color:#00ff00'  ></i>
-                <i class='not-valid bx bx-error' style='color:#ff0000'  ></i>
-                
-                <i class="bx bx-copy" data-copy-text="{{$patient->getpamka()}}" onclick0="copyStr0('{{$patient->getpamka()}}')"></i>
-            </div>
-
-            <!-- <img class="valid" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAABAklEQVRIS+2TSwrCMBRFU9A1qCj4W4ao+3AD4tSNOHPg3IX4w034RUXdgxDPsxE/mCaonbVwG2iac9+7fQ1UzFcQM18lBs6Ek4jCiLTKcG8xMr33zH6PSKsc0AmqojYmg2eT3wy0ygMbowpaoDoGp/8YhPAZKtrgYvRdB57waAOturwwpITzy4d7jWVpYjnafojPHWjV4UAfCaCJycFMS4F1amJZszbY29vg9g60yrI5RyW0RTWUQiMD35jKI+GuiKRaAcqESLVpJM9WpisnPNpAdvUNKDMuncjlXfk9NvcUPUzkjMy5V+X+BmEnZe4X4Lv7Qd/V3YEvyfJeYuAMMPaIrlEoNRkz68QbAAAAAElFTkSuQmCC"/> -->
-            <!-- <img class="not-valid" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAB9ElEQVRIS9WUTyhEURTG3yillIWNhQg1RJkFzYZsiIXCCgtly4JmRbEwZoPYaLJgzcasFDbESikpZRZIMmFjYyFKyZ/fGfe93jx33jyjKW7zzZl37jnfd/68xmfk+PhyzG/8HYEPw/DTbVh1HKayKy/de+oA8nzIzkGVIhXyWpJfM4l4FQhBtAguFGENNkRy9NcCVF8IyQ0oBr1AioqBB1DOw7ObSMYOEIhAMAXiBAeEDN8pph5E8E1nLQCRVC3VSxdtkO0rgVbsHpDqpQvpRntcO0BAZjwKdgnssDNwt8NzO4hyJzv6mQAEpWRcA3mDApDE8fFJLsHHDxmRjErepCp8dzqFtB1AsEbCAIgR1K9GYwmo53VsH1glZtCzgK26N5L8JEsnUr5ToBL35VdTRh1f5mtsaWk7gGWbiE6wQsCwGe0UUKLL2CGwSWy3s4tvApA0E3QAXkAFAfcZBEq4T4ACECT+2C6iE5CARjDL5aRurk4fRc3gm5DCyGlJK0BgD5cb4BGUESzWOroRqTEVYW+B2C7ytswkqwOS83CegWowzsWCptKUJTvEx3ieB7JoWfi73NsFzNnLzGX2sgPPB2XZQQLITprIP3QKBHEceWZ0D2xA4CRFQM1yDjsC5L8nm/NE0hLksvDkcf0vykbBmfP/BT4BuO90GdOYVhMAAAAASUVORK5CYII="/> -->
-        </div>
-
-        <div class="input-div">
-            <label for="patient-telephone">Τηλέφωνο</label>
-            <input type="text" name="patient-telephone" loader="info-loader" validator="telephone" value="{{$patient->getptel()}}" placeholder="τηλέφωνο ασθενούς">
-
-            <div class="inline-icons">
-                <i class='valid bx bx-check' style='color:#00ff00'  ></i>
-                <i class='not-valid bx bx-error' style='color:#ff0000'  ></i>
-                
-                <a href="tel:{{$patient->getptel()}}"><i class="bx bx-phone-call"></i></a>
-                <i class="bx bx-copy" data-copy-text="{{$patient->getptel()}}"onclick="copyStr0('{{$patient->getptel()}}')"></i>
             </div>
         </div>
 
-        <div class="input-div">
-            <label for="patient-email">Email</label>
-            <input type="text" name="patient-email" loader="info-loader" validator="email" value="{{$patient->getpemail()}}" placeholder="email ασθενούς">
-            
-                <div class="inline-icons">
-                    <i class='valid bx bx-check' style='color:#00ff00'  ></i>
-                    <i class='not-valid bx bx-error' style='color:#ff0000'  ></i>
-                    
-                    <i class="bx bx-copy" onclick="copyStr('{{$patient->getpemail()}}')"></i>
+        <div class="card mb-lg">
+            <div class="card-header">
+                <h3 class="card-title">{{t("Contact Information")}}</h3>
+            </div>
+            <div class="card-body">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <div class="input-div">
+                            <label for="patient-telephone">{{t("Telephone")}}</label>
+                            <input type="text" name="patient-telephone" loader="info-loader" validator="telephone" value="{{$patient->getptel()}}" placeholder="{{t('telephone')}}">
+                            <div class="inline-icons">
+                                <i class='valid bx bx-check' style='color:#00ff00'></i>
+                                <i class='not-valid bx bx-error' style='color:#ff0000'></i>
+                                <a href="tel:{{$patient->getptel()}}"><i class="bx bx-phone-call"></i></a>
+                                <i class="bx bx-copy" data-copy-text="{{$patient->getptel()}}" onclick="copyStr0('{{$patient->getptel()}}')"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="input-div">
+                            <label for="patient-email">{{t("Email")}}</label>
+                            <input type="text" name="patient-email" loader="info-loader" validator="email" value="{{$patient->getpemail()}}" placeholder="{{t('email')}}">
+                            <div class="inline-icons">
+                                <i class='valid bx bx-check' style='color:#00ff00'></i>
+                                <i class='not-valid bx bx-error' style='color:#ff0000'></i>
+                                <i class="bx bx-copy" onclick="copyStr('{{$patient->getpemail()}}')"></i>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <div class="input-div">
+                            <label for="patient-address">{{t("Address")}}</label>
+                            <input type="text" name="patient-address" loader="info-loader" id="" value="{{$patient->getpaddr()}}" placeholder="{{t('address')}}">
+                        </div>
+                    </div>
                 </div>
+            </div>
         </div>
 
-        <div class="input-div">
-            <label for="patient-address">Διεύθυνση</label>
-            <input type="text" name="patient-address" loader="info-loader" id=""  value="{{$patient->getpaddr()}}" placeholder="διεύθυνση ασθενούς">
+        <div class="card mb-lg">
+            <div class="card-header">
+                <h3 class="card-title">{{t("Notes")}}</h3>
+            </div>
+            <div class="card-body">
+                <div class="input-div input-notes">
+                    <label for="patient-note">{{t("Notes")}}</label>
+                    <textarea name="patient-note" loader="info-loader" autoexpand id="" rows="5" placeholder="{{t('notes')}}">{{$patient->getpnote()}}</textarea>
+                </div>
+            </div>
         </div>
 
-        <div class="input-div">
-            <label for="patient-note">Σημειώσεις</label>
-            <textarea name="patient-note" loader="info-loader" autoexpand id="" rows="5" placeholder="σημειώσεις">{{$patient->getpnote()}}</textarea>
-        </div>
-        <div class="buttons">
-            <input type="submit" name="submit" value="Αποθήκευση">
-
+        <div class="form-actions">
+            <input type="submit" name="submit" class="btn btn-primary" value="{{t('Save')}}">
             {% if($action == 'new'): %}
-                <input type="submit" name="submitedit" value="Αποθήκευση & Επεξεργασία">
+                <input type="submit" name="submitedit" class="btn btn-success" value="{{t('Save & Edit')}}">
             {% else: %}
-                <input type="submit" name="delete" value="Ακύρωση">
+                <input type="submit" name="delete" class="btn btn-danger" value="{{t('Cancel')}}">
             {% endif %}
-
             <button hidden type="button" loader="info-loader" onclick="field_update(this)">Update</button>
             <div id="info-loader" class="loader0"></div>
         </div>
     </form>
 
-    {% if($action != 'new'): %}
-        <hr>
-        <div class="patient-appointments">
-            <a href="{{rel_url('/appointment/'.$id.'/newappointment')}}">
-                <div class="new-appointment">
-                    Νέο Ραντεβού
-                </div>
-            </a>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            dobChange(document.getElementById('datepicker'));
+        });
+    </script>
 
-        </div>
+    {% if($action != 'new'): %}
+        <div class="card mb-lg mt-lg">
+            <div class="card-header">
+                <h3 class="card-title">{{t("Appointments")}}</h3>
+                <a href="{{rel_url('/appointment/'.$id.'/newappointment')}}" class="btn btn-sm btn-primary"><i class="bx bx-plus"></i> {{t("New Appointment")}}</a>
+            </div>
+            <div class="card-body">
     {% endif %}
 
     {% if(isset($appointments) && (count($appointments)>0)): %}
+                <div class="appointment-dates mb-lg">
+                    {% foreach($appdates as $ad): %}
+                        <li>
+                            <a href="#app-{{$ad['index']}}">
+                                Date {{$ad['index']}}: {{$ad['date'] | date('d-m-Y')}}
+                            </a>
+                        </li>
+                    {% endforeach %}
+                </div>
 
-        <div class="appointment-entries">
+                <ul class="patient-appointments-list">
+                    {% foreach($appointments as $ap): %}
+                        <li data-index="{{$ap['index']}}">{{$ap['markup']}}</li>
+                    {% endforeach %}
+                </ul>
+    {% endif %}
 
-            <div class="appointment-dates">
-                {% foreach($appdates as $ad): %}
-                    <li>
-                        <a href="#app-{{$ad['index']}}">
-                            Date {{$ad['index']}}: {{$ad['date'] | date('d-m-Y')}}
-                        </a>
-                    </li>
-                {% endforeach %}
-            </div>            
-
-
-
-            <ul class="patient-appointments-list">
-                {% foreach($appointments as $ap): %}
-                    <li data-index="{{$ap['index']}}">{{$ap['markup']}}</li>
-                {% endforeach %}
-            </ul`>
-        </div>            
-
-
+    {% if($action != 'new'): %}
+            </div>
+        </div>
     {% endif %}
 </div>
-
-{#
-<script>
-    var picker = new Pikaday( { field: document.getElementById('datepicker') } );
-</script>
-#}

@@ -1,105 +1,106 @@
 {% attach_library('boxicons') %}
 
-<div class="page-title">
-    <h2>{{t("Patients")}}</h2>
+{# ── Page header: title + actions (mimics topbar-left/right pattern) ── #}
+<div class="page-header">
+    <div class="page-header-left">
+        <h1>{{t("Patients")}}</h1>
+    </div>
+    <div class="page-header-right">
+        <a href="{{rel_url('/patient/new')}}" class="btn btn-sm btn-primary"><i class="bx bx-plus"></i> {{t("New Patient")}}</a>
+    </div>
 </div>
 
-<div class="patient-list-actions">
-    <ul>
-        <li><a href="{{rel_url('/patient/new')}}"">{{t("Add new patient")}}</a></li>
-    </ul>
-</div>
-
-<div class="search">
-    <form action="{{rel_url('patients/search')}}" method="post">
-        <div class="input-div">
-            <label for="search-term">{{t("Search")}}</label>
-            {% set $searchAttributes = new Attributes([
-                'type' => 'text',
-                'class' => 'select2 focus-primary',
-                'name' => 'search-term',
-                'autocomplete' => 'off',
-                'placeholder' => 'Αναζήτηση ασθενών...'
-                ]); %}
-            {% if isset($search_term) %}
-                {% $searchAttributes->addAttributeS('value', $search_term); %}
-            {% endif %}
-            <input {{attributes($searchAttributes)}}>
-            {# <input type="text" class="select2 focus-primary" name="search-term" id="" autocomplete="off" placeholder="Αναζήτηση ασθενών..." value="{% if(isset($search_term))echo $search_term; %}"> #}
-            {# <input type="text" class="select2" name="search-term" id="" autocomplete="off" value="{% if(isset($search_term))echo $search_term; %}"> #}
-        </div>
-        <div class="select-container">
-            <ul class="select-box" id="select-box">
-                <!-- <li>Opt 1</li> -->
-                <!-- <li>Opt 2</li> -->
-                <!-- <li>Opt 3</li> -->
-            </ul>
-        </div>
-        <!-- <div class="buttons">
-            <button type="submit" name="search" value="search">Search</button>
-        </div> -->
-
-        <!-- <p>
-            <textarea name="search-response" id="search-response" cols="30" rows="10"></textarea>
-        </p> -->
-    </form>
-</div>
-<div class="patients-list">
-    <table>
-        <thead>
-            <!-- <th>#</th> -->
-            <th>{{t("Name")}}
-                <div class="sorting-arrows">
-                    <i class="bx bx-chevron-down"></i>
-                    <i class="bx bx-chevron-up"></i>
+{# ── Search / Filter card ── #}
+<div class="card mb-lg">
+    <div class="card-body">
+        <form action="{{rel_url('patients/search')}}" method="post">
+            <div class="filter-bar">
+                {% set $searchAttributes = new Attributes([
+                    'type' => 'text',
+                    'class' => 'form-input search-input select2',
+                    'name' => 'search-term',
+                    'autocomplete' => 'off',
+                    'placeholder' => t('Search patients by name or AMKA...')
+                    ]); %}
+                {% if isset($search_term) %}
+                    {% $searchAttributes->addAttributeS('value', $search_term); %}
+                {% endif %}
+                <input {{attributes($searchAttributes)}}>
+                <div class="select-container">
+                    <ul class="select-box" id="select-box"></ul>
                 </div>
-            </th>
-            <th>{{t("AMKA")}}
+                <button type="submit" class="btn btn-outline">{{t("Reset")}}</button>
+            </div>
+        </form>
+    </div>
+</div>
 
-            </th>
-            <th>{{t("Last App")}}
-                <div class="sorting-arrows">
-                    <i class="bx bx-chevron-down"></i>
-                    <i class="bx bx-chevron-up"></i>
-                </div>
+{# ── Patients table card ── #}
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">{{t("All Patients")}}</h3>
+        <span class="text-sm text-muted">{{count($pat_list)}} {{t("records")}}</span>
+    </div>
+    <div class="card-body" style="padding:0;">
+        <div class="table-container">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>
+                            {{t("Name")}}
+                            <span class="sorting-arrows">
+                                <i class="bx bx-chevron-down"></i>
+                                <i class="bx bx-chevron-up"></i>
+                            </span>
+                        </th>
+                        <th>{{t("AMKA")}}</th>
+                        <th>
+                            {{t("Last App")}}
+                            <span class="sorting-arrows">
+                                <i class="bx bx-chevron-down"></i>
+                                <i class="bx bx-chevron-up"></i>
+                            </span>
+                        </th>
+                        <th>{{t("Actions")}}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% foreach($pat_list as $pat): %}
+                    <tr>
+                        <td data-column="name">
+                            <div class="font-medium">
+                                <a href="{{rel_url('/patient/'.$pat['id'].'/edit')}}">{{$pat['pname']}}</a>
+                            </div>
+                            {% if(strlen($pat['pname'])>0): %}
+                                <i class='bx bx-copy text-sm' style="cursor:pointer;color:var(--gray-400);margin-left:4px;" onclick="copyStr('{{$pat['pname']}}')" data-copy-text="{{$pat['pname']}}"></i>
+                            {% endif %}
+                        </td>
 
-            </th>
-            <th>{{t("Ενέργειες")}}</th>
-        </thead>
-        {% $loop=0; %}
-        <tbody>
-            {% foreach($pat_list as $pat): %}
-            <tr>
-                {% $loop++ %}
-                <!-- <td>{{$loop}}</td> -->
-                <td data-column="name">
-                    <a href="{{rel_url('/patient/'.$pat['id'].'/edit')}}">{{$pat['pname']}}</a>
-                    {% if(strlen($pat['pname'])>0): %}
-                        <i class='bx bx-copy' onclick="copyStr('{{$pat['pname']}}')" data-copy-text="{{$pat['pname']}}"></i>
-                    {% endif %}
-                </td>
+                        <td data-column="amka" style="font-family:monospace;">
+                            {{$pat['pamka']}}
+                            {% if(strlen($pat['pamka'])>0): %}
+                                <i class='bx bx-copy text-sm' style="cursor:pointer;color:var(--gray-400);margin-left:4px;" onclick="copyStr('{{$pat['pamka']}}')" data-copy-text="{{$pat['pamka']}}"></i>
+                            {% endif %}
+                        </td>
 
-                <td data-column="amka">
-                    {{$pat['pamka']}} 
-                    {% if(strlen($pat['pamka'])>0): %}
-                        <i class='bx bx-copy' onclick="copyStr('{{$pat['pamka']}}')" data-copy-text="{{$pat['pamka']}}"></i>
-                    {% endif %}
-                </td>
+                        <td data-column="lastapp">
+                            {% if($pat['lastapp']): %}
+                                {% echo explode(' ', $pat['lastapp'])[0]; %}
+                            {% else: %}
+                                <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
 
-                <td data-column="lastapp">
-                    {% if($pat['lastapp']): %}
-                        {% echo explode(' ', $pat['lastapp'])[0]; %}
-                    {% else: %}
-                        -
-                    {% endif %}
-                </td>
-                <td class="actions" data-column="actions">
-                    
-                    <!-- <a href="{{rel_url('/patient/'.$pat['id'].'/edit')}}">edit</a> -->
-                    <a href="{{rel_url('/patient/'.$pat['id'].'/delete')}}" confirmation><i class="bx bx-trash"></i></a>
-                </td>
-            </tr>
-            {% endforeach %}
-        </tbody>
-    </table>
+                        <td data-column="actions">
+                            <div class="action-buttons">
+                                <a href="{{rel_url('/patient/'.$pat['id'].'/edit')}}" class="action-btn" title="{{t('Edit')}}"><i class="bx bx-edit"></i> {{t("Edit")}}</a>
+                                <a href="{{rel_url('/patient/'.$pat['id'].'/delete')}}" class="action-btn" confirmation title="{{t('Delete')}}"><i class="bx bx-trash"></i></a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endforeach %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
