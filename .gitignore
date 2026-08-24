@@ -1,6 +1,7 @@
 web/core
 fw
 config/db.php
+config/ernsauth.php
 config/site.info.yaml
 sql/admin.sql
 sql/backup
@@ -14,4 +15,5 @@ backup/
 backups/
 web/modules/datepicker/date-picker
 web/test
-
+data/
+web/css/styles-old.css

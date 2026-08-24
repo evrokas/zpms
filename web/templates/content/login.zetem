@@ -1,26 +1,360 @@
-<div class="login-page">
-    <div class="title">
-        {{t("Enter your credentials to login")}}    
-    </div>    
+<style>
+.login-container {
+    display: flex;
+    max-width: 900px;
+    width: 90%;
+    background: white;
+    border-radius: var(--radius-xl, 0.75rem);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+}
 
-    <form action="{{$action}}" method="post">    
-        <div class="field">
-            <label for="username">{{t("Username")}}</label>
-            <input type="text" name="username" id="username">
+.login-sidebar {
+    flex: 1;
+    background: linear-gradient(135deg, var(--primary-600, #1e88e5) 0%, var(--primary-700, #1976d2) 100%);
+    color: white;
+    padding: 3rem 2.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.login-sidebar h1 {
+    font-size: var(--font-size-3xl, 2rem);
+    margin-bottom: 0.75rem;
+    color: white;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.login-sidebar > p {
+    font-size: var(--font-size-lg, 1.125rem);
+    opacity: 0.9;
+    line-height: 1.6;
+    color: white;
+    margin-bottom: 0;
+}
+
+.feature-list {
+    list-style: none;
+    margin-top: 2rem;
+    padding: 0;
+}
+
+.feature-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+    margin-bottom: 1rem;
+    font-size: 0.95rem;
+    color: rgba(255,255,255,0.9);
+}
+
+.feature-icon {
+    background: rgba(255,255,255,0.2);
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: var(--radius-md, 0.5rem);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+}
+
+.login-form-container {
+    flex: 1;
+    padding: 3rem 2.5rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.login-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.login-header h2 {
+    color: var(--text-primary, #212121);
+    margin-bottom: 0.25rem;
+    font-size: 1.5rem;
+}
+
+.login-header p {
+    color: var(--text-secondary, #616161);
+    margin: 0;
+}
+
+.login-form-container .form-group {
+    margin-bottom: 1.25rem;
+}
+
+.login-form-container .form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+    color: var(--text-primary, #212121);
+}
+
+.login-form-container .form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1.5px solid var(--border, #e0e0e0);
+    border-radius: var(--radius-md, 0.5rem);
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    box-sizing: border-box;
+    font-family: var(--font-family);
+}
+
+.login-form-container .form-input:focus {
+    outline: none;
+    border-color: var(--primary-600, #1e88e5);
+    box-shadow: 0 0 0 3px var(--primary-50, #e3f2fd);
+}
+
+.form-options {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--text-secondary, #616161);
+}
+
+.btn-login {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: var(--primary-600, #1e88e5);
+    color: white;
+    border: none;
+    border-radius: var(--radius-md, 0.5rem);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+    font-family: var(--font-family);
+}
+
+.btn-login:hover {
+    background: var(--primary-700, #1976d2);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md, 0 4px 6px -1px rgba(0,0,0,0.1));
+}
+
+.login-divider {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin: 1.5rem 0;
+    color: var(--text-secondary, #616161);
+    font-size: 0.875rem;
+}
+
+.login-divider::before,
+.login-divider::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border, #e0e0e0);
+}
+
+#sso-start .form-group { margin-bottom: 1rem; }
+#sso-start .form-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+#sso-start .form-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1.5px solid var(--border, #e0e0e0);
+    border-radius: var(--radius-md, 0.5rem);
+    font-size: 1rem;
+    box-sizing: border-box;
+    font-family: var(--font-family);
+}
+#sso-start .form-input:focus {
+    outline: none;
+    border-color: var(--primary-600, #1e88e5);
+    box-shadow: 0 0 0 3px var(--primary-50, #e3f2fd);
+}
+
+.btn-sso {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background: transparent;
+    color: var(--primary-600, #1e88e5);
+    border: 1.5px solid var(--primary-600, #1e88e5);
+    border-radius: var(--radius-md, 0.5rem);
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-family: var(--font-family);
+}
+.btn-sso:hover { background: var(--primary-50, #e3f2fd); }
+
+#sso-pending { text-align: center; padding: 1.5rem 0; }
+#sso-pending strong {
+    font-size: 2rem;
+    color: var(--primary-600, #1e88e5);
+    display: block;
+    margin: 0.5rem 0;
+}
+#sso-username-error {
+    color: var(--danger-500, #f44336);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+@media (max-width: 640px) {
+    .login-container { flex-direction: column; }
+    .login-sidebar { padding: 2rem 1.5rem; }
+    .login-form-container { padding: 2rem 1.5rem; }
+}
+</style>
+
+<div class="login-container">
+    <div class="login-sidebar">
+        <h1><i class="bx bxs-heart-circle"></i> ZPMS</h1>
+        <p>{{t("Patient Management System")}}</p>
+        <ul class="feature-list">
+            <li>
+                <span class="feature-icon"><i class="bx bx-user"></i></span>
+                <span>{{t("Patient Records")}}</span>
+            </li>
+            <li>
+                <span class="feature-icon"><i class="bx bx-calendar"></i></span>
+                <span>{{t("Appointments")}}</span>
+            </li>
+            <li>
+                <span class="feature-icon"><i class="bx bx-file"></i></span>
+                <span>{{t("Medical Files")}}</span>
+            </li>
+            <li>
+                <span class="feature-icon"><i class="bx bx-cog"></i></span>
+                <span>{{t("Administration")}}</span>
+            </li>
+        </ul>
+    </div>
+
+    <div class="login-form-container">
+        <div class="login-header">
+            <h2>{{t("Welcome Back")}}</h2>
+            <p>{{t("Enter your credentials to login")}}</p>
         </div>
 
-        <div class="field">
-            <label for="password">{{t("Password")}}</label>
-            <input type="password" name="password" id="password">
+        <form action="{{$action}}" method="post">
+            <div class="form-group">
+                <label class="form-label" for="username">{{t("Username")}}</label>
+                <input type="text" class="form-input" name="username" id="username" autocomplete="username">
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="password">{{t("Password")}}</label>
+                <input type="password" class="form-input" name="password" id="password" autocomplete="current-password">
+            </div>
+
+            <div class="form-options">
+                <label class="checkbox-label">
+                    <input type="checkbox" name="rememberme" id="rememberme">
+                    <span>{{t("Remember me")}}</span>
+                </label>
+            </div>
+
+            <button type="submit" class="btn-login">{{t("Login")}}</button>
+        </form>
+
+{%if($ernsauth_enabled):%}
+        <div class="login-divider">{{t("or")}}</div>
+
+        <div id="sso-start">
+            <div class="form-group">
+                <label class="form-label" for="sso-username">{{t("Username")}}</label>
+                <input type="text" class="form-input" id="sso-username" autocomplete="username">
+            </div>
+            <p id="sso-username-error" style="display:none;"></p>
+            <button type="button" class="btn-sso" id="btn-start-sso">{{t("Login with ErnsAuth")}}</button>
         </div>
 
-        <div class="field justify-right">
-            <input type="checkbox" name="rememberme" id="rememberme">
-            <label for="rememberme">{{t("Remember me")}}</label>
+        <div id="sso-pending" style="display:none">
+            <p>{{t("Open your ErnsAuth dashboard and approve the login.")}}</p>
+            <strong id="sso-number"></strong>
+            <p id="sso-status">{{t("Waiting for approval...")}}</p>
         </div>
 
-        <div class="buttons">
-            <button type="submit">{{t("Login")}}</button>
-        </div>
-    </form>
+        <script>
+        (function() {
+            var SSO_URL = '{{$sso_url}}';
+            var pollTimer = null;
+
+            document.getElementById('btn-start-sso').addEventListener('click', function() {
+                var username = document.getElementById('sso-username').value.trim();
+                var errEl = document.getElementById('sso-username-error');
+                if (!username) {
+                    errEl.textContent = '{{t("Please enter your username.")}}';
+                    errEl.style.display = 'block';
+                    return;
+                }
+                errEl.style.display = 'none';
+                this.disabled = true;
+                fetch(SSO_URL + '?action=sso_create_challenge', {
+                    method: 'POST', credentials: 'same-origin',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({username: username})
+                }).then(function(r) { return r.json(); }).then(function(d) {
+                    if (d.error) {
+                        errEl.textContent = d.error;
+                        errEl.style.display = 'block';
+                        document.getElementById('btn-start-sso').disabled = false;
+                        return;
+                    }
+                    document.getElementById('sso-number').textContent = d.challenge_number;
+                    document.getElementById('sso-start').style.display = 'none';
+                    document.getElementById('sso-pending').style.display = 'block';
+
+                    var expireMs = (d.expires_at - Math.floor(Date.now() / 1000) + 5) * 1000;
+                    setTimeout(function() {
+                        if (pollTimer) { clearInterval(pollTimer); pollTimer = null; }
+                        document.getElementById('sso-status').textContent = '{{t("Expired. Please try again.")}}';
+                    }, expireMs);
+
+                    pollTimer = setInterval(function() {
+                        fetch(SSO_URL + '?action=sso_poll_challenge&challenge_id=' + encodeURIComponent(d.challenge_id),
+                            {credentials: 'same-origin'})
+                        .then(function(r) { return r.json(); }).then(function(p) {
+                            if (p.authenticated) {
+                                clearInterval(pollTimer); pollTimer = null;
+                                document.getElementById('sso-status').textContent = '{{t("Approved! Redirecting...")}}';
+                                window.location.href = p.redirect;
+                            } else if (p.status === 'rejected' || p.status === 'expired') {
+                                clearInterval(pollTimer); pollTimer = null;
+                                document.getElementById('sso-status').textContent =
+                                    p.status === 'rejected' ? '{{t("Login rejected.")}}' : '{{t("Expired. Please try again.")}}';
+                            } else if (p.error) {
+                                clearInterval(pollTimer); pollTimer = null;
+                                document.getElementById('sso-status').textContent = p.error;
+                            }
+                        }).catch(function() {});
+                    }, 3000);
+                }).catch(function() {
+                    document.getElementById('sso-status').textContent = '{{t("SSO service unavailable.")}}';
+                    document.getElementById('btn-start-sso').disabled = false;
+                });
+            });
+        })();
+        </script>
+{%endif%}
+    </div>
 </div>

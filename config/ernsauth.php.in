@@ -1,0 +1,4 @@
+<?php
+define('ERNSAUTH_URL', 'http://localhost/apps/ernsauth/web/sso-api.php');
+define('ERNSAUTH_API_KEY', '');
+define('ERNSAUTH_ENABLED', false);
