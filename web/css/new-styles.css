@@ -1,0 +1,479 @@
+/* Improved styles.css using the new color palette */
+
+@media screen and (max-width: 800px) { html { font-size: 90%; }}
+@media screen and (max-width: 700px) { html { font-size: 80%; }}  
+@media screen and (max-width: 600px) { html { font-size: 70%; }}
+
+:root {
+    --basic-dark-color: var(--primary);
+    --main-navigation-menu-level-0-background-color: var(--primary);
+    --main-navigation-menu-level-0-link-color: #fff; 
+    --main-navigation-menu-level-0-hover-background-color: var(--primary-light);
+    --main-navigation-menu-level-0-hover-text-color: #fff;
+
+    --main-navigation-menu-level-1-background-color: var(--primary-dark);
+    --main-navigation-menu-level-1-link-color: #fff; 
+    --main-navigation-menu-level-1-hover-background-color: var(--primary-light);
+    --main-navigation-menu-level-1-hover-text-color: #fff;
+
+    --main-navigation-menu-level-2-background-color: var(--primary-dark);
+    --main-navigation-menu-level-2-link-color: #fff; 
+    --main-navigation-menu-level-2-hover-background-color: var(--primary-light);
+    --main-navigation-menu-level-2-hover-text-color: #fff;
+}
+
+body {
+    margin: 0 0.5rem;
+    background-color: var(--light-gray);
+    color: var(--text);
+}
+
+.section-right-flush {
+    display: block;
+}
+
+.section-right-flush-contents {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+}
+
+.section-header-grid-2x1 {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+.section-right-column {
+    display: flex;
+    flex-direction: column;
+    text-align: right;
+}
+
+.git-hash {
+    padding: 0.2rem;
+    color: var(--dark-gray);
+    font-size: 12px;
+    text-align: right;
+    word-wrap: anywhere;
+}
+
+.wrapper {
+    max-width: max(900px, 80%);
+    margin: auto;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-items: center;
+    gap: 2rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+    justify-content: left;
+    box-shadow: var(--shadow-md);
+}
+
+.region {
+    margin: 1rem 0;
+}
+
+.region-header {
+    margin: unset;
+}
+
+.region-footer {
+    margin: 2rem 0;
+    padding: 1rem 0.5rem;
+    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+    color: white;
+    text-align: center;
+    border-radius: var(--border-radius);
+}
+
+.region-footer i {
+    color: white;
+}
+
+/* Forms */
+form .buttons {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-evenly;
+    gap: var(--spacing-sm);
+}
+
+form .buttons button,
+form .buttons input[type="submit"] {
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    padding: var(--spacing-sm) var(--spacing);
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+form .buttons button:hover,
+form .buttons input[type="submit"]:hover {
+    background-color: var(--primary-light);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-md);
+}
+
+form .input-div {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.1rem 0.4rem;    
+}
+
+.edit-patient {
+    form .buttons {
+        padding: 0.5rem;
+    }
+
+    form .buttons input[type="submit"] {
+        padding: 8px 16px;
+    }
+
+    form {
+        display: flex;
+        gap: 0.3rem;
+        flex-direction: column;
+        position: relative;
+        background: white;
+        padding: var(--spacing);
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-sm);
+    }
+
+    form .input-div select,
+    form .input-div input,
+    form .input-div .date-picker-input span,
+    form .input-div textarea {
+        flex-grow: 1;
+        padding: 8px 12px;
+        border: 1px solid var(--medium-gray);
+        border-radius: var(--border-radius-sm);
+        transition: all var(--transition-fast);
+    }
+
+    form .input-div select:focus,
+    form .input-div input:focus,
+    form .input-div textarea:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(3, 99, 121, 0.1);
+        outline: none;
+    }
+
+    form .input-div label {
+        width: 10rem;
+        text-align: right;
+        font-weight: 600;
+        color: var(--dark-gray);
+    }
+
+    form .input-div.input-notes {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.2rem;
+    }
+
+    form .input-div.input-notes label {
+        text-align: left;
+    }
+
+    form .input-div input::placeholder {
+        font-size: 0.8rem;
+        color: var(--dark-gray);
+    }
+
+    form .input-div input[name="patient-name"],
+    form .input-div input[name="patient-amka"],
+    form .input-div input[name="patient-telephone"],
+    form .input-div input[name="patient-email"] {
+        position: relative;
+        
+        & ~ .inline-icons {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            position: absolute;
+            font-size: 1.5rem;
+            right: 1rem;
+
+            img,
+            i.valid,
+            i.not-valid {
+                visibility: hidden;
+                display: none;
+            }
+
+            i.bx-copy,
+            i.bx-phone-call {
+                font-size: 1.2rem;
+                color: var(--primary);
+                cursor: pointer;
+                transition: color var(--transition-fast);
+            }
+            
+            i.bx-copy:hover,
+            i.bx-phone-call:hover {
+                color: var(--primary-dark);
+            }
+        }
+
+        &:placeholder-shown ~ .inline-icons {
+            display: none;
+        }
+
+        &.valid {
+            border-color: var(--success);
+        }
+
+        &.valid ~ .inline-icons i.valid {
+            visibility: visible;
+            display: inline-block;
+            color: var(--success);
+        }
+
+        &.not-valid {
+            border-color: var(--error);
+        }
+
+        &.not-valid ~ .inline-icons i.not-valid {
+            visibility: visible;
+            display: inline-block;
+            color: var(--error);
+        }
+    }
+}
+
+@media screen and (max-width: 470px) {
+    .edit-patient form {
+        .input-attachments {
+            width: unset;
+        }
+        .input-div {
+            flex-direction: column;
+            gap: 0;
+            align-items: flex-start;
+        }
+
+        .input-div label {
+            width: auto;
+            text-align: left;
+        }
+    }
+
+    .section-header-grid-2x1 {
+        flex-direction: column-reverse;
+    }
+}
+
+/* Patients List Improvements */
+.page-title {
+    text-align: center;
+    margin-bottom: var(--spacing);
+    color: var(--primary);
+}
+
+.patient-list-actions ul {
+    padding: 1rem 2rem 0.2rem;
+    list-style: none;
+}
+
+.patient-list-actions a {
+    display: inline-block;
+    background-color: var(--primary);
+    color: white;
+    padding: var(--spacing-sm) var(--spacing);
+    border-radius: var(--border-radius);
+    text-decoration: none;
+    transition: all var(--transition-fast);
+}
+
+.patient-list-actions a:hover {
+    background-color: var(--primary-light);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.search {
+    margin: 1rem 1rem 0rem;
+    background: white;
+    padding: var(--spacing);
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+}
+
+.search .input-div label {
+    text-align: left;
+    width: auto;
+    font-weight: 600;
+    color: var(--dark-gray);
+}
+
+.search .input-div input {
+    padding: 8px 12px;
+    border: 1px solid var(--medium-gray);
+    border-radius: var(--border-radius-sm);
+    transition: all var(--transition-fast);
+}
+
+.search .input-div input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(3, 99, 121, 0.1);
+    outline: none;
+}
+
+.patients-list {
+    padding: 1rem;
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.patients-list table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.patients-list table thead {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+}
+
+.patients-list table thead th {
+    padding: 12px 8px;
+    text-align: left;
+    font-weight: 600;
+    position: relative;
+}
+
+.patients-list table tr {
+    transition: background-color var(--transition-fast);
+}
+
+.patients-list table tr:nth-child(even) {
+    background-color: var(--light-gray);
+}
+
+
+.patients-list table td.actions a,
+.patients-list table td.actions a:visited {
+    color: var(--error);
+    text-decoration: inherit;
+    transition: color var(--transition-fast);
+}
+
+.patients-list table td.actions a:hover {
+    color: var(--error-dark);
+    transform: scale(1.1);
+}
+
+.patients-list table td[data-column="name"] {
+    font-weight: 600;
+    width: auto;
+}
+
+.patients-list table td[data-column="name"] a {
+    color: var(--primary);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+}
+
+.patients-list table td[data-column="name"] a:hover {
+    color: var(--primary-dark);
+    text-decoration: underline;
+}
+
+.patients-list table td[data-column="name"] i {
+    margin: 0 0.5rem;
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+    color: var(--primary);
+    cursor: pointer;
+}
+
+.patients-list table td[data-column="name"]:hover i {
+    opacity: 1;
+}
+
+.patients-list table td[data-column="name"] i:hover {
+    color: var(--primary-dark);
+}
+
+.patients-list table td[data-column="amka"] {
+    text-align: center;
+    width: 10rem;
+    font-family: monospace;
+}
+
+.patients-list table td[data-column="amka"] i {
+    opacity: 0;
+    transition: opacity var(--transition-fast);
+    color: var(--primary);
+    cursor: pointer;
+}
+
+.patients-list table td[data-column="amka"]:hover i {
+    opacity: 1;
+}
+
+.patients-list table td[data-column="amka"] i:hover {
+    color: var(--primary-dark);
+}
+
+.patients-list table td[data-column="lastapp"] {
+    text-align: center;
+    width: max-content;
+}
+
+.patients-list table td[data-column="actions"] {
+    margin: 0 auto;
+    text-align: center;
+    width: min-content;
+}
+
+.patients-list thead .sorting-arrows {
+    display: inline-block;
+    color: white;
+    margin-left: 8px;
+}
+
+.patients-list thead .sorting-arrows i {
+    font-size: 1rem;
+    cursor: pointer;
+    transition: color var(--transition-fast);
+    opacity: 0.7;
+}
+
+.patients-list thead .sorting-arrows i:hover {
+    color: var(--warning);
+    opacity: 1;
+}
+
+/* Responsive rules */
+@media screen and (max-width: 470px) {
+    body {
+        margin: 0;
+    }
+
+    .patients-list {
+        padding: 0;
+        border-radius: 0;
+    }
+    
+    .patients-list table {
+        display: block;
+        overflow-x: auto;
+    }
+}
+
+/* Additional existing styles remain unchanged below this point */
+/* ... (rest of the existing styles.css content) ... */

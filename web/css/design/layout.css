@@ -11,10 +11,11 @@
 }
 
 .app-main {
+    margin-left: var(--sidebar-width, 260px);
     flex: 1;
     display: flex;
     flex-direction: column;
-    min-width: 0; /* Prevent flex overflow */
+    min-width: 0;
 }
 
 .app-content {
@@ -25,10 +26,9 @@
     width: 100%;
 }
 
-/* Legacy container (backward compatibility) */
+/* Legacy container — layout now handled by .app-container in navigation.css */
 .wrapper {
-    display: flex;
-    min-height: 100vh;
+    display: block;
 }
 
 /* ===== SIDEBAR ===== */
@@ -314,6 +314,12 @@
 
 /* ===== MOBILE (< 768px) ===== */
 
+@media (max-width: 900px) {
+    .app-main {
+        margin-left: 0;
+    }
+}
+
 @media (max-width: 768px) {
     :root {
         --sidebar-width: 100%;
@@ -409,6 +415,10 @@
         position: sticky;
         top: 0;
         height: 100vh;
+    }
+
+    .app-main {
+        margin-left: 0;
     }
 
     .grid-cols-4 {

@@ -79,7 +79,7 @@ body {
 
 /* NEW body styles */
 body {
-    margin: 0 0.5rem;
+    margin: 0;
     background-color: var(--light-gray);
     color: var(--text);
 }
@@ -114,9 +114,9 @@ body {
     word-wrap: anywhere;
 }
 
+/* .wrapper kept for backward compatibility — layout now uses .app-container */
 .wrapper {
-    max-width: max(900px, 80%);
-    margin: auto;
+    max-width: 100%;
 }
 
 /* OLD header styles - keeping for reference */
@@ -152,19 +152,18 @@ body {
 }
 
 .region {
-    margin: 1rem 0;
+    /* Default region margin removed — layout-specific spacing in navigation.css */
 }
 
 .region-header {
-    margin: unset;
+    /* Header content is in sidebar-bottom; no extra margin needed */
 }
 
 
 .region-main_content {
-    padding: var(--spacing);
-    background-color: var(--light-gray);
-    border-radius: var(--border-radius-lg);
-    box-shadow: var(--shadow-sm);
+    /* Padding/bg handled by .app-content-area in navigation.css */
+    padding: 0;
+    background: transparent;
 }
 
 /* OLD region-footer styles - keeping for reference */
@@ -177,18 +176,19 @@ body {
 }
 */
 
-/* NEW region-footer styles */
+/* region-footer styles — clean white footer matching new design */
 .region-footer {
-    margin: 2rem 0;
-    padding: 1rem 0.5rem;
-    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
-    color: white;
+    margin: 0;
+    padding: 0.875rem 1.5rem;
+    background: var(--background, #ffffff);
+    border-top: 1px solid var(--border, #e0e0e0);
+    color: var(--text-secondary, #616161);
     text-align: center;
-    border-radius: var(--border-radius);
+    font-size: 0.8125rem;
 }
 
 .region-footer i {
-    color: white;
+    color: var(--text-secondary, #616161);
 }
 
 /* forms */
@@ -319,7 +319,7 @@ form .input-div {
     form .input-div input:focus,
     form .input-div textarea:focus {
         border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(3, 99, 121, 0.1);
+        box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.1);
         outline: none;
     }
 
@@ -641,7 +641,7 @@ form .input-div {
 
 .search .input-div input:focus {
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(3, 99, 121, 0.1);
+    box-shadow: 0 0 0 3px rgba(30, 136, 229, 0.1);
     outline: none;
 }
 
@@ -700,7 +700,7 @@ form .input-div {
 }
 
 .patients-list table tr:hover {
-    background-color: rgba(3, 99, 121, 0.05);
+    background-color: rgba(30, 136, 229, 0.05);
 }
 
 .patients-list table tr:nth-child(even) {
@@ -794,21 +794,24 @@ form .input-div {
     width: min-content;
 }
 
-.patients-list thead .sorting-arrows {
+.patients-list thead .sorting-arrows,
+.data-table thead .sorting-arrows {
     display: inline-block;
-    color: white;
+    color: var(--text-secondary, #616161);
     margin-left: 8px;
 }
 
-.patients-list thead .sorting-arrows i {
+.patients-list thead .sorting-arrows i,
+.data-table thead .sorting-arrows i {
     font-size: 1rem;
     cursor: pointer;
     transition: color var(--transition-fast);
     opacity: 0.7;
 }
 
-.patients-list thead .sorting-arrows i:hover {
-    color: var(--warning);
+.patients-list thead .sorting-arrows i:hover,
+.data-table thead .sorting-arrows i:hover {
+    color: var(--primary-600, #1e88e5);
     opacity: 1;
 }
 

@@ -590,19 +590,23 @@ tbody tr:hover .table-row-actions {
 }
 
 .action-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
     padding: var(--space-1) var(--space-2);
     font-size: var(--text-sm);
     border: none;
     background: none;
     cursor: pointer;
     color: var(--primary-600);
+    text-decoration: none;
+    border-radius: var(--radius-sm);
     transition: all var(--transition-fast);
 }
 
 .action-btn:hover {
     color: var(--primary-700);
     background-color: var(--primary-50);
-    border-radius: var(--radius-sm);
 }
 
 /* Stats Cards */

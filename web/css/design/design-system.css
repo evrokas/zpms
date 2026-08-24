@@ -1,20 +1,20 @@
-/* ===== ZPMS DESIGN SYSTEM - MEDICAL TEAL THEME ===== */
-/* Phase 5: Enhanced Token System with Healthcare-Focused Design */
-/* Updated: February 8, 2026 */
+/* ===== ZPMS DESIGN SYSTEM - MATERIAL BLUE THEME ===== */
+/* Design Migration: Clean Material-inspired blue design */
+/* Updated: March 16, 2026 */
 
 :root {
-    /* ===== PRIMARY COLORS - MEDICAL TEAL ===== */
-    /* Healthcare-appropriate teal color scheme */
-    --primary-50: #f0fdfa;
-    --primary-100: #ccfbf1;
-    --primary-200: #99f6e4;
-    --primary-300: #5eead4;
-    --primary-400: #2dd4bf;
-    --primary-500: #14b8a6;
-    --primary-600: #0d9488;    /* Main brand color */
-    --primary-700: #0f766e;
-    --primary-800: #115e59;
-    --primary-900: #134e4a;
+    /* ===== PRIMARY COLORS - MATERIAL BLUE ===== */
+    /* Clean, professional Material Design blue palette */
+    --primary-50: #e3f2fd;
+    --primary-100: #bbdefb;
+    --primary-200: #90caf9;
+    --primary-300: #64b5f6;
+    --primary-400: #42a5f5;
+    --primary-500: #2196f3;
+    --primary-600: #1e88e5;    /* Main brand color */
+    --primary-700: #1976d2;
+    --primary-800: #1565c0;
+    --primary-900: #0d47a1;
 
     /* ===== NEUTRAL COLORS - SLATE ===== */
     /* Professional slate gray for UI elements */
@@ -136,7 +136,7 @@
     --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
     --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
     --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    --shadow-focus: 0 0 0 3px rgba(13, 148, 136, 0.18);  /* Medical teal focus ring for accessibility */
+    --shadow-focus: 0 0 0 3px rgba(30, 136, 229, 0.18);  /* Blue focus ring for accessibility */
 
     /* ===== TRANSITIONS ===== */
     /* Just the timing function — use as: transition: all var(--transition-base) */
