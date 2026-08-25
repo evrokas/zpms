@@ -197,11 +197,26 @@ form .input-div {
 
 
     form .buttons {
+        position: relative;
         display: flex;
         justify-content: space-between;
         gap: var(--spacing);
         margin-top: var(--spacing);
         padding: 0.5rem;
+    }
+
+    /* The save-status spinner (#info-loader, .loader0 -- see loader.css)
+       is a flex sibling of the two submit buttons here, so
+       justify-content: space-between treated it as a third row item and
+       pushed it out to the far edge, detached from the buttons it
+       actually reports on. Taking it out of flex flow entirely pins it
+       tight against the button row instead, vertically centered
+       regardless of the row's actual height. */
+    form .buttons .loader0 {
+        position: absolute;
+        top: 50%;
+        right: 0;
+        transform: translateY(-50%);
     }
 
     form .buttons input[type="submit"] {

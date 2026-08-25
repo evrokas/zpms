@@ -11,22 +11,29 @@
     --loader-error-color: red;
     --loader-pending-color: orange;
 
-    /*position: absolute;*/
-    /*right: calc(var(--loader-height)/2);*/
-    /* bottom: 2px; */
-    
-    display: inline-block; 
-    float: right;
-    
-    
+    display: inline-block;
+
+    /* Fixed circular size regardless of the parent layout: a flex parent
+       whose main axis is a column (e.g. .edit-patient .buttons on mobile,
+       see styles.css) stretches a flex item across the cross axis by
+       default (align-items: normal computes to stretch), and with no
+       explicit width set here, that turned a small 18px spinner into a
+       pill spanning the full row width, relying on nothing but
+       aspect-ratio (which only fills in a missing dimension, it doesn't
+       protect an existing one from being stretched) to keep it circular.
+       flex-shrink/align-self are no-ops when .loader0 isn't a flex child
+       at all (e.g. the .appointment-entry usage below), so this is safe
+       everywhere this class is used. */
+    flex-shrink: 0;
+    align-self: center;
+
     background-color: white;
     border: var(--loader-radius) solid #f3f3f3; /* Light grey */
     border-top: var(--loader-radius) solid #3498db; /* Blue */
     border-radius: 50%;
+    width: var(--loader-height);
     height: var(--loader-height);
     aspect-ratio: 1;
-    /* width: 50px; */
-    /* height: 50px; */
     visibility: hidden;
 
     &.active {
