@@ -27,6 +27,7 @@
         </div>
     </form>
 
+    {% if($totp_ui_enabled): %}
     <form action="#" method="post">
         {{ csrf_field() }}
         <div class="totp">
@@ -63,6 +64,7 @@
             </div>
         </div>
     </form>
+    {% endif %}
 
     <div class="user-devices">
         <h2>{{t("My Devices")}}</h2>

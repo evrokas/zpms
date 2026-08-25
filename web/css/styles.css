@@ -628,6 +628,91 @@ form .input-div {
 }
 
 
+/* homepage dashboard */
+
+.dashboard-welcome {
+    padding: var(--spacing) 0 var(--spacing-sm);
+    text-align: center;
+}
+
+.dashboard-welcome h2 {
+    color: var(--primary-dark);
+}
+
+.dashboard-location {
+    margin-top: var(--spacing-xs);
+    color: var(--dark-gray);
+    font-size: 0.9rem;
+}
+
+.dashboard-location i {
+    color: var(--primary);
+    margin-right: var(--spacing-xs);
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: var(--spacing-md);
+    padding: var(--spacing) 0 var(--spacing-lg);
+}
+
+.dashboard-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: var(--spacing-xs);
+    padding: var(--spacing-lg) var(--spacing);
+    background-color: white;
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-base);
+    color: var(--text);
+    transition: transform var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
+}
+
+.dashboard-card i {
+    font-size: 2.5rem;
+    color: var(--primary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.dashboard-card:hover {
+    background-color: var(--primary);
+    color: white;
+}
+
+.dashboard-card:hover i,
+.dashboard-card:hover .dashboard-card-desc {
+    color: white;
+}
+
+.dashboard-card-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+}
+
+.dashboard-card-desc {
+    color: var(--dark-gray);
+    font-size: 0.85rem;
+}
+
+@media screen and (max-width: 470px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: var(--spacing-sm);
+    }
+
+    .dashboard-card {
+        padding: var(--spacing) var(--spacing-sm);
+    }
+
+    .dashboard-card i {
+        font-size: 2rem;
+    }
+}
+
+
 /* patients forms */
 
 .patients-header {

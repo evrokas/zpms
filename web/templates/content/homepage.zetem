@@ -1,10 +1,48 @@
-<!-- <h2>Welcome to the Patient Management System</h2> -->
+{% attach_library('boxicons') %}
 
-Selected location is: {{$location}}
+<div class="dashboard">
+    <div class="dashboard-welcome">
+        <h2>Καλώς ήρθατε{% if($display_name): %}, {{{$display_name}}}{% endif %}</h2>
+        {% if($location): %}
+            <p class="dashboard-location"><i class="bx bx-map"></i> {{{$location}}}</p>
+        {% endif %}
+    </div>
 
-<hr>
+    <div class="dashboard-grid">
+        {% if($can_view_patients): %}
+        <a class="dashboard-card hover-lift" href="{{rel_url('/patients')}}">
+            <i class="bx bx-group"></i>
+            <span class="dashboard-card-title">Ασθενείς</span>
+            <span class="dashboard-card-desc">Λίστα και διαχείριση ασθενών</span>
+        </a>
+        {% endif %}
 
-<ul>
-    <li>Select <a href="{{rel_url('/patients')}}">Patients</a> for show patient list</li>
-</ul>
+        <a class="dashboard-card hover-lift" href="{{rel_url('/profile')}}">
+            <i class="bx bx-user-circle"></i>
+            <span class="dashboard-card-title">Ο Λογαριασμός μου</span>
+            <span class="dashboard-card-desc">Στοιχεία χρήστη και συσκευές</span>
+        </a>
 
+        <a class="dashboard-card hover-lift" href="{{rel_url('/apps/genqr')}}">
+            <i class="bx bx-qr"></i>
+            <span class="dashboard-card-title">Δημιουργία QR</span>
+            <span class="dashboard-card-desc">Δημιουργία κωδικού QR</span>
+        </a>
+
+        {% if($can_access_backups): %}
+        <a class="dashboard-card hover-lift" href="{{rel_url('/apps/backup')}}">
+            <i class="bx bx-cloud-upload"></i>
+            <span class="dashboard-card-title">Αντίγραφα Ασφαλείας</span>
+            <span class="dashboard-card-desc">Κατάσταση αντιγράφων ασφαλείας</span>
+        </a>
+        {% endif %}
+
+        {% if($can_manage_settings): %}
+        <a class="dashboard-card hover-lift" href="{{rel_url('/settings')}}">
+            <i class="bx bx-cog"></i>
+            <span class="dashboard-card-title">Ρυθμίσεις</span>
+            <span class="dashboard-card-desc">Κλινικές, γιατροί, χρήστες</span>
+        </a>
+        {% endif %}
+    </div>
+</div>

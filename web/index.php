@@ -119,6 +119,7 @@ require_once(__DIR__ . '/rbac.php');
 /* ----- website handlers ----- */
 
     function homepage($params) {
+        global $kernel;
 
         if(!SecurityClass::userLoggedIn()) {
             return Renderer::render("homepage-nologin.zetem", []);
@@ -126,12 +127,25 @@ require_once(__DIR__ . '/rbac.php');
 
         // user is logged, so show a different page
         if(!isset($_SESSION['location'])) {
-            // $locname = $ln[1];
-
+            $locname = null;
         } else $locname = $_SESSION['location'];
 
+        $uname = $kernel->getUserName();
+        $account = UsersClassEx::getUserAccount($uname);
 
-        return Renderer::render("homepage.zetem", ['location' => $locname]);
+        return Renderer::render("homepage.zetem", [
+            'location' => $locname,
+            'display_name' => $account ? $account->getname() : $uname,
+            // Each dashboard tile below is only as visible as the nav menu
+            // entry for the same destination already is (see menu.main in
+            // config/settings.info.yaml -- patients/settings both carry
+            // access: power-user there, qrgenerator carries none) -- this
+            // just makes the same access decision reachable from a template
+            // conditional instead of only the menu renderer.
+            'can_view_patients' => rbacClass::isPermitted(ZPMS_PERM_PATIENTS_VIEW_LIST),
+            'can_manage_settings' => rbacClass::isPermitted(ZPMS_PERM_SETTINGS_MANAGE),
+            'can_access_backups' => rbacClass::isPermitted(ZPMS_PERM_BACKUP_ACCESS),
+        ]);
     }
 
 

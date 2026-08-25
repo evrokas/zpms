@@ -41,6 +41,14 @@ class UserProfileModule extends moduleClass {
             $user->getactive()?'checked="checked"':'',
             $user->getExpired()?'checked="checked"':'',
             'totp_activated' => true,
+            // TOTP is hidden from the profile page for now -- totp_handler()
+            // (web/index.php) is a stub that encodes a hardcoded literal
+            // string into the QR code, not a real per-user TOTP secret, so
+            // showing the section as a working security feature would be
+            // actively misleading. Flip this back to true once real TOTP
+            // secret generation/verification is implemented; nothing else
+            // needs to change.
+            'totp_ui_enabled' => false,
             'devices' => $devices,
             'current_selector' => $currentSelector,
         ]);
