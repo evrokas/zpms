@@ -3,25 +3,29 @@
 <div class="user-profile">
     Userid: {{$user->getuname()}}
 
-    <form action="#" method="post">
+    <form action="{{rel_url('/profile')}}" method="post">
         {{ csrf_field() }}
+        <input type="hidden" name="action" value="update_account">
         <div class="fields">
             <label for="useractive">User account active</label>
-            <input type="checkbox" name="useractive" disabled {{ ($user->getactive()==1)?"checked":"" }}>
+            <input type="checkbox" name="useractive" id="useractive" {{ ($user->getactive()==1)?"checked":"" }}>
         </div>
-        <!-- user active {{$user->getactive()}} -->
         <div class="fields">
             <label for="userexpired">User account expired</label>
-            <input type="checkbox" name="userexpired" disabled {{ ($user->getexpired()==1)?"checked":"" }}>
+            <input type="checkbox" name="userexpired" id="userexpired" {{ ($user->getexpired()==1)?"checked":"" }}>
         </div>
         <div class="fields">
             <label for="user_name">Name</label>
             <input type="text" name="user_name" id="" disabled value="{{$user->getname()}}">
         </div>
-        <!-- <div class="fields"> -->
-            <!-- <label for="pass_word">Password</label> -->
-            <!-- <input type="password" name="pass_word" id="" disabled value="{{$user->getupass()}}""> -->
-        <!-- </div> -->
+        <div class="fields">
+            <label for="new_password">Νέος Κωδικός</label>
+            <input type="password" name="new_password" id="new_password" autocomplete="new-password" placeholder="Αφήστε κενό για να παραμείνει ο τρέχων κωδικός">
+        </div>
+        <div class="fields">
+            <label for="confirm_password">Επιβεβαίωση Κωδικού</label>
+            <input type="password" name="confirm_password" id="confirm_password" autocomplete="new-password" placeholder="Επανάληψη νέου κωδικού">
+        </div>
         <div class="buttons">
             <button type="submit" name="submit">Αποθήκευση</button>
         </div>

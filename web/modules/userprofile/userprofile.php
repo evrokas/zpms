@@ -77,6 +77,57 @@ class UserProfileModule extends moduleClass {
             exit();
         }
 
+        // Main account form: active/expired flags and an optional password
+        // change, same "leave blank to keep the current password" +
+        // password_hash(..., PASSWORD_DEFAULT) convention zeusfw core's own
+        // admin_crud.php uses for the same users.upass column (see
+        // zeusfw_admin_apply_field()'s 'password' case) -- the plaintext is
+        // never stored or redisplayed, so the field is always blank on load
+        // regardless of whether an account has a password set.
+        if($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'update_account') {
+            if(!csrfClass::verifyRequest()) {
+                $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
+                header('location: ' . rel_url('/profile'));
+                exit();
+            }
+
+            $u = $kernel->getUserName();
+            $user = UsersClassEx::getUserAccount($u);
+            if(!$user) {
+                header('location: ' . rel_url('/profile'));
+                exit();
+            }
+
+            $newPassword = trim((string)($_POST['new_password'] ?? ''));
+            $confirmPassword = trim((string)($_POST['confirm_password'] ?? ''));
+
+            $fields = [
+                'active' => isset($_POST['useractive']) ? 1 : 0,
+                'expired' => isset($_POST['userexpired']) ? 1 : 0,
+            ];
+
+            if($newPassword !== '') {
+                if(mb_strlen($newPassword) < 8) {
+                    $kernel->addStatus('error', 'Ο νέος κωδικός πρέπει να έχει τουλάχιστον 8 χαρακτήρες.');
+                    header('location: ' . rel_url('/profile'));
+                    exit();
+                }
+                if($newPassword !== $confirmPassword) {
+                    $kernel->addStatus('error', 'Η επιβεβαίωση κωδικού δεν ταιριάζει με τον νέο κωδικό.');
+                    header('location: ' . rel_url('/profile'));
+                    exit();
+                }
+                $fields['upass'] = password_hash($newPassword, PASSWORD_DEFAULT);
+            }
+
+            $user->loadFields($fields);
+            $user->update();
+
+            $kernel->addStatus('notice', 'Οι αλλαγές αποθηκεύτηκαν.');
+            header('location: ' . rel_url('/profile'));
+            exit();
+        }
+
         // echopre("UserProfile module::run()");
         return $this->render($params);
     }
