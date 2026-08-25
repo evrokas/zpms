@@ -15,7 +15,10 @@ class backupModule extends moduleClass {
     }
 
     function render($params = array()) {
-        return $this->renderTemplate(['status' => $this->readStatus()]);
+        return $this->renderTemplate([
+            'status' => $this->readStatus(),
+            'generations' => $this->readGenerations(),
+        ]);
     }
 
     function run($params = array()) {
@@ -37,6 +40,24 @@ class backupModule extends moduleClass {
         }
         $data = json_decode((string)file_get_contents($statusFile), true);
         return is_array($data) ? $data : null;
+    }
+
+    // Companion to readStatus() above: bin/backup.sh also writes
+    // web/files/logs/backup_generations.json on every successful run --
+    // {generated_at, tiers: {daily: [...], weekly: [...], monthly: [...]}},
+    // each tier a sorted list of generation names actually present on the
+    // backup destination (oldest first, matching bin/restore.sh --list's
+    // own sort order). This page never talks SSH itself -- it only reads
+    // this file, which bin/backup.sh already has the access to produce
+    // once a night. Returns null under the same conditions readStatus()
+    // does (not configured/run yet).
+    private function readGenerations(): ?array {
+        $generationsFile = __APPDIR__ . '/web/files/logs/backup_generations.json';
+        if (!is_file($generationsFile)) {
+            return null;
+        }
+        $data = json_decode((string)file_get_contents($generationsFile), true);
+        return is_array($data) && isset($data['tiers']) && is_array($data['tiers']) ? $data : null;
     }
 }
 

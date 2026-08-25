@@ -26,4 +26,56 @@
             </p>
         {% endif %}
     </section>
+
+    <section class="backup-generations">
+        <h2>{{t("Available Backups")}}</h2>
+        {% if(is_null($generations)): %}
+            <p class="backup-status-unknown">
+                {{t("No generation list is available yet -- it is written by bin/backup.sh on its next successful run.")}}
+            </p>
+        {% else: %}
+            <p class="backup-generations-time">
+                {{t("As of:")}} {{{$generations['generated_at']}}}
+            </p>
+
+            <div class="backup-tier">
+                <h3>{{t("Daily")}}</h3>
+                {% if(empty($generations['tiers']['daily'])): %}
+                    <p class="backup-tier-empty">{{t("No generations yet.")}}</p>
+                {% else: %}
+                    <ul class="backup-tier-list">
+                        {% foreach(array_reverse($generations['tiers']['daily']) as $generation): %}
+                            <li>{{{$generation}}}</li>
+                        {% endforeach %}
+                    </ul>
+                {% endif %}
+            </div>
+
+            <div class="backup-tier">
+                <h3>{{t("Weekly")}}</h3>
+                {% if(empty($generations['tiers']['weekly'])): %}
+                    <p class="backup-tier-empty">{{t("No generations yet.")}}</p>
+                {% else: %}
+                    <ul class="backup-tier-list">
+                        {% foreach(array_reverse($generations['tiers']['weekly']) as $generation): %}
+                            <li>{{{$generation}}}</li>
+                        {% endforeach %}
+                    </ul>
+                {% endif %}
+            </div>
+
+            <div class="backup-tier">
+                <h3>{{t("Monthly")}}</h3>
+                {% if(empty($generations['tiers']['monthly'])): %}
+                    <p class="backup-tier-empty">{{t("No generations yet.")}}</p>
+                {% else: %}
+                    <ul class="backup-tier-list">
+                        {% foreach(array_reverse($generations['tiers']['monthly']) as $generation): %}
+                            <li>{{{$generation}}}</li>
+                        {% endforeach %}
+                    </ul>
+                {% endif %}
+            </div>
+        {% endif %}
+    </section>
 </div>

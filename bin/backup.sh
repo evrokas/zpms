@@ -30,6 +30,7 @@ STAGE_DIR="$FILES_DIR/.backup_stage"
 STAGE_RAW="$STAGE_DIR/raw"
 BACKUP_LOG="$FILES_DIR/logs/backup.log"
 STATUS_FILE="$FILES_DIR/logs/backup_status.json"
+GENERATIONS_FILE="$FILES_DIR/logs/backup_generations.json"
 DB_PHP_CONFIG="$PROJECT_ROOT/config/db.php"
 
 # Overridable purely for deterministic tests, never in production use.
@@ -241,6 +242,42 @@ REMOTE_SCRIPT
 
 zpms_backup_ship
 zpms_backup_promote_and_prune
+
+# --- Manifest of available generations, for the web backup-status page ---
+# The web app itself never talks SSH to the backup destination (that would
+# mean the SSH key -- or worse, an SSH round-trip on every page load --
+# would need to be reachable from the web server user, a much bigger
+# credential/latency exposure than this script already has). Instead, this
+# script -- which already has that access, once a night -- writes a small
+# JSON manifest listing what's actually on the destination in each tier,
+# right next to the existing backup_status.json, for backup.php to read.
+zpms_write_generations() {
+    mkdir -p "$(dirname "$GENERATIONS_FILE")"
+    local daily weekly monthly
+    daily="$(zpms_ssh "ls -1 '$BACKUP_REMOTE_PATH/raw/daily' 2>/dev/null | grep -v '^\.tmp-' | sort" || true)"
+    weekly="$(zpms_ssh "ls -1 '$BACKUP_REMOTE_PATH/raw/weekly' 2>/dev/null | grep -v '^\.tmp-' | sort" || true)"
+    monthly="$(zpms_ssh "ls -1 '$BACKUP_REMOTE_PATH/raw/monthly' 2>/dev/null | grep -v '^\.tmp-' | sort" || true)"
+
+    php -r '
+        $generatedAt = $argv[1];
+        $out = $argv[2];
+        $toList = function (string $s): array {
+            $s = trim($s);
+            return $s === "" ? [] : explode("\n", $s);
+        };
+        $data = [
+            "generated_at" => $generatedAt,
+            "tiers" => [
+                "daily" => $toList($argv[3]),
+                "weekly" => $toList($argv[4]),
+                "monthly" => $toList($argv[5]),
+            ],
+        ];
+        file_put_contents($out, json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . "\n");
+    ' "$TS" "$GENERATIONS_FILE" "$daily" "$weekly" "$monthly"
+}
+zpms_write_generations
+zpms_backup_log "Wrote generation manifest to $GENERATIONS_FILE"
 
 zpms_write_status "success"
 zpms_backup_log "Backup run $TS completed successfully"

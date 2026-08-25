@@ -12,8 +12,8 @@ web/classes/yaml/new/*
 web/classes/yaml/old/*
 web/cache
 web/files
-backup/
-backups/
+/backup/
+/backups/
 web/modules/datepicker/date-picker
 web/test
 
