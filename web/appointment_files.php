@@ -290,6 +290,39 @@ function appointment_files_json($data, int $status = 200) {
     exit();
 }
 
+// Maps a PHP upload error code to a specific, user-facing message. Every
+// $_FILES[...]['error'] value used to collapse into the same generic "no
+// file uploaded" string below, regardless of cause -- actively misleading
+// for UPLOAD_ERR_INI_SIZE/UPLOAD_ERR_FORM_SIZE in particular, since a file
+// rejected for exceeding upload_max_filesize/post_max_size genuinely WAS
+// selected and sent, it just never made it into $_FILES with any usable
+// data. This is exactly what a pasted screenshot hits in practice: this
+// server's own upload_max_filesize (see web/.user.ini) is raised to
+// accommodate APPOINTMENT_FILE_MAX_BYTES below, but a deployment that
+// hasn't picked that file up (.user.ini requires a CGI/FPM SAPI -- see its
+// own comment) silently truncates the upload at the PHP layer, before
+// $upload['size'] > APPOINTMENT_FILE_MAX_BYTES ever gets a chance to run
+// and report its own, clearer "file too large" message -- so the user saw
+// nothing but a confusing, inaccurate "no file uploaded" for a file they
+// definitely did select and send.
+function appointment_files_upload_error_message(int $error): string {
+    switch($error) {
+        case UPLOAD_ERR_INI_SIZE:
+        case UPLOAD_ERR_FORM_SIZE:
+            return 'image exceeds this server\'s upload limit (' . ini_get('upload_max_filesize') . ') -- try a smaller image';
+        case UPLOAD_ERR_PARTIAL:
+            return 'upload was interrupted -- please try again';
+        case UPLOAD_ERR_NO_FILE:
+            return 'no file uploaded';
+        case UPLOAD_ERR_NO_TMP_DIR:
+        case UPLOAD_ERR_CANT_WRITE:
+        case UPLOAD_ERR_EXTENSION:
+            return 'upload failed on the server -- please try again';
+        default:
+            return 'upload failed';
+    }
+}
+
 function appointment_file_upload($params) {
     global $kernel;
     appointment_files_start_clean_output();
@@ -311,8 +344,12 @@ function appointment_file_upload($params) {
         appointment_files_json(['success' => false, 'error' => 'appointment not found'], 404);
     }
 
-    if(!isset($_FILES['appointmentFile']) || $_FILES['appointmentFile']['error'] !== UPLOAD_ERR_OK) {
+    if(!isset($_FILES['appointmentFile'])) {
         appointment_files_json(['success' => false, 'error' => 'no file uploaded'], 400);
+    }
+
+    if($_FILES['appointmentFile']['error'] !== UPLOAD_ERR_OK) {
+        appointment_files_json(['success' => false, 'error' => appointment_files_upload_error_message($_FILES['appointmentFile']['error'])], 400);
     }
 
     $upload = $_FILES['appointmentFile'];

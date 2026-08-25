@@ -21,8 +21,18 @@
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteRule ^(.*)$ index.php?$1 [QSA,L,PT]
-    
-    
+
+    # Same upload_max_filesize/post_max_size bump as web/.user.ini, for a
+    # classic Apache mod_php deployment instead of php-fpm/cgi (which reads
+    # .user.ini, not this) -- see that file's own comment for why this is
+    # needed at all. <IfModule> makes this a no-op, not an error, on any
+    # server where mod_php isn't loaded (php-fpm included), so both files
+    # are safe to ship together without knowing which SAPI a given
+    # deployment actually runs.
+    <IfModule mod_php.c>
+        php_value upload_max_filesize 16M
+        php_value post_max_size 17M
+    </IfModule>
 
 
 
