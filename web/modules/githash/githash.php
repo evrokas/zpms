@@ -40,7 +40,7 @@ class githashModule extends moduleClass {
         }
         
         if(!$tag_str)
-            $tag_str = $hash;
+            $tag_str = substr($hash, 0, 7);
 
 
         // error_log( "git hash directory: $branch, hash: $hash\n" );

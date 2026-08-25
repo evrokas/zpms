@@ -8,9 +8,9 @@
 .wrapper .main-navigation {
     margin: 0rem 0;
     position: relative;
-    padding: 0.5rem 1rem;
-    font-size: 1.2em;
-    line-height: 1.6em;
+    padding: 0.3rem 1rem;
+    font-size: 1em;
+    line-height: 1.4em;
     background-color: var(--main-navigation-menu-level-0-background-color);
     color: var(--main-navigation-menu-level-0-link-color);
 
@@ -149,8 +149,8 @@ label[for="menu-open"] {
     display: none;
     align-items: center;
     justify-content: end;
-    font-size: 2rem;
-    line-height: 2rem;
+    font-size: 1.5rem;
+    line-height: 1.5rem;
     width: 100%;
     vertical-align: middle;
     background-color: var(--main-navigation-menu-level-0-background-color);
@@ -241,7 +241,7 @@ label[for="menu-open"] {
 
     .wrapper .main-navigation {
         width: 100%;
-        line-height: 32px;
+        line-height: 24px;
     }
 
     .main-navigation ul {

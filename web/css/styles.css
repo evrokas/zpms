@@ -123,8 +123,8 @@ body {
     display: flex;
     align-items: center;
     justify-items: center;
-    gap: 2rem;
-    padding: 1rem;
+    gap: 1rem;
+    padding: 0.5rem 1rem;
     background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
     color: white;
     justify-content: left;
@@ -132,8 +132,13 @@ body {
 }
 
 .header img {
-    padding: 0.5rem;
-    height: 4.9rem;
+    padding: 0.3rem 0;
+    height: 2.4rem;
+}
+
+.header h1 {
+    font-size: 1.4rem;
+    line-height: 1.2;
 }
 
 .region {
