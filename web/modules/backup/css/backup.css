@@ -35,3 +35,58 @@
   color: #666;
   font-size: 14px;
 }
+
+.backup-generations {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.backup-generations h2 {
+  margin-top: 0;
+}
+
+.backup-generations-time {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.backup-tier {
+  margin-bottom: 16px;
+}
+
+.backup-tier:last-child {
+  margin-bottom: 0;
+}
+
+.backup-tier h3 {
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+
+.backup-tier-empty {
+  color: #888;
+  font-size: 14px;
+  margin: 0;
+}
+
+.backup-tier-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 180px;
+  overflow-y: auto;
+  font-family: monospace;
+  font-size: 13px;
+}
+
+.backup-tier-list li {
+  padding: 3px 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.backup-tier-list li:last-child {
+  border-bottom: none;
+}
