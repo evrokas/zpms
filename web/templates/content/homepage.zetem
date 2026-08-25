@@ -17,32 +17,18 @@
         </a>
         {% endif %}
 
-        <a class="dashboard-card hover-lift" href="{{rel_url('/profile')}}">
-            <i class="bx bx-user-circle"></i>
-            <span class="dashboard-card-title">Ο Λογαριασμός μου</span>
-            <span class="dashboard-card-desc">Στοιχεία χρήστη και συσκευές</span>
+        {% if($can_create_patients): %}
+        <a class="dashboard-card hover-lift" href="{{rel_url('/patient/new')}}">
+            <i class="bx bx-user-plus"></i>
+            <span class="dashboard-card-title">Νέος Ασθενής</span>
+            <span class="dashboard-card-desc">Καταχώρηση νέου ασθενή</span>
         </a>
+        {% endif %}
 
         <a class="dashboard-card hover-lift" href="{{rel_url('/apps/genqr')}}">
             <i class="bx bx-qr"></i>
             <span class="dashboard-card-title">Δημιουργία QR</span>
             <span class="dashboard-card-desc">Δημιουργία κωδικού QR</span>
         </a>
-
-        {% if($can_access_backups): %}
-        <a class="dashboard-card hover-lift" href="{{rel_url('/apps/backup')}}">
-            <i class="bx bx-cloud-upload"></i>
-            <span class="dashboard-card-title">Αντίγραφα Ασφαλείας</span>
-            <span class="dashboard-card-desc">Κατάσταση αντιγράφων ασφαλείας</span>
-        </a>
-        {% endif %}
-
-        {% if($can_manage_settings): %}
-        <a class="dashboard-card hover-lift" href="{{rel_url('/settings')}}">
-            <i class="bx bx-cog"></i>
-            <span class="dashboard-card-title">Ρυθμίσεις</span>
-            <span class="dashboard-card-desc">Κλινικές, γιατροί, χρήστες</span>
-        </a>
-        {% endif %}
     </div>
 </div>
