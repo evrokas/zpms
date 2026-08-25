@@ -1,21 +1,27 @@
 {% attach_library('userprofile-library') %}
 
 <div class="user-profile">
-    Userid: {{$user->getuname()}}
+    <div class="user-profile-header">
+        <i class="bx bx-user-circle"></i>
+        <div>
+            <h2>Ο Λογαριασμός μου</h2>
+            <p class="user-id">Όνομα χρήστη: <strong>{{{$user->getuname()}}}</strong></p>
+        </div>
+    </div>
 
     <form action="{{rel_url('/profile')}}" method="post">
         {{ csrf_field() }}
         <input type="hidden" name="action" value="update_account">
         <div class="fields">
-            <label for="useractive">User account active</label>
+            <label for="useractive">Ενεργός λογαριασμός</label>
             <input type="checkbox" name="useractive" id="useractive" {{ ($user->getactive()==1)?"checked":"" }}>
         </div>
         <div class="fields">
-            <label for="userexpired">User account expired</label>
+            <label for="userexpired">Ληγμένος λογαριασμός</label>
             <input type="checkbox" name="userexpired" id="userexpired" {{ ($user->getexpired()==1)?"checked":"" }}>
         </div>
         <div class="fields">
-            <label for="user_name">Name</label>
+            <label for="user_name">Όνομα</label>
             <input type="text" name="user_name" id="" disabled value="{{$user->getname()}}">
         </div>
         <div class="fields">
@@ -71,20 +77,20 @@
     {% endif %}
 
     <div class="user-devices">
-        <h2>{{t("My Devices")}}</h2>
-        <p>{{t("Devices you've asked this app to remember you on.")}}</p>
+        <h2>Οι Συσκευές μου</h2>
+        <p>Συσκευές στις οποίες έχετε ζητήσει να σας θυμάται η εφαρμογή.</p>
 
         {% if(count($devices) == 0): %}
-            <p>{{t("No remembered devices.")}}</p>
+            <p>Δεν υπάρχουν απομνημονευμένες συσκευές.</p>
         {% else: %}
         <table>
             <thead>
             <tr>
-                <th>{{t("Device / Browser")}}</th>
-                <th>{{t("First Remembered")}}</th>
-                <th>{{t("Last Used")}}</th>
-                <th>{{t("Expires")}}</th>
-                <th>{{t("Actions")}}</th>
+                <th>Συσκευή / Browser</th>
+                <th>Πρώτη Καταχώρηση</th>
+                <th>Τελευταία Χρήση</th>
+                <th>Λήξη</th>
+                <th>Ενέργειες</th>
             </tr>
             </thead>
             <tbody>
@@ -93,18 +99,18 @@
                 <td>
                     {{{substr($device->getuseragent(), 0, 60)}}}
                     {% if($device->getselector() == $current_selector): %}
-                        <span class="badge">{{t("This device")}}</span>
+                        <span class="badge">Αυτή η συσκευή</span>
                     {% endif %}
                 </td>
                 <td>{{{$device->getcdate()}}}</td>
-                <td>{{{$device->getlast_used_at() ? $device->getlast_used_at() : t("Never")}}}</td>
+                <td>{{{$device->getlast_used_at() ? $device->getlast_used_at() : 'Ποτέ'}}}</td>
                 <td>{{{$device->getexpiry()}}}</td>
                 <td>
                     <form action="{{rel_url('/profile')}}" method="post">
                         {{ csrf_field() }}
                         <input type="hidden" name="action" value="revoke_device">
                         <input type="hidden" name="token_id" value="{{(int)$device->getid()}}">
-                        <button type="submit">{{t("Revoke")}}</button>
+                        <button type="submit">Ανάκληση</button>
                     </form>
                 </td>
             </tr>

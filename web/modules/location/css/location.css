@@ -1,7 +1,7 @@
 .location-place {
-    margin: 0.5rem 0;
-    text-align: right;
-    display: block;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
 }
 
 .location-place select {

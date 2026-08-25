@@ -74,19 +74,38 @@ body {
     display: flex;
     flex-direction: row;
     justify-content: space-between;
+    align-items: center;
 }
 
+/* User info (left column) and location/language/git-hash (right column)
+   used to each stack as their own row -- header-grid-2x1's right-column
+   was itself a flex *column*, so location (which used to be a separate
+   row below the whole grid) and its siblings piled up as three more
+   stacked rows on top of that. Laying the right column out as a single
+   flex row instead is what actually puts them on one line; the location
+   block moved into this column (see config/settings.info.yaml's
+   structure: header-grid-2x1.right-column) is what let it join that row
+   at all, rather than living in its own top-level header: section. */
 .section-right-column {
     display: flex;
-    flex-direction: column;
-    text-align: right;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--spacing);
+}
+
+/* language_selector (zeusfw core/modules/language_selector/css) brings
+   its own margin-top intended for stacking below something -- overridden
+   here, scoped to this app's layout, rather than edited in the shared
+   core file every app on the framework vendors. */
+.section-right-column .language-selector {
+    margin-top: 0;
 }
 
 .git-hash {
     padding: 0.2rem;
     color: var(--dark-gray);
     font-size: 12px;
-    text-align: right;
     word-wrap: anywhere;
 }
 
@@ -609,19 +628,29 @@ form .input-div {
         gap: var(--spacing-sm);
     }
     
+    /* Desktop lays location/language/git-hash out as one row (see
+       .section-right-column above) -- too cramped at this width, so back
+       to a stacked, centered column here, same as this block already did
+       before that change. */
+    .section-right-column {
+        flex-direction: column;
+        align-items: center;
+        gap: var(--spacing-sm);
+    }
+
     .section-right-column,
     .section-left-column {
         text-align: center;
     }
-    
+
     .git-hash {
         text-align: center;
     }
-    
+
     .location-place {
-        text-align: center;
+        justify-content: center;
     }
-    
+
     .language-selector ul {
         justify-content: center;
     }
@@ -709,6 +738,203 @@ form .input-div {
 
     .dashboard-card i {
         font-size: 2rem;
+    }
+}
+
+
+/* user profile page */
+
+.user-profile {
+    max-width: 640px;
+    margin: 0 auto var(--spacing-lg);
+    padding: var(--spacing-md);
+    background-color: white;
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-base);
+}
+
+.user-profile-header {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing);
+    padding-bottom: var(--spacing);
+    margin-bottom: var(--spacing);
+    border-bottom: 1px solid var(--medium-gray);
+}
+
+.user-profile-header i {
+    font-size: 2.75rem;
+    color: var(--primary);
+}
+
+.user-profile-header h2 {
+    color: var(--primary-dark);
+    font-size: 1.4rem;
+}
+
+.user-profile-header .user-id {
+    color: var(--dark-gray);
+    font-size: 0.9rem;
+    margin-top: 0.2rem;
+}
+
+.user-profile-header .user-id strong {
+    color: var(--text);
+}
+
+.user-profile form {
+    display: grid;
+    gap: var(--spacing);
+}
+
+.user-profile .fields {
+    display: grid;
+    grid-template-columns: 13rem 1fr;
+    align-items: center;
+    gap: var(--spacing);
+}
+
+.user-profile .fields label {
+    font-weight: 600;
+    color: var(--text);
+}
+
+.user-profile .fields input[type="text"],
+.user-profile .fields input[type="password"] {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--medium-gray);
+    border-radius: var(--border-radius-sm);
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: all var(--transition-fast);
+}
+
+.user-profile .fields input[type="text"]:focus,
+.user-profile .fields input[type="password"]:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
+    outline: none;
+}
+
+.user-profile .fields input[type="text"]:disabled {
+    background-color: var(--light-gray);
+    color: var(--dark-gray);
+    cursor: not-allowed;
+}
+
+.user-profile .fields input[type="checkbox"] {
+    justify-self: start;
+    width: 1.2rem;
+    height: 1.2rem;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+
+.user-profile .buttons {
+    justify-content: flex-start;
+}
+
+.user-devices {
+    margin-top: var(--spacing-lg);
+    padding-top: var(--spacing);
+    border-top: 1px solid var(--medium-gray);
+}
+
+.user-devices h2 {
+    color: var(--primary-dark);
+    font-size: 1.2rem;
+    margin-bottom: 0.2rem;
+}
+
+.user-devices > p {
+    color: var(--dark-gray);
+    font-size: 0.9rem;
+    margin-bottom: var(--spacing);
+}
+
+.user-devices table {
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: var(--border-radius-sm);
+    overflow: hidden;
+}
+
+.user-devices table thead {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+}
+
+.user-devices table thead th {
+    padding: 10px 8px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.85rem;
+}
+
+.user-devices table tr {
+    transition: background-color var(--transition-fast);
+}
+
+.user-devices table tr:nth-child(even) {
+    background-color: var(--light-gray);
+}
+
+.user-devices table tr:hover {
+    background-color: rgba(var(--primary-rgb), 0.05);
+}
+
+.user-devices table td {
+    padding: 0.7rem 0.6rem;
+    border-bottom: 1px solid var(--medium-gray);
+    font-size: 0.9rem;
+}
+
+.user-devices .badge {
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 2px 9px;
+    background-color: var(--secondary);
+    color: white;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+}
+
+.user-devices table button {
+    padding: 0.4rem 0.8rem;
+    background-color: white;
+    color: var(--error);
+    border: 1.5px solid var(--error-light);
+    border-radius: var(--border-radius-sm);
+    font-size: 0.85rem;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.user-devices table button:hover {
+    background-color: var(--error);
+    color: white;
+    border-color: var(--error);
+}
+
+@media screen and (max-width: 470px) {
+    .user-profile .fields {
+        grid-template-columns: 1fr;
+        gap: 0.3rem;
+    }
+
+    /* overflow-x on the wrapper only takes effect if the table itself
+       can't shrink to fit -- width: 100% alone just compresses every
+       column instead, which is what clipped the Actions/Revoke column
+       here before min-width was added. */
+    .user-devices {
+        overflow-x: auto;
+    }
+
+    .user-devices table {
+        min-width: 560px;
     }
 }
 

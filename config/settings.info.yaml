@@ -396,9 +396,9 @@ structure:
       - left-column:
         - userblock
       - right-column:
-        - githash
+        - location
         - language_selector
-    - location
+        - githash
     - breadcrumbs
   main_navigation:
     - mainnavigation
