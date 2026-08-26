@@ -28,6 +28,31 @@ form:
       label: "Clinic name"
       type: text
 
+    # Never shown -- carries an existing row's guid back on submit so
+    # formsClass::storeFormResults() (zeusfw) updates that row instead of
+    # inserting a new one. Empty/absent on the plain "Add New Clinic"
+    # form (Settings page), populated only by clinics_row_edit()'s own
+    # renderForm(..., $default_values) call (web/index.php).
+    - name: row_guid
+      type: hidden
+
+# Named results-table views (core/maker/functions.php's
+# generateHTMLFormArray() / core/lib/WebForms.php's renderFormResults()
+# in the zeusfw framework) -- a document-root key, mirroring doctors.yaml.
+# Only one view (this form has just the one field to show); its own
+# `buttons:` are what give the Clinics table its Edit/Delete row actions.
+table_view:
+  default: table_default
+  table_default:
+    - name: clinic_name
+
+  actions_label: "Actions"
+  buttons:
+    - type: edit
+      handler: clinics_edit_url
+    - type: delete
+      handler: clinics_delete_url
+
 # Named create-form views (core/maker/functions.php's
 # generateHTMLFormArray() / core/lib/FormElement.php's generateHTMLForm()
 # in the zeusfw framework) -- a document-root key, sibling of table:/form:
@@ -50,3 +75,4 @@ form_view:
 
     fields:
       - name: clinic_name
+      - name: row_guid

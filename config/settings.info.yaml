@@ -354,6 +354,23 @@ routes:
     title: "View Webform"
     url: "/webform/viewform/{formname}"
     handler: formsClass::viewform
+  webforms_delete:
+    title: "Delete webform row"
+    url: "/webform/delete/{formname}/{guid}"
+    handler: formsClass::deleteFormRow
+    method: post
+    # Same reasoning as webforms_post above -- formsClass::deleteFormRow()
+    # (zeusfw core) has no permission check of its own, so this
+    # route-level access: is what actually protects it. Used by the
+    # Clinics/Doctors results tables' Delete row buttons (table_view ->
+    # buttons: -> handler:, see clinics_delete_url()/doctors_delete_url()
+    # in web/index.php).
+    access: power-user
+  clinics_row_edit:
+    title: "Edit clinic"
+    url: "/clinics/{guid}/edit"
+    handler: clinics_row_edit
+    method: get
   totp_management:
     title: "Activate TOTP"
     url: "/totp/{action}"

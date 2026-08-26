@@ -931,6 +931,46 @@ function clinics_edit($params) {
 }
 
 
+// Row-action button `handler:` resolvers (table_view -> buttons: ->
+// handler:, doctors.yaml/clinics.yaml) -- each is called per row at
+// render time with that row's guid/fields (core/lib/FormElement.php's
+// generateHTMLTableRowButton(), zeusfw) and returns the URL to bake into
+// that row's rendered button. Their only job is picking the URL; the
+// routes they point at (webforms_delete/clinics_row_edit,
+// config/settings.info.yaml) do the actual work.
+function doctors_delete_url($guid, $fields) {
+    return rel_url('/webform/delete/doctors/' . $guid);
+}
+
+function clinics_delete_url($guid, $fields) {
+    return rel_url('/webform/delete/clinics/' . $guid);
+}
+
+function clinics_edit_url($guid, $fields) {
+    return rel_url('/clinics/' . $guid . '/edit');
+}
+
+// GET /clinics/{guid}/edit -- loads the clinic by guid and renders the
+// same 'clinics' webform clinics_edit()/settings() already use, prefilled
+// with that row's real values via renderForm()'s $default_values param.
+// 'row_guid' (clinics.yaml's form.inputs/form_view -- a hidden field,
+// never shown) carries the row's own guid back on submit, which is what
+// tells formsClass::storeFormResults() (zeusfw) to update this existing
+// row instead of inserting a new one.
+function clinics_row_edit($params) {
+    if(($errmsg = rbacClass::require(ZPMS_PERM_SETTINGS_MANAGE)))return $errmsg;
+
+    $rows = clinicsClass::sgetAllFilter('clinics', ['guid' => $params['guid']]);
+    $clinic = $rows[0] ?? null;
+    if(!$clinic) return error_404();
+
+    return formsClass::renderForm('clinics', null, [
+        'clinic_name' => $clinic->getclinic_name(),
+        'row_guid' => $clinic->getguid(),
+    ]);
+}
+
+
 
 function totp_handler($params) {
 
