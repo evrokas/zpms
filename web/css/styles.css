@@ -1497,6 +1497,47 @@ a.btn-secondary:hover {
     overflow-x: auto;
 }
 
+/* The clinics/doctors tables themselves were a bare, unstyled <table>
+   (structurally fixed in WebForms.php/FormElement.php/webform_table.zetem
+   -- see that fix's commit message -- but zeusfw's own generic renderer
+   deliberately emits no styling of its own, same "framework provides
+   markup, app provides CSS" split already used for .webform above).
+   Matches .patients-list table's own look rather than inventing a new
+   one. */
+.settings-table-scroll table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: var(--spacing);
+}
+
+.settings-table-scroll table thead {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+}
+
+.settings-table-scroll table thead th {
+    padding: 12px 8px;
+    text-align: left;
+    font-weight: 600;
+}
+
+.settings-table-scroll table tbody tr {
+    transition: background-color var(--transition-fast);
+}
+
+.settings-table-scroll table tbody tr:hover {
+    background-color: rgba(var(--primary-rgb), 0.05);
+}
+
+.settings-table-scroll table tbody tr:nth-child(even) {
+    background-color: var(--light-gray);
+}
+
+.settings-table-scroll table td {
+    padding: 0.85rem 0.75rem;
+    border-bottom: 1px solid var(--medium-gray);
+}
+
 .notification {
     margin: 1.5rem;
     padding: 1rem;
