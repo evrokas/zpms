@@ -1,0 +1,109 @@
+/* Generic styling for zeusfw core's DB-driven webform system
+   (core/lib/FormElement.php's generateHTMLForm()/webform.zetem) --
+   used by every yaml-defined form on this app (Clinics, Doctors,
+   Operations, and any future one) via the framework's own
+   attach_library('webform') call (core/config/zeusfw.info.yaml), which
+   expects this exact file at this exact path. There was previously no
+   file here at all -- the library declaration pointed at a stylesheet
+   that had never been created, so every webform rendered with zero
+   styling (bare, unstyled default browser buttons/inputs).
+
+   .form_elements has no per-field wrapper (each input's <label> and
+   <input>/<select>/<textarea> are emitted as flat, unwrapped siblings --
+   see form_element.zetem), so both are styled as block-level with
+   spacing between them rather than relying on a wrapping container. */
+
+.webform {
+    max-width: 32rem;
+    margin: 0 auto var(--spacing-lg);
+    padding: var(--spacing-md);
+    background-color: white;
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-base);
+}
+
+.webform .form_elements {
+    display: flex;
+    flex-direction: column;
+}
+
+.webform .form_elements label {
+    display: block;
+    margin-bottom: 0.35rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.webform .form_elements input,
+.webform .form_elements select,
+.webform .form_elements textarea {
+    display: block;
+    width: 100%;
+    margin-bottom: var(--spacing);
+    padding: 8px 12px;
+    border: 1px solid var(--medium-gray);
+    border-radius: var(--border-radius-sm);
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: all var(--transition-fast);
+}
+
+.webform .form_elements input:focus,
+.webform .form_elements select:focus,
+.webform .form_elements textarea:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
+    outline: none;
+}
+
+.webform .form_controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    margin-top: var(--spacing-sm);
+}
+
+.webform .form_controls button {
+    flex: 1;
+    min-width: 6rem;
+    padding: 0.6rem var(--spacing);
+    border: 1.5px solid transparent;
+    border-radius: var(--border-radius-sm);
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+/* type="submit" is the primary action -- filled, matches every other
+   primary button in the app (.edit-patient/.appointment-entry etc). */
+.webform .form_controls button[type="submit"] {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    color: white;
+    box-shadow: var(--shadow-primary-sm);
+}
+
+.webform .form_controls button[type="submit"]:hover {
+    background-color: var(--primary-light);
+    border-color: var(--primary-light);
+    box-shadow: var(--shadow-primary-base);
+}
+
+/* type="reset"/type="button" (Reset, Cancel, ...) are secondary/neutral
+   actions -- outlined, not filled, so the one real submit action stays
+   visually dominant. */
+.webform .form_controls button[type="reset"],
+.webform .form_controls button[type="button"] {
+    background-color: white;
+    border-color: var(--medium-gray);
+    color: var(--dark-gray);
+}
+
+.webform .form_controls button[type="reset"]:hover,
+.webform .form_controls button[type="button"]:hover {
+    background-color: var(--light-gray);
+    border-color: var(--dark-gray);
+    color: var(--text);
+}
