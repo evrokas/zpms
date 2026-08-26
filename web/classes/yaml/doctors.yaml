@@ -36,31 +36,50 @@ form:
       label: "Doctor specialty"
       type: text
 
-  # Named results-table views (core/maker/functions.php's
-  # generateHTMLFormArray() / core/lib/WebForms.php's renderFormResults()
-  # in the zeusfw framework) -- entirely optional, a form with no `table:`
-  # block here just keeps showing every input, as before. `default` is the
-  # view used by any caller that doesn't request one explicitly (e.g. the
-  # /webform/viewform/doctors route); table_short is what the Settings
-  # page's Doctors listing actually uses (web/index.php's settings()),
-  # passed explicitly.
-  table:
-    default: table_extended
-    table_short:
-      - name: doctor_name
-    table_extended:
+# Named results-table views (core/maker/functions.php's
+# generateHTMLFormArray() / core/lib/WebForms.php's renderFormResults() in
+# the zeusfw framework) -- a document-root key (promoted here from an
+# earlier form: -> table: location, and renamed to table_view to avoid any
+# confusion with this same file's own, unrelated document-root `table:`
+# key above, which describes the DB schema). Entirely optional -- a form
+# with no `table_view:` block just keeps showing every input, as before.
+# `default` is the view used by any caller that doesn't request one
+# explicitly (e.g. the /webform/viewform/doctors route); table_short is
+# what the Settings page's Doctors listing actually uses (web/index.php's
+# settings()), passed explicitly.
+table_view:
+  default: table_extended
+  table_short:
+    - name: doctor_name
+  table_extended:
+    - name: doctor_name
+    - name: doctor_specialty
+      label: "Specialty"
+
+# Named create-form views -- a document-root key, mirroring table_view
+# above but for the form itself rather than its results table. Buttons
+# now live here (per view) rather than under form:, so every webform must
+# define at least a default view carrying buttons: -- a form with none
+# renders with no Submit/Reset/Cancel at all. Only one view is defined
+# here (both fields, no grouping -- deliberately not offering a
+# field-hiding "compact" view the way table_view does: hiding
+# doctor_specialty from a *create* form would be real lost functionality,
+# not a harmless display choice).
+form_view:
+  default: view_full
+  view_full:
+    buttons:
+      - type: "submit"
+        label: "Submit"
+
+      - type: "reset"
+        label: "Reset"
+
+      - type: "button"
+        label: "Cancel"
+        action: "window.location.href='index.php';"
+
+    fields:
       - name: doctor_name
       - name: doctor_specialty
-        label: "Specialty"
-
-  buttons:
-    - type: "submit"
-      label: "Submit"
-
-    - type: "reset"
-      label: "Reset"
-
-    - type: "button"
-      label: "Cancel"
-      action: "window.location.href='index.php';"
 ...

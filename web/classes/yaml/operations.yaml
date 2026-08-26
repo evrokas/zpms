@@ -104,14 +104,72 @@ form:
       label: "Anesthesiologist"
       type: text
 
-  buttons:
-    - type: "submit"
-      label: "Submit"
-    
-    - type: "reset"
-      label: "Reset"
+# Named create-form views -- a document-root key, mirroring table_view
+# (which this form doesn't use). Buttons now live here (per view) rather
+# than under form:, so every webform must define at least a default view
+# carrying buttons: -- a form with none renders with no
+# Submit/Reset/Cancel at all.
+#
+# operations has by far the most fields of any webform in this app, so
+# it's the concrete demonstration of real, multi-level grouping and of a
+# form offering more than one view: view_full groups fields into Patient
+# Info / Procedure (with a nested Location sub-group -- 2 levels deep) /
+# Staff, while view_quick is a flat, ungrouped short list for a fast
+# entry. Note: nothing in zpms currently renders this form on a live page
+# -- both views exist and are exercised at the yaml/rendering level only.
+form_view:
+  default: view_full
 
-    - type: "button"
-      label: "Cancel"
-      action: "window.location.href='index.php';"
+  view_full:
+    buttons:
+      - type: "submit"
+        label: "Submit"
+
+      - type: "reset"
+        label: "Reset"
+
+      - type: "button"
+        label: "Cancel"
+        action: "window.location.href='index.php';"
+
+    groups:
+      - label: "Patient Info"
+        fields:
+          - name: pname
+          - name: pguid
+          - name: pdob
+
+      - label: "Procedure"
+        fields:
+          - name: opdate
+          - name: opdiagnosis
+          - name: opprocedure
+          - name: category
+        groups:
+          - label: "Location"
+            fields:
+              - name: clinic
+
+      - label: "Staff"
+        fields:
+          - name: surgeon1
+          - name: surgeon2
+          - name: anesthesiology
+
+  view_quick:
+    buttons:
+      - type: "submit"
+        label: "Submit"
+
+      - type: "reset"
+        label: "Reset"
+
+      - type: "button"
+        label: "Cancel"
+        action: "window.location.href='index.php';"
+
+    fields:
+      - name: pname
+      - name: opdate
+      - name: opprocedure
 ...

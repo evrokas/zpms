@@ -56,6 +56,53 @@
     outline: none;
 }
 
+/* form_view groups (core/templates/webform/form_group.zetem, zeusfw) --
+   real <fieldset>/<legend> HTML, one per named group, nestable to
+   arbitrary depth. Each fieldset's own inner .form_elements is already
+   covered by the label/input rules above (plain descendant selectors),
+   so only the fieldset/legend chrome itself needs styling here. A nested
+   fieldset gets a slightly shaded background so depth stays visible even
+   without relying on border alone.
+
+   grid-column: 1 / -1 -- a pre-existing rule elsewhere in this app's CSS
+   (`form.webform { .form_elements { display: grid; grid-template-columns:
+   auto 1fr; } }`, styles.css) lays every .form_elements out as an
+   implicit 2-column label/input grid, and wins over this file's own
+   .form_elements { display: flex } rule on specificity (a type+2 classes
+   selector beats 2 classes). That's fine for a flat field list -- each
+   label/input pair naturally lands in its own row -- but a <fieldset> is
+   a single grid item, so two adjacent groups would otherwise land side by
+   side in that same 2-column grid instead of stacking. Forcing every
+   fieldset (at any nesting depth) to span both columns keeps each group
+   on its own full-width row regardless of which layout mode its parent
+   .form_elements ends up using; a no-op when the parent is flex, not
+   grid. */
+.webform fieldset {
+    grid-column: 1 / -1;
+    border: 1px solid var(--medium-gray);
+    border-radius: var(--border-radius-sm);
+    padding: var(--spacing);
+    margin: 0 0 var(--spacing);
+}
+
+.webform fieldset:last-child {
+    margin-bottom: 0;
+}
+
+.webform legend {
+    padding: 0 0.4rem;
+    font-weight: 600;
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--primary-dark);
+}
+
+.webform fieldset fieldset {
+    background-color: var(--light-gray);
+    margin-top: var(--spacing);
+}
+
 .webform .form_controls {
     display: flex;
     flex-wrap: wrap;
