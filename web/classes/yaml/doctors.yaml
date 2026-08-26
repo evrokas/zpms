@@ -28,11 +28,11 @@ form:
   method: "post"
   action: "#"
   inputs:
-    - name: doc_name
+    - name: doctor_name
       label: "Doctor name"
       type: text
-    
-    - name: doc_specialty
+
+    - name: doctor_specialty
       label: "Doctor specialty"
       type: text
   

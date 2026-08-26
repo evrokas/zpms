@@ -4,21 +4,10 @@
     gap: 0.4rem;
 }
 
-.location-place select {
-    padding: 8px 12px;
-    border: 1px solid var(--medium-gray);
-    border-radius: var(--border-radius-sm);
-    background: white;
-    transition: all var(--transition-fast);
-
+.location-place .bx-map {
+    color: var(--primary);
 }
 
-.location-place select:focus {
-    border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(3, 99, 121, 0.1);
-    outline: none;
-}
-
-.location-place form .input-div {
-    justify-content: flex-end;
+.location-badge strong {
+    color: var(--text);
 }

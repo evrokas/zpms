@@ -401,6 +401,12 @@ function appointment_file_upload($params) {
         imagedestroy($decoded);
     }
 
+    // Currently only ever populated by the "paste from clipboard" flow
+    // (appointment-files.js) -- a pasted image has no filename of its own
+    // to describe it. A normal click-to-browse/drag-drop upload simply
+    // never sends this field, so $description stays ''/NULL for those.
+    $description = trim((string)($_POST['description'] ?? ''));
+
     $entry = new appointmentFilesClass([
         'guid' => guid(),
         'cdate' => getDBtime(),
@@ -412,6 +418,7 @@ function appointment_file_upload($params) {
         'mime_type' => $mimeType,
         'file_hash' => hash_file('sha256', $destPath),
         'thumbnail_path' => $thumbnailPath,
+        'description' => $description !== '' ? $description : null,
     ]);
     $entry->insert();
 
@@ -423,6 +430,7 @@ function appointment_file_upload($params) {
             'size' => (int)$entry->getfile_size(),
             'mime_type' => $mimeType,
             'is_image' => $isImage,
+            'description' => $entry->getdescription(),
             'download_url' => rel_url('/appointment/' . $ap->getid() . '/files/' . $entry->getid() . '/download'),
             'thumbnail_url' => rel_url('/appointment/' . $ap->getid() . '/files/' . $entry->getid() . '/thumbnail'),
             'delete_url' => rel_url('/appointment/' . $ap->getid() . '/files/' . $entry->getid() . '/delete'),

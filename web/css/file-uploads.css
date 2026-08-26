@@ -147,6 +147,23 @@
     color: var(--dark-gray);
 }
 
+.paste-description-input {
+    flex: 1;
+    min-width: 10rem;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--medium-gray);
+    border-radius: var(--border-radius-sm);
+    font-size: 0.85rem;
+    font-family: inherit;
+    transition: all var(--transition-fast);
+}
+
+.paste-description-input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
+    outline: none;
+}
+
 /* File previews */
 .file-previews {
     display: grid;
@@ -207,6 +224,15 @@
 .preview-size {
     color: var(--dark-gray);
     font-size: 0.7rem;
+}
+
+.preview-description {
+    color: var(--dark-gray);
+    font-size: 0.7rem;
+    font-style: italic;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .preview-remove {
@@ -316,6 +342,14 @@
 .file-size {
     font-size: 0.8rem;
     color: var(--dark-gray);
+}
+
+.file-description {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--dark-gray);
+    font-style: italic;
+    margin-top: 0.15rem;
 }
 
 .file-actions {

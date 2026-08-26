@@ -102,9 +102,14 @@ body {
     margin-top: 0;
 }
 
+/* Lives in the footer now (moved out of the header's white
+   right-column), on the same teal gradient background as
+   .region-footer/.module-copyright -- needs a light color to stay
+   readable there, not the dark-gray tuned for a white background. */
 .git-hash {
+    margin-top: 0.4rem;
     padding: 0.2rem;
-    color: var(--dark-gray);
+    color: rgba(255, 255, 255, 0.7);
     font-size: 12px;
     word-wrap: anywhere;
 }
@@ -484,7 +489,7 @@ form .input-div {
         /* justify-content: space-between; */
 
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: 1fr 1fr 1fr;
 
         gap: var(--spacing);
 
@@ -797,6 +802,38 @@ form .input-div {
     grid-template-columns: 13rem 1fr;
     align-items: center;
     gap: var(--spacing);
+}
+
+/* Sits between the header and the account form (not inside a <form> --
+   it saves instantly via AJAX on change, same as it did in the header
+   before it moved here), so it needs the same grid look declared
+   standalone rather than inherited from ".user-profile form". */
+.user-profile .location-field {
+    margin-bottom: var(--spacing);
+}
+
+.user-profile .fields select {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--medium-gray);
+    border-radius: var(--border-radius-sm);
+    font-size: 0.95rem;
+    font-family: inherit;
+    background: white;
+    transition: all var(--transition-fast);
+}
+
+.user-profile .fields select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
+    outline: none;
+}
+
+.user-profile .field-hint {
+    display: block;
+    margin-top: 0.3rem;
+    color: var(--dark-gray);
+    font-size: 0.8rem;
 }
 
 .user-profile .fields label {

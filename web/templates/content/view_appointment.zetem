@@ -31,6 +31,14 @@
                 </select>
                 <!-- {% endif %} -->
             </div>
+
+            <div class="input-div">
+                <label for="appointment-type">Τύπος</label>
+                <select name="appointment-type" loader="app-loader-{{$index}}" data-appointment-type>
+                    <option value="appointment" {{($appointment->getatype() != 'operation')?"selected":""}}>Ραντεβού</option>
+                    <option value="operation" {{($appointment->getatype() == 'operation')?"selected":""}}>Επέμβαση</option>
+                </select>
+            </div>
         </div>
         <div id="app-loader-{{$index}}" class="loader0"></div>
 
@@ -41,6 +49,12 @@
                     <label for="appointment-notes">Σημειώσεις</label>
                     <textarea name="appointment-notes" id="" autoexpand rows="5"
                         loader="app-loader-{{$index}}">{{$appointment->getanote()}}</textarea>
+                </div>
+
+                <div class="input-div input-notes input-operation-notes{{($appointment->getatype() != 'operation')?' is-hidden':''}}" data-operation-notes>
+                    <label for="appointment-operation-notes">Λεπτομέρειες Επέμβασης</label>
+                    <textarea name="appointment-operation-notes" id="" autoexpand rows="5"
+                        loader="app-loader-{{$index}}">{{$appointment->getaoperationnotes()}}</textarea>
                 </div>
 
                 <div class="buttons">
@@ -86,6 +100,8 @@
                 <button type="button" class="paste-clipboard-btn" data-paste-clipboard>
                     <i class='bx bx-clipboard'></i> Επικόλληση εικόνας από το πρόχειρο
                 </button>
+                <input type="text" class="paste-description-input" data-paste-description
+                    placeholder="Περιγραφή (προαιρετικό)" maxlength="255">
                 <span class="paste-status" data-paste-status></span>
             </div>
 
@@ -117,6 +133,9 @@
                     <div class="file-info">
                         <span class="file-name">{{{$f->getfile_name()}}}</span>
                         <span class="file-size">{{appointment_files_format_size($f->getfile_size())}}</span>
+                        {% if($f->getdescription()): %}
+                        <span class="file-description">{{{$f->getdescription()}}}</span>
+                        {% endif %}
                     </div>
                     <div class="file-actions">
                         <button type="button" class="view-btn"

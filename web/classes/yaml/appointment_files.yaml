@@ -40,6 +40,9 @@ table:
   - name: thumbnail_path
     type: text
 
+  - name: description
+    type: text
+
 ...
 
 # - guid          attachment guid
@@ -69,3 +72,8 @@ table:
 #                 branch on whether a thumbnail actually exists. Stored on
 #                 the filesystem like every other file in this app, not as
 #                 a DB blob.
+# - description   nullable free-text note -- currently only ever populated
+#                 from the "paste image from clipboard" flow (a pasted
+#                 image has no filename of its own to describe it), but
+#                 the column itself applies to any upload; a normal
+#                 click-to-browse/drag-drop upload simply leaves it blank.

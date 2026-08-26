@@ -398,7 +398,6 @@ structure:
       - right-column:
         - location
         - language_selector
-        - githash
     - breadcrumbs
   main_navigation:
     - mainnavigation
@@ -410,6 +409,7 @@ structure:
   footer:
     - footer
     - copyright
+    - githash
 
 menu:
   main:

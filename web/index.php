@@ -623,6 +623,13 @@ require_once(__DIR__ . '/rbac.php');
 
         $ap->setanote($_POST['appointment-notes']);
 
+        // 'appointment' (default) or 'operation' -- anything else posted
+        // is ignored rather than trusted verbatim, since it drives which
+        // fields the QR/download side of this app treats as relevant.
+        $atype = ($_POST['appointment-type'] ?? '') === 'operation' ? 'operation' : 'appointment';
+        $ap->setatype($atype);
+        $ap->setaoperationnotes($atype === 'operation' ? ($_POST['appointment-operation-notes'] ?? '') : '');
+
         $ap->update();
 
         // error_log('patient appointment saved');
@@ -708,6 +715,8 @@ require_once(__DIR__ . '/rbac.php');
             'adate' => getDBtime(),
             'aplace' => locationsClassEx::getCurrentLocation(),
             'anote' => '', //print_r( $_SERVER, 1) /*'notes'*/
+            'atype' => 'appointment',
+            'aoperationnotes' => '',
         ]);
         // $kernel->setS
         // $pat = $pc->getById($params['id']);
@@ -743,16 +752,21 @@ require_once(__DIR__ . '/rbac.php');
 
         $loc = locationsClassEx::getbyMachineName($_POST['appointment-place'], $kernel->getCurrentLanguage());
 
+        // 'appointment' (default) or 'operation' -- see appointment_edit_post()'s
+        // identical handling for the same field.
+        $atype = ($_POST['appointment-type'] ?? '') === 'operation' ? 'operation' : 'appointment';
 
         // echo "this is the post version<br/>";
         $app = new appointmentsClass([
-            // 'guid' => 
+            // 'guid' =>
             'id' => null,
             'cuser' => 'admin',
             'cdate' => getDBtime(),
             'adate' => getDBformattime($_POST['appointment-date']),
             'aplace' => ($loc)?$loc->getname():'',   //$_POST['appointment-place'],
             'anote' => $_POST['appointment-notes'],
+            'atype' => $atype,
+            'aoperationnotes' => $atype === 'operation' ? ($_POST['appointment-operation-notes'] ?? '') : '',
             'guid' => guid(),
             'pguid' => $pat->getguid()
         ]);

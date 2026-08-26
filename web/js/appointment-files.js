@@ -64,13 +64,14 @@ function initAppointmentFileSection(section) {
 
     const pasteBtn = section.querySelector('[data-paste-clipboard]');
     const pasteStatus = section.querySelector('[data-paste-status]');
+    const pasteDescription = section.querySelector('[data-paste-description]');
     if (pasteBtn) {
         if (!navigator.clipboard || !navigator.clipboard.read) {
             pasteBtn.disabled = true;
             pasteBtn.title = 'Δεν υποστηρίζεται από αυτόν τον browser';
         } else {
             pasteBtn.addEventListener('click', function() {
-                pasteImageFromClipboard(pasteBtn, pasteStatus, uploadUrl, previews, existingFiles);
+                pasteImageFromClipboard(pasteBtn, pasteStatus, pasteDescription, uploadUrl, previews, existingFiles);
             });
         }
     }
@@ -80,16 +81,24 @@ function initAppointmentFileSection(section) {
 // clipboard (e.g. a screenshot) via the async Clipboard API, synthesizes a
 // filename since a pasted image has none, and feeds it through the exact
 // same uploadOneFile() pipeline as a click-selected or dropped file.
-function pasteImageFromClipboard(button, statusEl, uploadUrl, previewsContainer, existingFilesContainer) {
+// descriptionInput is the optional free-text note field next to the paste
+// button (a pasted image, unlike a real file, has no name of its own to
+// identify it later, so this is the one place staff are prompted for a
+// description at upload time) -- read at click time, not bound once, so
+// whatever the user just typed is what gets sent with this specific paste.
+function pasteImageFromClipboard(button, statusEl, descriptionInput, uploadUrl, previewsContainer, existingFilesContainer) {
     if (statusEl) statusEl.textContent = '';
     button.disabled = true;
+
+    const description = descriptionInput ? descriptionInput.value.trim() : '';
 
     navigator.clipboard.read().then(function(items) {
         for (let i = 0; i < items.length; i++) {
             const imageType = items[i].types.find(function(t) { return t.indexOf('image/') === 0; });
             if (imageType) {
                 items[i].getType(imageType).then(function(blob) {
-                    uploadOneFile(blobToFile(blob, imageType), uploadUrl, previewsContainer, existingFilesContainer);
+                    uploadOneFile(blobToFile(blob, imageType), uploadUrl, previewsContainer, existingFilesContainer, description);
+                    if (descriptionInput) descriptionInput.value = '';
                 });
                 return;
             }
@@ -117,12 +126,13 @@ function handleFiles(fileList, uploadUrl, previewsContainer, existingFilesContai
     }
 }
 
-function uploadOneFile(file, uploadUrl, previewsContainer, existingFilesContainer) {
-    const previewItem = createLocalPreview(file, previewsContainer);
+function uploadOneFile(file, uploadUrl, previewsContainer, existingFilesContainer, description) {
+    const previewItem = createLocalPreview(file, previewsContainer, description);
 
     const formData = new FormData();
     formData.append('appointmentFile', file);
     formData.append('csrf_token', csrfToken());
+    if (description) formData.append('description', description);
 
     fetch(uploadUrl, { method: 'POST', body: formData })
         .then(function(response) {
@@ -144,7 +154,7 @@ function uploadOneFile(file, uploadUrl, previewsContainer, existingFilesContaine
         });
 }
 
-function createLocalPreview(file, container) {
+function createLocalPreview(file, container, description) {
     const previewItem = document.createElement('div');
     previewItem.className = 'preview-item';
 
@@ -181,6 +191,13 @@ function createLocalPreview(file, container) {
     size.className = 'preview-size';
     size.textContent = formatFileSize(file.size);
     info.appendChild(size);
+
+    if (description) {
+        const desc = document.createElement('div');
+        desc.className = 'preview-description';
+        desc.textContent = description;
+        info.appendChild(desc);
+    }
 
     previewItem.appendChild(info);
 
@@ -234,6 +251,12 @@ function appendExistingFileRow(existingFilesContainer, file) {
     sizeSpan.textContent = formatFileSize(file.size);
     info.appendChild(nameSpan);
     info.appendChild(sizeSpan);
+    if (file.description) {
+        const descSpan = document.createElement('span');
+        descSpan.className = 'file-description';
+        descSpan.textContent = file.description;
+        info.appendChild(descSpan);
+    }
     item.appendChild(info);
 
     const actions = document.createElement('div');

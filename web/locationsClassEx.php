@@ -75,7 +75,12 @@ class locationsClassEx extends locationsClass {
                 $locname = $_SESSION['location'];
                 // echopre("location cookie was already set: $lcookie");
             } else {
-                $locname = $ln[1];
+                // Was an unguarded $ln[1] -- on an install with fewer
+                // than 2 locations on file this left $locname null,
+                // which then reached setcookie() as its value (a
+                // "passing null" deprecation warning printed ahead of
+                // every page's own markup) instead of a real fallback.
+                $locname = $ln[1] ?? ($ln[0] ?? '');
                 $_SESSION['location'] = $locname;
                 // echopre("location cookie was not set");
 
@@ -101,7 +106,7 @@ class locationsClassEx extends locationsClass {
                 $ln[] = $l->getname();
 
                 if(!isset($_SESSION['location']))
-                $locname = $ln[1];
+                $locname = $ln[1] ?? ($ln[0] ?? '');
             else $locname = $_SESSION['location'];
 
         return ($locname);

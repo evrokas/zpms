@@ -1,4 +1,5 @@
 {% attach_library('userprofile-library') %}
+{% attach_library('location-places') %}
 
 <div class="user-profile">
     <div class="user-profile-header">
@@ -6,6 +7,18 @@
         <div>
             <h2>Ο Λογαριασμός μου</h2>
             <p class="user-id">Όνομα χρήστη: <strong>{{{$user->getuname()}}}</strong></p>
+        </div>
+    </div>
+
+    <div class="fields location-field">
+        <label for="location-selector">Τοποθεσία</label>
+        <div>
+            <select name="location" id="location-selector" data-ajax-callback="{{rel_url('/updatelocation')}}">
+                {% foreach($location_places as $loc): %}
+                <option value="{{$loc}}" {{ ($loc == $location)?"selected":""}}>{{$loc}}</option>
+                {% endforeach %}
+            </select>
+            <span class="field-hint">Αποθηκεύεται αυτόματα μόλις αλλάξει η επιλογή.</span>
         </div>
     </div>
 
@@ -22,7 +35,7 @@
         </div>
         <div class="fields">
             <label for="user_name">Όνομα</label>
-            <input type="text" name="user_name" id="" disabled value="{{$user->getname()}}">
+            <input type="text" name="user_name" id="user_name" value="{{$user->getname()}}" required>
         </div>
         <div class="fields">
             <label for="new_password">Νέος Κωδικός</label>

@@ -1,16 +1,10 @@
-{% attach_library('location-places') %}
-
+{#
+  Read-only badge -- shows the current location, unchangeable from here.
+  The actual "change location" select lives on the profile page
+  (web/templates/blocks/user_profile.zetem), which posts to the same
+  /updatelocation route via the location-places library's JS/CSS.
+#}
 <div class="location-place">
-    <!-- <form action="#"> -->
-        <!-- <div class="input-div"> -->
-
-            <!-- <label for="location-selector">{{t("Location")}}</label> -->
-             {{t("Location")}}
-            <select name="location" id="location-selector" data-ajax-callback="{{rel_url('/updatelocation')}}"">
-                {% foreach($location_places as $loc): %}
-                <option value="{{$loc}}" {{ ($loc == $location)?"selected":""}}>{{$loc}}</option>
-                {% endforeach %}
-            </select>
-        <!-- </div> -->
-    <!-- </form> -->
+    <i class="bx bx-map"></i>
+    <span class="location-badge">{{t("Location")}}: <strong>{{{$location}}}</strong></span>
 </div>

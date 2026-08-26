@@ -18,6 +18,19 @@ table:
     type: text
   - name: anote
     type: text
+  - name: atype
+    type: varchar(32)
+    # No SQL-level default -- maker.php's field-definition generator
+    # (core/maker/functions.php) addslashes()'s a string `default:` value
+    # with no surrounding quotes of its own, so there's no way to express
+    # a valid quoted string literal here. Not needed anyway: every insert
+    # path (patient_appointment_new()/patient_appointment_new_post() in
+    # web/index.php) sets 'atype' explicitly, and every read site treats
+    # anything other than the literal string 'operation' as the plain
+    # 'appointment' type, so a NULL column value already behaves exactly
+    # like a default of 'appointment' would.
+  - name: aoperationnotes
+    type: text
   - name: deleted
     type: datetime
     default: null
@@ -30,3 +43,11 @@ table:
 # - adata appointment date/time
 # - aplace appointment place
 # - anote appointment notes
+# - atype appointment type -- 'appointment' (plain, default) or
+#   'operation'
+# - aoperationnotes free-text operation details, shown/editable only when
+#   atype == 'operation' -- kept separate from the general anote field
+#   since operation documentation (procedure, findings) is materially
+#   different content from ordinary scheduling notes, and existing
+#   appointments' anote shouldn't need to be reinterpreted as one or the
+#   other

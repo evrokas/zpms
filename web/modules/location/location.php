@@ -29,7 +29,12 @@ class locationModule extends moduleClass {
             $ln[] = $l->getname();
 
         if(!isset($_SESSION['location']))
-            $locname = $ln[1];
+            // Was an unguarded $ln[1] -- an "undefined array key" warning
+            // (visible right above the header, ahead of the actual page
+            // markup) on any install with fewer than 2 locations on file,
+            // and $locname ended up null besides. Same fallback chain
+            // used by userprofile.php's own copy of this same lookup.
+            $locname = $ln[1] ?? ($ln[0] ?? '');
         else $locname = $_SESSION['location'];
 
 

@@ -36,8 +36,20 @@ class UserProfileModule extends moduleClass {
             }
         }
 
+        // Location select -- same data the location module itself uses
+        // (locationsClassEx::sgetAll()/$_SESSION['location']), duplicated
+        // here since the header's own location module now only renders a
+        // read-only badge; the profile page is where it's actually changed.
+        $locs = locationsClassEx::sgetAll( $kernel->getCurrentLanguage() );
+        $locationNames = array();
+        foreach($locs as $l)
+            $locationNames[] = $l->getname();
+        $currentLocation = $_SESSION['location'] ?? ($locationNames[1] ?? ($locationNames[0] ?? ''));
+
         return $this->RenderTemplate([
             'user' => $user,
+            'location_places' => $locationNames,
+            'location' => $currentLocation,
             $user->getactive()?'checked="checked"':'',
             $user->getExpired()?'checked="checked"':'',
             'totp_activated' => true,
@@ -100,10 +112,18 @@ class UserProfileModule extends moduleClass {
 
             $newPassword = trim((string)($_POST['new_password'] ?? ''));
             $confirmPassword = trim((string)($_POST['confirm_password'] ?? ''));
+            $newName = trim((string)($_POST['user_name'] ?? ''));
+
+            if($newName === '') {
+                $kernel->addStatus('error', 'Το όνομα δεν μπορεί να είναι κενό.');
+                header('location: ' . rel_url('/profile'));
+                exit();
+            }
 
             $fields = [
                 'active' => isset($_POST['useractive']) ? 1 : 0,
                 'expired' => isset($_POST['userexpired']) ? 1 : 0,
+                'name' => $newName,
             ];
 
             if($newPassword !== '') {

@@ -1,47 +1,72 @@
-<h2>Επεξεργασία ραντεβού</h2>
+{% attach_library('textarea-autoexpand-library') %}
+{% attach_library('appointment-improvements') %}
+
+<h2>Νέο Ραντεβού</h2>
 
 {% if(isset($patient)):%}
     <div class="appointment-patient-name">
         <h4>Ασθενής: <span>{{$patient->getpname()}}</span> </h4>
     </div>
 {% endif %}
-<div class="edit-appointment">    
+
+{#
+  Visually matches the inline appointment card on the patient page
+  (view_appointment.zetem) -- same .appointment-entry/.input-header/
+  .edit-appointment/.input-notes classes -- but deliberately carries none
+  of that card's AJAX auto-save wiring: no loader="..." attributes, no
+  .loader0 element, no field_update()/enableLoader() call sites. The
+  appointment doesn't exist yet, so there's no id to PATCH against; this
+  page only ever does a single, explicit full-page POST via the
+  Αποθήκευση/Ακύρωση buttons below. The attachments section is likewise
+  absent -- file uploads target an existing appointment id, which this
+  page doesn't have until after that POST.
+#}
+<div class="appointment-entry">
     <form action="{{$action}}" method="post">
         {{ csrf_field() }}
-        <div class="input-div">
-            <label for="patient-date">Ημ/νια & Ώρα ραντεβού</label>
-            <input type="datetime-local" name="appointment-date" id="" value="{{$appointment->getadate()}}">
-            <!-- <label for="appointment-date">Ημ/νια & Ώρα ραντεβού</label> -->
-            <!-- <input type="date" name="appointment-date" id="" role="date-picker"" value="{{formatDate($appointment->getadate())}}"> -->
-            <!-- <label for="patient-dob">Ημ/νια Γεννήσεως</label> -->
-            <!-- <input type="date" name="patient-dob" id="" role="date-picker" value="{{formatDate($patient->getpdob())}}"> -->
-    </div>
+        <div class="input-header">
+            <div class="input-div" role="rendezvouz">
+                <label for="appointment-date">Ημ/νια &amp; Ώρα ραντεβού</label>
+                <input type="datetime-local" name="appointment-date" id="appointment-date" value="{{$appointment->getadate()}}">
+            </div>
 
-        <div class="input-div">
-            <label for="appointment-place">Περιοχή</label>
-            <!-- <input type="text" name="appointment-place" id=""  value="{{$appointment->getaplace()}}"> -->
-                    <!-- {% if(isset($locations)): %} -->
-                    <select name="appointment-place">
-                        {% foreach($locations as $loc): %}
-                            <option value="{{$loc->getmachinename()}}"{{($loc->getname() == $appointment->getaplace())?"selected":""}}>{{$loc->getname()}}</option>
-                        {% endforeach %}
-                    </select>
-                <!-- {% endif %} -->
+            <div class="input-div">
+                <label for="appointment-place" role="location">Περιοχή</label>
+                <select name="appointment-place" id="appointment-place">
+                    {% foreach($locations as $loc): %}
+                    <option value="{{$loc->getmachinename()}}" {{($loc->getname() ==
+                        $appointment->getaplace())?"selected":""}}>{{$loc->getname()}}</option>
+                    {% endforeach %}
+                </select>
+            </div>
 
+            <div class="input-div">
+                <label for="appointment-type">Τύπος</label>
+                <select name="appointment-type" id="appointment-type" data-appointment-type>
+                    <option value="appointment" {{($appointment->getatype() != 'operation')?"selected":""}}>Ραντεβού</option>
+                    <option value="operation" {{($appointment->getatype() == 'operation')?"selected":""}}>Επέμβαση</option>
+                </select>
+            </div>
         </div>
 
-        <div class="input-div">
-            <label for="appointment-notes">Σημειώσεις</label>
-            <textarea name="appointment-notes" id="" cols="" rows="5">{{$appointment->getanote()}}</textarea>
-        </div>
+        <div class="appointment-wrapper">
+            <div class="edit-appointment">
 
-        <div class="buttons">
-            <input type="submit" name="Αποθήκευση" value="submit">
-            <input type="submit" name="cancel" value="cancel">
+                <div class="input-div input-notes">
+                    <label for="appointment-notes">Σημειώσεις</label>
+                    <textarea name="appointment-notes" id="appointment-notes" autoexpand rows="5">{{$appointment->getanote()}}</textarea>
+                </div>
 
-            <!-- <button type="button" loader="info-loader" onclick="field_update(this)">Update</button> -->
-            <!-- <div id="info-loader" class="loader0"></div> -->
+                <div class="input-div input-notes input-operation-notes{{($appointment->getatype() != 'operation')?' is-hidden':''}}" data-operation-notes>
+                    <label for="appointment-operation-notes">Λεπτομέρειες Επέμβασης</label>
+                    <textarea name="appointment-operation-notes" id="appointment-operation-notes" autoexpand rows="5">{{$appointment->getaoperationnotes()}}</textarea>
+                </div>
 
+                <div class="buttons">
+                    <input type="submit" name="submit" value="Αποθήκευση">
+                    <input type="submit" name="cancel" value="Ακύρωση">
+                </div>
+            </div>
         </div>
     </form>
 </div>
