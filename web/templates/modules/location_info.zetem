@@ -6,5 +6,5 @@
 #}
 <div class="location-place">
     <i class="bx bx-map"></i>
-    <span class="location-badge">{{t("Location")}}: <strong>{{{$location}}}</strong></span>
+    <span class="location-badge"><strong>{{{$location}}}</strong></span>
 </div>
