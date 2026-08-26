@@ -35,7 +35,24 @@ form:
     - name: doctor_specialty
       label: "Doctor specialty"
       type: text
-  
+
+  # Named results-table views (core/maker/functions.php's
+  # generateHTMLFormArray() / core/lib/WebForms.php's renderFormResults()
+  # in the zeusfw framework) -- entirely optional, a form with no `table:`
+  # block here just keeps showing every input, as before. `default` is the
+  # view used by any caller that doesn't request one explicitly (e.g. the
+  # /webform/viewform/doctors route); table_short is what the Settings
+  # page's Doctors listing actually uses (web/index.php's settings()),
+  # passed explicitly.
+  table:
+    default: table_extended
+    table_short:
+      - name: doctor_name
+    table_extended:
+      - name: doctor_name
+      - name: doctor_specialty
+        label: "Specialty"
+
   buttons:
     - type: "submit"
       label: "Submit"

@@ -800,7 +800,12 @@ require_once(__DIR__ . '/rbac.php');
             'clinics_table' => formsClass::renderFormResults('clinics'),
             'clinics' => formsClass::renderForm('clinics'),
 
-            'doctors_table' => formsClass::renderFormResults('doctors'),
+            // 'table_short' -- doctors.yaml's named view showing just
+            // Doctor name, proving the multi-view mechanism actually
+            // works; the yaml's own 'table_extended' (both columns) stays
+            // available as that form's `default` for any caller (e.g. the
+            // /webform/viewform/doctors route) that doesn't request a view.
+            'doctors_table' => formsClass::renderFormResults('doctors', [], 'table_short'),
             'doctors' => formsClass::renderForm('doctors'),
 
             // A settings-manage holder doesn't necessarily also have
