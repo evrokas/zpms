@@ -56,6 +56,24 @@ table_view:
     - name: doctor_specialty
       label: "Specialty"
 
+  # Per-row action buttons (core/maker/functions.php's
+  # zeusfw_normalize_table_row_buttons() / core/lib/FormElement.php's
+  # generateHTMLTableRowButton() in the zeusfw framework), applied once
+  # per table_view -- the same row actions make sense regardless of
+  # which columns (table_short vs table_extended) happen to be showing.
+  # `edit`/`delete` get a default icon/tooltip (bx-edit/"Edit",
+  # bx-trash/"Delete"); `custom` needs both spelled out. Deliberately no
+  # `handler:` on any of these yet -- this is the row-button *mechanism*
+  # only, not real edit/delete/history wiring; each renders as a real,
+  # correctly-styled but disabled button until a handler is added.
+  actions_label: "Actions"
+  buttons:
+    - type: edit
+    - type: delete
+    - type: custom
+      icon: "bx bx-history"
+      tooltip: "View history"
+
 # Named create-form views -- a document-root key, mirroring table_view
 # above but for the form itself rather than its results table. Buttons
 # now live here (per view) rather than under form:, so every webform must

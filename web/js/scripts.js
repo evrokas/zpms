@@ -115,8 +115,12 @@ if(trashelements.length>0) {
 
 /* same confirmation, for a delete action that's now a real POST form
    (needs a CSRF token, so it can't be a bare <a href> anymore) instead
-   of a link -- intercepts submit instead of click. */
-let trashforms = document.querySelectorAll('.patients-list form[confirmation], .admin-list form[confirmation]');
+   of a link -- intercepts submit instead of click. .settings-table-scroll
+   covers a webform results table's delete row-buttons (core/lib/
+   FormElement.php's generateHTMLTableRowButton() in zeusfw, rendering
+   webform_row_action_delete.zetem's own [confirmation] form) -- same
+   convention as the other two containers, not a separate mechanism. */
+let trashforms = document.querySelectorAll('.patients-list form[confirmation], .admin-list form[confirmation], .settings-table-scroll form[confirmation]');
 if(trashforms.length>0) {
     trashforms.forEach(el => {
         el.addEventListener('submit', (e) => {

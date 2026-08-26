@@ -1165,6 +1165,20 @@ button.icon-btn {
     cursor: pointer;
 }
 
+/* First disabled .icon-btn usage in this app -- a webform results-table
+   row button with no `handler:` wired yet (table_view: -> buttons:,
+   zeusfw) renders inert rather than being omitted, so the actions column
+   never looks broken/incomplete; this just needs to visually read as
+   "not clickable" instead of an active button. */
+.icon-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.icon-btn:disabled:hover {
+    background-color: transparent;
+}
+
 .inline-delete-form {
     display: inline-flex;
 }
@@ -1536,6 +1550,16 @@ a.btn-secondary:hover {
 .settings-table-scroll table td {
     padding: 0.85rem 0.75rem;
     border-bottom: 1px solid var(--medium-gray);
+}
+
+/* Webform results-table row action buttons (table_view: -> buttons:,
+   zeusfw) -- same layout rule as .patients-list table td.actions above,
+   so a row of 1-3 icon buttons lays out centered with even spacing
+   instead of stacking as block elements. */
+.settings-table-scroll table td.actions {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
 }
 
 .notification {
