@@ -96,6 +96,27 @@ match a known role name (nothing is ever silently dropped — see the
 script's own header comment). It's idempotent, so re-running it after
 fixing something it flagged is safe.
 
+## Settings page: Clinics/Doctors management
+
+The Clinics/Doctors sections on `/settings` are rendered by zeusfw core's
+generic `formsClass` (`web/core/lib/WebForms.php`) from a `webforms` DB row
+per form, generated from `web/classes/yaml/{clinics,doctors}.yaml`'s own
+`form:` block — but nothing creates that row automatically. On a database
+that has never had this step run, `formsClass::getForm('clinics')` returns
+null and the sections render as empty (`renderFormResults()`/`renderForm()`
+both degrade gracefully rather than crash — see zeusfw's own `CLAUDE.md` for
+the fix that made that true). Run once per app database (idempotent — safe
+to re-run, it updates the existing row instead of duplicating it):
+
+```sh
+cd web/classes
+php ../core/maker/maker.php form:load yaml/clinics.yaml
+php ../core/maker/maker.php form:load yaml/doctors.yaml
+```
+
+Needs `config/db.php` in place (the real, live database config) since this
+writes directly to it — same prerequisite as the RBAC deploy steps above.
+
 ## Backups
 
 `bin/backup.sh`, run nightly via cron/systemd (reference configs:
