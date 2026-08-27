@@ -29,6 +29,13 @@
 
 const APPOINTMENT_FILE_MAX_BYTES = 15 * 1024 * 1024; // 15MB
 
+// Hard ceiling on how long appointment_files_convert_heic_to_jpeg()'s
+// heif-convert subprocess is allowed to run -- see that function's own
+// comment for why proc_open() otherwise has no timeout of its own, and
+// why an unbounded wait here is exactly the "upload spinner never
+// resolves" symptom this exists to prevent.
+const APPOINTMENT_FILE_HEIC_CONVERT_TIMEOUT_SECONDS = 20;
+
 const APPOINTMENT_FILE_ALLOWED_MIME_EXTENSIONS = [
     'image/jpeg' => 'jpg',
     'image/png' => 'png',
@@ -43,6 +50,21 @@ const APPOINTMENT_FILE_ALLOWED_MIME_EXTENSIONS = [
 // hover preview never has to upscale or waste bytes.
 const APPOINTMENT_FILE_THUMBNAIL_MAX_DIMENSION = 320;
 const APPOINTMENT_FILE_THUMBNAIL_JPEG_QUALITY = 80;
+
+// A full GD decode allocates roughly 4 bytes/pixel for the truecolor
+// buffer, doubled to ~8 bytes/pixel once EXIF-orientation correction
+// (appointment_files_decode_image()) keeps both the original and a
+// rotated copy in memory at once. 24 megapixels comfortably covers
+// standard phone camera photos (a non-Pro iPhone shoots 12MP; most
+// Android flagships are in the same range) with margin to spare, while
+// still bailing out before the ~40-48MP output some phones' cameras can
+// produce at their maximum-resolution setting -- a real full decode at
+// that size is both slow (multi-second) and, on a modest production
+// memory_limit, can hit a fatal, unrecoverable "allowed memory size
+// exhausted" mid-request. See appointment_file_upload()'s own comment
+// at the call site for why skipping the decode there, rather than just
+// catching a failure, is the only way to actually avoid that.
+const APPOINTMENT_FILE_MAX_THUMBNAIL_DECODE_PIXELS = 24_000_000;
 
 // Sanitizes a patient's name for use as a filesystem directory component:
 // strips path separators/control characters, trims stray dots/spaces (both
@@ -194,9 +216,41 @@ function appointment_files_convert_heic_to_jpeg(string $sourcePath): ?string {
     }
 
     fclose($pipes[0]);
-    stream_get_contents($pipes[1]);
+    stream_set_blocking($pipes[1], false);
+    stream_set_blocking($pipes[2], false);
+
+    // heif-convert normally finishes in well under a second, even for a
+    // large photo -- but proc_open() itself has no timeout, so a genuinely
+    // stuck or pathological decode would otherwise hang this request (and
+    // the staff member watching the upload) indefinitely. Poll for
+    // completion against a hard deadline and kill the process if it's
+    // exceeded, rather than trust the subprocess to always finish.
+    $deadline = microtime(true) + APPOINTMENT_FILE_HEIC_CONVERT_TIMEOUT_SECONDS;
+    do {
+        // Drain periodically, not just once at the end -- heif-convert's
+        // stdout/stderr pipes are a fixed OS buffer size; if it writes
+        // enough to fill one before this process reads it, heif-convert
+        // itself blocks writing and never reaches exit, which would
+        // otherwise look identical to a genuine timeout.
+        stream_get_contents($pipes[1]);
+        stream_get_contents($pipes[2]);
+        $status = proc_get_status($process);
+        if(!$status['running']) {
+            break;
+        }
+        usleep(50000); // 50ms
+    } while(microtime(true) < $deadline);
+
+    if($status['running']) {
+        proc_terminate($process, 9);
+        fclose($pipes[1]);
+        fclose($pipes[2]);
+        proc_close($process);
+        if(is_file($outputPath)) unlink($outputPath);
+        return null;
+    }
+
     fclose($pipes[1]);
-    stream_get_contents($pipes[2]);
     fclose($pipes[2]);
     $exitCode = proc_close($process);
 
@@ -515,28 +569,44 @@ function appointment_file_upload($params) {
     $entry->insert();
 
     if($isImage && extension_loaded('gd')) {
-        $decoded = appointment_files_decode_image($destPath);
-        if(!$decoded) {
-            // finfo only sniffs the header, so a file can pass that check
-            // and still not be a real, complete image -- seen with
-            // corrupted/truncated data from some clipboard-paste sources
-            // (e.g. iOS Safari). Reject outright rather than silently
-            // archiving a file staff can never actually open (which
-            // would otherwise show up as an unexplained broken-image
-            // placeholder with no way to view it either). This is a
-            // controlled, non-fatal rejection (unlike the crash scenario
-            // above), so it's safe to clean up both the file and the
-            // just-inserted row together -- a genuinely corrupt upload
-            // still leaves nothing behind, same as before this change.
-            $entry->delete();
-            unlink($destPath);
-            appointment_files_json(['success' => false, 'error' => 'corrupt or unreadable image data -- please try again'], 400);
-        }
-        $thumbnailPath = appointment_files_save_thumbnail($decoded, $relativePath);
-        imagedestroy($decoded);
-        if($thumbnailPath) {
-            $entry->setthumbnail_path($thumbnailPath);
-            $entry->update();
+        // A cheap header-only read -- unlike appointment_files_decode_image()
+        // below, getimagesize() never allocates a full pixel buffer, so
+        // it's safe to run even when the real dimensions turn out to be
+        // huge. Used to decide whether the expensive full decode is even
+        // worth the risk (see APPOINTMENT_FILE_MAX_THUMBNAIL_DECODE_PIXELS's
+        // own comment, above the constant) -- an oversized image still
+        // gets stored and inserted normally, it just skips thumbnailing.
+        // appointment_file_thumbnail() already falls back to serving the
+        // full original whenever thumbnail_path is NULL, the same
+        // fallback already relied on for PDFs and pre-thumbnail-column
+        // uploads.
+        $dimensions = @getimagesize($destPath);
+        $tooLargeToDecode = $dimensions && ($dimensions[0] * $dimensions[1] > APPOINTMENT_FILE_MAX_THUMBNAIL_DECODE_PIXELS);
+
+        if(!$tooLargeToDecode) {
+            $decoded = appointment_files_decode_image($destPath);
+            if(!$decoded) {
+                // finfo only sniffs the header, so a file can pass that check
+                // and still not be a real, complete image -- seen with
+                // corrupted/truncated data from some clipboard-paste sources
+                // (e.g. iOS Safari). Reject outright rather than silently
+                // archiving a file staff can never actually open (which
+                // would otherwise show up as an unexplained broken-image
+                // placeholder with no way to view it either). This is a
+                // controlled, non-fatal rejection (unlike the crash scenario
+                // above), so it's safe to clean up both the file and the
+                // just-inserted row together -- a genuinely corrupt upload
+                // still leaves nothing behind, same as before this change.
+                $entry->delete();
+                unlink($destPath);
+                appointment_files_json(['success' => false, 'error' => 'corrupt or unreadable image data -- please try again'], 400);
+            }
+            $thumbnailPath = appointment_files_save_thumbnail($decoded, $relativePath);
+            imagedestroy($decoded);
+            if($thumbnailPath) {
+                $entry->setthumbnail_path($thumbnailPath);
+                $entry->update();
+            }
         }
     }
 
