@@ -153,6 +153,61 @@ function appointment_files_resolve_storage_path(array $appointment, string $pati
     return [$dir . '/' . $filename, $relativePath];
 }
 
+// iPhone camera photos default to HEIC/HEIF, which GD (the only image
+// library installed here -- confirmed no Imagick/libheif support) can't
+// decode at all. Click-to-browse is the one upload path staff actually
+// use to pick a photo straight from a phone's camera roll (drag-and-drop/
+// paste in practice almost always supply an already-JPEG/PNG desktop
+// image), so this is what made HEIC photos specifically read as "the
+// upload via click doesn't save" -- previously a clean-but-silent-looking
+// 400 rejection from the MIME allow-list below, with no real fix.
+//
+// Converts by shelling out to `heif-convert` (from Debian/Ubuntu's
+// libheif-examples package -- install with `apt-get install
+// libheif-examples` on any server that doesn't have it yet) via
+// proc_open() with an ARGUMENT ARRAY, the same secure invocation pattern
+// already used by this app's own QR generator (web/index.php's
+// app_generate_qr(), itself matching docarc's docarc_generate_qr_png())
+// -- never a shell string, so nothing in the uploaded filename/path is
+// ever shell-interpreted. No upfront "is the tool installed" check,
+// matching that same precedent's just-attempt-it style: proc_open()
+// itself fails cleanly (returns false / non-zero exit) if the binary is
+// missing, and appointment_file_upload() treats that identically to any
+// other conversion failure -- a clear, HEIC-specific rejection message
+// rather than a crash, so a server that hasn't installed the tool yet
+// still degrades safely.
+//
+// Returns the converted file's absolute path (a plain temp file this
+// function created, NOT something PHP tracked as an actual upload -- the
+// caller must move it with rename(), not move_uploaded_file()) on
+// success, or null on any failure (binary missing, non-zero exit, no/
+// empty output file).
+function appointment_files_convert_heic_to_jpeg(string $sourcePath): ?string {
+    $outputPath = sys_get_temp_dir() . '/' . uniqid('zpms_heic_', true) . '.jpg';
+
+    $command = ['heif-convert', $sourcePath, $outputPath];
+    $descriptors = [0 => ['pipe', 'r'], 1 => ['pipe', 'w'], 2 => ['pipe', 'w']];
+
+    $process = @proc_open($command, $descriptors, $pipes);
+    if(!is_resource($process)) {
+        return null;
+    }
+
+    fclose($pipes[0]);
+    stream_get_contents($pipes[1]);
+    fclose($pipes[1]);
+    stream_get_contents($pipes[2]);
+    fclose($pipes[2]);
+    $exitCode = proc_close($process);
+
+    if($exitCode !== 0 || !is_file($outputPath) || filesize($outputPath) <= 0) {
+        if(is_file($outputPath)) unlink($outputPath);
+        return null;
+    }
+
+    return $outputPath;
+}
+
 // Attempts to fully decode $absoluteSourcePath as an image -- unlike the
 // finfo_file() check in appointment_file_upload(), which only sniffs the
 // first few header bytes, this actually reads the whole file through GD.
@@ -362,8 +417,28 @@ function appointment_file_upload($params) {
     $mimeType = finfo_file($finfo, $upload['tmp_name']);
     finfo_close($finfo);
 
+    // See appointment_files_convert_heic_to_jpeg()'s own docblock -- an
+    // iPhone camera photo (HEIC/HEIF) gets converted to a real JPEG here,
+    // before the allow-list check below, so everything downstream (GD
+    // decode/thumbnail/DB insert/response) runs completely unchanged
+    // against it, exactly as if a JPEG had been uploaded directly.
+    $wasHeic = in_array($mimeType, ['image/heic', 'image/heif'], true);
+    $convertedFromHeic = false;
+    if($wasHeic) {
+        $converted = appointment_files_convert_heic_to_jpeg($upload['tmp_name']);
+        if($converted) {
+            $upload['tmp_name'] = $converted;
+            $upload['name'] = preg_replace('/\.\w+$/', '', basename($upload['name'])) . '.jpg';
+            $mimeType = 'image/jpeg';
+            $convertedFromHeic = true;
+        }
+    }
+
     if(!isset(APPOINTMENT_FILE_ALLOWED_MIME_EXTENSIONS[$mimeType])) {
-        appointment_files_json(['success' => false, 'error' => 'unsupported file type'], 400);
+        $message = $wasHeic
+            ? "HEIC/HEIF photos aren't supported on this server yet -- please switch your camera to \"Most Compatible\" (JPEG) format, or choose a different photo"
+            : 'unsupported file type';
+        appointment_files_json(['success' => false, 'error' => $message], 400);
     }
 
     $patient = patientsClassEx::sgetByGuid($ap->getpguid());
@@ -377,8 +452,27 @@ function appointment_file_upload($params) {
         basename($upload['name'])
     );
 
-    if(!move_uploaded_file($upload['tmp_name'], $destPath)) {
+    // A HEIC-converted file is a plain temp file this request created
+    // itself, not something PHP tracked as an actual upload --
+    // move_uploaded_file() requires is_uploaded_file() to be true and
+    // would fail on it, so that case uses a plain rename() instead.
+    $moved = $convertedFromHeic
+        ? rename($upload['tmp_name'], $destPath)
+        : move_uploaded_file($upload['tmp_name'], $destPath);
+
+    if(!$moved) {
+        if($convertedFromHeic && is_file($upload['tmp_name'])) unlink($upload['tmp_name']);
         appointment_files_json(['success' => false, 'error' => 'upload failed'], 500);
+    }
+
+    // $upload['size'] is the ORIGINAL (HEIC) upload's byte count -- the
+    // converted JPEG actually stored at $destPath is a different size,
+    // so the DB's file_size (below) would otherwise be wrong/misleading
+    // for a converted file. Same reasoning already applied to file_hash
+    // below, which hashes $destPath rather than trusting anything about
+    // the pre-move upload.
+    if($convertedFromHeic) {
+        $upload['size'] = filesize($destPath);
     }
 
     $isImage = str_starts_with($mimeType, 'image/');

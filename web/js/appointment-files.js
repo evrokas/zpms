@@ -212,7 +212,17 @@ function createLocalPreview(file, container, description) {
 function showPreviewError(previewItem, message) {
     previewItem.classList.add('preview-error');
     const status = previewItem.querySelector('.preview-status');
-    if (status) status.textContent = message;
+    if (!status) return;
+
+    // Built via DOM methods (not innerHTML) so `message` -- server-
+    // supplied text (e.g. appointment_files.php's own error strings) --
+    // stays safely text-only, same as the plain textContent assignment
+    // this replaces.
+    status.textContent = '';
+    const icon = document.createElement('i');
+    icon.className = 'bx bx-error-circle';
+    status.appendChild(icon);
+    status.appendChild(document.createTextNode(message));
 }
 
 function appendExistingFileRow(existingFilesContainer, file) {

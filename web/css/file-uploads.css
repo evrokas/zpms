@@ -262,12 +262,28 @@
     padding: 0 var(--spacing-sm) var(--spacing-sm);
 }
 
+/* A failed upload (e.g. an unsupported HEIC photo -- see
+   appointment_files.php's own HEIC-conversion comment) previously only
+   got a thin red border + small red text here, easy to miss in a
+   multi-file preview grid -- exactly the kind of silent-looking failure
+   that made a real, correctly-rejected upload read as "it just didn't
+   save". A background tint + stronger border + warning icon (prepended
+   in showPreviewError(), appointment-files.js) make it unmistakable. */
 .preview-item.preview-error {
-    border-color: var(--error);
+    border: 2px solid var(--error);
+    background-color: rgba(var(--error-rgb), 0.06);
 }
 
 .preview-item.preview-error .preview-status {
-    color: var(--error);
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--error-dark);
+    font-weight: 600;
+}
+
+.preview-item.preview-error .preview-status i {
+    font-size: 0.95rem;
 }
 
 /* Existing files */
