@@ -142,7 +142,7 @@ function uploadOneFile(file, uploadUrl, previewsContainer, existingFilesContaine
         })
         .then(function(result) {
             if (result.ok && result.data && result.data.success) {
-                previewItem.remove();
+                removePreviewItem(previewItem);
                 appendExistingFileRow(existingFilesContainer, result.data.file);
                 updateFileCountBadge(existingFilesContainer.closest('.file-upload-section'));
             } else {
@@ -168,9 +168,22 @@ function createLocalPreview(file, container, description) {
     if (file.type.startsWith('image/')) {
         const img = document.createElement('img');
         img.className = 'preview-image';
-        const reader = new FileReader();
-        reader.onload = function(e) { img.src = e.target.result; };
-        reader.readAsDataURL(file);
+        // Object URL, not FileReader.readAsDataURL() -- a data: URL means
+        // holding the entire file re-encoded as a base64 string in memory
+        // (~33% bigger than the file itself) for as long as the preview
+        // tile exists. Desktop test uploads are usually small enough that
+        // this never mattered, but a real phone camera photo can be
+        // several MB, and iOS Safari's per-tab memory budget is far
+        // tighter than desktop -- large enough uploads (especially a few
+        // picked at once, each getting its own data: URL) have been seen
+        // to make the tab reload mid-upload, silently aborting the
+        // in-flight fetch() before the server ever received it. An object
+        // URL just references the existing File's bytes with no copy.
+        // Revoked in removePreviewItem() below once the tile is done with
+        // it, whether that's a successful upload or a manual cancel.
+        const objectUrl = URL.createObjectURL(file);
+        previewItem.dataset.objectUrl = objectUrl;
+        img.src = objectUrl;
         previewItem.appendChild(img);
     } else {
         const generic = document.createElement('div');
@@ -207,6 +220,17 @@ function createLocalPreview(file, container, description) {
 
     if (container) container.appendChild(previewItem);
     return previewItem;
+}
+
+// Removes a local preview tile and releases its object URL (see
+// createLocalPreview()) -- the one function both the successful-upload
+// path and the manual "cancel" button go through, so neither can forget
+// the revoke and leak the reference.
+function removePreviewItem(previewItem) {
+    if (previewItem.dataset.objectUrl) {
+        URL.revokeObjectURL(previewItem.dataset.objectUrl);
+    }
+    previewItem.remove();
 }
 
 function showPreviewError(previewItem, message) {
@@ -294,7 +318,7 @@ function handleDelegatedClick(e) {
     const removeBtn = e.target.closest('.preview-remove');
     if (removeBtn) {
         const previewItem = removeBtn.closest('.preview-item');
-        if (previewItem) previewItem.remove();
+        if (previewItem) removePreviewItem(previewItem);
         return;
     }
 

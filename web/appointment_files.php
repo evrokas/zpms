@@ -476,24 +476,6 @@ function appointment_file_upload($params) {
     }
 
     $isImage = str_starts_with($mimeType, 'image/');
-    $thumbnailPath = null;
-
-    if($isImage && extension_loaded('gd')) {
-        $decoded = appointment_files_decode_image($destPath);
-        if(!$decoded) {
-            // finfo only sniffs the header, so a file can pass that check
-            // and still not be a real, complete image -- seen with
-            // corrupted/truncated data from some clipboard-paste sources
-            // (e.g. iOS Safari). Reject outright rather than silently
-            // archiving a file staff can never actually open (which
-            // would otherwise show up as an unexplained broken-image
-            // placeholder with no way to view it either).
-            unlink($destPath);
-            appointment_files_json(['success' => false, 'error' => 'corrupt or unreadable image data -- please try again'], 400);
-        }
-        $thumbnailPath = appointment_files_save_thumbnail($decoded, $relativePath);
-        imagedestroy($decoded);
-    }
 
     // Currently only ever populated by the "paste from clipboard" flow
     // (appointment-files.js) -- a pasted image has no filename of its own
@@ -501,6 +483,22 @@ function appointment_file_upload($params) {
     // never sends this field, so $description stays ''/NULL for those.
     $description = trim((string)($_POST['description'] ?? ''));
 
+    // Insert the DB row (thumbnail_path still null) BEFORE attempting the
+    // GD decode/thumbnail below -- deliberately reordered from a version
+    // that decoded first. A full GD decode of a real, full-resolution
+    // phone camera photo (something desktop test uploads rarely exercise,
+    // but the routine case for an actual iPhone photo -- 12-48MP, plus a
+    // second full-size buffer while correcting EXIF rotation) can be
+    // expensive enough to hit the process's memory limit and fatally
+    // terminate the request -- a true PHP fatal, unrecoverable by any
+    // try/catch. With decode running first, that crash left the file
+    // sitting on disk with no DB row at all: uploaded, but permanently
+    // invisible in the "existing files" list, even after a refresh.
+    // Inserting first means a worst-case crash during thumbnailing still
+    // leaves a real, visible file row behind -- appointment_file_thumbnail()
+    // already falls back to serving the full original whenever
+    // thumbnail_path is NULL, so a missing thumbnail degrades gracefully
+    // instead of losing the upload outright.
     $entry = new appointmentFilesClass([
         'guid' => guid(),
         'cdate' => getDBtime(),
@@ -511,10 +509,36 @@ function appointment_file_upload($params) {
         'file_size' => $upload['size'],
         'mime_type' => $mimeType,
         'file_hash' => hash_file('sha256', $destPath),
-        'thumbnail_path' => $thumbnailPath,
+        'thumbnail_path' => null,
         'description' => $description !== '' ? $description : null,
     ]);
     $entry->insert();
+
+    if($isImage && extension_loaded('gd')) {
+        $decoded = appointment_files_decode_image($destPath);
+        if(!$decoded) {
+            // finfo only sniffs the header, so a file can pass that check
+            // and still not be a real, complete image -- seen with
+            // corrupted/truncated data from some clipboard-paste sources
+            // (e.g. iOS Safari). Reject outright rather than silently
+            // archiving a file staff can never actually open (which
+            // would otherwise show up as an unexplained broken-image
+            // placeholder with no way to view it either). This is a
+            // controlled, non-fatal rejection (unlike the crash scenario
+            // above), so it's safe to clean up both the file and the
+            // just-inserted row together -- a genuinely corrupt upload
+            // still leaves nothing behind, same as before this change.
+            $entry->delete();
+            unlink($destPath);
+            appointment_files_json(['success' => false, 'error' => 'corrupt or unreadable image data -- please try again'], 400);
+        }
+        $thumbnailPath = appointment_files_save_thumbnail($decoded, $relativePath);
+        imagedestroy($decoded);
+        if($thumbnailPath) {
+            $entry->setthumbnail_path($thumbnailPath);
+            $entry->update();
+        }
+    }
 
     appointment_files_json([
         'success' => true,
