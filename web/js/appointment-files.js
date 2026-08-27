@@ -7,6 +7,15 @@
 // fetch()+FormData. Replaces file-upload.js + pdf-preview.js, which were
 // both purely decorative -- neither ever actually talked to the server.
 
+// Hard ceiling on how long a single upload's XMLHttpRequest is allowed to
+// run before it's treated as failed -- see uploadOneFile()'s own comment
+// for why this exists (in short: a request can genuinely take a long
+// time to even START sending on a phone -- e.g. iOS still finishing an
+// iCloud-backed photo's on-device download before the browser can read
+// it at all -- and with no timeout, that reads as "nothing happens"
+// forever instead of a clear, actionable error).
+const APPOINTMENT_FILE_UPLOAD_TIMEOUT_MS = 120000; // 2 minutes
+
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.file-upload-section').forEach(initAppointmentFileSection);
 
@@ -128,30 +137,59 @@ function handleFiles(fileList, uploadUrl, previewsContainer, existingFilesContai
 
 function uploadOneFile(file, uploadUrl, previewsContainer, existingFilesContainer, description) {
     const previewItem = createLocalPreview(file, previewsContainer, description);
+    const progressFill = previewItem.querySelector('.preview-progress-fill');
+    const statusEl = previewItem.querySelector('.preview-status');
 
     const formData = new FormData();
     formData.append('appointmentFile', file);
     formData.append('csrf_token', csrfToken());
     if (description) formData.append('description', description);
 
-    fetch(uploadUrl, { method: 'POST', body: formData })
-        .then(function(response) {
-            return response.json().then(function(data) {
-                return { ok: response.ok, data: data };
-            });
-        })
-        .then(function(result) {
-            if (result.ok && result.data && result.data.success) {
-                removePreviewItem(previewItem);
-                appendExistingFileRow(existingFilesContainer, result.data.file);
-                updateFileCountBadge(existingFilesContainer.closest('.file-upload-section'));
-            } else {
-                showPreviewError(previewItem, (result.data && result.data.error) || 'Η μεταφόρτωση απέτυχε');
-            }
-        })
-        .catch(function() {
-            showPreviewError(previewItem, 'Σφάλμα δικτύου κατά τη μεταφόρτωση');
-        });
+    // XMLHttpRequest, not fetch() -- fetch() has no cross-browser way to
+    // observe upload progress, so a large photo over a slow mobile
+    // connection looked completely frozen: the local preview thumbnail
+    // appears instantly (it's generated client-side, before any network
+    // activity starts), then nothing visibly changes again until the
+    // response finally comes back, however long that takes. There's no
+    // way to tell "still working" from "stuck" in that gap. XHR's
+    // upload.onprogress is the one place a real percentage is available,
+    // and the timeout below means a genuinely stuck request -- e.g. iOS
+    // still finishing an iCloud-backed photo's on-device download before
+    // the browser can even read it, or a stalled connection -- surfaces
+    // as a clear, actionable error instead of leaving the tile in limbo.
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', uploadUrl, true);
+    xhr.timeout = APPOINTMENT_FILE_UPLOAD_TIMEOUT_MS;
+
+    xhr.upload.addEventListener('progress', function(e) {
+        if (!e.lengthComputable) return;
+        const pct = Math.round((e.loaded / e.total) * 100);
+        if (progressFill) progressFill.style.width = pct + '%';
+        if (statusEl) statusEl.textContent = 'Μεταφόρτωση... ' + pct + '%';
+    });
+
+    xhr.addEventListener('load', function() {
+        let data = null;
+        try { data = JSON.parse(xhr.responseText); } catch (e) { /* handled below as a failure */ }
+
+        if (xhr.status >= 200 && xhr.status < 300 && data && data.success) {
+            removePreviewItem(previewItem);
+            appendExistingFileRow(existingFilesContainer, data.file);
+            updateFileCountBadge(existingFilesContainer.closest('.file-upload-section'));
+        } else {
+            showPreviewError(previewItem, (data && data.error) || 'Η μεταφόρτωση απέτυχε');
+        }
+    });
+
+    xhr.addEventListener('error', function() {
+        showPreviewError(previewItem, 'Σφάλμα δικτύου κατά τη μεταφόρτωση');
+    });
+
+    xhr.addEventListener('timeout', function() {
+        showPreviewError(previewItem, 'Η μεταφόρτωση καθυστέρησε πολύ -- ελέγξτε τη σύνδεσή σας και δοκιμάστε ξανά');
+    });
+
+    xhr.send(formData);
 }
 
 function createLocalPreview(file, container, description) {
@@ -214,8 +252,20 @@ function createLocalPreview(file, container, description) {
 
     previewItem.appendChild(info);
 
+    // Thin progress bar, filled in by uploadOneFile()'s XHR
+    // upload.onprogress handler -- the visible signal that a slow
+    // upload is actually moving rather than stuck (see uploadOneFile()'s
+    // own comment for why this exists).
+    const progress = document.createElement('div');
+    progress.className = 'preview-progress';
+    const progressFill = document.createElement('div');
+    progressFill.className = 'preview-progress-fill';
+    progress.appendChild(progressFill);
+    previewItem.appendChild(progress);
+
     const status = document.createElement('div');
     status.className = 'preview-status';
+    status.textContent = 'Μεταφόρτωση...';
     previewItem.appendChild(status);
 
     if (container) container.appendChild(previewItem);

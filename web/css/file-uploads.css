@@ -262,6 +262,30 @@
     padding: 0 var(--spacing-sm) var(--spacing-sm);
 }
 
+/* Filled in by uploadOneFile()'s XHR upload.onprogress handler
+   (appointment-files.js) -- the visible "this is actually moving"
+   signal for a slow upload (large photo, weak mobile connection), which
+   previously had no feedback at all between the instant local preview
+   and whatever the response eventually turned out to be. */
+.preview-progress {
+    height: 4px;
+    margin: 0 var(--spacing-sm);
+    background-color: var(--light-gray);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.preview-progress-fill {
+    height: 100%;
+    width: 0;
+    background-color: var(--primary);
+    transition: width 0.15s ease-out;
+}
+
+.preview-item.preview-error .preview-progress {
+    display: none;
+}
+
 /* A failed upload (e.g. an unsupported HEIC photo -- see
    appointment_files.php's own HEIC-conversion comment) previously only
    got a thin red border + small red text here, easy to miss in a
