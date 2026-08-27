@@ -48,12 +48,29 @@ function initAppointmentFileSection(section) {
 
     const uploadUrl = form.getAttribute('data-upload-url');
 
+    // Reset the input BEFORE the picker opens, not after the change event.
+    //
+    // This is what makes picking the same file twice in a row still fire a
+    // `change` event, and it MUST happen here rather than at the end of the
+    // change handler below. Clearing input.value while an upload is still
+    // in flight detaches the underlying file resource on WebKit/iOS: an
+    // XHR/fetch body is read ASYNCHRONOUSLY after send() returns, so the
+    // request found nothing left to send and was abandoned before a single
+    // byte left the device -- no request ever reached the server, nothing
+    // in its access log, and no error anywhere, since from the page's point
+    // of view nothing had failed yet. Desktop Chrome/Firefox keep a File's
+    // data alive independently of the input it came from, which is exactly
+    // why this only ever broke on iPhone/iPad, and only via click-to-browse
+    // (drag-and-drop and clipboard paste never touch input.value at all).
+    input.addEventListener('click', function() {
+        input.value = '';
+    });
+
     // Click-to-browse is native, via the <label for="..."> -- deliberately
     // no manual click handler on the dropzone/label, that would double-fire
     // the file picker.
     input.addEventListener('change', function(e) {
         handleFiles(e.target.files, uploadUrl, previews, existingFiles);
-        input.value = ''; // allow re-selecting the same file later
     });
 
     ['dragover', 'dragenter'].forEach(function(evt) {
