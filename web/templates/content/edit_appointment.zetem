@@ -40,19 +40,15 @@
                 </select>
             </div>
 
-            <div class="input-div">
-                <label>Τύπος</label>
-                <!-- Fixed for this new appointment already, by which
-                     "Add ..." button was clicked on the patient page (see
-                     patient_appointment_new()) -- no dropdown. Carried
-                     through to patient_appointment_new_post() by the
-                     hidden field below, since this is the only way that
-                     handler can know which type to insert. -->
-                <div class="appointment-type-badge{{($appointment->getatype() == 'operation')?' is-operation':''}}">
-                    {{($appointment->getatype() == 'operation')?'Χειρουργείο':'Ραντεβού'}}
-                </div>
-                <input type="hidden" name="appointment-type" value="{{$appointment->getatype()}}">
-            </div>
+            <!-- Fixed for this new appointment already, by which
+                 "Add ..." button was clicked on the patient page (see
+                 patient_appointment_new_render()) -- no dropdown/badge,
+                 the <h2> above already says "Νέο Ραντεβού"/"Νέο
+                 Χειρουργείο". Carried through to
+                 patient_appointment_new_post() by this hidden field,
+                 since that's the only way the handler can know which
+                 type to insert. -->
+            <input type="hidden" name="appointment-type" value="{{$appointment->getatype()}}">
         </div>
 
         <div class="appointment-wrapper">

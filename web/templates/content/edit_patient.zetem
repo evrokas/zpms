@@ -147,11 +147,15 @@
                 </div>
             </a>
             <!-- Type is decided entirely by which of these two links was
-                 clicked (?type=operation vs the default plain appointment)
-                 -- see patient_appointment_new()'s own comment. There's no
-                 dropdown anywhere in the appointment/operation flow any
-                 more; once created, the type is permanent. -->
-            <a href="{{rel_url('/appointment/'.$id.'/newappointment')}}?type=operation">
+                 clicked -- a separate route, not a ?type=operation query
+                 string (the router matches on $_SERVER['QUERY_STRING']
+                 itself, and .htaccess's [QSA] rewrite flag would append a
+                 real query string onto that same value and break route
+                 matching -- see patient_operation_new()'s own comment in
+                 web/index.php). There's no dropdown anywhere in the
+                 appointment/operation flow any more; once created, the
+                 type is permanent. -->
+            <a href="{{rel_url('/appointment/'.$id.'/newoperation')}}">
                 <div class="new-appointment new-operation">
                     Νέο Χειρουργείο
                 </div>

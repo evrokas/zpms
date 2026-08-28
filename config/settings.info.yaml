@@ -292,6 +292,23 @@ routes:
     url: "/appointment/{id}/newappointment"
     handler: patient_appointment_new_post
     method: post
+  # A separate route/URL, not a ?type=operation query string on the route
+  # above -- this Router matches on $_SERVER['QUERY_STRING'] itself (see
+  # Request.php), and web/.htaccess's rewrite rule uses [QSA] (Query
+  # String Append), so a real query string on a rewritten URL gets
+  # appended onto that same value, corrupting the last path segment (e.g.
+  # "newappointment&type=operation" instead of "newappointment") and
+  # missing every route -- a 404. A second, fully separate literal path
+  # is the only way to make this a plain GET link with no query string
+  # involved at all. Shares patient_appointment_new()'s own rendering
+  # logic (see patient_operation_new() in web/index.php) and always POSTs
+  # back to the plain /newappointment route above regardless of which of
+  # these two rendered the page -- see edit_appointment.zetem's $action.
+  patient_operation_new:
+    title: "New patient operation"
+    url: "/appointment/{id}/newoperation"
+    handler: patient_operation_new
+    method: get
   appointment_file_upload:
     title:
       gr: "Μεταφόρτωση αρχείου ραντεβού"

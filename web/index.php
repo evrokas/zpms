@@ -688,7 +688,19 @@ require_once(__DIR__ . '/rbac.php');
         appointment_perform_delete($params['id']);
     }
 
-    function patient_appointment_new($params) {
+    // Renders the "new appointment"/"new operation" form -- type is
+    // decided once, right here, entirely by which of the two functions
+    // below called this ("Νέο Ραντεβού" vs "Νέο Χειρουργείο" on
+    // edit_patient.zetem, two separate GET routes/links, see
+    // patient_operation_new()'s own comment for why a query string
+    // couldn't be used for this instead). There's no dropdown anywhere in
+    // this flow; edit_appointment.zetem just displays whichever type this
+    // resolved to as a fixed label and carries it through to
+    // patient_appointment_new_post() via a hidden field (always POSTing
+    // back to the plain /newappointment route regardless of which page
+    // rendered the form), and once saved it's permanent --
+    // appointment_edit_post() never touches atype at all.
+    function patient_appointment_new_render($params, string $atype) {
         global $kernel;
 
         if(!isset($params['id'])) {
@@ -702,24 +714,13 @@ require_once(__DIR__ . '/rbac.php');
             echo "REJECTED";
             exit();
         }
-        
+
         // error_log("\npatient_appointment_new: ".print_r($params, 1)."\n");
         $p = patientsClass::sgetById( $params['id'] );
         // echo "<pre>" . print_r( $p ) . "</pre>";
 
         $loc = locationsClassEx::sgetAll( $kernel->getCurrentLanguage() );
         // $loc = locationsClass::sgetAll();
-
-        // Type is decided once, right here, by which button the user
-        // clicked on the patient page -- "Νέο Ραντεβού" (plain, the
-        // default) or "Νέο Χειρουργείο" (?type=operation), see
-        // edit_patient.zetem. There's no dropdown anywhere in this flow
-        // any more; edit_appointment.zetem just displays whichever type
-        // this resolved to as a fixed label and carries it through to
-        // patient_appointment_new_post() via a hidden field, and once
-        // saved it's permanent -- appointment_edit_post() never touches
-        // atype at all.
-        $atype = ($_GET['type'] ?? '') === 'operation' ? 'operation' : 'appointment';
 
         $ap = new appointmentsClass([
             'adate' => getDBtime(),
@@ -729,7 +730,21 @@ require_once(__DIR__ . '/rbac.php');
         ]);
         // $kernel->setS
         // $pat = $pc->getById($params['id']);
-        return (Renderer::render("edit_appointment.zetem", ['action' => 'newappointment', 'id' => null, 'appointment' => $ap, 'patient' => $p, 'locations' => $loc]));
+        return (Renderer::render("edit_appointment.zetem", [
+            'action' => rel_url('/appointment/' . $params['id'] . '/newappointment'),
+            'id' => null,
+            'appointment' => $ap,
+            'patient' => $p,
+            'locations' => $loc
+        ]));
+    }
+
+    function patient_appointment_new($params) {
+        return patient_appointment_new_render($params, 'appointment');
+    }
+
+    function patient_operation_new($params) {
+        return patient_appointment_new_render($params, 'operation');
     }
 
     function patient_appointment_new_post($params) {

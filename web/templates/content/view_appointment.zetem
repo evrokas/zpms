@@ -10,7 +10,14 @@
             <div class="input-div" role="rendezvouz">
                 <!-- <label for="patient-date">Ημ/νια & Ώρα ραντεβού</label> -->
                 <!-- <input type="datetime-local" loader="app-loader-{{$index}}" name="appointment-date" id="" value="{{$appointment->getadate()}}"> -->
-                <label for="patient-date">Ραντεβού</label>
+                <!-- Doubles as this card's type indicator -- fixed at
+                     creation, never editable here (see
+                     patient_appointment_new_render()'s own comment in
+                     web/index.php for where the type is actually decided:
+                     which "Add ..." button was clicked on the patient
+                     page). No dropdown/badge/appointment-type field
+                     anywhere in this form. -->
+                <label for="patient-date">{{($appointment->getatype() == 'operation')?'Χειρουργείο':'Ραντεβού'}}</label>
                 <input type="date" loader="app-loader-{{$index}}" name="appointment-date-{{$index}}" id=""
                     role="date-picker" value="{{formatBrowserDate($appointment->getadate())}}">
                 <!-- <label for="patient-dob">Ημ/νια Γεννήσεως</label> -->
@@ -30,18 +37,6 @@
                     {% endforeach %}
                 </select>
                 <!-- {% endif %} -->
-            </div>
-
-            <div class="input-div">
-                <label>Τύπος</label>
-                <!-- Fixed at creation, never editable here -- see
-                     patient_appointment_new()'s own comment for where the
-                     type is actually decided (which "Add ..." button was
-                     clicked on the patient page). No dropdown, no
-                     appointment-type field posted by this form at all. -->
-                <div class="appointment-type-badge{{($appointment->getatype() == 'operation')?' is-operation':''}}">
-                    {{($appointment->getatype() == 'operation')?'Χειρουργείο':'Ραντεβού'}}
-                </div>
             </div>
         </div>
         <div id="app-loader-{{$index}}" class="loader0"></div>

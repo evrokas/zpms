@@ -32,27 +32,6 @@
     box-shadow: var(--shadow-primary-sm);
 }
 
-/* Appointment type badge (view_appointment.zetem/edit_appointment.zetem)
-   -- replaces what used to be an editable <select>. Type is fixed at
-   creation (see patient_appointment_new()'s own comment), so this is
-   just a plain read-only label, not a form control. Styled like the
-   other read-only fields in this app rather than an <input>, since it
-   never accepts focus/input. */
-.appointment-type-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.5rem 0.85rem;
-    border-radius: var(--border-radius);
-    background-color: var(--light-gray);
-    color: var(--text);
-    font-weight: 500;
-}
-
-.appointment-type-badge.is-operation {
-    background-color: rgba(var(--primary-rgb), 0.12);
-    color: var(--primary-dark);
-}
-
 /* Responsive adjustments for appointments */
 @media screen and (max-width: 768px) {
     /* .input-header (date + place) is a sibling of .edit-appointment in
