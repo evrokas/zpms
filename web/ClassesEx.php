@@ -195,7 +195,24 @@ class patientsClassEx extends patientsClass {
 
 class appointmentsClassEx extends appointmentsClass {
     static function getAppointmentsForPatient($pguid, $order = 'ASC') {
-        $sql = "SELECT * FROM appointments WHERE pguid=:pguid ORDER BY adate $order";
+        // Never trust $order as a raw SQL fragment, even though every
+        // current call site passes a hardcoded literal -- whitelist
+        // rather than interpolate an unvalidated value.
+        $order = (strtoupper((string)$order) === 'DESC') ? 'DESC' : 'ASC';
+
+        // Primary sort is by CALENDAR DATE, not the full adate datetime --
+        // view_appointment.zetem's inline card only ever exposes a plain
+        // type="date" field (no time-of-day) for editing an existing
+        // appointment, so two appointments landing on the same day would
+        // otherwise get silently ordered by a time-of-day value staff can
+        // never see or change after creation (only edit_appointment.zetem's
+        // initial datetime-local input sets it at all). Secondary sort by
+        // id, always DESC regardless of $order -- same-day appointments
+        // should show newest-created first when the page as a whole is
+        // newest-first (patient_edit()'s own 'DESC' call), since id is a
+        // reliable stand-in for creation order (cdate has only whole-second
+        // precision and isn't indexed/sorted on elsewhere in this app).
+        $sql = "SELECT * FROM appointments WHERE pguid=:pguid ORDER BY DATE(adate) $order, id DESC";
         $st = dbConnection::getConnection()->prepare( $sql );
         $st->bindValue(":pguid", $pguid, PDO::PARAM_STR);
         // $st->bindValue(":order", $order, PDO::PARAM_STR);
