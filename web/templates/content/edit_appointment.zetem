@@ -1,7 +1,7 @@
 {% attach_library('textarea-autoexpand-library') %}
 {% attach_library('appointment-improvements') %}
 
-<h2>Νέο Ραντεβού</h2>
+<h2>{{($appointment->getatype() == 'operation')?'Νέο Χειρουργείο':'Νέο Ραντεβού'}}</h2>
 
 {% if(isset($patient)):%}
     <div class="appointment-patient-name">
@@ -41,11 +41,17 @@
             </div>
 
             <div class="input-div">
-                <label for="appointment-type">Τύπος</label>
-                <select name="appointment-type" id="appointment-type" data-appointment-type>
-                    <option value="appointment" {{($appointment->getatype() != 'operation')?"selected":""}}>Ραντεβού</option>
-                    <option value="operation" {{($appointment->getatype() == 'operation')?"selected":""}}>Επέμβαση</option>
-                </select>
+                <label>Τύπος</label>
+                <!-- Fixed for this new appointment already, by which
+                     "Add ..." button was clicked on the patient page (see
+                     patient_appointment_new()) -- no dropdown. Carried
+                     through to patient_appointment_new_post() by the
+                     hidden field below, since this is the only way that
+                     handler can know which type to insert. -->
+                <div class="appointment-type-badge{{($appointment->getatype() == 'operation')?' is-operation':''}}">
+                    {{($appointment->getatype() == 'operation')?'Χειρουργείο':'Ραντεβού'}}
+                </div>
+                <input type="hidden" name="appointment-type" value="{{$appointment->getatype()}}">
             </div>
         </div>
 
@@ -55,11 +61,6 @@
                 <div class="input-div input-notes">
                     <label for="appointment-notes">Σημειώσεις</label>
                     <textarea name="appointment-notes" id="appointment-notes" autoexpand rows="5">{{$appointment->getanote()}}</textarea>
-                </div>
-
-                <div class="input-div input-notes input-operation-notes{{($appointment->getatype() != 'operation')?' is-hidden':''}}" data-operation-notes>
-                    <label for="appointment-operation-notes">Λεπτομέρειες Επέμβασης</label>
-                    <textarea name="appointment-operation-notes" id="appointment-operation-notes" autoexpand rows="5">{{$appointment->getaoperationnotes()}}</textarea>
                 </div>
 
                 <div class="buttons">

@@ -1350,7 +1350,10 @@ a.btn-secondary:hover {
 
 .patient-appointments {
     padding: 1rem;
-    text-align: center;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.75rem;
 }
 
 .patient-appointments a {
@@ -1364,7 +1367,6 @@ a.btn-secondary:hover {
     gap: 0.5rem;
     width: auto;
     min-width: 14rem;
-    margin: auto;
     padding: 0.65rem 1.5rem;
     border-radius: var(--border-radius);
     border: 1.5px solid var(--primary);
@@ -1383,6 +1385,15 @@ a.btn-secondary:hover {
     background-color: var(--primary);
     color: white;
     box-shadow: var(--shadow-primary-sm);
+}
+
+/* "Νέο Χειρουργείο" -- same shape as "Νέο Ραντεβού" above (deliberately,
+   these are the only two ways to create either type now, so they should
+   read as a matched pair), just a distinct icon (bx-plus-medical, confirmed
+   against web/css/bx/css/boxicons.min.css) so the two are easy to tell
+   apart at a glance. */
+.patient-appointments .new-operation::before {
+    content: "\ebc2";
 }
 
 

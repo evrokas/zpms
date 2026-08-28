@@ -29,8 +29,12 @@ table:
     # anything other than the literal string 'operation' as the plain
     # 'appointment' type, so a NULL column value already behaves exactly
     # like a default of 'appointment' would.
-  - name: aoperationnotes
-    type: text
+    #
+    # Immutable after creation -- decided once by which "Add ..." button
+    # was clicked on the patient page (Νέο Ραντεβού vs Νέο Χειρουργείο,
+    # see edit_patient.zetem), never a user-editable dropdown.
+    # appointment_edit_post() (the existing-appointment save handler) never
+    # touches this column at all, by design.
   - name: deleted
     type: datetime
     default: null
@@ -44,10 +48,16 @@ table:
 # - aplace appointment place
 # - anote appointment notes
 # - atype appointment type -- 'appointment' (plain, default) or
-#   'operation'
-# - aoperationnotes free-text operation details, shown/editable only when
-#   atype == 'operation' -- kept separate from the general anote field
-#   since operation documentation (procedure, findings) is materially
-#   different content from ordinary scheduling notes, and existing
-#   appointments' anote shouldn't need to be reinterpreted as one or the
-#   other
+#   'operation' (displayed as "Χειρουργείο"). Set once at creation, never
+#   editable afterward.
+#
+# aoperationnotes (a separate free-text field for operation details) was
+# removed 2026-08-27 -- a single shared anote field turned out to be all
+# that was needed, regardless of atype. Any pre-existing content was
+# migrated into anote by bin/migrate_operation_notes.php before this
+# column was dropped from the schema; see that script for the exact
+# migration and the DROP COLUMN statement it prints at the end. That
+# script must be run against a production database BEFORE removing this
+# comment/regenerating with this yaml -- otherwise operation-details text
+# already on file is silently orphaned in a DB column the app no longer
+# reads.

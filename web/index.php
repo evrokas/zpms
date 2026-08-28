@@ -623,12 +623,10 @@ require_once(__DIR__ . '/rbac.php');
 
         $ap->setanote($_POST['appointment-notes']);
 
-        // 'appointment' (default) or 'operation' -- anything else posted
-        // is ignored rather than trusted verbatim, since it drives which
-        // fields the QR/download side of this app treats as relevant.
-        $atype = ($_POST['appointment-type'] ?? '') === 'operation' ? 'operation' : 'appointment';
-        $ap->setatype($atype);
-        $ap->setaoperationnotes($atype === 'operation' ? ($_POST['appointment-operation-notes'] ?? '') : '');
+        // atype is deliberately never read/set here -- it's fixed at
+        // creation (see patient_appointment_new()'s own comment for where
+        // it's actually decided) and this form carries no editable control
+        // for it at all, so there's nothing in $_POST to trust or ignore.
 
         $ap->update();
 
@@ -711,12 +709,23 @@ require_once(__DIR__ . '/rbac.php');
 
         $loc = locationsClassEx::sgetAll( $kernel->getCurrentLanguage() );
         // $loc = locationsClass::sgetAll();
+
+        // Type is decided once, right here, by which button the user
+        // clicked on the patient page -- "Νέο Ραντεβού" (plain, the
+        // default) or "Νέο Χειρουργείο" (?type=operation), see
+        // edit_patient.zetem. There's no dropdown anywhere in this flow
+        // any more; edit_appointment.zetem just displays whichever type
+        // this resolved to as a fixed label and carries it through to
+        // patient_appointment_new_post() via a hidden field, and once
+        // saved it's permanent -- appointment_edit_post() never touches
+        // atype at all.
+        $atype = ($_GET['type'] ?? '') === 'operation' ? 'operation' : 'appointment';
+
         $ap = new appointmentsClass([
             'adate' => getDBtime(),
             'aplace' => locationsClassEx::getCurrentLocation(),
             'anote' => '', //print_r( $_SERVER, 1) /*'notes'*/
-            'atype' => 'appointment',
-            'aoperationnotes' => '',
+            'atype' => $atype,
         ]);
         // $kernel->setS
         // $pat = $pc->getById($params['id']);
@@ -752,8 +761,10 @@ require_once(__DIR__ . '/rbac.php');
 
         $loc = locationsClassEx::getbyMachineName($_POST['appointment-place'], $kernel->getCurrentLanguage());
 
-        // 'appointment' (default) or 'operation' -- see appointment_edit_post()'s
-        // identical handling for the same field.
+        // Carried through as a hidden field from patient_appointment_new()
+        // above (which is what actually decided it, from which "Add ..."
+        // button was clicked) -- not user-editable on this form, no
+        // dropdown, and never touched again after this insert.
         $atype = ($_POST['appointment-type'] ?? '') === 'operation' ? 'operation' : 'appointment';
 
         // echo "this is the post version<br/>";
@@ -766,7 +777,6 @@ require_once(__DIR__ . '/rbac.php');
             'aplace' => ($loc)?$loc->getname():'',   //$_POST['appointment-place'],
             'anote' => $_POST['appointment-notes'],
             'atype' => $atype,
-            'aoperationnotes' => $atype === 'operation' ? ($_POST['appointment-operation-notes'] ?? '') : '',
             'guid' => guid(),
             'pguid' => $pat->getguid()
         ]);

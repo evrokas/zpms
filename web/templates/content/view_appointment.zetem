@@ -33,11 +33,15 @@
             </div>
 
             <div class="input-div">
-                <label for="appointment-type">Τύπος</label>
-                <select name="appointment-type" loader="app-loader-{{$index}}" data-appointment-type>
-                    <option value="appointment" {{($appointment->getatype() != 'operation')?"selected":""}}>Ραντεβού</option>
-                    <option value="operation" {{($appointment->getatype() == 'operation')?"selected":""}}>Επέμβαση</option>
-                </select>
+                <label>Τύπος</label>
+                <!-- Fixed at creation, never editable here -- see
+                     patient_appointment_new()'s own comment for where the
+                     type is actually decided (which "Add ..." button was
+                     clicked on the patient page). No dropdown, no
+                     appointment-type field posted by this form at all. -->
+                <div class="appointment-type-badge{{($appointment->getatype() == 'operation')?' is-operation':''}}">
+                    {{($appointment->getatype() == 'operation')?'Χειρουργείο':'Ραντεβού'}}
+                </div>
             </div>
         </div>
         <div id="app-loader-{{$index}}" class="loader0"></div>
@@ -49,12 +53,6 @@
                     <label for="appointment-notes">Σημειώσεις</label>
                     <textarea name="appointment-notes" id="" autoexpand rows="5"
                         loader="app-loader-{{$index}}">{{$appointment->getanote()}}</textarea>
-                </div>
-
-                <div class="input-div input-notes input-operation-notes{{($appointment->getatype() != 'operation')?' is-hidden':''}}" data-operation-notes>
-                    <label for="appointment-operation-notes">Λεπτομέρειες Επέμβασης</label>
-                    <textarea name="appointment-operation-notes" id="" autoexpand rows="5"
-                        loader="app-loader-{{$index}}">{{$appointment->getaoperationnotes()}}</textarea>
                 </div>
 
                 <div class="buttons">

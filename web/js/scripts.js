@@ -426,22 +426,3 @@ if(duplicateCheckInput && duplicateCheckBox) {
     });
 }
 
-// Appointment type select (view_appointment.zetem / edit_appointment.zetem)
-// -- shows the operation-details textarea only when 'Επέμβαση' (operation)
-// is selected. Delegated at the document level since each appointment
-// card on a patient's page is its own independent form; server-rendered
-// with the correct .is-hidden state already applied (see
-// .input-operation-notes in appointment-improvements.css), so this only
-// needs to react to further changes, not set up the initial state.
-document.addEventListener('change', (ev) => {
-    if(!ev.target.matches('[data-appointment-type]')) return;
-
-    let container = ev.target.closest('.appointment-entry');
-    if(!container) return;
-
-    let notes = container.querySelector('[data-operation-notes]');
-    if(!notes) return;
-
-    notes.classList.toggle('is-hidden', ev.target.value !== 'operation');
-});
-

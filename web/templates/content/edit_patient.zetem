@@ -146,7 +146,16 @@
                     Νέο Ραντεβού
                 </div>
             </a>
-
+            <!-- Type is decided entirely by which of these two links was
+                 clicked (?type=operation vs the default plain appointment)
+                 -- see patient_appointment_new()'s own comment. There's no
+                 dropdown anywhere in the appointment/operation flow any
+                 more; once created, the type is permanent. -->
+            <a href="{{rel_url('/appointment/'.$id.'/newappointment')}}?type=operation">
+                <div class="new-appointment new-operation">
+                    Νέο Χειρουργείο
+                </div>
+            </a>
         </div>
     {% endif %}
 

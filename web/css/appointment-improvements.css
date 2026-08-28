@@ -32,20 +32,25 @@
     box-shadow: var(--shadow-primary-sm);
 }
 
-/* Operation-details textarea (data-operation-notes) -- only relevant when
-   the appointment's type is 'operation', toggled by the type <select>'s
-   change handler in web/js/scripts.js. Server-rendered with this class
-   already applied when it doesn't apply (see view_appointment.zetem/
-   edit_appointment.zetem), so the page is correct even before JS runs.
-   !important is deliberate here: an inline appointment card renders
-   inside edit_patient.zetem's own ".edit-patient" wrapper, whose scoped
-   "form .input-div" rule (styles.css) sets display:grid at a higher
-   specificity (.edit-patient + form + .input-div) than a plain two-class
-   selector here can reach -- confirmed via the browser's own computed
-   style, not guessed. A hide/show utility class needs to win regardless
-   of which ancestor a card happens to render under. */
-.input-operation-notes.is-hidden {
-    display: none !important;
+/* Appointment type badge (view_appointment.zetem/edit_appointment.zetem)
+   -- replaces what used to be an editable <select>. Type is fixed at
+   creation (see patient_appointment_new()'s own comment), so this is
+   just a plain read-only label, not a form control. Styled like the
+   other read-only fields in this app rather than an <input>, since it
+   never accepts focus/input. */
+.appointment-type-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 0.85rem;
+    border-radius: var(--border-radius);
+    background-color: var(--light-gray);
+    color: var(--text);
+    font-weight: 500;
+}
+
+.appointment-type-badge.is-operation {
+    background-color: rgba(var(--primary-rgb), 0.12);
+    color: var(--primary-dark);
 }
 
 /* Responsive adjustments for appointments */
