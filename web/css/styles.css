@@ -1772,6 +1772,110 @@ ul.patient-appointments-list {
     transform: translateY(-1px);
 }
 
+.login-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: var(--spacing-lg) 0;
+    color: var(--dark-gray);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.login-divider::before,
+.login-divider::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--medium-gray);
+}
+
+.ernsauth-sso .field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    margin-bottom: var(--spacing);
+}
+
+.ernsauth-sso .field label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--dark-gray);
+}
+
+.ernsauth-sso input[type="text"] {
+    font-size: 1rem;
+    padding: 0.65rem 0.8rem;
+    border: 1px solid var(--medium-gray);
+    border-radius: var(--border-radius-sm);
+    width: 100%;
+}
+
+.ernsauth-btn {
+    width: 100%;
+    font-size: 1.05rem;
+    font-weight: 600;
+    padding: 0.8rem;
+    border: 1px solid var(--primary);
+    border-radius: var(--border-radius);
+    background: white;
+    color: var(--primary-dark);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.ernsauth-btn:hover {
+    background: rgba(var(--primary-rgb), 0.08);
+}
+
+.ernsauth-btn:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+.ernsauth-instructions {
+    text-align: center;
+    color: var(--text);
+    font-size: 0.92rem;
+    margin-bottom: var(--spacing);
+}
+
+.ernsauth-number {
+    text-align: center;
+    font-size: 2.4rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--primary-dark);
+    margin-bottom: var(--spacing);
+}
+
+.ernsauth-status {
+    text-align: center;
+    color: var(--dark-gray);
+    font-size: 0.85rem;
+    margin-bottom: var(--spacing);
+}
+
+.ernsauth-error {
+    text-align: center;
+    color: var(--error);
+    font-size: 0.9rem;
+    margin-bottom: var(--spacing);
+}
+
+.ernsauth-linkbtn {
+    display: block;
+    margin: 0 auto;
+    background: none;
+    border: none;
+    color: var(--primary);
+    font-size: 0.85rem;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0.25rem;
+}
+
 @media screen and (max-width: 500px) {
     .login-card {
         padding: var(--spacing-lg) var(--spacing);

@@ -3,7 +3,9 @@ fw
 config/db.php
 config/db.test.php
 config/docarc_api.php
+config/ernsauth.php
 config/site.info.yaml
+lib/ernsauth
 sql/admin.sql
 sql/backup
 web/classes/sql/*

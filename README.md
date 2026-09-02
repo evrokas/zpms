@@ -174,3 +174,46 @@ live production database automatically is a much higher-consequence
 action than restoring files, so the verified dump is left in place with
 the exact `mysql ... < zpms.sql` command printed for you to run manually
 against whichever database you choose.
+
+## ErnsAuth SSO login
+
+Optional number-matching sign-in alongside the existing username/password
+form — staff type their ZPMS username, approve a shown number from an
+already-authenticated ErnsAuth dashboard session (on another device or
+tab), and are signed in as that same local account. See
+[CLIENT-INTEGRATION.md](https://github.com/evrokas/ernsauth/blob/main/CLIENT-INTEGRATION.md)
+in the ernsauth repo, "Requiring a username before Flow A", for the full
+protocol and the security requirements this implementation follows. The
+reusable engine (`ernsauthClass`, the `ernsauth_sso_attempts` rate-limit/
+one-pending-challenge table, and the `/login/ernsauth/{start,poll,exchange}`
+routes) lives in zeusfw core, shared by any app on the framework — this
+app only supplies its own config, vendored client library, and the
+login-page UI.
+
+**Setup:**
+
+1. Register ZPMS as a client app in the ErnsAuth dashboard: **Admin →
+   Client Apps → Add App**. Copy the API key shown at creation — it's
+   never shown again.
+2. Vendor the client library outside the web root:
+   ```sh
+   git clone -b stable https://github.com/evrokas/ernsauth.git lib/ernsauth
+   ```
+3. Copy `config/ernsauth.php.in` to `config/ernsauth.php` and fill in the
+   real `sso_api_url`/`api_key` (see that file's own comments).
+
+`ernsauth_sso` is already listed under `config/settings.info.yaml`'s
+`modules:` block — that alone does **not** turn the feature on;
+`ernsauthClass::isEnabled()` also requires step 3's config file to be
+present and valid. Until both are done, `login.zetem` renders exactly as
+it did before this integration existed — no "Sign in with ErnsAuth"
+section, no error.
+
+The mapping from an approved ErnsAuth identity back to a specific ZPMS
+account is a direct `uname` match (`usersClassEx::getUserAccount()`,
+zeusfw's `ernsauthClass::startChallenge()`) — if your ErnsAuth usernames
+ever need to differ from ZPMS's own, define
+`zeusfw_app_resolve_ernsauth_username(usersClass $user): string` in
+`web/ClassesEx.php` (same `function_exists()` extension-point convention
+as `zeusfw_app_resolve_user_roles()`); undefined, it assumes they're the
+same string.

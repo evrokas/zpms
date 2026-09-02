@@ -111,6 +111,17 @@ libraries:
         type: 'text/javascript'
         src: 'js/appointment-files.js'
         defer:
+  # Only ever attached from login.zetem, and only when
+  # ernsauthClass::isEnabled() is true -- see that template's own
+  # {% attach_library(...) %} call. No CSS here: the SSO widget reuses
+  # .login-page's own existing design tokens (see web/css/styles.css's
+  # .ernsauth-* rules, right after the .login-* block).
+  ernsauth-sso-library:
+    foot_script:
+      - ernsauth_sso:
+        type: 'text/javascript'
+        src: 'js/ernsauth-sso.js'
+        defer:
 
 
 # head_script:
@@ -547,3 +558,10 @@ modules:
     - language_selector
     - message
     - backup
+    # Enables ernsauthClass (zeusfw core/lib/ErnsAuth.php) -- see
+    # core/modules/ernsauth_sso/ernsauth_sso.php's register_ernsauth_sso_
+    # module(). Still requires a valid config/ernsauth.php (see
+    # config/ernsauth.php.in) before ernsauthClass::isEnabled() actually
+    # returns true and login.zetem shows the "Sign in with ErnsAuth"
+    # section -- listing it here alone is not enough, by design.
+    - ernsauth_sso

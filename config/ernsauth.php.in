@@ -1,0 +1,25 @@
+<?php
+
+// Connection details for ZPMS's ErnsAuth SSO integration (Flow A,
+// mandatory-username variant -- see CLIENT-INTEGRATION.md in the ernsauth
+// repo, "Requiring a username before Flow A"). Read by
+// zeusfw core/lib/ErnsAuth.php's ernsauthClass::getConfig().
+//
+// Copy this file to ernsauth.php (gitignored, same pattern as db.php.in ->
+// db.php) and fill in a real sso_api_url + api_key. Register ZPMS as a
+// client app first: ErnsAuth dashboard -> Admin -> Client Apps -> Add App
+// -- the API key is shown once, at creation.
+//
+// A missing file, or one that returns a blank sso_api_url/api_key, leaves
+// ernsauthClass::isEnabled() false -- login.zetem then renders exactly as
+// it did before this integration existed, with no "Sign in with ErnsAuth"
+// section and no fatal error. Also requires `ernsauth_sso` to be listed
+// under config/settings.info.yaml's `modules:` block -- both are needed.
+//
+// The vendored client library itself (git clone -b stable
+// https://github.com/evrokas/ernsauth.git lib/ernsauth) is a separate step
+// -- see the README.
+return [
+    'sso_api_url' => 'https://<<ernsauth-host>>/sso-api.php',
+    'api_key'     => '<<key>>',
+];
