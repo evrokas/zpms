@@ -209,11 +209,21 @@ present and valid. Until both are done, `login.zetem` renders exactly as
 it did before this integration existed — no "Sign in with ErnsAuth"
 section, no error.
 
-The mapping from an approved ErnsAuth identity back to a specific ZPMS
-account is a direct `uname` match (`usersClassEx::getUserAccount()`,
-zeusfw's `ernsauthClass::startChallenge()`) — if your ErnsAuth usernames
-ever need to differ from ZPMS's own, define
-`zeusfw_app_resolve_ernsauth_username(usersClass $user): string` in
-`web/ClassesEx.php` (same `function_exists()` extension-point convention
-as `zeusfw_app_resolve_user_roles()`); undefined, it assumes they're the
-same string.
+**Mapping a ZPMS account to its real ErnsAuth identity.** These are two
+independent username spaces — ErnsAuth has no idea a ZPMS `uname` even
+exists, let alone that it means anything on its side. Every account that
+will sign in via ErnsAuth needs its real ErnsAuth username set in the
+**ErnsAuth Username** field on `/admin/users` (Settings → Users →
+edit) — a plain `users.ernsauth_username` column (zeusfw core), so it's
+just another field on the existing admin form, nothing to deploy. Leave it
+blank and `ernsauthClass::startChallenge()` falls back, in order, to an
+app-defined `zeusfw_app_resolve_ernsauth_username(usersClass $user):
+string` hook in `web/ClassesEx.php` (same `function_exists()`
+extension-point convention as `zeusfw_app_resolve_user_roles()`) if one
+exists, and only then to assuming the ZPMS `uname` and the ErnsAuth
+username are spelled identically — a convenience for a quick local test,
+**not a safe production default**: the moment a real account's ErnsAuth
+username is spelled differently, every login attempt for it silently
+rejects (logged as `ernsauth sso mismatched for <uname>`) with nothing in
+the log to explain why beyond that. Set the field explicitly for every
+real account rather than relying on the guess.
