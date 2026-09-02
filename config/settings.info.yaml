@@ -406,11 +406,28 @@ routes:
 
 
 regions:
-  - header
-  - main_navigation
+  # header/main_navigation/footer require an authenticated session -- the
+  # login page (the only route reachable while logged out, now that
+  # homepage() and every route-level access: redirect to /login instead of
+  # rendering anything -- see web/index.php) is meant to be a standalone
+  # page with none of the normal site chrome around it. Region-level
+  # access: (zeusfw core's Kernel::renderRegion(), same
+  # SecurityClass::userIsPermitted() check a route's own access: uses)
+  # replaces the old page.zetem override that hardcoded the login/
+  # login_post route names -- this now covers any future pre-auth page
+  # (password reset, registration, ...) automatically, with nothing to
+  # remember to add here.
+  - header:
+      access: authenticated
+  - main_navigation:
+      access: authenticated
+  # notification stays unrestricted -- login_post()'s own addStatus()
+  # flash messages (wrong password, CSRF failure) render through this
+  # region and must still show on the (logged-out) login page itself.
   - notification
   - main_content
-  - footer
+  - footer:
+      access: authenticated
 
 # blocks:
 #   - header: header

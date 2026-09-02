@@ -1,14 +1,13 @@
-{% $__routename = $_SESSION['route_match']['_routename'] ?? null; %}
-{% $__bareLayout = in_array($__routename, ['login', 'login_post'], true); %}
-{% if($__bareLayout): %}
-<div class="wrapper wrapper-bare">
-    {{ $regions['notification'] }}
-    {{ $regions['main_content'] }}
-</div>
-{% else: %}
-<div class="wrapper">
+{# header/main_navigation/footer carry access: authenticated in
+   config/settings.info.yaml's regions: list, so they already render as ''
+   for a logged-out visitor (Kernel::renderRegion()) -- no route-name check
+   needed here at all, unlike the version this replaced. The only thing
+   left to derive is whether to add wrapper-bare, purely so .login-page's
+   own CSS knows there's no header/footer around it to leave room for
+   (web/css/styles.css's .wrapper-bare .login-page rule). #}
+{% $__bareLayout = trim(($regions['header'] ?? '') . ($regions['main_navigation'] ?? '') . ($regions['footer'] ?? '')) === ''; %}
+<div class="wrapper{% if($__bareLayout): %} wrapper-bare{% endif %}">
     {% foreach($regions as $reg): %}
         {{ $reg }}
     {% endforeach %}
 </div>
-{% endif %}
