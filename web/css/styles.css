@@ -124,6 +124,15 @@ body {
     margin: auto;
 }
 
+/* Used only for the login/login_post routes (see web/templates/page/
+   page.zetem) -- header/main_navigation/footer regions are skipped
+   entirely there, so .login-page's own `calc(100vh - 6rem)` (sized to
+   leave room for chrome that no longer surrounds it) would otherwise
+   leave a large, pointless empty gap at the bottom of the viewport. */
+.wrapper-bare .login-page {
+    min-height: 100vh;
+}
+
 .header {
     display: flex;
     align-items: center;

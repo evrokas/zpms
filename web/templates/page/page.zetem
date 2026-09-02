@@ -1,0 +1,14 @@
+{% $__routename = $_SESSION['route_match']['_routename'] ?? null; %}
+{% $__bareLayout = in_array($__routename, ['login', 'login_post'], true); %}
+{% if($__bareLayout): %}
+<div class="wrapper wrapper-bare">
+    {{ $regions['notification'] }}
+    {{ $regions['main_content'] }}
+</div>
+{% else: %}
+<div class="wrapper">
+    {% foreach($regions as $reg): %}
+        {{ $reg }}
+    {% endforeach %}
+</div>
+{% endif %}

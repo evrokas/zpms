@@ -73,6 +73,15 @@ require_once(__DIR__ . '/rbac.php');
     // change can safely assume.
     LoginSecurityClass::enableLockout();
 
+    // Opt in to redirecting straight to /login instead of a bare 401 page
+    // for any route with `access:` that an unauthenticated/unpermitted
+    // request hits -- see SecurityClass::$loginRedirectUrl's own docblock
+    // (zeusfw core/lib/Security.php). homepage() below applies the same
+    // "go straight to /login" treatment to '/' itself, which has no
+    // `access:` of its own (it renders different content per login state
+    // rather than being gated) and so never reaches this codepath.
+    SecurityClass::enableLoginRedirect('/login');
+
     $kernel->isUserLoggedin();
     // if($kernel->isUserLoggedin()) {
         // echo "<pre>User has been logged in!</pre>";
@@ -121,8 +130,15 @@ require_once(__DIR__ . '/rbac.php');
     function homepage($params) {
         global $kernel;
 
+        // Straight to /login rather than a "please login" landing page --
+        // same "get an unauthenticated visitor to the login form with no
+        // extra click" treatment SecurityClass::$loginRedirectUrl gives
+        // every `access:`-gated route (see its own docblock); '/' has no
+        // `access:` of its own since it renders different content per
+        // login state, so it needs this one explicit check instead.
         if(!SecurityClass::userLoggedIn()) {
-            return Renderer::render("homepage-nologin.zetem", []);
+            header('location: ' . rel_url('/login'));
+            exit();
         }
 
         // user is logged, so show a different page

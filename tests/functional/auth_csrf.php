@@ -8,11 +8,14 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
     $runner->add('an unauthenticated request to a protected page is refused', function () use ($baseUrl) {
         $http = new TestHttpClient($baseUrl);
         $res = $http->get('/patients');
-        // error_401() renders inline (200 OK carrying the 401 page's
-        // content) rather than sending a real HTTP 401 or redirecting --
-        // see core/router/ErrorHandlers.php -- so the regression signal is
-        // the rendered content, not the status line.
-        assert_contains('401', $res['body'], '/patients did not show the 401/unauthorized page when logged out');
+        // patients_list carries a route-level `access:` (config/settings.info.yaml),
+        // so this goes through Router.php's own 401 handling, not a
+        // handler-internal rbacClass::require() call -- and
+        // SecurityClass::enableLoginRedirect('/login') (web/index.php)
+        // turns that into a redirect straight to /login rather than the
+        // inline error_401() page every *handler-checked* permission
+        // failure (e.g. /apps/edit_clinics below) still renders.
+        assert_contains('/login', (string)$res['location'], '/patients did not redirect to /login when logged out');
         assert_not_contains('Δοκιμαστική', $res['body'], '/patients leaked patient data to a logged-out request');
     });
 
@@ -32,7 +35,9 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
         // clinics/doctors reference-data forms it's used for in this app.
         $http = new TestHttpClient($baseUrl);
         $res = $http->post('/webform/processform/anything', ['submit' => '1']);
-        assert_contains('401', $res['body'], 'an unauthenticated POST to /webform/processform/... was not refused');
+        // webforms_post also carries a route-level `access:` -- same
+        // Router.php redirect-to-/login path as the /patients case above.
+        assert_contains('/login', (string)$res['location'], 'an unauthenticated POST to /webform/processform/... was not refused');
     });
 
     $runner->add('a logged-in account with the plain user role cannot delete a patient', function () use ($baseUrl) {
