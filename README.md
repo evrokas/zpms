@@ -209,22 +209,30 @@ present and valid. Until both are done, `login.zetem` renders exactly as
 it did before this integration existed — no "Sign in with ErnsAuth"
 section, no error.
 
-**Mapping a ZPMS account to its real ErnsAuth identity is entirely this
-app's own responsibility — ErnsAuth does not check it.** These are two
-independent username spaces, and there is deliberately no mapping table
-anywhere in this system to bridge them, on either side. ErnsAuth's Pending
-Logins dashboard shows the requested username as a courtesy ("Claiming to
-be `guest`") so a human approver can visually catch an impersonation
-attempt, but any logged-in ErnsAuth user can approve any challenge — that
-display is not a lock, and ErnsAuth deliberately doesn't try to be one. The
-entire security property is `ernsauthClass::finish()`'s own post-exchange
-comparison (`core/lib/ErnsAuth.php`, zeusfw): the identity that actually
-approved must match `$expected`, resolved by an app-defined
-`zeusfw_app_resolve_ernsauth_username(usersClass $user): string` hook in
-`web/ClassesEx.php` if one is defined (`function_exists()` extension point,
-same convention as `zeusfw_app_resolve_user_roles()`), else the bare ZPMS
-`uname`. A mismatch there is what actually rejects a login — logged as
-`ernsauth sso mismatched for <uname>` — not anything on ErnsAuth's side. The
-simplest thing that works with the default (no hook) fallback is keeping
-each real account's ZPMS `uname` and ErnsAuth username spelled identically;
-an app needing a different rule defines the hook instead.
+**ZPMS does not check which ErnsAuth identity approved an SSO login — this
+is a deliberate choice, not a gap.** `ernsauthClass::finish()`
+(`core/lib/ErnsAuth.php`, zeusfw) trusts any successful `exchangeCode()` for
+the pending username: whichever ErnsAuth account clicks approve on the
+dashboard, that click signs the browser into the ZPMS account whose `uname`
+was typed at the login form. ErnsAuth's Pending Logins card still shows the
+requested username as a courtesy ("Claiming to be `guest`") so a human
+approver can visually catch an impersonation attempt before clicking, but
+nothing enforces it — that's the entire remaining check, and it's a human
+one, not a code one.
+
+This was decided after weighing the tradeoff directly: with a small,
+trusted set of people holding ErnsAuth dashboard access, requiring an exact
+username match added friction (accounts like `guest` whose ErnsAuth
+identity is spelled differently kept failing SSO for no operational
+reason) without a corresponding benefit worth that friction. The
+consequence to be clear-eyed about: **any currently-logged-in ErnsAuth
+user can sign into *any* ZPMS account by typing its username** — there is
+no per-account restriction. Keep the pool of ErnsAuth accounts with
+dashboard access to people who should be trusted with every ZPMS account
+this way, and treat an ErnsAuth account compromise as equivalent to
+compromising every SSO-reachable ZPMS account at once. This doesn't apply
+to password login, which is unaffected and still gates each account
+independently. See ernsauth's own `CLIENT-INTEGRATION.md` ("Requiring a
+username before Flow A") for the general-purpose guidance this
+intentionally departs from, and its note on apps that make this same
+choice.

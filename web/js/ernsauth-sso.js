@@ -57,7 +57,7 @@
             disabled: 'ErnsAuth sign-in is not available right now.',
             upstream_unavailable: 'Could not reach ErnsAuth. Please try again shortly.',
             invalid_request: 'Please enter your username.',
-            identity_mismatch: 'This login could not be verified.'
+            account_not_found: 'That username was not recognized.'
         };
 
         function messageFor(code) {
