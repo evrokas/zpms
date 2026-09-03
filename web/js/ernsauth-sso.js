@@ -26,6 +26,24 @@
             stepEls[el.getAttribute('data-ea-step')] = el;
         });
 
+        // Password vs. ErnsAuth tabs (login.zetem's .login-tabs, siblings
+        // of `root` rather than inside it) -- swapping which
+        // [data-login-panel] is hidden, not accordion-style stacking, so
+        // the card's height stays whatever the open tab needs instead of
+        // growing to fit both forms at once.
+        var loginTabs = document.querySelectorAll('[data-login-tab]');
+        var loginPanels = document.querySelectorAll('[data-login-panel]');
+        loginTabs.forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                var target = tab.getAttribute('data-login-tab');
+                loginTabs.forEach(function (t) { t.classList.toggle('active', t === tab); });
+                loginPanels.forEach(function (p) { p.hidden = (p.getAttribute('data-login-panel') !== target); });
+                if (target === 'ernsauth' && usernameInput) {
+                    usernameInput.focus();
+                }
+            });
+        });
+
         var pollTimer = null;
 
         function showStep(name) {

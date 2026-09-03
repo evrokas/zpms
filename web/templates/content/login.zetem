@@ -10,57 +10,66 @@
 
         <p class="login-subtitle">{{t("Enter your credentials to login")}}</p>
 
-        <form action="{{$action}}" method="post">
-            {{ csrf_field() }}
-            <div class="field">
-                <label for="username">{{t("Username")}}</label>
-                <input type="text" name="username" id="username" autocomplete="username" autofocus>
-            </div>
+        {% if(class_exists('ernsauthClass') && ernsauthClass::isEnabled()): %}
+        <div class="login-tabs">
+            <button type="button" class="login-tab active" data-login-tab="password">{{t("Password")}}</button>
+            <button type="button" class="login-tab" data-login-tab="ernsauth">{{t("ErnsAuth")}}</button>
+        </div>
+        {% endif %}
 
-            <div class="field">
-                <label for="password">{{t("Password")}}</label>
-                <input type="password" name="password" id="password" autocomplete="current-password">
-            </div>
+        <div class="login-panel" data-login-panel="password">
+            <form action="{{$action}}" method="post">
+                {{ csrf_field() }}
+                <div class="field">
+                    <label for="username">{{t("Username")}}</label>
+                    <input type="text" name="username" id="username" autocomplete="username" autofocus>
+                </div>
 
-            <div class="field field-remember">
-                <input type="checkbox" name="rememberme" id="rememberme">
-                <label for="rememberme">{{t("Remember me")}}</label>
-            </div>
+                <div class="field">
+                    <label for="password">{{t("Password")}}</label>
+                    <input type="password" name="password" id="password" autocomplete="current-password">
+                </div>
 
-            <div class="buttons">
-                <button type="submit">{{t("Login")}}</button>
-            </div>
-        </form>
+                <div class="field field-remember">
+                    <input type="checkbox" name="rememberme" id="rememberme">
+                    <label for="rememberme">{{t("Remember me")}}</label>
+                </div>
+
+                <div class="buttons">
+                    <button type="submit">{{t("Login")}}</button>
+                </div>
+            </form>
+        </div>
 
         {% if(class_exists('ernsauthClass') && ernsauthClass::isEnabled()): %}
-        <div class="login-divider"><span>{{t("or")}}</span></div>
+        <div class="login-panel" data-login-panel="ernsauth" hidden>
+            <div class="ernsauth-sso"
+                 data-ernsauth-sso
+                 data-start-url="{{rel_url('/login/ernsauth/start')}}"
+                 data-poll-url="{{rel_url('/login/ernsauth/poll')}}"
+                 data-exchange-url="{{rel_url('/login/ernsauth/exchange')}}">
 
-        <div class="ernsauth-sso"
-             data-ernsauth-sso
-             data-start-url="{{rel_url('/login/ernsauth/start')}}"
-             data-poll-url="{{rel_url('/login/ernsauth/poll')}}"
-             data-exchange-url="{{rel_url('/login/ernsauth/exchange')}}">
-
-            <div data-ea-step="username">
-                <div class="field">
-                    <label for="ea_username">{{t("Sign in with ErnsAuth")}}</label>
-                    <input type="text" id="ea_username" data-ea-username autocomplete="username" placeholder="{{t('Username')}}">
+                <div data-ea-step="username">
+                    <div class="field">
+                        <label for="ea_username">{{t("Sign in with ErnsAuth")}}</label>
+                        <input type="text" id="ea_username" data-ea-username autocomplete="username" placeholder="{{t('Username')}}">
+                    </div>
+                    <div class="buttons">
+                        <button type="button" class="ernsauth-btn" data-ea-start>{{t("Sign in with ErnsAuth")}}</button>
+                    </div>
                 </div>
-                <div class="buttons">
-                    <button type="button" class="ernsauth-btn" data-ea-start>{{t("Sign in with ErnsAuth")}}</button>
+
+                <div data-ea-step="challenge" hidden>
+                    <p class="ernsauth-instructions">{{t("Open ErnsAuth on another device and approve this number:")}}</p>
+                    <div class="ernsauth-number" data-ea-number></div>
+                    <p class="ernsauth-status" data-ea-status>{{t("Waiting for approval...")}}</p>
+                    <button type="button" class="ernsauth-linkbtn" data-ea-restart>{{t("New request")}}</button>
                 </div>
-            </div>
 
-            <div data-ea-step="challenge" hidden>
-                <p class="ernsauth-instructions">{{t("Open ErnsAuth on another device and approve this number:")}}</p>
-                <div class="ernsauth-number" data-ea-number></div>
-                <p class="ernsauth-status" data-ea-status>{{t("Waiting for approval...")}}</p>
-                <button type="button" class="ernsauth-linkbtn" data-ea-restart>{{t("New request")}}</button>
-            </div>
-
-            <div data-ea-step="error" hidden>
-                <p class="ernsauth-error" data-ea-error-message></p>
-                <button type="button" class="ernsauth-linkbtn" data-ea-restart>{{t("Try again")}}</button>
+                <div data-ea-step="error" hidden>
+                    <p class="ernsauth-error" data-ea-error-message></p>
+                    <button type="button" class="ernsauth-linkbtn" data-ea-restart>{{t("Try again")}}</button>
+                </div>
             </div>
         </div>
         {% endif %}

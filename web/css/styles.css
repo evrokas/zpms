@@ -1781,23 +1781,40 @@ ul.patient-appointments-list {
     transform: translateY(-1px);
 }
 
-.login-divider {
+/* Password vs. ErnsAuth are two separate tab panels, not stacked on the
+   same page -- only one renders at a time (data-login-panel[hidden]),
+   so the card's height never grows past whichever tab is open and the
+   login screen doesn't scroll. See web/js/ernsauth-sso.js for the click
+   handler; only rendered at all when ErnsAuth is enabled (login.zetem),
+   so plain password login is completely unchanged when it isn't. */
+.login-tabs {
     display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin: var(--spacing-lg) 0;
-    color: var(--dark-gray);
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    gap: 0.4rem;
+    margin-bottom: var(--spacing-lg);
+    border-bottom: 1px solid var(--medium-gray);
 }
 
-.login-divider::before,
-.login-divider::after {
-    content: "";
+.login-tab {
     flex: 1;
-    height: 1px;
-    background: var(--medium-gray);
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 0.6rem 0.4rem;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--dark-gray);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    margin-bottom: -1px;
+}
+
+.login-tab:hover {
+    color: var(--primary-dark);
+}
+
+.login-tab.active {
+    color: var(--primary-dark);
+    border-bottom-color: var(--primary);
 }
 
 .ernsauth-sso .field {
