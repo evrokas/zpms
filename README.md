@@ -209,21 +209,22 @@ present and valid. Until both are done, `login.zetem` renders exactly as
 it did before this integration existed — no "Sign in with ErnsAuth"
 section, no error.
 
-**Every SSO-enabled ZPMS account's `uname` must be spelled identically to
-its real ErnsAuth username.** These are two independent username spaces —
-ErnsAuth has no idea a ZPMS `uname` even exists — but there is deliberately
-no mapping table anywhere in this system to bridge them, on either side. As
-of 2026-09-02, ErnsAuth itself enforces this convention server-side: a
-logged-in ErnsAuth user can only approve a login challenge whose requested
-identity matches their own account's username, so a real mismatch now fails
-loudly at the approval step on ErnsAuth's dashboard ("this request isn't for
-your account") rather than silently at `ernsauthClass::finish()` with only
-`ernsauth sso mismatched for <uname>` in ZPMS's own log to go on. Confirm
-each real account's ZPMS username and ErnsAuth username actually match
-before relying on SSO for it — an app that genuinely needs a different rule
-can still define `zeusfw_app_resolve_ernsauth_username(usersClass $user):
-string` in `web/ClassesEx.php` (`function_exists()` extension point, same
-convention as `zeusfw_app_resolve_user_roles()`) for its own local check,
-but note ErnsAuth's own approval-time enforcement only ever compares
-against the literal `uname` submitted at login — a hook that resolves to
-something else here will never actually be approvable on ErnsAuth's side.
+**Mapping a ZPMS account to its real ErnsAuth identity is entirely this
+app's own responsibility — ErnsAuth does not check it.** These are two
+independent username spaces, and there is deliberately no mapping table
+anywhere in this system to bridge them, on either side. ErnsAuth's Pending
+Logins dashboard shows the requested username as a courtesy ("Claiming to
+be `guest`") so a human approver can visually catch an impersonation
+attempt, but any logged-in ErnsAuth user can approve any challenge — that
+display is not a lock, and ErnsAuth deliberately doesn't try to be one. The
+entire security property is `ernsauthClass::finish()`'s own post-exchange
+comparison (`core/lib/ErnsAuth.php`, zeusfw): the identity that actually
+approved must match `$expected`, resolved by an app-defined
+`zeusfw_app_resolve_ernsauth_username(usersClass $user): string` hook in
+`web/ClassesEx.php` if one is defined (`function_exists()` extension point,
+same convention as `zeusfw_app_resolve_user_roles()`), else the bare ZPMS
+`uname`. A mismatch there is what actually rejects a login — logged as
+`ernsauth sso mismatched for <uname>` — not anything on ErnsAuth's side. The
+simplest thing that works with the default (no hook) fallback is keeping
+each real account's ZPMS `uname` and ErnsAuth username spelled identically;
+an app needing a different rule defines the hook instead.
