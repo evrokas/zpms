@@ -719,6 +719,16 @@ require_once(__DIR__ . '/rbac.php');
     function patient_appointment_new_render($params, string $atype) {
         global $kernel;
 
+        // Was missing entirely -- neither this function nor either of its
+        // two GET routes (config/settings.info.yaml) had any access check,
+        // so a specific patient's name/DOB/AMKA/etc. rendered into this
+        // form (below) was reachable by anyone who could guess/enumerate a
+        // patient id, logged in or not. Same permission appointment_edit_post()/
+        // appointment_delete()/every appointment_file_* handler already
+        // requires for this exact resource -- there is no separate
+        // "create" permission for appointments.
+        if(($errmsg = rbacClass::require(ZPMS_PERM_APPOINTMENT_EDIT)))return $errmsg;
+
         if(!isset($params['id'])) {
             return ("User could not be found");
         }
@@ -766,6 +776,13 @@ require_once(__DIR__ . '/rbac.php');
     function patient_appointment_new_post($params) {
         global $kernel;
 
+        // Was missing entirely -- CSRF alone doesn't imply the requester
+        // is logged in (a session/token exists for anonymous visitors
+        // too), so this endpoint would create a real appointment record
+        // for any patient id from an unauthenticated request. Same
+        // permission every other appointment-mutating handler requires.
+        if(($errmsg = rbacClass::require(ZPMS_PERM_APPOINTMENT_EDIT)))return $errmsg;
+
         if(!csrfClass::verifyRequest()) {
             $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
             header('location: '.rel_url('/patient/'.$params['id'].'/edit'));
@@ -802,7 +819,12 @@ require_once(__DIR__ . '/rbac.php');
         $app = new appointmentsClass([
             // 'guid' =>
             'id' => null,
-            'cuser' => 'admin',
+            // Was hardcoded to the literal string 'admin' regardless of
+            // who was actually logged in -- every appointment created via
+            // this handler misattributed itself in the audit trail. Every
+            // other creation handler in this file (patient_new_post(),
+            // appointment_files.php's upload) already uses this.
+            'cuser' => $kernel->getUserName(),
             'cdate' => getDBtime(),
             'adate' => getDBformattime($_POST['appointment-date']),
             'aplace' => ($loc)?$loc->getname():'',   //$_POST['appointment-place'],
