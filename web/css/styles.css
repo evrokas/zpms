@@ -512,6 +512,24 @@ form .input-div {
             gap: 1rem;
 
             width: auto !important;
+
+            /* .edit-patient form .input-div input/select (further up this
+               file) force grid-column:2/grid-row:1 for the patient-info
+               form's own 2-column layout -- but this .input-div lives
+               inside .edit-patient too (the appointment cards are nested
+               in the same wrapper) and uses a single-column subgrid here
+               instead, with no column 2 to place into. That rule was
+               shoving the date input and location select into the exact
+               same cell as their own <label>, painting over it -- "Ραντεβού"/
+               "Χειρουργείο"/"Περιοχή" all existed in the DOM but were
+               entirely hidden behind their own input. Resetting back to
+               auto placement lets label (row 1) and field (row 2) stack
+               normally within this single-column subgrid. */
+            & input,
+            & select {
+                grid-column: auto;
+                grid-row: auto;
+            }
         }
 
         & .input-div[role="rendezvouz"] {
