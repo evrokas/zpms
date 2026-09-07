@@ -1,0 +1,19 @@
+<?php
+
+// APYweb financial-lookup integration (read-only) -- see
+// web/apyweb_client.php and CLAUDE.md's "Link ZPMS to APYweb" section.
+//
+// Copy this file to apyweb_api.php (same directory, gitignored, same
+// pattern as db.php.in -> db.php / docarc_api.php.in -> docarc_api.php)
+// and fill in the real values:
+//   - APYWEB_API_URL: APYweb's web/ base URL, no trailing slash needed
+//     (e.g. 'https://web.erns.eu/apy/web')
+//   - APYWEB_API_KEY: must match the value in APYweb's own
+//     config/zpms_api.php (copied from its config/zpms_api.php.example),
+//     e.g. generated with:
+//       php -r "echo bin2hex(random_bytes(32)), PHP_EOL;"
+//
+// Leave this file absent to disable the integration entirely -- the
+// patient page simply shows no financial-info block, no error.
+define('APYWEB_API_URL', 'https://example.com/apy/web');
+define('APYWEB_API_KEY', '<<key>>');

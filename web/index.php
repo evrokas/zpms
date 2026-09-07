@@ -11,9 +11,17 @@ if (is_file(__DIR__ . '/../config/docarc_api.php')) {
     include_once(__DIR__ . '/../config/docarc_api.php');
 }
 
+// Optional -- only present once an admin has set up the APYweb
+// financial-info lookup integration (see config/apyweb_api.php.in).
+// Same is_file() guard as docarc_api.php above.
+if (is_file(__DIR__ . '/../config/apyweb_api.php')) {
+    include_once(__DIR__ . '/../config/apyweb_api.php');
+}
+
 require_once(__FWDIR__ . '/bootstrap.php');
 require_once(__DIR__ . '/api_patients.php');
 require_once(__DIR__ . '/appointment_files.php');
+require_once(__DIR__ . '/apyweb_client.php');
 require_once(__DIR__ . '/rbac.php');
 
 
@@ -322,6 +330,17 @@ require_once(__DIR__ . '/rbac.php');
         // error_log("\n$params: " .print_r($params, 1)."\n");
         $pat = patientsClass::sgetById( $params['id'] );
 
+        // Read-only financial-info block (APYweb integration) -- silent
+        // no-op (null) when unconfigured/unreachable/no match, see
+        // apyweb_client.php's own docblock for why this has no
+        // user-facing error unlike an interactive lookup.
+        $financials = zpms_apyweb_fetch_financials($pat->getpname());
+        $hasFinancials = $financials !== null && (
+            count($financials['invoices']) > 0
+            || count($financials['operations']) > 0
+            || count($financials['fee_reports']) > 0
+        );
+
         // echo "<pre>patient: " . print_r($pat, 1) . "</pre>";
         $app_list = appointmentsClassEx::getAppointmentsForPatient($pat->getguid(), 'DESC');
         // $loc = locationsClass::sgetAll();
@@ -351,11 +370,13 @@ require_once(__DIR__ . '/rbac.php');
         }
 
         return (Renderer::render("edit_patient.zetem", [
-            'action' => 'edit', 
-            'id' => $params['id'], 
+            'action' => 'edit',
+            'id' => $params['id'],
             'patient' => $pat,
             'appdates' => $appdates,
-            'appointments' => $apprender
+            'appointments' => $apprender,
+            'financials' => $financials,
+            'has_financials' => $hasFinancials
         ]));
     }
     function patient_edit_post($params) {

@@ -188,6 +188,107 @@
 
 
     {% endif %}
+
+    {% if(isset($has_financials) && $has_financials): %}
+        <hr>
+        <!-- Read-only APYweb financial-info block -- see
+             web/apyweb_client.php / api_financial.php. No forms, no edit
+             controls, no outbound links: APYweb has no per-record
+             deep-link URL scheme, this is purely informational. -->
+        <div class="financial-info">
+            <h4>Οικονομικά Στοιχεία</h4>
+
+            {% if(count($financials['invoices'])>0): %}
+            <h5>Παραστατικά</h5>
+            <div class="settings-table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Ημερομηνία</th>
+                            <th>ΜΑΡΚ</th>
+                            <th>Ποσό</th>
+                            <th>Πληρωτέο</th>
+                            <th>Τρόπος Πληρωμής</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% foreach($financials['invoices'] as $inv): %}
+                        <tr>
+                            <td>{{$inv['doc_date'] | date('d-m-Y')}}</td>
+                            <td>{{{$inv['mark']}}}</td>
+                            <td>{{{number_format((float)$inv['gross_amount'], 2, ',', '.')}}} &euro;</td>
+                            <td>{{{number_format((float)$inv['net_payable'], 2, ',', '.')}}} &euro;</td>
+                            <td>{{{$inv['payment_method'] ?? '—'}}}</td>
+                        </tr>
+                        {% endforeach %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            {% if(count($financials['operations'])>0): %}
+            <h5>Χειρουργεία / Επεμβάσεις</h5>
+            <div class="settings-table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Ημερομηνία</th>
+                            <th>Επέμβαση</th>
+                            <th>Κλινική</th>
+                            <th>Ποσό</th>
+                            <th>Ασφάλεια</th>
+                            <th>Ασθενής</th>
+                            <th>Κατάσταση</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% foreach($financials['operations'] as $op): %}
+                        <tr>
+                            <td>{{$op['op_date'] | date('d-m-Y')}}</td>
+                            <td>{{{$op['operation'] ?? '—'}}}</td>
+                            <td>{{{$op['clinic'] ?? '—'}}}</td>
+                            <td>{{{number_format((float)$op['amount'], 2, ',', '.')}}} &euro;</td>
+                            <td>{{{$op['insurance_amount'] !== null ? number_format((float)$op['insurance_amount'], 2, ',', '.') . ' €' : '—'}}}</td>
+                            <td>{{{$op['patient_amount'] !== null ? number_format((float)$op['patient_amount'], 2, ',', '.') . ' €' : '—'}}}</td>
+                            <td>{{$op['paid'] ? 'Πληρώθηκε' : 'Εκκρεμεί'}}</td>
+                        </tr>
+                        {% endforeach %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            {% if(count($financials['fee_reports'])>0): %}
+            <h5>Αμοιβές Κλινικής</h5>
+            <div class="settings-table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Ημερομηνία</th>
+                            <th>Ιατρός</th>
+                            <th>Σύμβαση</th>
+                            <th>Ασφάλεια</th>
+                            <th>Ασθενής</th>
+                            <th>ΑΠΥ</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% foreach($financials['fee_reports'] as $fr): %}
+                        <tr>
+                            <td>{{$fr['fee_date'] | date('d-m-Y')}}</td>
+                            <td>{{{$fr['doctor_name']}}}</td>
+                            <td>{{{number_format((float)$fr['amount_contract'], 2, ',', '.')}}} &euro;</td>
+                            <td>{{{number_format((float)$fr['amount_insurance'], 2, ',', '.')}}} &euro;</td>
+                            <td>{{{number_format((float)$fr['amount_patient'], 2, ',', '.')}}} &euro;</td>
+                            <td>{{{$fr['apy_number'] ?? '—'}}}</td>
+                        </tr>
+                        {% endforeach %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+    {% endif %}
 </div>
 
 {#
