@@ -1,0 +1,49 @@
+---
+# A Google Calendar event that landed in the synced calendar without
+# having originated from ZPMS's own "Νέο Ραντεβού" booking screen (no
+# zpms_appointment_id extendedProperty) -- created directly in the
+# Calendar app, or by hand, during a phone call. The pull-sync cron
+# (bin/sync_google_calendar.php) inserts one of these per such event
+# instead of a real appointments row, since a Calendar event alone has
+# no AMKA/phone/patient link -- exactly the "take the info from the
+# calendar and put it into ZPMS" step, made explicit as a review queue
+# a human has to complete rather than a guess the sync makes on its own.
+table:
+  name: calendar_pending_events
+  class: calendarPendingEventsClass
+  fields:
+  - name: guid
+    type: '@guid'
+
+  - name: cdate
+    type: '@cdate'
+
+  - name: google_event_id
+    type: varchar(255) UNIQUE
+
+  - name: summary
+    type: text
+
+  - name: start_datetime
+    type: datetime
+
+  - name: raw_json
+    # The event's raw Calendar API JSON at the moment it was pulled --
+    # kept purely for a human to inspect if the summary/start_datetime
+    # alone aren't enough context to know what to do with it (which
+    # attendee email was on it, a longer description, etc.).
+    type: text
+
+  - name: resolved_appointment_guid
+    # Set once staff link this to a real (possibly newly-created)
+    # appointment via the review-queue page -- the row then leaves the
+    # queue's default listing but isn't deleted, so there's still a
+    # record of which calendar event a given appointment actually came
+    # from.
+    type: varchar(36)
+    default: null
+
+  - name: resolved_at
+    type: datetime
+    default: null
+...

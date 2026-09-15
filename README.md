@@ -289,3 +289,144 @@ visible "alt" input displays and accepts typing in this app's usual
 field (`dobChange()` in `web/js/scripts.js`) needed no changes: it's
 simply pointed at that alt input instead of the original one, via
 flatpickr's `onReady`/`onValueUpdate` hooks.
+
+## Google Calendar sync
+
+Consultation scheduling: a patient calls, staff take their name/phone/
+AMKA/email and a date/time on one fast screen (`/consultation/new`,
+"Ραντεβού → Νέο (τηλεφωνικά)" in the nav), which creates the patient +
+appointment in ZPMS **and** pushes a matching event to a shared Google
+Calendar in the same request — so the practice's day-to-day calendar
+(glanceable from anyone's phone, gets Google's own reminders) always
+reflects what ZPMS knows, with no separate "now go create the calendar
+event too" step. Staff who reschedule or cancel directly in the Calendar
+app instead have that reflected back automatically by a periodic sync;
+staff who create an event directly in Calendar (no ZPMS screen involved
+at all) get it surfaced in a review queue to complete with the patient's
+AMKA/phone, rather than the sync guessing at a patient link on its own.
+
+**Why this direction, not Calendar-first with ZPMS parsing the event
+text**: AMKA/phone/dedup only exist as structured, validated fields in
+ZPMS today. Typing them into a Calendar event's title/description and
+parsing them back out later is fragile (Greek name spelling variants,
+staff typos, no shared convention for what goes where) — the "Calendar →
+ZPMS" pull sync deliberately never tries to extract that from free text.
+It only crosses two things safely both ways: the *time* an appointment is
+at, and cancellation — never patient PII. That data flows into ZPMS
+exactly once, at intake, structured, either on the quick-booking screen or
+via a human filling in the review queue.
+
+### Setup (one-time)
+
+1. **Google Cloud**: create a project, enable the Calendar API, create a
+   service account, download its JSON key. No OAuth consent screen,
+   nothing per-user — a service account is a long-lived credential this
+   app signs its own short-lived (1h) access tokens with, on every
+   process that needs one (`web/google_calendar_client.php`, RFC 7523
+   JWT bearer flow, hand-rolled via `openssl_sign()`+cURL — no Composer/
+   SDK, consistent with this app family having no build step anywhere).
+2. **Create a Google Calendar** for consultations (e.g. "ΖΠΜΣ Ραντεβού")
+   in the normal Google Calendar UI, and share it with the service
+   account's email (shown on its Credentials page) with "Make changes to
+   events" permission. Staff keep using this calendar exactly as before —
+   the service account is just a second, silent editor on it.
+3. Save the JSON key somewhere outside the web root (this repo expects
+   `config/google_calendar_key.json`, gitignored — never commit it).
+4. `cp config/google_calendar.php.in config/google_calendar.php` and fill
+   in `service_account_key_path`/`calendar_id` (gitignored, same
+   `*.php.in` → `*.php` convention as `config/db.php`/`config/
+   ernsauth.php`).
+
+A missing/invalid config file leaves `googleCalendarClass::isEnabled()`
+false — `/consultation/new` still saves the patient + appointment
+normally, `google_event_id` just stays `NULL`, and
+`bin/sync_google_calendar.php` exits immediately with a log line. Never a
+fatal error; nothing here can block a real phone booking.
+
+### Schema
+
+`appointments.google_event_id` (nullable, `UNIQUE`)/`google_synced_at` —
+links an appointment to its Calendar twin; `NULL` on every appointment
+predating this feature, and on every one created while it's unconfigured.
+`calendar_sync_state` — one row per synced calendar, holding the
+incremental `sync_token` Google's `events.list` API hands back between
+runs. `calendar_pending_events` — the review queue: one row per
+Calendar-native event the pull sync found with no `zpms_appointment_id`
+extended property, holding just what Calendar itself knows (summary,
+start time, the raw event JSON) until a human turns it into a real
+patient + appointment (or dismisses it, e.g. a personal event that landed
+on the shared calendar by mistake) via "Ραντεβού → Νέα από Ημερολόγιο".
+
+As with every other schema change in this app, there's no migration
+runner: `cd web/classes && php ../core/maker/maker.php spill:class:all
+spill:sql:all` regenerates the entity classes + `CREATE TABLE` SQL from
+the yaml (`web/classes/yaml/{calendar_pending_events,calendar_sync_state}
+.yaml`, plus the two new fields in `appointments.yaml`) — the two new
+tables' SQL is directly `mysql`-runnable as-is on a live database; for
+the pre-existing `appointments` table, run `php ../core/maker/maker.php
+diff:sql:all` first to see the exact `ALTER TABLE` this needs, since the
+generated file is a full `CREATE TABLE`, not an `ALTER`.
+
+### The two sync directions
+
+**ZPMS → Calendar (synchronous, on save)**: `consultation_new_post()` and
+`calendar_review_resolve()` (both in `web/index.php`) call
+`googleCalendarClass::createEvent()` right after inserting the
+appointment row, storing the returned event id. The event's
+`extendedProperties.private.zpms_appointment_id` is what a later pull
+sync uses to recognize "this is one of ours" — patient name/phone/AMKA/
+notes go into the event's plain description text (for a human glancing at
+the calendar to read), never into `extendedProperties` itself.
+
+**Calendar → ZPMS (polling, every few minutes)**: `bin/sync_google_calendar.php`
+(reference cron: `deploy/zpms-calendar-sync.cron` — install manually, same
+"reference only" convention as `deploy/zpms-backup.cron`) calls
+`googleCalendarClass::listChangedEvents()`, which follows Google's
+incremental `syncToken` (only what changed since last run, not a full
+rescan) and its own pagination. Per changed event:
+
+- Carries `zpms_appointment_id` + still active → just a reschedule;
+  update that appointment's `adate` to match. Never touches patient
+  fields.
+- Carries `zpms_appointment_id` + cancelled → soft-delete that
+  appointment (`deleted`, same convention `appointment_delete()` uses).
+- No `zpms_appointment_id`, active → upsert a `calendar_pending_events`
+  row by `google_event_id` (refreshed in place if it's already queued and
+  the event changed again before anyone reviewed it).
+- No `zpms_appointment_id`, cancelled → if it was still sitting
+  unreviewed in the queue, mark it resolved with no appointment created
+  rather than leaving a stale row for an event that no longer exists.
+
+A `410 Gone` response (Google's documented signal that a stored
+`sync_token` is too old to resume from) clears the stored token so the
+next run does a full resync from "now" rather than silently missing
+whatever changed in between — never a caught, ignored error.
+
+Five minutes' polling latency (not real-time push notifications via
+Google's `events.watch()`) is a deliberate simplification: no public-
+facing webhook endpoint to expose, no channel-renewal job to keep
+running. Revisit only if that latency is ever a real problem in practice.
+
+### Verified
+
+`php -l` clean on every touched/new file; `bin/run_tests.sh` (32/32
+static, 35/35 functional) green throughout. The JWT/token-exchange half
+of `googleCalendarClient` was verified against Google's **real**
+`oauth2.googleapis.com` endpoint (this sandbox can reach it, unlike
+`www.google.com` — confirmed by a hand-signed JWT for a fake service
+account coming back `invalid_grant: account not found` rather than a
+malformed-request error, which only happens if Google successfully
+parsed and validated the JWT's structure/signature first). The full
+booking → review-queue → resolve/dismiss flow was verified end-to-end via
+Playwright against a real MariaDB-backed test server: a phone booking
+creates the correct patient/appointment; a simulated calendar-native
+event resolves into a patient/appointment that reuses the *existing*
+Calendar event id (never creates a duplicate); dismissing a queued event
+removes it with no record created. **Not** verified: a real, successful
+`createEvent()`/`listChangedEvents()` call against an actual configured
+calendar (needs real service-account credentials + a real shared
+calendar, which only a live deployment can provide) — same "known
+limitation, not a bug" caveat zeusfw's `Recaptcha.php` documents for its
+own reCAPTCHA integration, except here a live test is realistically
+possible once real credentials exist, since the sandbox's network access
+to Google's endpoints turned out not to be the blocker it was there.

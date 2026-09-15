@@ -119,8 +119,12 @@ if(trashelements.length>0) {
    covers a webform results table's delete row-buttons (core/lib/
    FormElement.php's generateHTMLTableRowButton() in zeusfw, rendering
    webform_row_action_delete.zetem's own [confirmation] form) -- same
-   convention as the other two containers, not a separate mechanism. */
-let trashforms = document.querySelectorAll('.patients-list form[confirmation], .admin-list form[confirmation], .settings-table-scroll form[confirmation]');
+   convention as the other two containers, not a separate mechanism.
+   .calendar-review-queue covers dismissing a calendar-origin appointment
+   review row (web/templates/content/calendar_review_queue.zetem) --
+   same reasoning, an extra container added to this same list rather than
+   inventing a second confirmation mechanism. */
+let trashforms = document.querySelectorAll('.patients-list form[confirmation], .admin-list form[confirmation], .settings-table-scroll form[confirmation], .calendar-review-queue form[confirmation]');
 if(trashforms.length>0) {
     trashforms.forEach(el => {
         el.addEventListener('submit', (e) => {
@@ -352,9 +356,14 @@ function dobChange(e) {
 
 
 /* live duplicate-name check on the "new patient" form -- see
- * patient_new_check_name() in index.php. Only ever finds a
- * [data-check-duplicate] input on the /patient/new page, so this whole
- * block is a no-op everywhere else. */
+ * patient_new_check_name() in index.php, reused by /consultation/new's
+ * combined patient+appointment booking form (its own consultation_new_
+ * namecheck route in config/settings.info.yaml points at the same
+ * handler). The URL is derived from the current page's own path, so
+ * either page's namecheck request lands on its own matching route with
+ * no page-specific code here. Only ever finds a [data-check-duplicate]
+ * input on one of those two pages, so this whole block is a no-op
+ * everywhere else. */
 function escapeHtml(str) {
     if(str === null || str === undefined) return '';
     return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

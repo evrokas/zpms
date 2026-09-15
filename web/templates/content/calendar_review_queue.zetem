@@ -1,0 +1,62 @@
+{% attach_library('flatpickr-library'); %}
+
+<div class="patients-header">
+    <h2 class="page-title">Νέα από Ημερολόγιο</h2>
+</div>
+
+<div class="calendar-review-queue">
+{% if(count($pending) == 0): %}
+<div class="patients-empty">
+    <p>Δεν υπάρχουν νέες καταχωρήσεις από το Google Calendar προς έλεγχο.</p>
+</div>
+{% else: %}
+{% foreach($pending as $p): %}
+<div class="edit-patient" style="margin-bottom: 1.5rem;">
+    <div class="header">
+        <h4>{{{$p->getsummary()}}}</h4>
+        <p class="muted">{{$p->getstart_datetime() | date('d-m-Y H:i')}}</p>
+    </div>
+
+    <form action="{{rel_url('/consultation/review/' . $p->getid() . '/resolve')}}" method="post">
+        {{ csrf_field() }}
+
+        <div class="input-div">
+            <label for="patient-name">Όνομα ασθενή</label>
+            <input type="text" name="patient-name" id="" value="{{{$p->getsummary()}}}" required>
+        </div>
+
+        <div class="input-div">
+            <label for="patient-telephone">Τηλέφωνο</label>
+            <input type="text" name="patient-telephone" id="" value="">
+        </div>
+
+        <div class="input-div">
+            <label for="patient-amka">ΑΜΚΑ</label>
+            <input type="text" name="patient-amka" id="" value="">
+        </div>
+
+        <div class="input-div">
+            <label for="patient-email">Email</label>
+            <input type="text" name="patient-email" id="" value="">
+        </div>
+
+        <div class="input-div input-notes">
+            <label for="appointment-notes">Σημειώσεις</label>
+            <textarea name="appointment-notes" id="" rows="3"></textarea>
+        </div>
+
+        <div class="buttons">
+            <input type="submit" value="Δημιουργία Ραντεβού">
+        </div>
+    </form>
+
+    <form action="{{rel_url('/consultation/review/' . $p->getid() . '/dismiss')}}" method="post" confirmation>
+        {{ csrf_field() }}
+        <div class="buttons">
+            <input type="submit" name="dismiss" value="Παράβλεψη" class="btn-danger">
+        </div>
+    </form>
+</div>
+{% endforeach %}
+{% endif %}
+</div>

@@ -322,6 +322,56 @@ routes:
     url: "/appointment/{id}/files/{fileid}/thumbnail"
     handler: appointment_file_thumbnail
     method: get
+  # Combined "patient just called" booking screen -- registers a brand
+  # new patient and their first appointment in one save, unlike
+  # patient_appointment_new above (which needs an existing patient id in
+  # the URL). See README.md, "Google Calendar sync", for the full design;
+  # this is the ZPMS-side half of it -- consultation_new_post also pushes
+  # the new appointment to the synced Google Calendar, when configured.
+  consultation_new:
+    title:
+      en: "New consultation booking"
+      gr: "Νέο ραντεβού (τηλεφωνικά)"
+    url: /consultation/new
+    handler: consultation_new
+    method: get
+    access: authenticated user
+  consultation_new_post:
+    title: "New consultation booking"
+    url: /consultation/new
+    handler: consultation_new_post
+    method: post
+    access: authenticated user
+  # Reuses patient_new_check_name() as-is -- see scripts.js's own comment
+  # on [data-check-duplicate] for why one handler can serve two pages.
+  consultation_new_namecheck:
+    title: "New consultation duplicate name check"
+    url: /consultation/new/namecheck
+    handler: patient_new_check_name
+    method: post
+  # The Calendar-native events review queue (bin/sync_google_calendar.php
+  # inserts one calendar_pending_events row per such event) -- staff pick
+  # or create the patient to turn one into a real appointment.
+  calendar_review_queue:
+    title:
+      en: "New from Calendar"
+      gr: "Νέα από Ημερολόγιο"
+    url: /consultation/review
+    handler: calendar_review_queue
+    method: get
+    access: authenticated user
+  calendar_review_resolve:
+    title: "Resolve a calendar-origin appointment"
+    url: "/consultation/review/{id}/resolve"
+    handler: calendar_review_resolve
+    method: post
+    access: authenticated user
+  calendar_review_dismiss:
+    title: "Dismiss a calendar-origin appointment"
+    url: "/consultation/review/{id}/dismiss"
+    handler: calendar_review_dismiss
+    method: post
+    access: authenticated user
   qrgenerator:
     title:
       gr: "Δημιουργία κωδικού QR"
@@ -474,11 +524,27 @@ menu:
             en: 'List'
           url: '/patients'
         - patient_new:
-          text: 
+          text:
             gr: 'Νεός'
             en: 'New'
           url: /patient/new
       # path: '/patients'
+    - consultations:
+      text:
+        gr: 'Ραντεβού'
+        en: 'Consultations'
+      access: power-user
+      submenu:
+        - consultation_new:
+          text:
+            gr: 'Νέο (τηλεφωνικά)'
+            en: 'New (phone)'
+          url: /consultation/new
+        - calendar_review_queue:
+          text:
+            gr: 'Νέα από Ημερολόγιο'
+            en: 'New from Calendar'
+          url: /consultation/review
     - settings:
       text:
         gr: "Ρυθμίσεις"

@@ -1,0 +1,27 @@
+---
+# One row per synced Google Calendar (in practice exactly one, this
+# app's single consultations calendar) holding the incremental sync
+# cursor Google's events.list API hands back -- see
+# bin/sync_google_calendar.php's own docblock for how it's used.
+# Deliberately its own table rather than a settings.php constant: the
+# token is opaque, per-calendar, and mutated on every sync run, none of
+# which fits config/google_calendar.php's "written once by a human,
+# read-only at runtime" role.
+table:
+  name: calendar_sync_state
+  class: calendarSyncStateClass
+  fields:
+  - name: calendar_id
+    type: varchar(255) UNIQUE
+
+  - name: sync_token
+    # NULL means "no successful sync yet" -- the next run does a full
+    # events.list instead of an incremental one, exactly the shape
+    # Google's own API expects for a first-ever sync.
+    type: text
+    default: null
+
+  - name: last_synced_at
+    type: datetime
+    default: null
+...
