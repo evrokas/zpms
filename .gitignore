@@ -17,6 +17,5 @@ web/cache
 web/files
 /backup/
 /backups/
-web/modules/flatpickr/vendor
 web/test
 

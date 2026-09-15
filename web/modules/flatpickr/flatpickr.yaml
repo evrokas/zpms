@@ -2,9 +2,9 @@ libraries:
   flatpickr-library:
     css:
       - flatpickr:
-        src: '@app/vendor/flatpickr/dist/flatpickr.min.css'
+        src: '@app/vendor/flatpickr/flatpickr.min.css'
     foot_script:
       - flatpickr:
         type:
         defer:
-        src: '@app/vendor/flatpickr/dist/flatpickr.min.js'
+        src: '@app/vendor/flatpickr/flatpickr.min.js'
