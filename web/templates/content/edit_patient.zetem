@@ -1,7 +1,6 @@
 
 {% attach_library('loader-library'); %}
-{# {% attach_library('datepicker-library'); %} #}
-{# {% attach_library('pikaday-library'); %} #}
+{% attach_library('flatpickr-library'); %}
 {% attach_library('textarea-expandable-library'); %}
 
 <div class="edit-patient">    
@@ -46,7 +45,7 @@
             <div class="input-div">
                 <label for="patient-dob">Ημ/νια Γεννήσεως</label>
                 <!-- <input type="date" name="patient-dob" id="" value="{{formatDate($patient->getpdob())}}"> -->
-                <input type="text" name="patient-dob" id="datepicker" loader="info-loader" value="{{$patient->getpdob()| date('d-m-Y')}}" onkeyup="dobChange(this)" agefield="age_field">
+                <input type="text" name="patient-dob" id="datepicker" loader="info-loader" value="{{$patient->getpdob()| date('Y-m-d')}}" agefield="age_field">
                 
                 <div class="inline-icons">
                     <!-- <i class='valid bx bx-check' style='color:#00ff00'  ></i> -->
@@ -61,7 +60,33 @@
    
         <script>
             document.addEventListener('DOMContentLoaded', function() {
-                dobChange(document.getElementById('datepicker'));
+                var dobInput = document.getElementById('datepicker');
+
+                /* flatpickr splits the field in two: this original input
+                 * keeps the real value (dateFormat, ISO Y-m-d, what actually
+                 * gets submitted) and becomes hidden, while a second,
+                 * visible "alt" input (altFormat, d-m-Y -- this app's usual
+                 * display convention, see formatDate()/formatDateTime() in
+                 * zeusfw core/kernel/utils.php) is what the user actually
+                 * sees and types into. dobChange() reads e.value/e.classList/
+                 * e.attributes['agefield'] off whatever element it's given,
+                 * so pointing it at instance.altInput -- once agefield is
+                 * copied onto it, since flatpickr creates that input fresh
+                 * with none of the original's custom attributes -- needs no
+                 * changes to dobChange() itself. */
+                flatpickr(dobInput, {
+                    dateFormat: 'Y-m-d',
+                    altInput: true,
+                    altFormat: 'd-m-Y',
+                    allowInput: true,
+                    onReady: function(selectedDates, dateStr, instance) {
+                        instance.altInput.setAttribute('agefield', dobInput.getAttribute('agefield'));
+                        dobChange(instance.altInput);
+                    },
+                    onValueUpdate: function(selectedDates, dateStr, instance) {
+                        dobChange(instance.altInput);
+                    }
+                });
             });
         </script>
 
@@ -290,9 +315,3 @@
         </div>
     {% endif %}
 </div>
-
-{#
-<script>
-    var picker = new Pikaday( { field: document.getElementById('datepicker') } );
-</script>
-#}

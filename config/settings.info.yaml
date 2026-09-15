@@ -33,8 +33,6 @@ css:
     # src: 'css/breadcrumbs.css'
   # - utils:
     # src: 'css/loader.css'
-  # - pikaday:
-    # src: "https://cdn.jsdelivr.net/npm/pikaday/css/pikaday.css"
 
 
 # setup multiple language support
@@ -77,24 +75,6 @@ libraries:
         defer:
         type: "text/javascript"
         src: 'js/textarea-autoexapand.js'
-  pikaday-library:
-    css:
-      - pikaday_css:
-        type: 'text/css'
-        src: 'https://cdn.jsdelivr.net/npm/pikaday/css/pikaday.css'
-    head_script:
-      - pikaday_js:
-        type: "text/javascript"
-        src: "https://cdn.jsdelivr.net/npm/pikaday/pikaday.js"
-        # defer:
-      - moment_js:
-        type: "text/javascript"
-        src: "https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment-with-locales.min.js"
-        # defer:
-    foot_script:
-      - pikaday_js:
-        type:
-        src: "."
   appointment-improvements:
     css:
       - uploads:
@@ -571,7 +551,7 @@ modules:
     - copyright
     - content
     - location
-    - datepicker
+    - flatpickr
     - language_selector
     - message
     - backup

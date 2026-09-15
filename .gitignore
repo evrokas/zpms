@@ -17,6 +17,6 @@ web/cache
 web/files
 /backup/
 /backups/
-web/modules/datepicker/date-picker
+web/modules/flatpickr/vendor
 web/test
 

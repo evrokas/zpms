@@ -1,11 +1,10 @@
 libraries:
-  datepicker-library:
+  flatpickr-library:
     css:
-      - datepicker:
-        src: '@app/date-picker/css/date-picker.css'
+      - flatpickr:
+        src: '@app/vendor/flatpickr/dist/flatpickr.min.css'
     foot_script:
-      - datepicker:
-        type: 
+      - flatpickr:
+        type:
         defer:
-        src: '@app/date-picker/js/date-picker.js'
-    
+        src: '@app/vendor/flatpickr/dist/flatpickr.min.js'
