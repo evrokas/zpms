@@ -562,3 +562,5 @@ modules:
     # returns true and login.zetem shows the "Sign in with ErnsAuth"
     # section -- listing it here alone is not enough, by design.
     - ernsauth_sso
+    - admin_crud
+    
