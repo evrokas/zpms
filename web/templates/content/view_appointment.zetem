@@ -1,6 +1,7 @@
 {% attach_library('textarea-autoexpand-library') %}
 {% attach_library('appointment-improvements') %}
 {% attach_library('loader-library') %}
+{% attach_library('flatpickr-library') %}
 
 <!-- <hr> -->
 <div class="appointment-entry" id="app-{{$index}}">
@@ -17,12 +18,36 @@
                      which "Add ..." button was clicked on the patient
                      page). No dropdown/badge/appointment-type field
                      anywhere in this form. -->
-                <label for="patient-date">{{($appointment->getatype() == 'operation')?'Χειρουργείο':'Ραντεβού'}}</label>
-                <input type="date" loader="app-loader-{{$index}}" name="appointment-date-{{$index}}" id=""
+                <label for="appointment-date-{{$index}}">{{($appointment->getatype() == 'operation')?'Χειρουργείο':'Ραντεβού'}}</label>
+                <input type="text" loader="app-loader-{{$index}}" name="appointment-date-{{$index}}" id="appointment-date-{{$index}}"
                     role="date-picker" value="{{formatBrowserDate($appointment->getadate())}}">
                 <!-- <label for="patient-dob">Ημ/νια Γεννήσεως</label> -->
                 <!-- <input type="date" name="patient-dob" id="" role="date-picker" value="{{formatDate($patient->getpdob())}}"> -->
             </div>
+
+            <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    var dateInput = document.getElementById('appointment-date-{{$index}}');
+
+                    flatpickr(dateInput, {
+                        dateFormat: 'Y-m-d',
+                        altInput: true,
+                        altFormat: 'd-m-Y',
+                        allowInput: true,
+                        onChange: function(selectedDates, dateStr, instance) {
+                            /* loader.js's own window-load handler binds its
+                             * autosave listener directly to this input's
+                             * native 'input' event (see input[loader="..."]
+                             * in web/js/loader.js) -- flatpickr updates
+                             * instance.input.value without dispatching that
+                             * event itself, so a picked date would silently
+                             * never trigger the same live-save every other
+                             * field on this form already gets on keystroke. */
+                            instance.input.dispatchEvent(new Event('input', { bubbles: true }));
+                        }
+                    });
+                });
+            </script>
 
             <div class="input-div">
                 <label for="appointment-place" role="location">Περιοχή</label>
