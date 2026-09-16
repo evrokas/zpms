@@ -1,55 +1,56 @@
-# Reference config for bin/backup.sh / bin/restore.sh.
+# Reference site config for zops (lib/zops's bin/zops-backup,
+# bin/zops-monitor, bin/zops-restore, bin/zops-doctor) -- ZPMS's own
+# backup/health-check registration. See lib/zops/docs/INSTALL.md for the
+# clone command and lib/zops/docs/HANDLERS.md for what
+# backup-handler.php/health-handler.php (both in this same deploy/
+# directory) actually do. Replaces bin/backup.sh/deploy/zpms-backup.*
+# (deleted; see git history if ever needed for reference).
 #
 # Install:
-#   sudo mkdir -p /etc/zpms
-#   sudo cp deploy/backup.conf.example /etc/zpms/backup.conf
-#   sudo $EDITOR /etc/zpms/backup.conf   # fill in the values below
-#   sudo chmod 600 /etc/zpms/backup.conf # readable only by the backup user
+#   sudo mkdir -p /etc/zops/sites.d
+#   sudo cp deploy/backup.conf.example /etc/zops/sites.d/zpms.conf
+#   sudo $EDITOR /etc/zops/sites.d/zpms.conf
+#   sudo chmod 600 /etc/zops/sites.d/zpms.conf
 #
-# This is a plain bash file, sourced directly by bin/backup.sh and
-# bin/restore.sh -- keep it valid shell (KEY=value, no spaces around =).
-# Point ZPMS_BACKUP_CONF at a different path instead of editing this one
-# in place if you want to test against a throwaway config.
+# Recommended: a dedicated "zops" system user, group-shared with whichever
+# user Apache/PHP actually runs as -- a compromised web app shouldn't
+# automatically also have the off-site backup SSH key, and the same group
+# membership web/files/ needs for the handler's Dir::link() hardlinks to
+# succeed (fs.protected_hardlinks -- see lib/zops/docs/SECURITY.md).
 
-# --- Where backups go -----------------------------------------------------
-# The destination server and the base path under which bin/backup.sh
-# creates raw/{daily,weekly,monthly}/. The user only needs write access
-# under this one path -- it does not need to reach anywhere else on the
-# destination server. Recommended: a separate destination/user/key from
-# any other app's backups (e.g. DocArc's), so a compromise of one app's
-# backup path can't expose another's.
-BACKUP_REMOTE_USER=zpms-backup
-BACKUP_REMOTE_HOST=backup.example.com
-BACKUP_REMOTE_PATH=/srv/zpms-backups
-BACKUP_SSH_PORT=22
+BACKUP_HANDLER=/var/www/zpms/deploy/backup-handler.php
+HEALTH_HANDLER=/var/www/zpms/deploy/health-handler.php
 
-# Path to the private key used to authenticate as BACKUP_REMOTE_USER (a
-# dedicated keypair for this purpose is strongly recommended -- see
-# deploy/zpms-backup.cron's header comment for why a dedicated
-# zpms-backup system user, separate from the web server user, is the
-# recommended setup). Leave blank to use ssh's own default key lookup.
-BACKUP_SSH_KEY=/home/zpms-backup/.ssh/id_ed25519
+# Same filesystem as web/files/ so Dir::link() hardlinks
+# appointment_files/ for free -- the exact role web/files/.backup_stage/
+# used to play for the old bin/backup.sh.
+WORK_DIR=/var/www/zpms/web/files/.zops_work
+LOG_FILE=/var/log/zops/zpms-backup.log
+HEALTH_TIMEOUT=30
 
-# --- Retention (tiered daily/weekly/monthly) -------------------------------
-# How many generations to keep in each tier on the destination. Promotion
-# is existence-based (the first backup of a new ISO week/month is what gets
-# promoted), so these numbers are also this system's disclosed
-# GDPR-erasure-propagation bound -- see README.md's "Backups" section for
-# the worked example with these defaults (roughly: a deleted record can
-# remain recoverable from an old monthly generation for up to
-# BACKUP_KEEP_MONTHLY months). Lower these if your retention/erasure
-# obligations need a tighter bound; raise them for more disaster-recovery
-# depth.
-BACKUP_KEEP_DAILY=14
-BACKUP_KEEP_WEEKLY=8
-BACKUP_KEEP_MONTHLY=12
+# Read by core/modules/backup/backup.php's status page (?table=... no --
+# the /apps/backup route) -- set the SAME path as zops_backup_status_file
+# in this app's own config/site.info.yaml.
+STATUS_FILE=/var/lib/zops/zpms-backup-status.json
 
-# --- Extras -----------------------------------------------------------
-# Off by default: additionally loads each night's dump into a throwaway
-# scratch database and runs CHECK TABLE on every table before shipping --
-# a much stronger correctness guarantee than the cheap file-level checks
-# bin/backup.sh always runs, at the cost of real extra time/DB load every
-# night. A --single-transaction dump of a live, healthy database essentially
-# can't itself be structurally corrupt, so this is meant for admins who
-# want the stronger guarantee anyway, not a default recommendation.
-BACKUP_VERIFY_LOAD=false
+# --- Destinations (one or more) -----------------------------------------
+DEST_1=ssh:zops@backup.example.com:/srv/zops-backups/zpms
+DEST_1_KEY=/home/zops/.ssh/id_ed25519
+#DEST_2=local:/mnt/usb-backup/zpms
+
+# --- Retention (tiered daily/weekly/monthly) -----------------------------
+KEEP_DAILY=14
+KEEP_WEEKLY=8
+KEEP_MONTHLY=12
+
+# --- Collector (optional) ------------------------------------------------
+COLLECTOR_URL=https://backup-status.example.com/ingest.php
+COLLECTOR_KEY=
+
+# This app bundles config/db.php (+ config/docarc_api.php if configured)
+# into its "config" backup element -- see lib/zops/docs/SECURITY.md
+# before choosing a destination for these.
+#ENCRYPT_ELEMENTS=true
+#ENCRYPT_PASSPHRASE=
+
+TIMEOUT=1800

@@ -12,6 +12,7 @@ web/classes/yaml/new/*
 web/classes/yaml/old/*
 web/cache
 web/files
+lib/zops
 /backup/
 /backups/
 web/modules/datepicker/date-picker

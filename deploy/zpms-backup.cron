@@ -1,27 +1,21 @@
-# Reference cron.d entry for ZPMS's nightly backup (bin/backup.sh).
+# Reference cron.d entry for ZPMS's nightly backup + periodic health
+# check, via the shared zops engine (lib/zops -- see
+# lib/zops/docs/INSTALL.md). Replaces the old bin/backup.sh-based
+# deploy/zpms-backup.cron/.timer/.service (deleted; git history has them
+# if ever needed for reference).
 #
 # Install:
 #   sudo cp deploy/zpms-backup.cron /etc/cron.d/zpms-backup
 #   sudo chmod 644 /etc/cron.d/zpms-backup
 #
-# Adjust the path below to match your actual deployment root and the user
-# cron runs it as.
-#
-# Recommended: a dedicated "zpms-backup" system user rather than the web
-# server user, so the credentials that can push to the backup destination
-# aren't the same identity as the web app process (defense in depth -- a
-# compromised web app shouldn't automatically also have your off-site
-# backup SSH key). That user needs:
-#   - read access to web/files/ (group membership alongside your Apache
-#     user, or an ACL -- either is fine)
-#   - write access to web/files/ itself (for the transient
-#     web/files/.backup_stage/ staging area and web/files/logs/)
-#   - its own SSH keypair, referenced as BACKUP_SSH_KEY in
-#     /etc/zpms/backup.conf (see deploy/backup.conf.example)
-# For a small single-admin deployment where this separation isn't worth
-# the setup, running it as your existing Apache/PHP user instead is a
-# reasonable simplification.
-#
-# flock -n guards against two runs overlapping if one night's backup runs
-# unexpectedly long (e.g. a slow network to the backup destination).
-0 2 * * * zpms-backup  flock -n /tmp/zpms-backup.lock /var/www/shtml/apps/zpms/bin/backup.sh
+# See deploy/backup.conf.example's own comment for the recommended
+# dedicated "zops" system user and why.
+
+# Nightly backup.
+0 2 * * *  zops  flock -n /run/lock/zops-zpms-backup.lock /var/www/zpms/lib/zops/bin/zops-backup --site=zpms >> /var/log/zops/zpms-backup-cron.log 2>&1
+
+# Health check every 15 minutes -- --email-on-change means this only
+# actually emails the administrator (ADMIN_EMAIL in /etc/zops/defaults.conf)
+# when something changes, or a failure has persisted long enough to
+# warrant a reminder, not on every single run.
+*/15 * * * *  zops  /var/www/zpms/lib/zops/bin/zops-monitor --site=zpms --email-on-change >> /var/log/zops/zpms-monitor-cron.log 2>&1

@@ -20,6 +20,12 @@ template_cache_path: "cache/"
 # library path for stored files
 libpath: files/
 
+# Read by core/modules/backup/backup.php (the "backup" module below) --
+# must match STATUS_FILE in this site's own /etc/zops/sites.d/zpms.conf
+# exactly. See lib/zops/docs/INSTALL.md and this app's README.md's
+# "Backups + health monitoring" section.
+zops_backup_status_file: /var/lib/zops/zpms-backup-status.json
+
 # Turn off optional framework-provided packages/modules for this
 # site/deployment by listing their package name here -- see zeusfw's
 # core/config/zeusfw.info.yaml (routes:/disabled_packages: comments) and
