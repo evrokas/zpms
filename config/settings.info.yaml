@@ -135,6 +135,15 @@ roles:
   authenticated: []
   user: []
   power-user: []
+  # Front-desk role for the "Εκκρεμή Ραντεβού" waiting room -- see
+  # web/rbac_seed.php's 'secretary' role for the actual (fine-grained,
+  # rbacClass-checked) permissions this grants; this entry only has to
+  # exist so SecurityClass::processRoles() (used for route/menu-level
+  # `access:` strings, a coarser, role-name-only mechanism -- see
+  # web/rbac.php's own docblock on why this app's real permission checks
+  # don't go through this class at all) doesn't hard-crash on an unknown
+  # role name the moment something references it.
+  secretary: []
 
 
 # reduce analytics entries, by not logging localhost calls
@@ -322,12 +331,12 @@ routes:
     url: "/appointment/{id}/files/{fileid}/thumbnail"
     handler: appointment_file_thumbnail
     method: get
-  # Combined "patient just called" booking screen -- registers a brand
-  # new patient and their first appointment in one save, unlike
-  # patient_appointment_new above (which needs an existing patient id in
-  # the URL). See README.md, "Google Calendar sync", for the full design;
-  # this is the ZPMS-side half of it -- consultation_new_post also pushes
-  # the new appointment to the synced Google Calendar, when configured.
+  # Phone-booking screen for the "Εκκρεμή Ραντεβού" waiting room -- see
+  # README.md, "Google Calendar sync"/"Pending appointments", for the
+  # full design. Secretary-level: creates a pending_appointments row
+  # only, never a real patient/appointment (that's
+  # pending_appointment_convert_post() below, doctor-gated) -- and pushes
+  # it to the synced Google Calendar, when configured.
   consultation_new:
     title:
       en: "New consultation booking"
@@ -342,36 +351,65 @@ routes:
     handler: consultation_new_post
     method: post
     access: authenticated user
+  # The waiting room itself -- every pending_appointments row not yet
+  # converted into a patient record or cancelled, regardless of whether
+  # it was booked above or pulled in from a Calendar-native event by
+  # bin/sync_google_calendar.php.
+  pending_appointments_list:
+    title:
+      en: "Pending appointments"
+      gr: "Εκκρεμή Ραντεβού"
+    url: /consultation/pending
+    handler: pending_appointments_list
+    method: get
+    access: authenticated user
+  pending_appointment_edit:
+    title: "Edit a pending appointment"
+    url: "/consultation/pending/{id}/edit"
+    handler: pending_appointment_edit
+    method: get
+    access: authenticated user
+  pending_appointment_edit_post:
+    title: "Edit a pending appointment"
+    url: "/consultation/pending/{id}/edit"
+    handler: pending_appointment_edit_post
+    method: post
+    access: authenticated user
+  pending_appointment_delete:
+    title: "Cancel a pending appointment"
+    url: "/consultation/pending/{id}/delete"
+    handler: pending_appointment_delete
+    method: post
+    access: authenticated user
+  # Doctor-only (ZPMS_PERM_PATIENTS_NEW_PATIENT + ZPMS_PERM_APPOINTMENT_EDIT,
+  # checked in the handlers -- a plain "authenticated user" route-level
+  # access: here would only gate being logged in at all, not which role).
+  pending_appointment_convert:
+    title:
+      en: "Create patient record"
+      gr: "Δημιουργία Φακέλου Ασθενή"
+    url: "/consultation/pending/{id}/convert"
+    handler: pending_appointment_convert
+    method: get
+    access: authenticated user
+  pending_appointment_convert_post:
+    title: "Create patient record"
+    url: "/consultation/pending/{id}/convert"
+    handler: pending_appointment_convert_post
+    method: post
+    access: authenticated user
   # Reuses patient_new_check_name() as-is -- see scripts.js's own comment
-  # on [data-check-duplicate] for why one handler can serve two pages.
+  # on [data-check-duplicate] for why one handler can serve several pages.
   consultation_new_namecheck:
     title: "New consultation duplicate name check"
     url: /consultation/new/namecheck
     handler: patient_new_check_name
     method: post
-  # The Calendar-native events review queue (bin/sync_google_calendar.php
-  # inserts one calendar_pending_events row per such event) -- staff pick
-  # or create the patient to turn one into a real appointment.
-  calendar_review_queue:
-    title:
-      en: "New from Calendar"
-      gr: "Νέα από Ημερολόγιο"
-    url: /consultation/review
-    handler: calendar_review_queue
-    method: get
-    access: authenticated user
-  calendar_review_resolve:
-    title: "Resolve a calendar-origin appointment"
-    url: "/consultation/review/{id}/resolve"
-    handler: calendar_review_resolve
+  pending_appointment_convert_namecheck:
+    title: "Convert-to-patient duplicate name check"
+    url: "/consultation/pending/{id}/convert/namecheck"
+    handler: patient_new_check_name
     method: post
-    access: authenticated user
-  calendar_review_dismiss:
-    title: "Dismiss a calendar-origin appointment"
-    url: "/consultation/review/{id}/dismiss"
-    handler: calendar_review_dismiss
-    method: post
-    access: authenticated user
   qrgenerator:
     title:
       gr: "Δημιουργία κωδικού QR"
@@ -533,18 +571,18 @@ menu:
       text:
         gr: 'Ραντεβού'
         en: 'Consultations'
-      access: power-user
+      access: power-user secretary
       submenu:
         - consultation_new:
           text:
             gr: 'Νέο (τηλεφωνικά)'
             en: 'New (phone)'
           url: /consultation/new
-        - calendar_review_queue:
+        - pending_appointments_list:
           text:
-            gr: 'Νέα από Ημερολόγιο'
-            en: 'New from Calendar'
-          url: /consultation/review
+            gr: 'Εκκρεμή Ραντεβού'
+            en: 'Pending appointments'
+          url: /consultation/pending
     - settings:
       text:
         gr: "Ρυθμίσεις"

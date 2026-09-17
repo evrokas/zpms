@@ -1,0 +1,111 @@
+{% attach_library('loader-library'); %}
+
+<div class="edit-patient">
+    <div class="header">
+        <h4>Δημιουργία Φακέλου Ασθενή</h4>
+    </div>
+
+    <p class="muted" style="padding: 0 1rem;">
+        Ραντεβού: {{$pending->getappointment_datetime() | date('d-m-Y H:i')}}
+        {% if($pending->getlocation()): %} &middot; {{{$pending->getlocation()}}}{% endif %}
+    </p>
+
+    <form action="{{rel_url('/consultation/pending/'.$pending->getid().'/convert')}}" method="post">
+        {{ csrf_field() }}
+        <input type="hidden" name="existing-patient-id" id="existing-patient-id" value="">
+
+        <div class="input-div">
+            <label for="patient-name">Όνομα ασθενή</label>
+            <input type="text" name="patient-name" id="convert-patient-name" value="{{{$pending->getpatient_name()}}}"
+                autocomplete="off" required>
+        </div>
+
+        <div class="duplicate-warning" id="convert-duplicate-warning" style="display:none;"></div>
+
+        <div class="input-div">
+            <label for="patient-telephone">Τηλέφωνο</label>
+            <input type="text" name="patient-telephone" id="" value="{{{$pending->getpatient_phone()}}}">
+        </div>
+
+        <div class="input-div">
+            <label for="patient-amka">ΑΜΚΑ</label>
+            <input type="text" name="patient-amka" id="" value="{{{$pending->getpatient_amka()}}}">
+        </div>
+
+        <div class="input-div">
+            <label for="patient-email">Email</label>
+            <input type="text" name="patient-email" id="" value="{{{$pending->getpatient_email()}}}">
+        </div>
+
+        <div class="buttons">
+            <input type="submit" value="Δημιουργία Φακέλου &amp; Ραντεβού">
+        </div>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var nameInput = document.getElementById('convert-patient-name');
+        var warningBox = document.getElementById('convert-duplicate-warning');
+        var existingIdInput = document.getElementById('existing-patient-id');
+        var timeout;
+
+        function escapeHtml(str) {
+            return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+        }
+
+        function render(matches) {
+            if (!matches || matches.length === 0) {
+                warningBox.style.display = 'none';
+                warningBox.innerHTML = '';
+                return;
+            }
+            var html = '<p>Βρέθηκαν ασθενείς με παρόμοιο όνομα -- επιλέξτε αν πρόκειται για τον ίδιο:</p><ul>';
+            matches.forEach(function(m) {
+                html += '<li>'
+                    + '<span class="name">' + escapeHtml(m.name) + '</span>'
+                    + '<span class="amka">ΑΜΚΑ: ' + escapeHtml(m.amka || '—') + '</span>'
+                    + '<button type="button" class="use-existing" data-id="' + escapeHtml(m.id) + '" data-name="' + escapeHtml(m.name) + '">Χρήση αυτού</button>'
+                    + '</li>';
+            });
+            html += '</ul>';
+            warningBox.innerHTML = html;
+            warningBox.style.display = 'block';
+
+            warningBox.querySelectorAll('.use-existing').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    existingIdInput.value = btn.dataset.id;
+                    nameInput.value = btn.dataset.name;
+                    nameInput.readOnly = true;
+                    warningBox.innerHTML = '<p>Επιλέχθηκε υπάρχων ασθενής: <b>' + escapeHtml(btn.dataset.name)
+                        + '</b> -- <button type="button" id="clear-existing">Άκυρο (νέος ασθενής)</button></p>';
+                    document.getElementById('clear-existing').addEventListener('click', function() {
+                        existingIdInput.value = '';
+                        nameInput.readOnly = false;
+                        warningBox.style.display = 'none';
+                        warningBox.innerHTML = '';
+                    });
+                });
+            });
+        }
+
+        nameInput.addEventListener('input', function(ev) {
+            clearTimeout(timeout);
+            var term = ev.target.value.trim();
+            if (term.length < 2) {
+                render([]);
+                return;
+            }
+            timeout = setTimeout(function() {
+                fetch(window.location.pathname.replace(/\/?$/, '/') + 'namecheck', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: 'pname=' + encodeURIComponent(term)
+                })
+                    .then(r => r.json())
+                    .then(data => render(data.matches))
+                    .catch(() => {});
+            }, 300);
+        });
+    });
+</script>

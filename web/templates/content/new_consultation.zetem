@@ -3,8 +3,13 @@
 
 <div class="edit-patient">
     <div class="header">
-        <h4>Νέο Ραντεβού (τηλεφωνικά)</h4>
+        <h4>Νέο Εκκρεμές Ραντεβού (τηλεφωνικά)</h4>
     </div>
+    <p class="muted" style="padding: 0 1rem;">
+        Δεν δημιουργείται φάκελος ασθενή τώρα -- μόνο όταν ο ασθενής
+        προσέλθει, ο ιατρός θα δημιουργήσει τον φάκελο από τη λίστα
+        «Εκκρεμή Ραντεβού».
+    </p>
 
     {% if(!$calendar_enabled): %}
     <p class="muted" style="padding: 0 1rem;">
@@ -42,6 +47,16 @@
         <div class="input-div">
             <label for="appointment-date">Ημ/νία &amp; Ώρα Ραντεβού</label>
             <input type="text" name="appointment-date" id="consultation-date" value="" required>
+        </div>
+
+        <div class="input-div">
+            <label for="appointment-location">Τοποθεσία</label>
+            <select name="appointment-location" id="">
+                <option value="">-- Επιλογή τοποθεσίας --</option>
+                {% foreach($locations as $loc): %}
+                <option value="{{{$loc}}}">{{{$loc}}}</option>
+                {% endforeach %}
+            </select>
         </div>
 
         <div class="input-div input-notes">

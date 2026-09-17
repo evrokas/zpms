@@ -37,9 +37,15 @@ define('GOOGLE_CALENDAR_TIMEOUT_SECONDS', 8);
 // The extendedProperties.private key an event carries when it originated
 // from ZPMS's own booking screen -- how listChangedEvents() tells "this
 // is one of ours, just check for a date/cancel change" apart from "this
-// was created directly in the Calendar app, queue it for review". See
-// calendar_pending_events.yaml's own docblock for the review-queue half.
-define('GOOGLE_CALENDAR_APPOINTMENT_PROPERTY', 'zpms_appointment_id');
+// was created directly in the Calendar app, needs a new pending_appointments
+// row". Keyed on a pending_appointments.id, not an appointments.id --
+// every booking starts as a pending row regardless of origin, and this
+// same value is carried forward unchanged onto the real appointment once
+// one is created (see pending_appointment_convert_post() in
+// web/index.php) rather than re-pointed at the new id, so the link this
+// property represents never has to be rewritten after the fact. See
+// pending_appointments.yaml's own docblock for the full lifecycle.
+define('GOOGLE_CALENDAR_PENDING_APPOINTMENT_PROPERTY', 'zpms_pending_appointment_id');
 
 class googleCalendarClass {
 
@@ -225,23 +231,51 @@ class googleCalendarClass {
     }
 
     /**
-     * Creates a Calendar event for a freshly-booked appointment and
-     * returns its event id, or null on failure. $appointmentId/$patientName/
-     * $startDateTime ('Y-m-d H:i:s')/$durationMinutes are required;
-     * $phone/$amka/$email/$notes are folded into the event description
-     * when present, never into extendedProperties (those are for the
-     * event/appointment *link*, not clinical/contact data -- keeping PII
-     * out of a field this class also reads back verbatim on every sync
-     * pass is deliberate, not an oversight).
+     * Shared summary/description builder for createEvent()/updateEvent()
+     * -- $phone/$amka/$email/$location/$notes fold into the plain
+     * description text when present, never into extendedProperties
+     * (those are for the event/pending-appointment *link*, not clinical/
+     * contact data -- keeping PII out of a field this class also reads
+     * back verbatim on every sync pass is deliberate, not an oversight).
+     */
+    private static function buildEventFields(
+        string $patientName,
+        string $phone,
+        string $amka,
+        string $email,
+        string $location,
+        string $notes
+    ): array {
+        $descriptionLines = ["Ασθενής: {$patientName}"];
+        if ($phone !== '') $descriptionLines[] = "Τηλέφωνο: {$phone}";
+        if ($amka !== '') $descriptionLines[] = "ΑΜΚΑ: {$amka}";
+        if ($email !== '') $descriptionLines[] = "Email: {$email}";
+        if ($location !== '') $descriptionLines[] = "Τοποθεσία: {$location}";
+        if ($notes !== '') $descriptionLines[] = "Σημειώσεις: {$notes}";
+
+        return [
+            'summary' => $patientName,
+            'description' => implode("\n", $descriptionLines),
+        ];
+    }
+
+    /**
+     * Creates a Calendar event for a freshly-booked pending appointment
+     * and returns its event id, or null on failure. $pendingAppointmentId
+     * is a pending_appointments.id -- see
+     * GOOGLE_CALENDAR_PENDING_APPOINTMENT_PROPERTY's own docblock for why
+     * this is never re-pointed at an appointments.id later, even after
+     * the booking is converted into a real patient/appointment.
      */
     static function createEvent(
-        int $appointmentId,
+        int $pendingAppointmentId,
         string $patientName,
         string $startDateTime,
         int $durationMinutes,
         string $phone = '',
         string $amka = '',
         string $email = '',
+        string $location = '',
         string $notes = ''
     ): ?string {
         if (!self::isEnabled()) {
@@ -252,19 +286,11 @@ class googleCalendarClass {
         $start = new DateTime($startDateTime);
         $end = (clone $start)->modify("+{$durationMinutes} minutes");
 
-        $descriptionLines = ["Ασθενής: {$patientName}"];
-        if ($phone !== '') $descriptionLines[] = "Τηλέφωνο: {$phone}";
-        if ($amka !== '') $descriptionLines[] = "ΑΜΚΑ: {$amka}";
-        if ($email !== '') $descriptionLines[] = "Email: {$email}";
-        if ($notes !== '') $descriptionLines[] = "Σημειώσεις: {$notes}";
-
-        $event = [
-            'summary' => $patientName,
-            'description' => implode("\n", $descriptionLines),
+        $event = self::buildEventFields($patientName, $phone, $amka, $email, $location, $notes) + [
             'start' => ['dateTime' => $start->format(DateTime::RFC3339)],
             'end' => ['dateTime' => $end->format(DateTime::RFC3339)],
             'extendedProperties' => [
-                'private' => [GOOGLE_CALENDAR_APPOINTMENT_PROPERTY => (string)$appointmentId],
+                'private' => [GOOGLE_CALENDAR_PENDING_APPOINTMENT_PROPERTY => (string)$pendingAppointmentId],
             ],
         ];
 
@@ -274,12 +300,25 @@ class googleCalendarClass {
     }
 
     /**
-     * Pushes a rescheduled appointment's new time onto its already-linked
-     * event. Only start/end are patched -- deliberately, the same
-     * "only date/time crosses this boundary" boundary listChangedEvents()
-     * enforces on the way back in.
+     * Pushes every user-editable field (patient name/phone/AMKA/email/
+     * location/notes/time) of an already-linked pending appointment back
+     * onto its Calendar event -- called after a secretary edits a
+     * pending row, and after conversion (whose own datetime/location
+     * don't change, but keeps this the one place that ever writes an
+     * event's summary/description, rather than a second, narrower method
+     * that only touched start/end).
      */
-    static function updateEventTime(string $eventId, string $startDateTime, int $durationMinutes): bool {
+    static function updateEvent(
+        string $eventId,
+        string $patientName,
+        string $startDateTime,
+        int $durationMinutes,
+        string $phone = '',
+        string $amka = '',
+        string $email = '',
+        string $location = '',
+        string $notes = ''
+    ): bool {
         if (!self::isEnabled()) {
             return false;
         }
@@ -288,12 +327,14 @@ class googleCalendarClass {
         $start = new DateTime($startDateTime);
         $end = (clone $start)->modify("+{$durationMinutes} minutes");
 
-        $calendarId = rawurlencode($config['calendar_id']);
-        $eventId = rawurlencode($eventId);
-        $resp = self::request('PATCH', "/calendars/{$calendarId}/events/{$eventId}", [
+        $event = self::buildEventFields($patientName, $phone, $amka, $email, $location, $notes) + [
             'start' => ['dateTime' => $start->format(DateTime::RFC3339)],
             'end' => ['dateTime' => $end->format(DateTime::RFC3339)],
-        ]);
+        ];
+
+        $calendarId = rawurlencode($config['calendar_id']);
+        $eventId = rawurlencode($eventId);
+        $resp = self::request('PATCH', "/calendars/{$calendarId}/events/{$eventId}", $event);
         return $resp !== null;
     }
 

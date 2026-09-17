@@ -45,6 +45,14 @@ const ZPMS_PERM_PATIENTS_DELETE_PATIENT = 'patients-delete-patient';
 const ZPMS_PERM_APPOINTMENT_EDIT = 'appointment-edit';
 const ZPMS_PERM_BACKUP_ACCESS = 'backup-access';
 const ZPMS_PERM_SETTINGS_MANAGE = 'settings-manage';
+// Covers the whole "Εκκρεμή Ραντεβού" waiting room -- view/create/edit/
+// delete a pending_appointments row -- but deliberately NOT the ability
+// to convert one into a real patient record, which stays gated on
+// ZPMS_PERM_PATIENTS_NEW_PATIENT + ZPMS_PERM_APPOINTMENT_EDIT below (a
+// secretary can schedule and manage phone bookings without being able to
+// create/edit real patient records, which stays a doctor-only action --
+// see web/rbac_seed.php's 'secretary' role for exactly this split).
+const ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE = 'pending-appointments-manage';
 
 // Every permission slug above, plus the framework's own
 // ZEUSFW_PERM_MANAGE_USERS (core/lib/Rbac.php -- gates zeusfw core's
@@ -68,6 +76,7 @@ function zpms_all_permission_slugs(): array {
         ZPMS_PERM_APPOINTMENT_EDIT,
         ZPMS_PERM_BACKUP_ACCESS,
         ZPMS_PERM_SETTINGS_MANAGE,
+        ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE,
         ZEUSFW_PERM_MANAGE_USERS,
     ];
 }

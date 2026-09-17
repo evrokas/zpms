@@ -866,65 +866,91 @@ require_once(__DIR__ . '/rbac.php');
     }
 
     // Default length of a plain phone-booked consultation, for the
-    // Calendar event's end time only -- appointments itself has no
-    // duration column (see appointments.yaml), and nothing here needs
-    // one beyond sizing the block Calendar shows.
+    // Calendar event's end time only -- neither pending_appointments nor
+    // appointments has a duration column, and nothing here needs one
+    // beyond sizing the block Calendar shows.
     const ZPMS_CONSULTATION_DEFAULT_DURATION_MINUTES = 30;
 
     /**
-     * Pushes $app to the synced Google Calendar (create if it has no
-     * google_event_id yet, otherwise just retime the existing event) and
-     * persists whatever came back onto the row. Shared by
-     * consultation_new_post() and calendar_review_resolve() -- both
-     * create a real appointment from scratch and both want the identical
-     * "push, then remember the event id/sync time" tail end. Entirely a
-     * no-op, silently, when googleCalendarClass::isEnabled() is false
-     * (not configured yet) -- never blocks or fails the appointment save
-     * itself, matching every other optional integration in this app
-     * family's fail-soft convention.
+     * Every currently-defined location's display name, for the <select>
+     * on the booking/edit/convert forms -- same locationsClassEx source
+     * view_appointment.zetem's own location field already reads,
+     * returned as plain strings (not objects) since pending_appointments.
+     * location is a plain varchar, same convention appointments.aplace
+     * already uses.
      */
-    function zpms_consultation_sync_to_calendar(appointmentsClass $app, patientsClass $pat): void {
+    function zpms_pending_appointment_location_options(): array {
+        global $kernel;
+        $names = [];
+        foreach (locationsClassEx::sgetAll($kernel->getCurrentLanguage()) as $loc) {
+            $names[] = $loc->getname();
+        }
+        return $names;
+    }
+
+    /**
+     * Pushes a pending_appointments row's current fields to its Calendar
+     * event -- create if it has no google_event_id yet, otherwise patch
+     * the existing one in place. Shared by consultation_new_post() and
+     * pending_appointment_edit_post(); entirely a no-op, silently, when
+     * googleCalendarClass::isEnabled() is false (not configured yet) --
+     * never blocks or fails the pending-row save itself, matching every
+     * other optional integration in this app family's fail-soft
+     * convention.
+     */
+    function zpms_pending_appointment_sync_to_calendar(pendingAppointmentsClass $pending): void {
         if (!googleCalendarClass::isEnabled()) {
             return;
         }
 
-        $eventId = googleCalendarClass::createEvent(
-            $app->getid(),
-            $pat->getpname(),
-            $app->getadate(),
-            ZPMS_CONSULTATION_DEFAULT_DURATION_MINUTES,
-            $pat->getptel(),
-            $pat->getpamka(),
-            $pat->getpemail(),
-            $app->getanote()
-        );
-
-        if ($eventId !== null) {
-            $app->setgoogle_event_id($eventId);
-            $app->setgoogle_synced_at(getDBtime());
-            $app->update();
+        if ($pending->getgoogle_event_id() === null) {
+            $eventId = googleCalendarClass::createEvent(
+                $pending->getid(),
+                $pending->getpatient_name(),
+                $pending->getappointment_datetime(),
+                ZPMS_CONSULTATION_DEFAULT_DURATION_MINUTES,
+                $pending->getpatient_phone() ?? '',
+                $pending->getpatient_amka() ?? '',
+                $pending->getpatient_email() ?? '',
+                $pending->getlocation() ?? '',
+                $pending->getnotes() ?? ''
+            );
+            if ($eventId === null) {
+                return;
+            }
+            $pending->setgoogle_event_id($eventId);
+        } else {
+            googleCalendarClass::updateEvent(
+                $pending->getgoogle_event_id(),
+                $pending->getpatient_name(),
+                $pending->getappointment_datetime(),
+                ZPMS_CONSULTATION_DEFAULT_DURATION_MINUTES,
+                $pending->getpatient_phone() ?? '',
+                $pending->getpatient_amka() ?? '',
+                $pending->getpatient_email() ?? '',
+                $pending->getlocation() ?? '',
+                $pending->getnotes() ?? ''
+            );
         }
+        $pending->setgoogle_synced_at(getDBtime());
+        $pending->update();
     }
 
     function consultation_new($params) {
         global $kernel;
 
-        if(($errmsg = rbacClass::require(ZPMS_PERM_PATIENTS_NEW_PATIENT)))return $errmsg;
-        if(($errmsg = rbacClass::require(ZPMS_PERM_APPOINTMENT_EDIT)))return $errmsg;
+        if(($errmsg = rbacClass::require(ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE)))return $errmsg;
 
         return (Renderer::render("new_consultation.zetem", [
             'calendar_enabled' => googleCalendarClass::isEnabled(),
+            'locations' => zpms_pending_appointment_location_options(),
         ]));
     }
 
     function consultation_new_post($params) {
         global $kernel;
 
-        // Creates both a patient and an appointment row -- require both
-        // permissions, not whichever is broader, so this action can never
-        // do more than either one alone would already be allowed to do.
-        if(($errmsg = rbacClass::require(ZPMS_PERM_PATIENTS_NEW_PATIENT)))return $errmsg;
-        if(($errmsg = rbacClass::require(ZPMS_PERM_APPOINTMENT_EDIT)))return $errmsg;
+        if(($errmsg = rbacClass::require(ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE)))return $errmsg;
 
         if(!csrfClass::verifyRequest()) {
             $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
@@ -932,72 +958,173 @@ require_once(__DIR__ . '/rbac.php');
             exit();
         }
 
-        $pat = new patientsClass([
+        // No patient/appointment row yet -- see pending_appointments.yaml's
+        // own docblock for why this table exists at all: a patient record
+        // is only ever created once the patient actually shows up and the
+        // doctor asks for one (pending_appointment_convert_post() below).
+        $pending = new pendingAppointmentsClass([
             'id' => null,
             'cuser' => $kernel->getUserName(),
             'cdate' => getDBtime(),
-            'pname' => $_POST['patient-name'],
-            'pdob' => getDBtime(),
-            'pamka' => $_POST['patient-amka'] ?? '',
-            'ptel' => $_POST['patient-telephone'] ?? '',
-            'paddr' => '',
-            'pemail' => $_POST['patient-email'] ?? '',
-            'pnote' => '',
             'guid' => guid(),
+            'patient_name' => $_POST['patient-name'],
+            'patient_phone' => $_POST['patient-telephone'] ?? '',
+            'patient_amka' => $_POST['patient-amka'] ?? '',
+            'patient_email' => $_POST['patient-email'] ?? '',
+            'appointment_datetime' => getDBformattime($_POST['appointment-date']),
+            'location' => $_POST['appointment-location'] ?? '',
+            'notes' => $_POST['appointment-notes'] ?? '',
         ]);
-        $pat->insert();
+        $pending->insert();
 
-        $app = new appointmentsClass([
-            'id' => null,
-            'cuser' => $kernel->getUserName(),
-            'cdate' => getDBtime(),
-            'adate' => getDBformattime($_POST['appointment-date']),
-            'aplace' => '',
-            'anote' => $_POST['appointment-notes'] ?? '',
-            'atype' => 'appointment',
-            'guid' => guid(),
-            'pguid' => $pat->getguid(),
-        ]);
-        $app->insert();
+        zpms_pending_appointment_sync_to_calendar($pending);
 
-        zpms_consultation_sync_to_calendar($app, $pat);
+        $kernel->addStatus('notice', 'Καταχωρήθηκε εκκρεμές ραντεβού για τον/την <b>'
+            . htmlspecialchars($pending->getpatient_name(), ENT_QUOTES, 'UTF-8') . '</b>'
+            . ($pending->getgoogle_event_id() ? ' (συγχρονίστηκε με το Google Calendar).' : '.'));
 
-        $kernel->addStatus('notice', 'Δημιουργήθηκε φάκελος και ραντεβού για τον ασθενή <b>'
-            . htmlspecialchars($pat->getpname(), ENT_QUOTES, 'UTF-8') . '</b>'
-            . ($app->getgoogle_event_id() ? ' (συγχρονίστηκε με το Google Calendar).' : '.'));
-
-        header('location: '.rel_url('/patient/'.$pat->getid().'/edit'));
+        header('location: '.rel_url('/consultation/pending'));
         exit();
     }
 
     /**
-     * "Νέα από Ημερολόγιο" -- calendar_pending_events rows
-     * bin/sync_google_calendar.php queued because they were created
-     * directly in the synced Google Calendar (no zpms_appointment_id
-     * extendedProperty), so ZPMS has no patient/appointment record for
-     * them yet. See calendar_pending_events.yaml's own docblock.
+     * "Εκκρεμή Ραντεβού" -- every not-yet-converted, not-yet-cancelled
+     * pending_appointments row, regardless of whether it was booked on
+     * /consultation/new or pulled in from a Calendar-native event by
+     * bin/sync_google_calendar.php. Secretary-level: viewing/editing/
+     * cancelling a phone booking never needs real patient-record access.
      */
-    function calendar_review_queue($params) {
+    function pending_appointments_list($params) {
+        global $kernel;
+
+        if(($errmsg = rbacClass::require(ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE)))return $errmsg;
+
+        $pending = pendingAppointmentsClass::sgetAll(
+            'converted_at IS NULL AND cancelled_at IS NULL',
+            null
+        );
+        usort($pending, fn($a, $b) => strcmp($a->getappointment_datetime(), $b->getappointment_datetime()));
+
+        return (Renderer::render("pending_appointments_list.zetem", [
+            'pending' => $pending,
+            // Gates the per-row "Δημιουργία Φακέλου" button -- a
+            // secretary-only account sees the list but not that action,
+            // same permission split pending_appointment_convert()
+            // enforces server-side (this is display-only, not the real
+            // access check).
+            'can_convert' => rbacClass::isPermitted(ZPMS_PERM_PATIENTS_NEW_PATIENT)
+                && rbacClass::isPermitted(ZPMS_PERM_APPOINTMENT_EDIT),
+        ]));
+    }
+
+    function pending_appointment_edit($params) {
+        global $kernel;
+
+        if(($errmsg = rbacClass::require(ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE)))return $errmsg;
+
+        $pending = pendingAppointmentsClass::sgetById((int)$params['id']);
+        if (!$pending || $pending->getconverted_at() !== null || $pending->getcancelled_at() !== null) {
+            $kernel->addStatus('error', 'Η καταχώρηση δεν βρέθηκε ή έχει ήδη επεξεργαστεί.');
+            header('location: '.rel_url('/consultation/pending'));
+            exit();
+        }
+
+        return (Renderer::render("pending_appointment_edit.zetem", [
+            'pending' => $pending,
+            'locations' => zpms_pending_appointment_location_options(),
+        ]));
+    }
+
+    function pending_appointment_edit_post($params) {
+        global $kernel;
+
+        if(($errmsg = rbacClass::require(ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE)))return $errmsg;
+
+        if(!csrfClass::verifyRequest()) {
+            $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
+            header('location: '.rel_url('/consultation/pending'));
+            exit();
+        }
+
+        $pending = pendingAppointmentsClass::sgetById((int)$params['id']);
+        if (!$pending || $pending->getconverted_at() !== null || $pending->getcancelled_at() !== null) {
+            $kernel->addStatus('error', 'Η καταχώρηση δεν βρέθηκε ή έχει ήδη επεξεργαστεί.');
+            header('location: '.rel_url('/consultation/pending'));
+            exit();
+        }
+
+        $pending->setpatient_name($_POST['patient-name']);
+        $pending->setpatient_phone($_POST['patient-telephone'] ?? '');
+        $pending->setpatient_amka($_POST['patient-amka'] ?? '');
+        $pending->setpatient_email($_POST['patient-email'] ?? '');
+        $pending->setappointment_datetime(getDBformattime($_POST['appointment-date']));
+        $pending->setlocation($_POST['appointment-location'] ?? '');
+        $pending->setnotes($_POST['appointment-notes'] ?? '');
+        $pending->update();
+
+        zpms_pending_appointment_sync_to_calendar($pending);
+
+        $kernel->addStatus('notice', 'Ενημερώθηκε το εκκρεμές ραντεβού.');
+        header('location: '.rel_url('/consultation/pending'));
+        exit();
+    }
+
+    /**
+     * Cancels a pending appointment with no patient record ever created
+     * -- the caller cancelled, or (for a Calendar-native row) it was a
+     * personal event that landed on the shared calendar by mistake.
+     * Deletes the linked Calendar event too, if there is one, so
+     * cancelling here doesn't leave a booking Calendar still shows.
+     */
+    function pending_appointment_delete($params) {
+        global $kernel;
+
+        if(($errmsg = rbacClass::require(ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE)))return $errmsg;
+
+        if(!csrfClass::verifyRequest()) {
+            $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
+            header('location: '.rel_url('/consultation/pending'));
+            exit();
+        }
+
+        $pending = pendingAppointmentsClass::sgetById((int)$params['id']);
+        if ($pending && $pending->getconverted_at() === null && $pending->getcancelled_at() === null) {
+            if ($pending->getgoogle_event_id() !== null) {
+                googleCalendarClass::deleteEvent($pending->getgoogle_event_id());
+            }
+            $pending->setcancelled_at(getDBtime());
+            $pending->update();
+            $kernel->addStatus('notice', 'Το ραντεβού ακυρώθηκε.');
+        }
+
+        header('location: '.rel_url('/consultation/pending'));
+        exit();
+    }
+
+    /**
+     * The patient showed up (or called to confirm) and the doctor wants
+     * a real record -- pre-fills the same duplicate-name check
+     * patient_new()/patient_new_check_name() already provide, so an
+     * existing patient can be picked instead of creating a second record
+     * for someone already on file.
+     */
+    function pending_appointment_convert($params) {
         global $kernel;
 
         if(($errmsg = rbacClass::require(ZPMS_PERM_PATIENTS_NEW_PATIENT)))return $errmsg;
         if(($errmsg = rbacClass::require(ZPMS_PERM_APPOINTMENT_EDIT)))return $errmsg;
 
-        $pending = calendarPendingEventsClass::sgetAll('resolved_at IS NULL', null);
+        $pending = pendingAppointmentsClass::sgetById((int)$params['id']);
+        if (!$pending || $pending->getconverted_at() !== null || $pending->getcancelled_at() !== null) {
+            $kernel->addStatus('error', 'Η καταχώρηση δεν βρέθηκε ή έχει ήδη επεξεργαστεί.');
+            header('location: '.rel_url('/consultation/pending'));
+            exit();
+        }
 
-        return (Renderer::render("calendar_review_queue.zetem", ['pending' => $pending]));
+        return (Renderer::render("pending_appointment_convert.zetem", ['pending' => $pending]));
     }
 
-    /**
-     * Turns one pending calendar event into a real patient + appointment,
-     * reusing whatever name/phone/AMKA/email staff type in against the
-     * event's own summary/time. Unlike consultation_new_post(), this
-     * appointment's Calendar event already exists (it's the very event
-     * that created this review-queue row) -- so google_event_id is set
-     * directly from it rather than calling createEvent() again, which
-     * would otherwise leave two Calendar events for the same booking.
-     */
-    function calendar_review_resolve($params) {
+    function pending_appointment_convert_post($params) {
         global $kernel;
 
         if(($errmsg = rbacClass::require(ZPMS_PERM_PATIENTS_NEW_PATIENT)))return $errmsg;
@@ -1005,85 +1132,69 @@ require_once(__DIR__ . '/rbac.php');
 
         if(!csrfClass::verifyRequest()) {
             $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
-            header('location: '.rel_url('/consultation/review'));
+            header('location: '.rel_url('/consultation/pending'));
             exit();
         }
 
-        $pending = calendarPendingEventsClass::sgetById((int)$params['id']);
-        if (!$pending || $pending->getresolved_at() !== null) {
+        $pending = pendingAppointmentsClass::sgetById((int)$params['id']);
+        if (!$pending || $pending->getconverted_at() !== null || $pending->getcancelled_at() !== null) {
             $kernel->addStatus('error', 'Η καταχώρηση δεν βρέθηκε ή έχει ήδη επεξεργαστεί.');
-            header('location: '.rel_url('/consultation/review'));
+            header('location: '.rel_url('/consultation/pending'));
             exit();
         }
 
-        $pat = new patientsClass([
-            'id' => null,
-            'cuser' => $kernel->getUserName(),
-            'cdate' => getDBtime(),
-            'pname' => $_POST['patient-name'],
-            'pdob' => getDBtime(),
-            'pamka' => $_POST['patient-amka'] ?? '',
-            'ptel' => $_POST['patient-telephone'] ?? '',
-            'paddr' => '',
-            'pemail' => $_POST['patient-email'] ?? '',
-            'pnote' => '',
-            'guid' => guid(),
-        ]);
-        $pat->insert();
+        $existingPatientId = trim((string)($_POST['existing-patient-id'] ?? ''));
+
+        if ($existingPatientId !== '') {
+            $pat = patientsClass::sgetById((int)$existingPatientId);
+            if (!$pat) {
+                $kernel->addStatus('error', 'Ο επιλεγμένος ασθενής δεν βρέθηκε.');
+                header('location: '.rel_url('/consultation/pending/'.$pending->getid().'/convert'));
+                exit();
+            }
+        } else {
+            $pat = new patientsClass([
+                'id' => null,
+                'cuser' => $kernel->getUserName(),
+                'cdate' => getDBtime(),
+                'pname' => $_POST['patient-name'],
+                'pdob' => getDBtime(),
+                'pamka' => $_POST['patient-amka'] ?? '',
+                'ptel' => $_POST['patient-telephone'] ?? '',
+                'paddr' => '',
+                'pemail' => $_POST['patient-email'] ?? '',
+                'pnote' => '',
+                'guid' => guid(),
+            ]);
+            $pat->insert();
+        }
 
         $app = new appointmentsClass([
             'id' => null,
             'cuser' => $kernel->getUserName(),
             'cdate' => getDBtime(),
-            'adate' => $pending->getstart_datetime(),
-            'aplace' => '',
-            'anote' => $_POST['appointment-notes'] ?? '',
+            'adate' => $pending->getappointment_datetime(),
+            'aplace' => $pending->getlocation() ?? '',
+            'anote' => $pending->getnotes() ?? '',
             'atype' => 'appointment',
             'guid' => guid(),
             'pguid' => $pat->getguid(),
             'google_event_id' => $pending->getgoogle_event_id(),
-            'google_synced_at' => getDBtime(),
+            'google_synced_at' => $pending->getgoogle_event_id() !== null ? getDBtime() : null,
         ]);
         $app->insert();
 
-        $pending->setresolved_appointment_guid($app->getguid());
-        $pending->setresolved_at(getDBtime());
+        $pending->setconverted_at(getDBtime());
+        $pending->setconverted_patient_id($pat->getid());
+        $pending->setconverted_appointment_id($app->getid());
         $pending->update();
 
         $kernel->addStatus('notice', 'Δημιουργήθηκε φάκελος και ραντεβού για τον ασθενή <b>'
-            . htmlspecialchars($pat->getpname(), ENT_QUOTES, 'UTF-8') . '</b> από το ημερολόγιο.');
+            . htmlspecialchars($pat->getpname(), ENT_QUOTES, 'UTF-8') . '</b>.');
 
         header('location: '.rel_url('/patient/'.$pat->getid().'/edit'));
         exit();
     }
-
-    /**
-     * Dismisses a pending calendar event with no ZPMS record created --
-     * e.g. it was a personal appointment someone added to the shared
-     * calendar by mistake, not an actual patient booking.
-     */
-    function calendar_review_dismiss($params) {
-        global $kernel;
-
-        if(($errmsg = rbacClass::require(ZPMS_PERM_APPOINTMENT_EDIT)))return $errmsg;
-
-        if(!csrfClass::verifyRequest()) {
-            $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
-            header('location: '.rel_url('/consultation/review'));
-            exit();
-        }
-
-        $pending = calendarPendingEventsClass::sgetById((int)$params['id']);
-        if ($pending && $pending->getresolved_at() === null) {
-            $pending->setresolved_at(getDBtime());
-            $pending->update();
-            $kernel->addStatus('notice', 'Η καταχώρηση παραβλέφθηκε.');
-        }
-
-        header('location: '.rel_url('/consultation/review'));
-        exit();
-    }
-
 
 
     function settings($params) {

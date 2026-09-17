@@ -44,6 +44,29 @@ function zpms_role_seed_definitions(): array {
                 ZPMS_PERM_APPOINTMENT_EDIT,
                 ZPMS_PERM_BACKUP_ACCESS,
                 ZPMS_PERM_SETTINGS_MANAGE,
+                ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE,
+            ],
+        ],
+        // A front-desk account that books/manages phone appointments
+        // (the "Εκκρεμή Ραντεβού" waiting room) without touching real
+        // patient records at all -- deliberately no ZPMS_PERM_PATIENTS_*/
+        // ZPMS_PERM_APPOINTMENT_EDIT, since "convert this into a patient
+        // record" is a doctor decision, made once the patient actually
+        // shows up (see pending_appointment_convert_post() in
+        // web/index.php, gated on those exact permissions this role
+        // doesn't have). Added after the role seed array's own docblock
+        // above said "not something that stays in sync automatically" --
+        // this one addition is still safe to bring into an existing
+        // deployment by re-running bin/migrate_roles.php --yes, since
+        // zpms_seed_permissions_and_roles() only ever inserts a
+        // permission/role/grant that doesn't already exist, never
+        // touches one that does.
+        'secretary' => [
+            'label' => 'Γραμματεία',
+            'is_superuser' => false,
+            'permissions' => [
+                ZPMS_PERM_PATIENTS_VIEW_LIST,
+                ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE,
             ],
         ],
         'administrator' => [
@@ -63,6 +86,7 @@ function zpms_permission_label_seed(): array {
         ZPMS_PERM_APPOINTMENT_EDIT => 'Create/edit/delete appointments and their attachments',
         ZPMS_PERM_BACKUP_ACCESS => 'View backup status',
         ZPMS_PERM_SETTINGS_MANAGE => 'Manage clinics/doctors reference data',
+        ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE => 'View/create/edit/delete pending (not-yet-a-patient) appointments',
         ZEUSFW_PERM_MANAGE_USERS => 'Manage user accounts and roles/permissions',
     ];
 }

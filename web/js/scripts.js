@@ -120,11 +120,11 @@ if(trashelements.length>0) {
    FormElement.php's generateHTMLTableRowButton() in zeusfw, rendering
    webform_row_action_delete.zetem's own [confirmation] form) -- same
    convention as the other two containers, not a separate mechanism.
-   .calendar-review-queue covers dismissing a calendar-origin appointment
-   review row (web/templates/content/calendar_review_queue.zetem) --
-   same reasoning, an extra container added to this same list rather than
+   .pending-appointments-list covers cancelling a pending appointment
+   (web/templates/content/pending_appointments_list.zetem) -- same
+   reasoning, an extra container added to this same list rather than
    inventing a second confirmation mechanism. */
-let trashforms = document.querySelectorAll('.patients-list form[confirmation], .admin-list form[confirmation], .settings-table-scroll form[confirmation], .calendar-review-queue form[confirmation]');
+let trashforms = document.querySelectorAll('.patients-list form[confirmation], .admin-list form[confirmation], .settings-table-scroll form[confirmation], .pending-appointments-list form[confirmation]');
 if(trashforms.length>0) {
     trashforms.forEach(el => {
         el.addEventListener('submit', (e) => {
@@ -357,13 +357,14 @@ function dobChange(e) {
 
 /* live duplicate-name check on the "new patient" form -- see
  * patient_new_check_name() in index.php, reused by /consultation/new's
- * combined patient+appointment booking form (its own consultation_new_
- * namecheck route in config/settings.info.yaml points at the same
- * handler). The URL is derived from the current page's own path, so
- * either page's namecheck request lands on its own matching route with
- * no page-specific code here. Only ever finds a [data-check-duplicate]
- * input on one of those two pages, so this whole block is a no-op
- * everywhere else. */
+ * phone-booking form and /consultation/pending/{id}/convert's
+ * create-patient-record form (their own consultation_new_namecheck/
+ * pending_appointment_convert_namecheck routes in
+ * config/settings.info.yaml both point at the same handler). The URL is
+ * derived from the current page's own path, so each page's namecheck
+ * request lands on its own matching route with no page-specific code
+ * here. Only ever finds a [data-check-duplicate] input on one of those
+ * pages, so this whole block is a no-op everywhere else. */
 function escapeHtml(str) {
     if(str === null || str === undefined) return '';
     return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
