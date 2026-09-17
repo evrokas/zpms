@@ -10,6 +10,17 @@
     <form action="{{$action}}" method="post">
         {{ csrf_field() }}
 
+        <!-- A viewer with only patients-view-list (e.g. the secretary
+             role -- see ZPMS_PERM_PATIENTS_VIEW_LIST's own docblock in
+             web/rbac.php) reaches this page but can't save changes to
+             it: every field below is wrapped in a single disabled
+             <fieldset>, which disables every descendant form control at
+             once (native HTML behavior) without touching each input
+             individually. The submit buttons are separately hidden
+             below, since a disabled fieldset doesn't hide its own
+             submit controls, just makes them inert. -->
+        <fieldset {% if(!$can_edit_patient): %}disabled{% endif %}>
+
         {#
             <div class="input-div">
             {% if($action != 'new'): %}
@@ -149,13 +160,19 @@
             <label for="patient-note">Σημειώσεις</label>
             <textarea name="patient-note" loader="info-loader" autoexpand id="" rows="5" placeholder="σημειώσεις">{{{$patient->getpnote()}}}</textarea>
         </div>
-        <div class="buttons">
-            <input type="submit" name="submit" value="Αποθήκευση">
+        </fieldset>
 
-            {% if($action == 'new'): %}
-                <input type="submit" name="submitedit" value="Αποθήκευση & Επεξεργασία">
+        <div class="buttons">
+            {% if($can_edit_patient): %}
+                <input type="submit" name="submit" value="Αποθήκευση">
+
+                {% if($action == 'new'): %}
+                    <input type="submit" name="submitedit" value="Αποθήκευση & Επεξεργασία">
+                {% else: %}
+                    <input type="submit" name="delete" value="Ακύρωση" class="btn-secondary">
+                {% endif %}
             {% else: %}
-                <input type="submit" name="delete" value="Ακύρωση" class="btn-secondary">
+                <a href="{{rel_url('/patients')}}" class="btn-secondary">&larr; Πίσω στη λίστα</a>
             {% endif %}
 
             <button hidden type="button" loader="info-loader" onclick="field_update(this)">Update</button>
@@ -163,7 +180,7 @@
         </div>
     </form>
 
-    {% if($action != 'new'): %}
+    {% if($action != 'new' && $can_edit_appointment): %}
         <hr>
         <div class="patient-appointments">
             <a href="{{rel_url('/appointment/'.$id.'/newappointment')}}">

@@ -7,6 +7,12 @@
 <div class="appointment-entry" id="app-{{$index}}">
     <form action="{{$action}}" method="post">
         {{ csrf_field() }}
+        <!-- A viewer without appointment-edit (e.g. the secretary role --
+             see ZPMS_PERM_PATIENTS_VIEW_LIST's own docblock in
+             web/rbac.php) can read this card but not save or delete it;
+             see edit_patient.zetem's own comment for why a disabled
+             <fieldset> is the mechanism. -->
+        <fieldset {% if(!$can_edit): %}disabled{% endif %}>
         <div class="input-header">
             <div class="input-div" role="rendezvouz">
                 <!-- <label for="patient-date">Ημ/νια & Ώρα ραντεβού</label> -->
@@ -75,6 +81,7 @@
                         loader="app-loader-{{$index}}">{{$appointment->getanote()}}</textarea>
                 </div>
 
+                {% if($can_edit): %}
                 <div class="buttons">
                     <input type="submit" name="submit" value="Αποθήκευση">
                     <input type="submit" name="delete" value="Διαγραφή">
@@ -82,9 +89,11 @@
                     <button hidden type="button" loader="app-loader-{{$index}}"
                         onclick="field_update(this)">Update</button>
                 </div>
+                {% endif %}
             </div>
         </div>
 
+        </fieldset>
     </form>
 
     <!-- Attachments for this appointment -- deliberately outside the form
@@ -92,7 +101,18 @@
          swept into the place/date/notes save). Collapsed by default and
          expanded by clicking the heading, except it starts already
          expanded when there are existing files, so staff land straight
-         on them instead of an empty-looking closed section. -->
+         on them instead of an empty-looking closed section.
+
+         Hidden entirely (not just disabled) from a viewer without
+         appointment-edit -- uploaded files can be scanned medical
+         documents, and read-only patient access (e.g. the secretary
+         role) was only ever asked to cover the patient/appointment
+         fields themselves, not attachment contents. Every underlying
+         appointment_file_* route already requires appointment-edit
+         regardless (web/appointment_files.php), so this is a UI
+         courtesy matching that real gate, not the only thing enforcing
+         it. -->
+    {% if($can_edit): %}
     <div class="file-upload-section{{(isset($files) && count($files) > 0) ? ' is-expanded' : ''}}">
         <h5 class="file-upload-section-heading" data-toggle-attachments>
             <i class='bx bx-chevron-right toggle-icon'></i>
@@ -167,4 +187,5 @@
             </div>
         </div>
     </div>
+    {% endif %}
 </div>

@@ -5,9 +5,11 @@
 class TestFixtures {
     const USERNAME = 'zpms_test_user';
     const PASSWORD = 'ZpmsTest!Passw0rd';
+    const SECRETARY_USERNAME = 'zpms_test_secretary';
+    const SECRETARY_PASSWORD = 'ZpmsTest!Secretary0';
 
     /**
-     * Inserts a `power-user` test account directly through the entity
+     * Inserts a `doctor` test account directly through the entity
      * class rather than the /admin/users HTTP UI (zeusfw core's
      * core/modules/admin/admin_crud.php) -- that UI needs an
      * already-logged-in users-manage account to reach at all, so it can't
@@ -35,7 +37,7 @@ class TestFixtures {
             // fallback path and so a from-scratch bin/migrate_roles.php
             // run against this same test database has something real to
             // migrate. The real grant is the user_roles row assigned below.
-            'roles' => 'power-user',
+            'roles' => 'doctor',
         ]);
         $u->insert();
 
@@ -46,11 +48,45 @@ class TestFixtures {
         // every permission check in the suite would fail regardless of
         // that column's value.
         $seeded = zpms_seed_permissions_and_roles(false, function () {});
-        user_rolesClassEx::assignRole((int)$u->getid(), $seeded['roleIdsByName']['power-user'], 'test-fixture');
+        user_rolesClassEx::assignRole((int)$u->getid(), $seeded['roleIdsByName']['doctor'], 'test-fixture');
+    }
+
+    /**
+     * A front-desk account (only patients-view-list +
+     * pending-appointments-manage -- see web/rbac_seed.php's 'secretary'
+     * role) for exercising the read-only patient page and the pending-
+     * appointments waiting room without full clinical access.
+     */
+    static function createSecretaryUser(): void {
+        TestSchema::assertSafeToMutate();
+
+        $u = new usersClass([
+            'name' => 'ZPMS Test Secretary',
+            'email' => 'zpms-test-secretary@example.invalid',
+            'uname' => self::SECRETARY_USERNAME,
+            'upass' => hash('sha256', self::SECRETARY_PASSWORD),
+            'active' => 1,
+            'expired' => 0,
+            'wrongpasscount' => 0,
+            'roles' => 'secretary',
+        ]);
+        $u->insert();
+
+        $seeded = zpms_seed_permissions_and_roles(false, function () {});
+        user_rolesClassEx::assignRole((int)$u->getid(), $seeded['roleIdsByName']['secretary'], 'test-fixture');
     }
 
     /** Logs in through the real /login form (scrapes the CSRF token like a browser would) and returns the client. */
     static function loginAsTestUser(TestHttpClient $http): void {
+        self::loginAs($http, self::USERNAME, self::PASSWORD);
+    }
+
+    /** Same as loginAsTestUser(), for the secretary fixture account. */
+    static function loginAsSecretary(TestHttpClient $http): void {
+        self::loginAs($http, self::SECRETARY_USERNAME, self::SECRETARY_PASSWORD);
+    }
+
+    private static function loginAs(TestHttpClient $http, string $username, string $password): void {
         $loginPage = $http->get('/login');
         assert_equal(200, $loginPage['status'], 'GET /login did not return 200');
 
@@ -59,8 +95,8 @@ class TestFixtures {
 
         $res = $http->post('/login', [
             'csrf_token' => $token,
-            'username' => self::USERNAME,
-            'password' => self::PASSWORD,
+            'username' => $username,
+            'password' => $password,
         ]);
         assert_equal(302, $res['status'], "login POST did not redirect (got {$res['status']}) -- body:\n" . $res['body']);
         assert_contains('/profile', (string)$res['location'], 'login did not redirect to /profile');

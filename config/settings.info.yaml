@@ -122,28 +122,36 @@ foot_script:
 # and role->permission mappings live in the permissions/roles/
 # role_permissions/user_roles DB tables now (see web/rbac.php and
 # bin/migrate_roles.php) -- this block used to double as that mapping
-# (per-role permission arrays, e.g. 'power-user: [patients-view-list, ...]'),
+# (per-role permission arrays, e.g. 'doctor: [patients-view-list, ...]'),
 # but zpms no longer calls SecurityClass::require() anywhere (see
 # web/rbac.php's docblock for the two real bugs that motivated moving off
 # of it), so those arrays were dead weight and are gone. 'authenticated'
 # here means "any logged-in user" for `access:` purposes only -- unrelated
 # to (and not affected by) SecurityClass::require()'s own, separate
-# "authenticated" special case documented in web/rbac.php.
+# "authenticated" special case documented in web/rbac.php. This list
+# only has to name every role that ever appears in an `access:` string
+# below, not every role that exists -- but every role that DOES appear
+# in an `access:` string must be listed here or SecurityClass::
+# processRoles() hard-crashes the request. There is deliberately no
+# 'user' entry any more (that role was retired -- see
+# bin/migrate_role_refactor.php).
 roles:
   anonymous: []
   administrator: []
   authenticated: []
-  user: []
-  power-user: []
-  # Front-desk role for the "Εκκρεμή Ραντεβού" waiting room -- see
-  # web/rbac_seed.php's 'secretary' role for the actual (fine-grained,
-  # rbacClass-checked) permissions this grants; this entry only has to
-  # exist so SecurityClass::processRoles() (used for route/menu-level
-  # `access:` strings, a coarser, role-name-only mechanism -- see
-  # web/rbac.php's own docblock on why this app's real permission checks
-  # don't go through this class at all) doesn't hard-crash on an unknown
-  # role name the moment something references it.
+  # Full clinical access -- see web/rbac_seed.php's 'doctor' role for the
+  # actual (fine-grained, rbacClass-checked) permissions this grants;
+  # this entry only has to exist so SecurityClass::processRoles() doesn't
+  # hard-crash on an unknown role name the moment an `access:` string
+  # below references it.
+  doctor: []
+  # Front-desk role for the "Εκκρεμή Ραντεβού" waiting room and read-only
+  # patient lookup -- see web/rbac_seed.php's 'secretary' role for the
+  # actual permissions this grants.
   secretary: []
+  # Ops-only role (backups + clinics/doctors reference data, zero patient
+  # access) -- see web/rbac_seed.php's 'maintenance' role.
+  maintenance: []
 
 
 # reduce analytics entries, by not logging localhost calls
@@ -210,24 +218,24 @@ routes:
           "/patients/sort/{key}/{order}"
           ]
     handler: patients_list
-    access: authenticated user
+    access: authenticated
   patients_search:
     title: "Patients"
     url: "/patients/search/{term}"
     handler: patients_list_search
-    access: authenticated user
+    access: authenticated
   # patients_search0:
     # title: "Patients"
     # url: "/patients/search"
     # handler: patients_list
-    # access: authenticated user
+    # access: authenticated
   patients_search_ajax:
     title: 
       gr: "Ασθενείς"
       en: "Patients"
     url: "/patients/searchajax/{term}"
     handler: patients_list_search_ajax
-    access: authenticated user
+    access: authenticated
   patients_search_post:
     title: "Patients search"
     url: "/patients/search"
@@ -344,13 +352,13 @@ routes:
     url: /consultation/new
     handler: consultation_new
     method: get
-    access: authenticated user
+    access: authenticated
   consultation_new_post:
     title: "New consultation booking"
     url: /consultation/new
     handler: consultation_new_post
     method: post
-    access: authenticated user
+    access: authenticated
   # The waiting room itself -- every pending_appointments row not yet
   # converted into a patient record or cancelled, regardless of whether
   # it was booked above or pulled in from a Calendar-native event by
@@ -362,25 +370,25 @@ routes:
     url: /consultation/pending
     handler: pending_appointments_list
     method: get
-    access: authenticated user
+    access: authenticated
   pending_appointment_edit:
     title: "Edit a pending appointment"
     url: "/consultation/pending/{id}/edit"
     handler: pending_appointment_edit
     method: get
-    access: authenticated user
+    access: authenticated
   pending_appointment_edit_post:
     title: "Edit a pending appointment"
     url: "/consultation/pending/{id}/edit"
     handler: pending_appointment_edit_post
     method: post
-    access: authenticated user
+    access: authenticated
   pending_appointment_delete:
     title: "Cancel a pending appointment"
     url: "/consultation/pending/{id}/delete"
     handler: pending_appointment_delete
     method: post
-    access: authenticated user
+    access: authenticated
   # Doctor-only (ZPMS_PERM_PATIENTS_NEW_PATIENT + ZPMS_PERM_APPOINTMENT_EDIT,
   # checked in the handlers -- a plain "authenticated user" route-level
   # access: here would only gate being logged in at all, not which role).
@@ -391,13 +399,13 @@ routes:
     url: "/consultation/pending/{id}/convert"
     handler: pending_appointment_convert
     method: get
-    access: authenticated user
+    access: authenticated
   pending_appointment_convert_post:
     title: "Create patient record"
     url: "/consultation/pending/{id}/convert"
     handler: pending_appointment_convert_post
     method: post
-    access: authenticated user
+    access: authenticated
   # Reuses patient_new_check_name() as-is -- see scripts.js's own comment
   # on [data-check-duplicate] for why one handler can serve several pages.
   consultation_new_namecheck:
@@ -438,8 +446,9 @@ routes:
     # framework) has no permission check of its own, so this route-level
     # access: is what actually protects it here. Router.php checks this
     # before dispatch, same mechanism already used by the settings/backup
-    # menu entries above.
-    access: power-user
+    # menu entries above. doctor and maintenance both hold settings-manage
+    # (see web/rbac_seed.php) -- this coarse gate matches that.
+    access: doctor maintenance
   # admin_list/admin_new/admin_new_post/admin_edit/admin_edit_post/
   # admin_delete used to be defined here -- they're now provided by
   # zeusfw core's own admin module (core/modules/admin/admin.yaml),
@@ -460,8 +469,8 @@ routes:
     # route-level access: is what actually protects it. Used by the
     # Clinics/Doctors results tables' Delete row buttons (table_view ->
     # buttons: -> handler:, see clinics_delete_url()/doctors_delete_url()
-    # in web/index.php).
-    access: power-user
+    # in web/index.php). doctor and maintenance both hold settings-manage.
+    access: doctor maintenance
   clinics_row_edit:
     title: "Edit clinic"
     url: "/clinics/{guid}/edit"
@@ -550,14 +559,19 @@ menu:
       url: '/'
       # path: home
     - patients:
-      text: 
+      text:
         gr: 'Ασθενείς'
         en: 'Patients'
-      access: power-user
+      # doctor gets full access; secretary gets a read-only view (see
+      # ZPMS_PERM_PATIENTS_VIEW_LIST's own docblock in web/rbac.php) --
+      # the "New" submenu item below is doctor-only since creating a
+      # patient stays gated on patients-new-patient, which secretary
+      # doesn't hold.
+      access: doctor secretary
       # url: '/patients'
       submenu:
         - patients_list:
-          text: 
+          text:
             gr: 'Λίστα'
             en: 'List'
           url: '/patients'
@@ -566,12 +580,13 @@ menu:
             gr: 'Νεός'
             en: 'New'
           url: /patient/new
+          access: doctor
       # path: '/patients'
     - consultations:
       text:
         gr: 'Ραντεβού'
         en: 'Consultations'
-      access: power-user secretary
+      access: doctor secretary
       submenu:
         - consultation_new:
           text:
@@ -588,7 +603,7 @@ menu:
         gr: "Ρυθμίσεις"
         en: "Settings"
       url: '/settings'
-      access: power-user
+      access: doctor maintenance
     - contact:
       text:
         gr: 'Επικοινωνία'
@@ -609,7 +624,7 @@ menu:
             gr: "Αντίγραφα Ασφαλείας"
             en: "Backups"
           url: /apps/backup
-          access: power-user
+          access: doctor maintenance
 
 
 

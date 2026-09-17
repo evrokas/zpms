@@ -40,7 +40,7 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
         assert_contains('/login', (string)$res['location'], 'an unauthenticated POST to /webform/processform/... was not refused');
     });
 
-    $runner->add('a logged-in account with the plain user role cannot delete a patient', function () use ($baseUrl) {
+    $runner->add('a logged-in secretary account can view but not modify/add/remove a patient', function () use ($baseUrl) {
         // The actual bug this whole system replaces: SecurityClass::require()
         // (zeusfw core) special-cases any role literally named
         // 'authenticated' as an unconditional pass for ANY permission, and
@@ -48,48 +48,35 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
         // logged-in user's session -- so in the old system, EVERY
         // permission check silently passed for ANY logged-in user
         // regardless of their actual role. rbacClass::require() (zeusfw
-        // core/lib/Rbac.php) has no such bypass; this proves it by
-        // creating an account with only the 'user' role
-        // (patients-view-list only, no delete) and confirming it's
-        // actually refused.
+        // core/lib/Rbac.php) has no such bypass; this proves it against
+        // the 'secretary' role (patients-view-list +
+        // pending-appointments-manage only -- see web/rbac_seed.php),
+        // which is deliberately the narrowest non-superuser role with any
+        // patient-data access at all.
         TestSchema::assertSafeToMutate();
-
-        $uname = 'zpms_test_plain_user';
-        $password = 'PlainUser!Passw0rd';
-        $u = new usersClass([
-            'name' => 'Plain User Test Account',
-            'email' => 'zpms-test-plain-user@example.invalid',
-            'uname' => $uname,
-            'upass' => password_hash($password, PASSWORD_DEFAULT),
-            'active' => 1,
-            'expired' => 0,
-            'wrongpasscount' => 0,
-            'roles' => 'user',
-        ]);
-        $u->insert();
-
-        $userRole = rolesClassEx::sgetByName('user');
-        assert_not_null($userRole, "the 'user' role was not seeded -- did TestFixtures::createTestUser() run first?");
-        user_rolesClassEx::assignRole((int)$u->getid(), (int)$userRole->getid(), 'test-fixture');
+        TestFixtures::createSecretaryUser();
 
         $http = new TestHttpClient($baseUrl);
-        $loginPage = $http->get('/login');
-        $token = TestHttpClient::extractCsrfToken($loginPage['body']);
-        $loginRes = $http->post('/login', ['csrf_token' => $token, 'username' => $uname, 'password' => $password]);
-        assert_contains('/profile', (string)$loginRes['location'], 'login with the plain-user account did not succeed');
+        TestFixtures::loginAsSecretary($http);
 
-        // Can still view the patient list (patients-view-list, granted).
+        // Can view the patient list (patients-view-list, granted).
         $listPage = $http->get('/patients');
-        assert_equal(200, $listPage['status'], 'plain-user account could not view the patient list');
-        assert_not_contains('401', $listPage['body'], 'plain-user account was refused a permission it does have');
+        assert_equal(200, $listPage['status'], 'secretary account could not view the patient list');
+        assert_not_contains('401', $listPage['body'], 'secretary account was refused a permission it does have');
+        // The "Add new patient" button and per-row delete forms are
+        // patients-new-patient/patients-delete-patient gated -- neither is
+        // granted to secretary, so neither control should even render
+        // (see patients_list.zetem).
+        assert_not_contains('btn-add-patient', $listPage['body'], 'secretary account saw the "Add new patient" button');
+        assert_not_contains('inline-delete-form', $listPage['body'], 'secretary account saw a per-row delete form');
 
         // Cannot reach clinics management (settings-manage, not granted).
         $settingsPage = $http->get('/apps/edit_clinics');
-        assert_contains('401', $settingsPage['body'], 'plain-user account was NOT refused settings-manage -- the permission bypass bug is back');
+        assert_contains('401', $settingsPage['body'], 'secretary account was NOT refused settings-manage -- the permission bypass bug is back');
 
-        // Cannot delete a patient (patients-delete-patient, not granted) --
-        // set up a throwaway patient via a power-user-equivalent direct
-        // insert (not through this account, which can't create one either).
+        // Set up a throwaway patient via a direct insert (not through this
+        // account, which can't create one either) to exercise the
+        // read-only patient page and the delete refusal below.
         $p = new patientsClass([
             'guid' => guid(), 'cuser' => 'test-fixture', 'cdate' => getDBtime(),
             'pname' => 'Ασθενής Για Δικαιώματα', 'pdob' => '1990-01-01 00:00:00',
@@ -97,16 +84,38 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
         ]);
         $p->insert();
 
-        // The token itself is session-wide, not tied to a specific page --
-        // /patient/{id}/edit would be the natural place to scrape one from,
-        // but this account can't reach it (patients-edit-patient isn't
-        // granted either), so /patients (already confirmed reachable above)
-        // supplies an equally valid token.
-        $editToken = TestHttpClient::extractCsrfToken($listPage['body']);
-        assert_not_null($editToken, 'no csrf_token field found on /patients (as seen by the plain-user account)');
+        // Can OPEN the patient's page read-only (patients-view-list also
+        // covers this -- see ZPMS_PERM_PATIENTS_VIEW_LIST's own docblock
+        // in web/rbac.php), but the page renders with no save controls
+        // and every field disabled.
+        $editPage = $http->get('/patient/' . $p->getid() . '/edit');
+        assert_equal(200, $editPage['status'], 'secretary account could not open the patient page read-only');
+        assert_not_contains('401', $editPage['body'], 'secretary account was refused patients-view-list on an individual patient page');
+        assert_contains('Ασθενής Για Δικαιώματα', $editPage['body'], "the patient's name did not render on the read-only page");
+        assert_contains('<fieldset disabled', $editPage['body'], 'the patient page did not render with a disabled fieldset for a view-only account');
+        assert_not_contains('name="submit" value="Αποθήκευση"', $editPage['body'], 'secretary account saw a save button on the read-only patient page');
 
+        // Cannot actually save a change (patients-edit-patient not
+        // granted) -- even a crafted POST with a valid token is refused.
+        $editToken = TestHttpClient::extractCsrfToken($editPage['body']);
+        assert_not_null($editToken, 'no csrf_token field found on the read-only patient page');
+        $saveRes = $http->post('/patient/' . $p->getid() . '/edit', [
+            'csrf_token' => $editToken,
+            'submit' => '1',
+            'patient-name' => 'Tampered Name',
+            'patient-dob' => '1990-01-01',
+            'patient-amka' => '44444444444',
+            'patient-telephone' => '', 'patient-address' => '', 'patient-email' => '', 'patient-note' => '',
+        ]);
+        assert_contains('401', $saveRes['body'], 'secretary account was NOT refused patients-edit-patient on a crafted POST -- the permission bypass bug is back');
+        $unchanged = dbConnection::getConnection()
+            ->query('SELECT pname FROM patients WHERE id = ' . $p->getid())
+            ->fetch();
+        assert_equal('Ασθενής Για Δικαιώματα', $unchanged['pname'], 'the patient was renamed despite the acting account lacking patients-edit-patient');
+
+        // Cannot delete a patient (patients-delete-patient, not granted).
         $delRes = $http->post('/patient/' . $p->getid() . '/delete', ['csrf_token' => $editToken]);
-        assert_contains('401', $delRes['body'], 'plain-user account was NOT refused patients-delete-patient -- the permission bypass bug is back');
+        assert_contains('401', $delRes['body'], 'secretary account was NOT refused patients-delete-patient -- the permission bypass bug is back');
 
         $row = dbConnection::getConnection()
             ->query('SELECT deleted FROM patients WHERE id = ' . $p->getid())
@@ -190,7 +199,7 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
             'active' => 1,
             'expired' => 0,
             'wrongpasscount' => 0,
-            'roles' => 'power-user',
+            'roles' => 'doctor',
         ]);
         $u->insert();
 
@@ -221,16 +230,16 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
         assert_not_contains('401', $profile['body'], '/patients still shows the 401 page after a successful login');
     });
 
-    $runner->add('a logged-in power-user can still reach clinics management', function () use ($baseUrl) {
-        // Confirms settings-manage (granted to power-user, see
+    $runner->add('a logged-in doctor can still reach clinics management', function () use ($baseUrl) {
+        // Confirms settings-manage (granted to doctor, see
         // config/settings.info.yaml) preserves existing access -- this is
         // a permission-scoping fix, not a lockout of current staff.
         $http = new TestHttpClient($baseUrl);
         TestFixtures::loginAsTestUser($http);
 
         $res = $http->get('/apps/edit_clinics');
-        assert_equal(200, $res['status'], 'GET /apps/edit_clinics did not return 200 for a logged-in power-user');
-        assert_not_contains('401', $res['body'], '/apps/edit_clinics still shows the 401 page for a logged-in power-user');
+        assert_equal(200, $res['status'], 'GET /apps/edit_clinics did not return 200 for a logged-in doctor');
+        assert_not_contains('401', $res['body'], '/apps/edit_clinics still shows the 401 page for a logged-in doctor');
     });
 
     $runner->add('a POST without a CSRF token is rejected and does not write data', function () use ($baseUrl) {

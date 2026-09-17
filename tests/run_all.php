@@ -102,7 +102,7 @@ try {
     $server = new TestServer();
     $server->start();
 
-    // Its own is_superuser client too -- the plain power-user $http above
+    // Its own is_superuser client too -- the plain doctor $http above
     // is not granted users-manage.
     $adminCrudRunner = new TestRunner('Admin CRUD (users/roles/permissions)');
     zpms_functional_admin_crud($adminCrudRunner, $server->baseUrl());

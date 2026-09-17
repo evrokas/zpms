@@ -2,9 +2,11 @@
 
 <div class="patients-header">
     <h2 class="page-title">{{t("Patients")}}</h2>
+    {% if($can_create_patient): %}
     <a class="btn-add-patient" href="{{rel_url('/patient/new')}}">
         <i class="bx bx-plus"></i>{{t("Add new patient")}}
     </a>
+    {% endif %}
 </div>
 
 <div class="search">
@@ -79,10 +81,12 @@
                     {% endif %}
                 </td>
                 <td class="actions" data-column="actions">
+                    {% if($can_delete_patient): %}
                     <form class="inline-delete-form" method="post" action="{{rel_url('/patient/'.$pat['id'].'/delete')}}" confirmation>
                         {{ csrf_field() }}
                         <button type="submit" class="icon-btn icon-btn-danger" title="{{t('Delete')}}"><i class="bx bx-trash"></i></button>
                     </form>
+                    {% endif %}
                 </td>
             </tr>
             {% endforeach %}

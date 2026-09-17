@@ -19,7 +19,7 @@ dedicated, disposable test database — never the live one. See
 Staff accounts (the `users` table) are authorized via a standard
 role-based model: `permissions` (the fixed set of things the app actually
 checks — `patients-view-list`, `appointment-edit`, etc.), `roles` (named,
-assignable bundles like `power-user`), `role_permissions` (which
+assignable bundles like `doctor`), `role_permissions` (which
 permissions a role grants), and `user_roles` (which roles a user has). The
 *engine* — this schema, the `rolesClassEx`/`permissionsClassEx`/
 `role_permissionsClassEx`/`user_rolesClassEx` extension classes, and the
@@ -34,6 +34,48 @@ importantly, every permission check silently passed for any logged-in
 user regardless of role). This app only owns its own permission
 *vocabulary*: the `ZPMS_PERM_*` constants + `zpms_all_permission_slugs()`
 in `web/rbac.php`, and the seed role/label data in `web/rbac_seed.php`.
+
+**Four roles, matching four real job functions at this practice**
+(`web/rbac_seed.php`'s `zpms_role_seed_definitions()`):
+
+| Role | Label | Permissions |
+|---|---|---|
+| `administrator` | Διαχειριστής | Everything (`is_superuser` bypasses the permission check entirely — no explicit grants needed or shown) |
+| `doctor` | Ιατρός | `patients-view-list`, `patients-new-patient`, `patients-edit-patient`, `patients-delete-patient`, `appointment-edit`, `backup-access`, `settings-manage`, `pending-appointments-manage` — full clinical access |
+| `secretary` | Γραμματεία | `patients-view-list`, `pending-appointments-manage` — see below |
+| `maintenance` | Συντήρηση | `backup-access`, `settings-manage` — ops-only, zero patient-data access |
+
+**`secretary` can see a patient, not change one.** `patients-view-list`
+covers both the patient list *and* opening an individual patient's page
+(name/AMKA/contact details/appointment history) — deliberately one
+permission for "can see patient data, read-only" rather than a separate
+view-list/view-record split (see that constant's own docblock in
+`web/rbac.php`). `patient_edit()` (`web/index.php`) renders the page for
+anyone holding just this permission with every field inside a disabled
+`<fieldset>`, no save button (a plain "← Back to list" link instead), no
+"New appointment"/"New operation" links, and the attachments section
+hidden entirely (uploaded files can be scanned medical documents, and
+read-only access was only ever meant to cover the patient/appointment
+fields themselves — every `appointment_file_*` route still requires
+`appointment-edit` regardless, so this is a UI courtesy matching a gate
+that already exists, not the only thing enforcing it). The patient
+list's own "Add new patient" button and per-row delete form are likewise
+hidden when the viewer lacks `patients-new-patient`/
+`patients-delete-patient`. Actually saving a change always re-checks
+`patients-edit-patient` server-side in `patient_edit_post()`, regardless
+of what a tampered request submits — the read-only rendering is a UX
+nicety on top of a real, independently-enforced gate, not the gate
+itself. `secretary` additionally holds `pending-appointments-manage` (see
+"Google Calendar sync" below) — it can book/edit/cancel a phone
+appointment in the waiting room, but converting one into a real patient
+record stays a `doctor`-only action.
+
+**`maintenance` is a technical/ops account**, for whoever administers the
+server — `backup-access` (check that backups actually ran) and
+`settings-manage` (keep the clinics/doctors reference data current), and
+nothing else: no patient, appointment, or pending-appointment access at
+all, and no `users-manage` either (account/role administration stays an
+`administrator`-only concern, same as it already was for `doctor`).
 
 **Admin UI:** list/add/edit/delete for users and all four RBAC tables
 lives at `/admin/{entity}` (`entity` is `users`, `permissions`, `roles`,
@@ -50,14 +92,14 @@ own comments, and `web/core/lib/Packages.php`, for the general
 enable/disable mechanism any future framework package uses the same way).
 Gated behind the framework's own `ZEUSFW_PERM_MANAGE_USERS`
 permission (slug `users-manage`, seeded by this app under that same
-string value), deliberately **not** granted to `power-user` by default:
-this page can create a new `is_superuser` role and assign it to any
-account, including its own operator's, so treat it as more sensitive than
-the `settings-manage`-gated Clinics/Doctors pages. Grant it explicitly
-(via the User Roles page itself, or `user_rolesClassEx::assignRole(...)`
-directly) to whichever accounts should have it — an `is_superuser` account
-(the seeded `administrator` role) always has it implicitly and needs no
-explicit grant.
+string value), deliberately **not** granted to `doctor` or `maintenance`
+by default: this page can create a new `is_superuser` role and assign it
+to any account, including its own operator's, so treat it as more
+sensitive than the `settings-manage`-gated Clinics/Doctors pages. Grant it
+explicitly (via the User Roles page itself, or
+`user_rolesClassEx::assignRole(...)` directly) to whichever accounts
+should have it — an `is_superuser` account (the seeded `administrator`
+role) always has it implicitly and needs no explicit grant.
 
 **Deploying this for the first time / to a server still on the old
 scheme:** the RBAC tables must exist before the app code that uses them
@@ -95,6 +137,42 @@ including a warning for any account whose legacy `roles` value doesn't
 match a known role name (nothing is ever silently dropped — see the
 script's own header comment). It's idempotent, so re-running it after
 fixing something it flagged is safe.
+
+**Upgrading an existing deployment that still has `power-user`/`user`
+roles** (from before the role-vocabulary refactor above) — run this once,
+after deploying this code, in the same order:
+
+```sh
+php bin/migrate_role_refactor.php --dry-run    # always first
+php bin/migrate_role_refactor.php --yes
+```
+
+Renames `power-user` to `doctor` **in place** — the role's id is
+preserved, so every account already assigned `power-user` keeps its exact
+access under the new name with zero manual reassignment. Retires `user`,
+but refuses to delete it (and reports exactly who) if any account is
+still assigned it, rather than silently locking that account out of
+every permission check — reassign those accounts to another role first
+(e.g. via `/admin/user_roles`), then re-run. Also seeds the new
+`maintenance` role in the same pass. Safe to run more than once —
+each step is a no-op once it's already done (see
+`zpms_rename_role()`/`zpms_retire_role()` in `web/rbac_seed.php` for the
+exact idempotence/merge behavior, including the out-of-order case where
+`bin/migrate_roles.php`'s own additive seeding already created a fresh
+`doctor` role before this script got a chance to rename the old one).
+
+**Verified**: `bin/migrate_role_refactor.php` was run against a database
+seeded with the *old* shape (a `power-user`-assigned account, a
+`user`-assigned account) — the rename preserved the account's access
+under the new `doctor` name with no reassignment needed (confirmed
+directly against `user_roles`); the retire step correctly refused to
+delete `user` while an account still held it, reported that account by
+name, and then correctly deleted it once that account was reassigned and
+the script re-run; a second `--yes` run afterward was a clean no-op
+(every step reported "exists"/"not found" rather than re-doing anything).
+`bin/run_tests.sh` (34/34 static, 35/35 functional, including a new
+`secretary`-role functional test covering the read-only patient page)
+stayed green throughout.
 
 ## Settings page: Clinics/Doctors management
 
@@ -307,11 +385,12 @@ booking. Every booking, whether made on this screen or directly in the
 Calendar app, first becomes a row in a dedicated **Εκκρεμή Ραντεβού**
 ("pending appointments") list — a waiting room, not the patient list. A
 **secretary** role can book, view, edit, and cancel entries on that list
-(front-desk work) but has no access to real patient records at all; only a
-**doctor** (a power-user account, which already has both
-`patients-new-patient` and `appointment-edit`) sees the "create patient
-record" action and can perform the actual conversion. See "Front-desk role:
-secretary" below for the full permission shape.
+(front-desk work), and can look up/open a real patient record read-only
+(see "Roles and permissions" above), but cannot create, edit, or delete
+one; only a **doctor** (which already has both `patients-new-patient` and
+`appointment-edit`) sees the "create patient record" action and can
+perform the actual conversion. See "Front-desk role: secretary" below for
+the full permission shape.
 
 Staff who reschedule or cancel directly in the Calendar app have that
 reflected back automatically by a periodic sync — against the pending
@@ -376,14 +455,16 @@ deployment the same way any other RBAC change here is rolled out (see
 what's missing.
 
 The "Ραντεβού" nav menu (and its "Εκκρεμή Ραντεβού" list) is visible to both
-`power-user` and `secretary`; the "create patient record" (👤+) action on
+`doctor` and `secretary`; the "create patient record" (👤+) action on
 each pending row, and the `/consultation/pending/{id}/convert` route behind
 it, are gated on `ZPMS_PERM_PATIENTS_NEW_PATIENT` **and**
 `ZPMS_PERM_APPOINTMENT_EDIT` together — a secretary account never sees that
 action and is refused outright (the app's standard `error_401()` page) on a
-direct hit of the URL. The "Ασθενείς" (patient list/management) menu itself
-stays hidden from `secretary`, same as it already was for the plain `user`
-role, via `access: power-user` on that menu entry.
+direct hit of the URL. The "Ασθενείς" (patient list) menu itself is
+also visible to `secretary` (via `access: doctor secretary` on that menu
+entry) — see "Roles and permissions" above for what a secretary account
+can actually do once there (view only; the "New" submenu item and the
+per-row/page-level create/edit/delete controls stay `doctor`-only).
 
 ### Schema
 
@@ -487,37 +568,43 @@ parsed and validated the JWT's structure/signature first).
 
 The full secretary-books → doctor-converts flow was verified end-to-end
 via Playwright against a real MariaDB-backed test server, using two real
-accounts (a `secretary`-role account and a `power-user` account): a
-secretary can book, edit, and cancel a pending appointment, cannot see the
-"Ασθενείς" menu or the convert action anywhere in the UI, and is refused
-(the app's `error_401()` page) on a direct GET to the convert URL; a doctor
-sees the same entry pre-filled on the convert form (including the existing-
-patient duplicate-name check reused from `/patient/new`) and, on submit,
-gets a real patient + appointment created, with the pending list emptied
-afterward. Edit and cancel were verified separately: editing a pending
-entry's fields/location/datetime saves correctly and re-syncs to Calendar
-when configured; cancelling calls `googleCalendarClass::deleteEvent()`
-when a `google_event_id` is present and marks the row `cancelled_at`
-rather than deleting it outright. **Not** verified: a real, successful
-`createEvent()`/`listChangedEvents()` call against an actual configured
-calendar (needs real service-account credentials + a real shared
-calendar, which only a live deployment can provide) — same "known
-limitation, not a bug" caveat zeusfw's `Recaptcha.php` documents for its
-own reCAPTCHA integration, except here a live test is realistically
-possible once real credentials exist, since the sandbox's network access
-to Google's endpoints turned out not to be the blocker it was there.
+accounts (a `secretary`-role account and a `doctor` account — `power-user`
+at the time, since this predates the role-vocabulary refactor in "Roles
+and permissions" above): a secretary can book, edit, and cancel a pending
+appointment, cannot see the convert action anywhere in the UI, and is
+refused (the app's `error_401()` page) on a direct GET to the convert URL;
+a doctor sees the same entry pre-filled on the convert form (including the
+existing-patient duplicate-name check reused from `/patient/new`) and, on
+submit, gets a real patient + appointment created, with the pending list
+emptied afterward. Edit and cancel were verified separately: editing a
+pending entry's fields/location/datetime saves correctly and re-syncs to
+Calendar when configured; cancelling calls
+`googleCalendarClass::deleteEvent()` when a `google_event_id` is present
+and marks the row `cancelled_at` rather than deleting it outright. **Not**
+verified: a real, successful `createEvent()`/`listChangedEvents()` call
+against an actual configured calendar (needs real service-account
+credentials + a real shared calendar, which only a live deployment can
+provide) — same "known limitation, not a bug" caveat zeusfw's
+`Recaptcha.php` documents for its own reCAPTCHA integration, except here a
+live test is realistically possible once real credentials exist, since
+the sandbox's network access to Google's endpoints turned out not to be
+the blocker it was there.
 
-**A real, framework-level bug was found and fixed while verifying this**:
-`zeusfw`'s `core/modules/mainnavigation/mainnavigation.php` gated a nav
-menu item's `access:` string via `SecurityClass::require()`, which treats
-the `"authenticated"` role — always present for any logged-in user — as an
+**A real, framework-level bug was found and fixed while verifying this
+(at the time secretary still had no patient-page access at all, before
+the read-only-view change in "Roles and permissions" above)**: `zeusfw`'s
+`core/modules/mainnavigation/mainnavigation.php` gated a nav menu item's
+`access:` string via `SecurityClass::require()`, which treats the
+`"authenticated"` role — always present for any logged-in user — as an
 automatic pass regardless of what `access:` actually requires. That made
 every `access:`-restricted nav menu item visible to every logged-in user
 no matter their role (caught here because the secretary account could see
-the "Ασθενείς" menu despite it being `access: power-user`), even though
-both this app's own `config/settings.info.yaml` comments and zeusfw's
-`core/lib/Rbac.php` docblock already documented nav-menu gating as going
-through `SecurityClass::userIsPermitted()` instead — a plain role-identity
-check with no such special case. Fixed in `zeusfw` by switching that one
-call site to `userIsPermitted()`, matching the framework's own documented
+the "Ασθενείς" menu despite it being `access: power-user` at the time —
+now `access: doctor secretary`, since a secretary account genuinely is
+meant to see that menu today), even though both this app's own
+`config/settings.info.yaml` comments and zeusfw's `core/lib/Rbac.php`
+docblock already documented nav-menu gating as going through
+`SecurityClass::userIsPermitted()` instead — a plain role-identity check
+with no such special case. Fixed in `zeusfw` by switching that one call
+site to `userIsPermitted()`, matching the framework's own documented
 design; `zpms`'s full test suite stayed green throughout.

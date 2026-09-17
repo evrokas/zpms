@@ -232,6 +232,8 @@ require_once(__DIR__ . '/rbac.php');
         return Renderer::render("patients_list.zetem",
             ['pat_list' => $pp,
                 // 'notice' => $kernel->ifelseStatus('patient_edit', '', true)
+                'can_create_patient' => rbacClass::isPermitted(ZPMS_PERM_PATIENTS_NEW_PATIENT),
+                'can_delete_patient' => rbacClass::isPermitted(ZPMS_PERM_PATIENTS_DELETE_PATIENT)
             ]);
     }
 
@@ -274,6 +276,8 @@ require_once(__DIR__ . '/rbac.php');
             [   'search_term' => $params['term'],
                 'pat_list' => $pp,
                 // 'notice' => $kernel->ifelseStatus('patient_edit', '', true)
+                'can_create_patient' => rbacClass::isPermitted(ZPMS_PERM_PATIENTS_NEW_PATIENT),
+                'can_delete_patient' => rbacClass::isPermitted(ZPMS_PERM_PATIENTS_DELETE_PATIENT)
             ]);
     }
 
@@ -319,7 +323,21 @@ require_once(__DIR__ . '/rbac.php');
     function patient_edit($params) {
         global $kernel;
 
-        if(($errmsg = rbacClass::require(ZPMS_PERM_PATIENTS_EDIT_PATIENT)))return $errmsg;
+        // Viewing a patient's page and actually saving changes to it are
+        // gated separately -- see ZPMS_PERM_PATIENTS_VIEW_LIST's own
+        // docblock in web/rbac.php. A holder of only patients-view-list
+        // (e.g. the secretary role) can open this page and read
+        // everything on it; patient_edit_post() below still requires
+        // patients-edit-patient regardless of what a tampered request
+        // submits, and $canEditPatient/$canEditAppointment (computed
+        // below) drive edit_patient.zetem/view_appointment.zetem
+        // rendering the page fully read-only (disabled fields, no
+        // save/appointment/attachment controls) when the viewer lacks
+        // the corresponding edit permission.
+        if(($errmsg = rbacClass::require(ZPMS_PERM_PATIENTS_VIEW_LIST)))return $errmsg;
+
+        $canEditPatient = rbacClass::isPermitted(ZPMS_PERM_PATIENTS_EDIT_PATIENT);
+        $canEditAppointment = rbacClass::isPermitted(ZPMS_PERM_APPOINTMENT_EDIT);
 
         if(!isset($params['id'])) {
             $kernel->addStatus('error', 'Ο φάκελος του ασθενή δεν βρέθηκε!');
@@ -362,7 +380,8 @@ require_once(__DIR__ . '/rbac.php');
                                                     'patient' => $pat,
                                                     'appointment' => $ap,
                                                     'locations' => $loc,
-                                                    'files' => appointmentFilesClassEx::getFilesForAppointment($ap->getid())
+                                                    'files' => appointmentFilesClassEx::getFilesForAppointment($ap->getid()),
+                                                    'can_edit' => $canEditAppointment
                                                 ]),
                     'attributes' => new Attributes()
                 ];
@@ -377,7 +396,9 @@ require_once(__DIR__ . '/rbac.php');
             'appdates' => $appdates,
             'appointments' => $apprender,
             'financials' => $financials,
-            'has_financials' => $hasFinancials
+            'has_financials' => $hasFinancials,
+            'can_edit_patient' => $canEditPatient,
+            'can_edit_appointment' => $canEditAppointment
         ]));
     }
     function patient_edit_post($params) {
@@ -467,7 +488,16 @@ require_once(__DIR__ . '/rbac.php');
         ]);
         
         // $pat = $pc->getById($params['id']);
-        return (Renderer::render("edit_patient.zetem", ['action' => 'new', 'id' => null, 'patient' => $pc]));
+        // A brand-new, not-yet-saved patient form is always fully
+        // editable -- reaching this handler already required
+        // patients-new-patient above, so there's no read-only case here.
+        return (Renderer::render("edit_patient.zetem", [
+            'action' => 'new',
+            'id' => null,
+            'patient' => $pc,
+            'can_edit_patient' => true,
+            'can_edit_appointment' => true
+        ]));
     }
 
     function patient_delete($params) {
@@ -1224,11 +1254,11 @@ require_once(__DIR__ . '/rbac.php');
             'doctors' => formsClass::renderForm('doctors'),
 
             // A settings-manage holder doesn't necessarily also have
-            // users-manage (deliberately not granted to power-user by
-            // default -- see ZEUSFW_PERM_MANAGE_USERS's own comment in
-            // zeusfw's core/lib/Rbac.php), so this link is only shown when
-            // the current user actually has it, rather than to everyone
-            // who can reach this page at all.
+            // users-manage (deliberately not granted to doctor or
+            // maintenance by default -- see ZEUSFW_PERM_MANAGE_USERS's own
+            // comment in zeusfw's core/lib/Rbac.php), so this link is only
+            // shown when the current user actually has it, rather than to
+            // everyone who can reach this page at all.
             'show_user_management' => rbacClass::isPermitted(ZEUSFW_PERM_MANAGE_USERS),
         ]);
 
