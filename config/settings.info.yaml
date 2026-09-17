@@ -372,19 +372,25 @@ routes:
     method: get
     access: authenticated
   pending_appointment_edit:
-    title: "Edit a pending appointment"
+    title:
+      en: "Edit a pending appointment"
+      gr: "Επεξεργασία Εκκρεμούς Ραντεβού"
     url: "/consultation/pending/{id}/edit"
     handler: pending_appointment_edit
     method: get
     access: authenticated
   pending_appointment_edit_post:
-    title: "Edit a pending appointment"
+    title:
+      en: "Edit a pending appointment"
+      gr: "Επεξεργασία Εκκρεμούς Ραντεβού"
     url: "/consultation/pending/{id}/edit"
     handler: pending_appointment_edit_post
     method: post
     access: authenticated
   pending_appointment_delete:
-    title: "Cancel a pending appointment"
+    title:
+      en: "Cancel a pending appointment"
+      gr: "Ακύρωση Εκκρεμούς Ραντεβού"
     url: "/consultation/pending/{id}/delete"
     handler: pending_appointment_delete
     method: post
@@ -598,6 +604,14 @@ menu:
             gr: 'Εκκρεμή Ραντεβού'
             en: 'Pending appointments'
           url: /consultation/pending
+          # Neither of these two is itself a menu item -- both are only
+          # ever reached via a row-action link on this very list (edit/
+          # convert one specific pending appointment), never the nav --
+          # but a viewer on either page still deserves a real breadcrumb
+          # path, not just its own bare page title with nothing above it.
+          # See zeusfw's core/lib/Menutrail.php, search_menu_trail_for_key()
+          # for what this key does.
+          breadcrumb_aliases: [pending_appointment_edit, pending_appointment_convert]
     - settings:
       text:
         gr: "Ρυθμίσεις"

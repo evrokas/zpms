@@ -365,27 +365,41 @@ require_once(__DIR__ . '/rbac.php');
         // $loc = locationsClass::sgetAll();
         $loc = locationsClassEx::sgetAll( $kernel->getCurrentLanguage() );
 
+        // A viewer without appointment-edit (e.g. the secretary role)
+        // never sees the full editable appointment/operation cards
+        // (view_appointment.zetem -- notes, save/delete, file uploads) --
+        // instead gets a compact, read-only summary listing just the date
+        // and location of each, per request. Only one of these two arrays
+        // is ever built, since edit_patient.zetem renders one or the
+        // other, never both.
         $apprender = array();
         $appdates = array();
+        $appointmentSummary = array();
         foreach($app_list as $ap) {
-            
+
             if($ap->getdeleted() == null) {
-                $apprender[] = [
-                    'index' => count($apprender),
-                    'markup' => Renderer::render('view_appointment.zetem', [
-                                                    'action' => rel_url('/appointment/' . $ap->getid() . '/edit'),
-                                                    'index' => count($apprender)+1,
-                                                    'checked' => "checked",/*(!count($apprender)?"checked":""),*/
-                                                    'id' => $params['id'], 
-                                                    'patient' => $pat,
-                                                    'appointment' => $ap,
-                                                    'locations' => $loc,
-                                                    'files' => appointmentFilesClassEx::getFilesForAppointment($ap->getid()),
-                                                    'can_edit' => $canEditAppointment
-                                                ]),
-                    'attributes' => new Attributes()
-                ];
-                $appdates[] = [ 'index' => count($apprender), 'date' => $ap->getadate() ];
+                if ($canEditAppointment) {
+                    $apprender[] = [
+                        'index' => count($apprender),
+                        'markup' => Renderer::render('view_appointment.zetem', [
+                                                        'action' => rel_url('/appointment/' . $ap->getid() . '/edit'),
+                                                        'index' => count($apprender)+1,
+                                                        'checked' => "checked",/*(!count($apprender)?"checked":""),*/
+                                                        'id' => $params['id'],
+                                                        'patient' => $pat,
+                                                        'appointment' => $ap,
+                                                        'locations' => $loc,
+                                                        'files' => appointmentFilesClassEx::getFilesForAppointment($ap->getid())
+                                                    ]),
+                        'attributes' => new Attributes()
+                    ];
+                    $appdates[] = [ 'index' => count($apprender), 'date' => $ap->getadate() ];
+                } else {
+                    $appointmentSummary[] = [
+                        'date' => $ap->getadate(),
+                        'location' => $ap->getaplace(),
+                    ];
+                }
             }
         }
 
@@ -395,6 +409,7 @@ require_once(__DIR__ . '/rbac.php');
             'patient' => $pat,
             'appdates' => $appdates,
             'appointments' => $apprender,
+            'appointment_summary' => $appointmentSummary,
             'financials' => $financials,
             'has_financials' => $hasFinancials,
             'can_edit_patient' => $canEditPatient,

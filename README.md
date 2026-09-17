@@ -51,22 +51,27 @@ covers both the patient list *and* opening an individual patient's page
 permission for "can see patient data, read-only" rather than a separate
 view-list/view-record split (see that constant's own docblock in
 `web/rbac.php`). `patient_edit()` (`web/index.php`) renders the page for
-anyone holding just this permission with every field inside a disabled
-`<fieldset>`, no save button (a plain "← Back to list" link instead), no
-"New appointment"/"New operation" links, and the attachments section
-hidden entirely (uploaded files can be scanned medical documents, and
-read-only access was only ever meant to cover the patient/appointment
-fields themselves — every `appointment_file_*` route still requires
-`appointment-edit` regardless, so this is a UI courtesy matching a gate
-that already exists, not the only thing enforcing it). The patient
+anyone holding just this permission with every patient field inside a
+disabled `<fieldset>`, no save button (a plain "← Back to list" link
+instead), and no "New appointment"/"New operation" links. Appointments/
+operations themselves render as a compact, read-only table (date +
+location only, per-row — see `$appointment_summary` in `patient_edit()`)
+rather than the full editable card (`view_appointment.zetem` — notes,
+save/delete, file uploads) a holder of `appointment-edit` gets: neither
+the appointment's own notes nor its attachments are shown, since those
+can carry more clinical detail than a front-desk lookup needs, and every
+`appointment_file_*` route still requires `appointment-edit` regardless
+of what this page shows, so hiding the section is a UI courtesy matching
+a gate that already exists, not the only thing enforcing it. The patient
 list's own "Add new patient" button and per-row delete form are likewise
 hidden when the viewer lacks `patients-new-patient`/
 `patients-delete-patient`. Actually saving a change always re-checks
-`patients-edit-patient` server-side in `patient_edit_post()`, regardless
-of what a tampered request submits — the read-only rendering is a UX
-nicety on top of a real, independently-enforced gate, not the gate
-itself. `secretary` additionally holds `pending-appointments-manage` (see
-"Google Calendar sync" below) — it can book/edit/cancel a phone
+`patients-edit-patient`/`appointment-edit` server-side in
+`patient_edit_post()`/`appointment_edit_post()`, regardless of what a
+tampered request submits — the read-only rendering is a UX nicety on top
+of a real, independently-enforced gate, not the gate itself. `secretary`
+additionally holds `pending-appointments-manage` (see "Google Calendar
+sync" below) — it can book/edit/cancel a phone
 appointment in the waiting room, but converting one into a real patient
 record stays a `doctor`-only action.
 
@@ -465,6 +470,27 @@ also visible to `secretary` (via `access: doctor secretary` on that menu
 entry) — see "Roles and permissions" above for what a secretary account
 can actually do once there (view only; the "New" submenu item and the
 per-row/page-level create/edit/delete controls stay `doctor`-only).
+
+**Breadcrumb path on the edit/convert pages.** `pending_appointment_edit`
+and `pending_appointment_convert` are deliberately never menu items
+themselves (only reachable via a row-action link on
+`pending_appointments_list`'s own page) — that used to mean their
+breadcrumb was a single, parent-less segment (just their own page title,
+no "Ραντεβού / Εκκρεμή Ραντεβού /" leading up to it), since zeusfw's
+`Menutrail::search_menu_trail_for_key()` only ever matched a route name
+that's literally a menu item's own key. Fixed via a new, additive
+`breadcrumb_aliases: [pending_appointment_edit, pending_appointment_convert]`
+key on `pending_appointments_list`'s own menu entry (see zeusfw's own
+`CLAUDE.md`, "Breadcrumbs" entry, for the general mechanism) — both pages
+now show the full "Ραντεβού / Εκκρεμή Ραντεβού / ..." path. A second,
+unrelated bug in the same code path was fixed at the same time: any
+breadcrumb segment for a pure menu-grouping label with no route of its
+own (e.g. "Ραντεβού"/"Ασθενείς" themselves) was rendering the literal
+string `nolangtext` instead of its actual label — see that same zeusfw
+`CLAUDE.md` entry for the root cause. `pending_appointment_edit`/`_post`'s
+own route `title:` also gained a Greek translation in the same pass
+(`config/settings.info.yaml`), matching its sibling
+`pending_appointment_convert`, which already had one.
 
 ### Schema
 

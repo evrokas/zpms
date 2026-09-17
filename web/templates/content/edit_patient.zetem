@@ -231,6 +231,37 @@
 
     {% endif %}
 
+    {% if(isset($appointment_summary) && (count($appointment_summary)>0)): %}
+        <hr>
+        <!-- Compact read-only view for a viewer without appointment-edit
+             (e.g. the secretary role) -- just the date and location of
+             each appointment/operation, no notes/save/delete/attachment
+             controls (see patient_edit() in web/index.php, which builds
+             this instead of the full editable cards above whenever
+             $canEditAppointment is false). -->
+        <div class="appointment-summary-readonly">
+            <h4>Ραντεβού</h4>
+            <div class="settings-table-scroll">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Ημερομηνία</th>
+                            <th>Τοποθεσία</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% foreach($appointment_summary as $as): %}
+                        <tr>
+                            <td>{{$as['date'] | date('d-m-Y H:i')}}</td>
+                            <td>{{{$as['location'] ?: '—'}}}</td>
+                        </tr>
+                        {% endforeach %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% endif %}
+
     {% if(isset($has_financials) && $has_financials): %}
         <hr>
         <!-- Read-only APYweb financial-info block -- see
