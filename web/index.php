@@ -29,109 +29,72 @@ require_once(__DIR__ . '/rbac.php');
     ini_set('session.gc_maxlifetime', 3600);
     // cookie_lifetime is deliberately no longer overridden here -- the PHP
     // session cookie itself now always dies on browser close (lifetime 0,
-    // set explicitly in zeusfw_session_start() below); persistence across
-    // browser restarts is delegated entirely to the separate
-    // zeusfwrememberme cookie/user_tokens mechanism, same as DocArc.
+    // set explicitly in zeusfw_session_start(), called from Kernel::boot()
+    // below); persistence across browser restarts is delegated entirely to
+    // the separate zeusfwrememberme cookie/user_tokens mechanism, same as
+    // DocArc.
 
     // Project Zeus - Patient Registration System
-    // echo "<pre>";
-    // print_r( $info['menu']['main'] );
-    // echo "</pre>";
-    
+
+    // zpms's own one-off setup that has to run at boot() 's app-hook point
+    // (after the session/language/output-buffer are ready, before modules
+    // are registered and the route is dispatched) -- see Kernel::boot()'s
+    // own docblock (zeusfw core/kernel/Kernel.php) for the function_exists()
+    // convention this follows.
+    function zeusfw_app_boot() {
+        locationsClassEx::setDefaultLocation();
+    }
+
     $kernel = new Kernel($_SERVER, "../config");
-    SecurityClass::init($kernel->getConfig('roles') );
 
-    $router = new RouterClass( $kernel->getConfig('routes') );
-    // print_r( $router->getAllRoutes() );
+    // Runs the whole request bootstrap + dispatch sequence that used to be
+    // hand-written here: Request/Router/Renderer construction, session
+    // start, the CSRF/lockout/login-redirect opt-ins below, remember-me
+    // cookie resolution, language selection, module registration, route
+    // matching + dispatch, and the final render/flush. See Kernel::boot()'s
+    // own docblock for exactly what each step does and why.
+    $kernel->boot([
+        // Opt in to CSRF enforcement on the shared login_post() -- see
+        // csrfClass::$enforceLogin's docblock (zeusfw core/lib/Csrf.php).
+        // Safe to do unconditionally: web/templates/content/login.zetem
+        // (zpms's own override of the core login form) always renders
+        // csrf_field() now, so every real login submission already carries
+        // a valid token.
+        'csrf_login' => true,
 
-    Renderer::init($kernel->getConfig('templates'), false,  $kernel->safeGetConfig('template_cache_path'), $kernel->getConfig('enable_comments'));
+        // Same reasoning for the shared webforms dispatcher -- see
+        // csrfClass::$enforceWebforms's docblock. generateHTMLForm() already
+        // renders csrf_field() into every DB-defined webform unconditionally
+        // (framework-wide, harmless for apps that don't check it); this
+        // just tells processform() to actually verify it for zpms's own
+        // webforms.
+        'csrf_webforms' => true,
 
-    $Request = new RequestClass($_SERVER);
-    // $handlers = $Request->getQueryRoute();
-    // echopre('Request: ', print_r($Request, 1));
-    // echo "<pre>" . print_r( $_SERVER, 1 ) . "</pre>";
-    // echo( "Method: " . $req->getMethod() . '  string: ' . $req->getQueryString() . "<br/>" );
-    // print_r( $handlers );
-    zeusfw_session_start();
+        // Opt in to the brute-force lockout on the shared login_post() --
+        // see LoginSecurityClass's docblock (zeusfw core/lib/UserLogin.php).
+        // Safe to enable unconditionally: every account starts at
+        // wrongpasscount=0, so this can't retroactively lock anyone out, it
+        // only starts counting failed attempts from here on. Deliberately
+        // NOT also calling enableAccountStatusEnforcement() here -- that
+        // one requires first confirming every real account in this server's
+        // users table actually has active=1 and expired=0 set (see the same
+        // docblock for why an account can be working today without that
+        // being true), which needs a human with production DB access to
+        // check, not something this change can safely assume.
+        'login_lockout' => true,
 
-    // Opt in to CSRF enforcement on the shared login_post() -- see
-    // csrfClass::$enforceLogin's docblock (zeusfw core/lib/Csrf.php).
-    // Safe to do unconditionally: web/templates/content/login.zetem
-    // (zpms's own override of the core login form) always renders
-    // csrf_field() now, so every real login submission already carries
-    // a valid token.
-    csrfClass::enableLoginProtection();
+        // Redirect straight to /login instead of a bare 401 page for any
+        // route with `access:` that an unauthenticated/unpermitted request
+        // hits -- see SecurityClass::$loginRedirectUrl's own docblock
+        // (zeusfw core/lib/Security.php). homepage() below applies the same
+        // "go straight to /login" treatment to '/' itself, which has no
+        // `access:` of its own (it renders different content per login
+        // state rather than being gated) and so never reaches this
+        // codepath.
+        'login_redirect' => '/login',
 
-    // Same reasoning for the shared webforms dispatcher -- see
-    // csrfClass::$enforceWebforms's docblock. generateHTMLForm() already
-    // renders csrf_field() into every DB-defined webform unconditionally
-    // (framework-wide, harmless for apps that don't check it); this just
-    // tells processform() to actually verify it for zpms's own webforms.
-    csrfClass::enableWebformProtection();
-
-    // Opt in to the brute-force lockout on the shared login_post() -- see
-    // LoginSecurityClass's docblock (zeusfw core/lib/UserLogin.php). Safe
-    // to enable unconditionally: every account starts at wrongpasscount=0,
-    // so this can't retroactively lock anyone out, it only starts counting
-    // failed attempts from here on. Deliberately NOT also calling
-    // enableAccountStatusEnforcement() here -- that one requires first
-    // confirming every real account in this server's users table actually
-    // has active=1 and expired=0 set (see the same docblock for why an
-    // account can be working today without that being true), which needs
-    // a human with production DB access to check, not something this
-    // change can safely assume.
-    LoginSecurityClass::enableLockout();
-
-    // Opt in to redirecting straight to /login instead of a bare 401 page
-    // for any route with `access:` that an unauthenticated/unpermitted
-    // request hits -- see SecurityClass::$loginRedirectUrl's own docblock
-    // (zeusfw core/lib/Security.php). homepage() below applies the same
-    // "go straight to /login" treatment to '/' itself, which has no
-    // `access:` of its own (it renders different content per login state
-    // rather than being gated) and so never reaches this codepath.
-    SecurityClass::enableLoginRedirect('/login');
-
-    $kernel->isUserLoggedin();
-    // if($kernel->isUserLoggedin()) {
-        // echo "<pre>User has been logged in!</pre>";
-    // } else {
-        // echo "<pre>User has *NOT* been logged in!</pre>";
-    // }
-    // echo "<pre>Session: " . print_r( $_SESSION, 1) . "</pre>";
-
-
-//    $l = new locationsClass();
-
-//    echopre('locations: ' . print_r($l->getFields(), 1));
-//    echopre('locations: ' . print_r(get_class_vars( 'locationsClass'),1) );
-    if(isset($_SESSION) && isset($_SESSION['CURRENT_LANGUAGE']))
-        $kernel->setCurrentLanguage( $_SESSION['CURRENT_LANGUAGE']);
-    else
-        $kernel->setCurrentLanguage('gr');
-    // $kernel->setCurrentLanguage('en');
-
-    ob_start();
-
-    // echopre('_SERVER: ' . print_r($_SERVER, 1));
-
-    locationsClassEx::setDefaultLocation();
-    registerModules();
-
-    // $f1 = new Feeder('/content/locations.feeder.yaml');
-
-    $match = $router->matchRoute( $Request );
-    // echopre("Match route: " . print_r($match, 1));
-    
-    $_SESSION['route_match'] = $match;
-    $_SESSION['request'] = $Request->getQueryRoute();
-
-    $content_response = $router->routerCallFunction($match);
-    // print_r($content_response);
-    // render web page
-    $kernel->renderPage();
-    
-    // finally flush webpage to the user
-    ob_end_flush();
+        'default_language' => 'gr',
+    ]);
 
 
 /* ----- website handlers ----- */
