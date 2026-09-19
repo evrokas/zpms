@@ -38,6 +38,19 @@
 // request that hits it, instead of a silently-always-false check -- same
 // failure-mode reasoning as bin/migrate_roles.php seeding this exact list
 // into the permissions table.
+// Covers both the patient list page AND opening an individual patient's
+// page to look at it (name/AMKA/contact details/appointment history) --
+// deliberately one permission for "can see patient data, read-only"
+// rather than a separate view-list/view-record split, matching this app's
+// existing granularity (see ZPMS_PERM_APPOINTMENT_EDIT below, one
+// permission for create/edit/delete together). A holder of only this
+// permission (see 'secretary' in web/rbac_seed.php) gets a fully
+// read-only patient page: patient_edit() (web/index.php) renders it with
+// every field disabled and no save/appointment/attachment controls
+// whenever ZPMS_PERM_PATIENTS_EDIT_PATIENT/ZPMS_PERM_APPOINTMENT_EDIT
+// aren't also held -- actually writing a change still goes through
+// patient_edit_post(), gated separately below, regardless of what a
+// tampered request submits.
 const ZPMS_PERM_PATIENTS_VIEW_LIST = 'patients-view-list';
 const ZPMS_PERM_PATIENTS_NEW_PATIENT = 'patients-new-patient';
 const ZPMS_PERM_PATIENTS_EDIT_PATIENT = 'patients-edit-patient';
@@ -45,12 +58,20 @@ const ZPMS_PERM_PATIENTS_DELETE_PATIENT = 'patients-delete-patient';
 const ZPMS_PERM_APPOINTMENT_EDIT = 'appointment-edit';
 const ZPMS_PERM_BACKUP_ACCESS = 'backup-access';
 const ZPMS_PERM_SETTINGS_MANAGE = 'settings-manage';
+// Covers the whole "Εκκρεμή Ραντεβού" waiting room -- view/create/edit/
+// delete a pending_appointments row -- but deliberately NOT the ability
+// to convert one into a real patient record, which stays gated on
+// ZPMS_PERM_PATIENTS_NEW_PATIENT + ZPMS_PERM_APPOINTMENT_EDIT below (a
+// secretary can schedule and manage phone bookings without being able to
+// create/edit real patient records, which stays a doctor-only action --
+// see web/rbac_seed.php's 'secretary' role for exactly this split).
+const ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE = 'pending-appointments-manage';
 
 // Every permission slug above, plus the framework's own
 // ZEUSFW_PERM_MANAGE_USERS (core/lib/Rbac.php -- gates zeusfw core's
 // generic /admin/{entity} CRUD UI), in one place -- the single list
 // bin/migrate_roles.php seeds into the permissions table and the
-// power-user role's role_permissions rows from. Keep in sync by hand with
+// doctor role's role_permissions rows from. Keep in sync by hand with
 // the constants above (and with every rbacClass::require() call site) --
 // there's no reflection-based discovery in this codebase, same as every
 // other config surface in this app. This app no longer defines its own
@@ -68,6 +89,7 @@ function zpms_all_permission_slugs(): array {
         ZPMS_PERM_APPOINTMENT_EDIT,
         ZPMS_PERM_BACKUP_ACCESS,
         ZPMS_PERM_SETTINGS_MANAGE,
+        ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE,
         ZEUSFW_PERM_MANAGE_USERS,
     ];
 }

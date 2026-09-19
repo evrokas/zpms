@@ -1,0 +1,101 @@
+---
+# The consultation-scheduling "waiting room" -- see README.md, "Google
+# Calendar sync" / "Pending appointments", for the full design. A row
+# here is *not* a patient/appointment record: those only get created
+# when the patient actually shows up and the doctor asks for one
+# (pending_appointment_convert_post() in web/index.php). Every row
+# starts here regardless of how it was created -- staff booking a call on
+# /consultation/new, or the pull-sync (bin/sync_google_calendar.php)
+# finding a Calendar-native event with no zpms_pending_appointment_id
+# extendedProperty -- so "Εκκρεμή Ραντεβού" is the one list either path
+# lands in, not two separate mechanisms.
+table:
+  name: pending_appointments
+  class: pendingAppointmentsClass
+  fields:
+  - name: guid
+    type: '@guid'
+
+  - name: cdate
+    type: '@cdate'
+
+  - name: cuser
+    type: '@cuser'
+
+  # Free text, deliberately not a patients.guid foreign key -- the whole
+  # point of this table is that no patient record exists yet. Renamed
+  # patient_name/patient_phone/... (not pname/ptel/... like patients.yaml)
+  # specifically so nothing could mistake a pending_appointments row for
+  # an actual patientsClass-shaped row if the two are ever handled side
+  # by side in the same code.
+  - name: patient_name
+    type: varchar(255)
+
+  - name: patient_phone
+    type: varchar(64)
+    default: null
+
+  - name: patient_amka
+    type: varchar(32)
+    default: null
+
+  - name: patient_email
+    type: varchar(255)
+    default: null
+
+  - name: appointment_datetime
+    type: datetime
+
+  # The location's display name (locationsClassEx), same convention
+  # appointments.aplace already uses -- a plain string, not a foreign
+  # key, since locations are a small managed list, not a real relation
+  # anything joins against.
+  - name: location
+    type: varchar(255)
+    default: null
+
+  - name: notes
+    type: text
+    default: null
+
+  - name: google_event_id
+    # See appointments.yaml's own google_event_id field for why this is
+    # UNIQUE-in-the-type-string, not a separate ALTER. Set the moment
+    # this row is pushed to Calendar (or, for a Calendar-native row the
+    # pull sync created, from the moment it was first pulled) and never
+    # changes again -- conversion to a real appointment copies this same
+    # value onto the new appointments row rather than creating a second
+    # Calendar event for the same booking.
+    type: varchar(255) UNIQUE
+
+  - name: google_synced_at
+    type: datetime
+    default: null
+
+  # Set together, by pending_appointment_convert_post() -- a patient
+  # showed up (or called back to confirm) and the doctor created/picked
+  # their record. Left on the row permanently as a history trail (the
+  # default "Εκκρεμή Ραντεβού" list filters WHERE converted_at IS NULL
+  # AND cancelled_at IS NULL, it doesn't delete rows once acted on).
+  - name: converted_at
+    type: datetime
+    default: null
+
+  - name: converted_patient_id
+    type: int(11)
+    default: null
+
+  - name: converted_appointment_id
+    type: int(11)
+    default: null
+
+  # Set when a pending row is dismissed with no patient record created --
+  # staff cancelling a phone booking, or a Calendar-native event that
+  # never should have been treated as a patient booking in the first
+  # place (a personal appointment that landed on the shared calendar by
+  # mistake). Distinct from converted_at so the list/report can always
+  # tell "never happened" apart from "actually became a patient".
+  - name: cancelled_at
+    type: datetime
+    default: null
+...

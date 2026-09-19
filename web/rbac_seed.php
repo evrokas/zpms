@@ -17,24 +17,23 @@
 // role_permissionsClassEx directly, not by editing this array and
 // re-running the migration.
 //
-// 'user' only ever had patients-view-list in practice
-// (appointments-view-list was listed in the old YAML but never actually
-// checked anywhere in code -- see web/rbac.php's docblock -- so it's
-// deliberately not carried forward as a real permission here).
+// Four roles, matching four real job functions at this practice --
+// 'user' (a generic view-only role nobody's actual account mapped to a
+// real job) and 'power-user' (renamed) are both retired here; see
+// bin/migrate_role_refactor.php for the one-time transition that renames
+// an existing deployment's 'power-user' role to 'doctor' in place
+// (preserving its id, so already-assigned accounts keep working) and
+// safely retires 'user' (refusing to delete it if any account still holds
+// it, rather than silently orphaning that account).
 // 'administrator' needs no permissions list at all -- is_superuser bypasses
 // the permission check entirely, see rbacClass::isPermitted() in
 // zeusfw's core/lib/Rbac.php.
 function zpms_role_seed_definitions(): array {
     return [
-        'user' => [
-            'label' => 'Χρήστης',
-            'is_superuser' => false,
-            'permissions' => [
-                ZPMS_PERM_PATIENTS_VIEW_LIST,
-            ],
-        ],
-        'power-user' => [
-            'label' => 'Προχωρημένος Χρήστης',
+        // Full clinical access -- the exact permission set 'power-user'
+        // held before this role was renamed to match its real job title.
+        'doctor' => [
+            'label' => 'Ιατρός',
             'is_superuser' => false,
             'permissions' => [
                 ZPMS_PERM_PATIENTS_VIEW_LIST,
@@ -42,6 +41,43 @@ function zpms_role_seed_definitions(): array {
                 ZPMS_PERM_PATIENTS_DELETE_PATIENT,
                 ZPMS_PERM_PATIENTS_EDIT_PATIENT,
                 ZPMS_PERM_APPOINTMENT_EDIT,
+                ZPMS_PERM_BACKUP_ACCESS,
+                ZPMS_PERM_SETTINGS_MANAGE,
+                ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE,
+            ],
+        ],
+        // A front-desk account that books/manages phone appointments
+        // (the "Εκκρεμή Ραντεβού" waiting room) and can look up/open a
+        // patient's record read-only (name/AMKA/appointment history --
+        // see ZPMS_PERM_PATIENTS_VIEW_LIST's own docblock in web/rbac.php
+        // for what "read-only" means in practice), without being able to
+        // create, edit, or delete a patient record, or touch appointment
+        // data itself -- deliberately no ZPMS_PERM_PATIENTS_NEW_PATIENT/
+        // _EDIT_PATIENT/_DELETE_PATIENT/ZPMS_PERM_APPOINTMENT_EDIT, since
+        // "convert this into a patient record" is a doctor decision, made
+        // once the patient actually shows up (see
+        // pending_appointment_convert_post() in web/index.php, gated on
+        // exactly the two permissions this role doesn't have).
+        'secretary' => [
+            'label' => 'Γραμματεία',
+            'is_superuser' => false,
+            'permissions' => [
+                ZPMS_PERM_PATIENTS_VIEW_LIST,
+                ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE,
+            ],
+        ],
+        // A technical/ops account for whoever administers the server --
+        // deliberately zero patient-data permissions (no
+        // ZPMS_PERM_PATIENTS_*/ZPMS_PERM_APPOINTMENT_EDIT/
+        // ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE), since this role exists
+        // for infrastructure tasks (checking backups ran, keeping the
+        // clinics/doctors reference data current), not clinical work.
+        // Also deliberately no ZEUSFW_PERM_MANAGE_USERS -- account/role
+        // administration stays an administrator-only concern.
+        'maintenance' => [
+            'label' => 'Συντήρηση',
+            'is_superuser' => false,
+            'permissions' => [
                 ZPMS_PERM_BACKUP_ACCESS,
                 ZPMS_PERM_SETTINGS_MANAGE,
             ],
@@ -56,15 +92,116 @@ function zpms_role_seed_definitions(): array {
 
 function zpms_permission_label_seed(): array {
     return [
-        ZPMS_PERM_PATIENTS_VIEW_LIST => 'View the patient list',
+        ZPMS_PERM_PATIENTS_VIEW_LIST => 'View the patient list and open a patient\'s record (read-only)',
         ZPMS_PERM_PATIENTS_NEW_PATIENT => 'Create a new patient',
         ZPMS_PERM_PATIENTS_EDIT_PATIENT => 'Edit a patient record',
         ZPMS_PERM_PATIENTS_DELETE_PATIENT => 'Delete a patient record',
         ZPMS_PERM_APPOINTMENT_EDIT => 'Create/edit/delete appointments and their attachments',
         ZPMS_PERM_BACKUP_ACCESS => 'View backup status',
         ZPMS_PERM_SETTINGS_MANAGE => 'Manage clinics/doctors reference data',
+        ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE => 'View/create/edit/delete pending (not-yet-a-patient) appointments',
         ZEUSFW_PERM_MANAGE_USERS => 'Manage user accounts and roles/permissions',
     ];
+}
+
+// Renames a role in place (preserving its id, and therefore every
+// existing role_permissions/user_roles row referencing it) -- used for a
+// one-time role-vocabulary change (power-user -> doctor) where the *set
+// of permissions* doesn't change, only what the role is called, so every
+// account already assigned the old name keeps its exact access under the
+// new one with zero manual reassignment.
+//
+// A no-op (not an error) when $oldName doesn't exist -- a fresh install
+// that was seeded straight from the current (already-renamed)
+// zpms_role_seed_definitions() never had a 'power-user' row to rename.
+//
+// If a role already named $newName ALSO exists (e.g. bin/migrate_roles.php's
+// own additive seeding already ran once against this database after the
+// code was updated, so it created a fresh 'doctor' role from scratch while
+// the old 'power-user' row was still sitting there untouched), the two are
+// merged instead: every user_roles row pointing at $oldName's id is
+// repointed at $newName's id, then $oldName's own role_permissions/role
+// rows are deleted -- so no account loses its assignment and no orphaned
+// role is left behind, regardless of which order this script and the
+// normal additive seed happen to run in.
+function zpms_rename_role(string $oldName, string $newName, string $newLabel, bool $dryRun, callable $log): void {
+    $old = rolesClassEx::sgetByName($oldName);
+    if (!$old) {
+        $log("  '$oldName' not found -- nothing to rename.");
+        return;
+    }
+
+    $db = dbConnection::getConnection();
+    $new = rolesClassEx::sgetByName($newName);
+
+    if ($new) {
+        $log("  both '$oldName' (id=" . $old->getid() . ") and '$newName' (id=" . $new->getid()
+            . ") exist -- merging '$oldName' assignments into '$newName' and removing '$oldName'.");
+        if (!$dryRun) {
+            $stmt = $db->prepare("SELECT user_id FROM user_roles WHERE role_id = :old");
+            $stmt->bindValue(':old', (int)$old->getid(), PDO::PARAM_INT);
+            $stmt->execute();
+            while ($row = $stmt->fetch()) {
+                user_rolesClassEx::assignRole((int)$row['user_id'], (int)$new->getid(), 'migration-script');
+            }
+            $db->prepare("DELETE FROM user_roles WHERE role_id = :old")
+                ->execute([':old' => (int)$old->getid()]);
+            $db->prepare("DELETE FROM role_permissions WHERE role_id = :old")
+                ->execute([':old' => (int)$old->getid()]);
+            $db->prepare("DELETE FROM roles WHERE id = :old")
+                ->execute([':old' => (int)$old->getid()]);
+        }
+        return;
+    }
+
+    $log(($dryRun ? "  would rename: " : "  renaming: ") . "'$oldName' (id=" . $old->getid() . ") -> '$newName'");
+    if (!$dryRun) {
+        $old->setname($newName);
+        $old->setlabel($newLabel);
+        $old->update();
+    }
+}
+
+// Deletes a role entirely -- but only if no account currently holds it.
+// Refuses (writes nothing, whether $dryRun or not) and reports which
+// usernames are still assigned it otherwise, rather than silently
+// orphaning a real account the moment its only role disappears --
+// same "don't guess, surface it for a human" rule this app's sibling
+// repos (apyweb's invoice/operation conflict detection, DocArc's audit
+// log) already follow for exactly this kind of consequential ambiguity.
+// Re-run after reassigning those accounts elsewhere (e.g. via
+// /admin/user_roles once 'secretary'/'doctor'/'maintenance' all exist).
+//
+// Returns ['retired' => bool, 'blockedUsers' => string[]].
+function zpms_retire_role(string $name, bool $dryRun, callable $log): array {
+    $role = rolesClassEx::sgetByName($name);
+    if (!$role) {
+        $log("  '$name' not found -- nothing to retire.");
+        return ['retired' => false, 'blockedUsers' => []];
+    }
+
+    $db = dbConnection::getConnection();
+    $stmt = $db->prepare(
+        "SELECT u.uname FROM user_roles ur JOIN users u ON u.id = ur.user_id WHERE ur.role_id = :r"
+    );
+    $stmt->bindValue(':r', (int)$role->getid(), PDO::PARAM_INT);
+    $stmt->execute();
+    $holders = array_column($stmt->fetchAll(), 'uname');
+
+    if ($holders) {
+        $log("  '$name' still assigned to: " . implode(', ', $holders)
+            . " -- NOT deleting. Reassign these account(s) to another role first, then re-run.");
+        return ['retired' => false, 'blockedUsers' => $holders];
+    }
+
+    $log(($dryRun ? "  would delete: " : "  deleting: ") . "'$name' role (id=" . $role->getid() . ")");
+    if (!$dryRun) {
+        $db->prepare("DELETE FROM role_permissions WHERE role_id = :r")
+            ->execute([':r' => (int)$role->getid()]);
+        $db->prepare("DELETE FROM roles WHERE id = :r")
+            ->execute([':r' => (int)$role->getid()]);
+    }
+    return ['retired' => true, 'blockedUsers' => []];
 }
 
 // Idempotent: skips any permission/role/grant that already exists by

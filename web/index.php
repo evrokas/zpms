@@ -22,115 +22,79 @@ require_once(__FWDIR__ . '/bootstrap.php');
 require_once(__DIR__ . '/api_patients.php');
 require_once(__DIR__ . '/appointment_files.php');
 require_once(__DIR__ . '/apyweb_client.php');
+require_once(__DIR__ . '/google_calendar_client.php');
 require_once(__DIR__ . '/rbac.php');
 
 
     ini_set('session.gc_maxlifetime', 3600);
     // cookie_lifetime is deliberately no longer overridden here -- the PHP
     // session cookie itself now always dies on browser close (lifetime 0,
-    // set explicitly in zeusfw_session_start() below); persistence across
-    // browser restarts is delegated entirely to the separate
-    // zeusfwrememberme cookie/user_tokens mechanism, same as DocArc.
+    // set explicitly in zeusfw_session_start(), called from Kernel::boot()
+    // below); persistence across browser restarts is delegated entirely to
+    // the separate zeusfwrememberme cookie/user_tokens mechanism, same as
+    // DocArc.
 
     // Project Zeus - Patient Registration System
-    // echo "<pre>";
-    // print_r( $info['menu']['main'] );
-    // echo "</pre>";
-    
+
+    // zpms's own one-off setup that has to run at boot() 's app-hook point
+    // (after the session/language/output-buffer are ready, before modules
+    // are registered and the route is dispatched) -- see Kernel::boot()'s
+    // own docblock (zeusfw core/kernel/Kernel.php) for the function_exists()
+    // convention this follows.
+    function zeusfw_app_boot() {
+        locationsClassEx::setDefaultLocation();
+    }
+
     $kernel = new Kernel($_SERVER, "../config");
-    SecurityClass::init($kernel->getConfig('roles') );
 
-    $router = new RouterClass( $kernel->getConfig('routes') );
-    // print_r( $router->getAllRoutes() );
+    // Runs the whole request bootstrap + dispatch sequence that used to be
+    // hand-written here: Request/Router/Renderer construction, session
+    // start, the CSRF/lockout/login-redirect opt-ins below, remember-me
+    // cookie resolution, language selection, module registration, route
+    // matching + dispatch, and the final render/flush. See Kernel::boot()'s
+    // own docblock for exactly what each step does and why.
+    $kernel->boot([
+        // Opt in to CSRF enforcement on the shared login_post() -- see
+        // csrfClass::$enforceLogin's docblock (zeusfw core/lib/Csrf.php).
+        // Safe to do unconditionally: web/templates/content/login.zetem
+        // (zpms's own override of the core login form) always renders
+        // csrf_field() now, so every real login submission already carries
+        // a valid token.
+        'csrf_login' => true,
 
-    Renderer::init($kernel->getConfig('templates'), false,  $kernel->safeGetConfig('template_cache_path'), $kernel->getConfig('enable_comments'));
+        // Same reasoning for the shared webforms dispatcher -- see
+        // csrfClass::$enforceWebforms's docblock. generateHTMLForm() already
+        // renders csrf_field() into every DB-defined webform unconditionally
+        // (framework-wide, harmless for apps that don't check it); this
+        // just tells processform() to actually verify it for zpms's own
+        // webforms.
+        'csrf_webforms' => true,
 
-    $Request = new RequestClass($_SERVER);
-    // $handlers = $Request->getQueryRoute();
-    // echopre('Request: ', print_r($Request, 1));
-    // echo "<pre>" . print_r( $_SERVER, 1 ) . "</pre>";
-    // echo( "Method: " . $req->getMethod() . '  string: ' . $req->getQueryString() . "<br/>" );
-    // print_r( $handlers );
-    zeusfw_session_start();
+        // Opt in to the brute-force lockout on the shared login_post() --
+        // see LoginSecurityClass's docblock (zeusfw core/lib/UserLogin.php).
+        // Safe to enable unconditionally: every account starts at
+        // wrongpasscount=0, so this can't retroactively lock anyone out, it
+        // only starts counting failed attempts from here on. Deliberately
+        // NOT also calling enableAccountStatusEnforcement() here -- that
+        // one requires first confirming every real account in this server's
+        // users table actually has active=1 and expired=0 set (see the same
+        // docblock for why an account can be working today without that
+        // being true), which needs a human with production DB access to
+        // check, not something this change can safely assume.
+        'login_lockout' => true,
 
-    // Opt in to CSRF enforcement on the shared login_post() -- see
-    // csrfClass::$enforceLogin's docblock (zeusfw core/lib/Csrf.php).
-    // Safe to do unconditionally: web/templates/content/login.zetem
-    // (zpms's own override of the core login form) always renders
-    // csrf_field() now, so every real login submission already carries
-    // a valid token.
-    csrfClass::enableLoginProtection();
+        // Redirect straight to /login instead of a bare 401 page for any
+        // route with `access:` that an unauthenticated/unpermitted request
+        // hits -- see SecurityClass::$loginRedirectUrl's own docblock
+        // (zeusfw core/lib/Security.php). homepage() below applies the same
+        // "go straight to /login" treatment to '/' itself, which has no
+        // `access:` of its own (it renders different content per login
+        // state rather than being gated) and so never reaches this
+        // codepath.
+        'login_redirect' => '/login',
 
-    // Same reasoning for the shared webforms dispatcher -- see
-    // csrfClass::$enforceWebforms's docblock. generateHTMLForm() already
-    // renders csrf_field() into every DB-defined webform unconditionally
-    // (framework-wide, harmless for apps that don't check it); this just
-    // tells processform() to actually verify it for zpms's own webforms.
-    csrfClass::enableWebformProtection();
-
-    // Opt in to the brute-force lockout on the shared login_post() -- see
-    // LoginSecurityClass's docblock (zeusfw core/lib/UserLogin.php). Safe
-    // to enable unconditionally: every account starts at wrongpasscount=0,
-    // so this can't retroactively lock anyone out, it only starts counting
-    // failed attempts from here on. Deliberately NOT also calling
-    // enableAccountStatusEnforcement() here -- that one requires first
-    // confirming every real account in this server's users table actually
-    // has active=1 and expired=0 set (see the same docblock for why an
-    // account can be working today without that being true), which needs
-    // a human with production DB access to check, not something this
-    // change can safely assume.
-    LoginSecurityClass::enableLockout();
-
-    // Opt in to redirecting straight to /login instead of a bare 401 page
-    // for any route with `access:` that an unauthenticated/unpermitted
-    // request hits -- see SecurityClass::$loginRedirectUrl's own docblock
-    // (zeusfw core/lib/Security.php). homepage() below applies the same
-    // "go straight to /login" treatment to '/' itself, which has no
-    // `access:` of its own (it renders different content per login state
-    // rather than being gated) and so never reaches this codepath.
-    SecurityClass::enableLoginRedirect('/login');
-
-    $kernel->isUserLoggedin();
-    // if($kernel->isUserLoggedin()) {
-        // echo "<pre>User has been logged in!</pre>";
-    // } else {
-        // echo "<pre>User has *NOT* been logged in!</pre>";
-    // }
-    // echo "<pre>Session: " . print_r( $_SESSION, 1) . "</pre>";
-
-
-//    $l = new locationsClass();
-
-//    echopre('locations: ' . print_r($l->getFields(), 1));
-//    echopre('locations: ' . print_r(get_class_vars( 'locationsClass'),1) );
-    if(isset($_SESSION) && isset($_SESSION['CURRENT_LANGUAGE']))
-        $kernel->setCurrentLanguage( $_SESSION['CURRENT_LANGUAGE']);
-    else
-        $kernel->setCurrentLanguage('gr');
-    // $kernel->setCurrentLanguage('en');
-
-    ob_start();
-
-    // echopre('_SERVER: ' . print_r($_SERVER, 1));
-
-    locationsClassEx::setDefaultLocation();
-    registerModules();
-
-    // $f1 = new Feeder('/content/locations.feeder.yaml');
-
-    $match = $router->matchRoute( $Request );
-    // echopre("Match route: " . print_r($match, 1));
-    
-    $_SESSION['route_match'] = $match;
-    $_SESSION['request'] = $Request->getQueryRoute();
-
-    $content_response = $router->routerCallFunction($match);
-    // print_r($content_response);
-    // render web page
-    $kernel->renderPage();
-    
-    // finally flush webpage to the user
-    ob_end_flush();
+        'default_language' => 'gr',
+    ]);
 
 
 /* ----- website handlers ----- */
@@ -231,6 +195,8 @@ require_once(__DIR__ . '/rbac.php');
         return Renderer::render("patients_list.zetem",
             ['pat_list' => $pp,
                 // 'notice' => $kernel->ifelseStatus('patient_edit', '', true)
+                'can_create_patient' => rbacClass::isPermitted(ZPMS_PERM_PATIENTS_NEW_PATIENT),
+                'can_delete_patient' => rbacClass::isPermitted(ZPMS_PERM_PATIENTS_DELETE_PATIENT)
             ]);
     }
 
@@ -273,6 +239,8 @@ require_once(__DIR__ . '/rbac.php');
             [   'search_term' => $params['term'],
                 'pat_list' => $pp,
                 // 'notice' => $kernel->ifelseStatus('patient_edit', '', true)
+                'can_create_patient' => rbacClass::isPermitted(ZPMS_PERM_PATIENTS_NEW_PATIENT),
+                'can_delete_patient' => rbacClass::isPermitted(ZPMS_PERM_PATIENTS_DELETE_PATIENT)
             ]);
     }
 
@@ -318,7 +286,21 @@ require_once(__DIR__ . '/rbac.php');
     function patient_edit($params) {
         global $kernel;
 
-        if(($errmsg = rbacClass::require(ZPMS_PERM_PATIENTS_EDIT_PATIENT)))return $errmsg;
+        // Viewing a patient's page and actually saving changes to it are
+        // gated separately -- see ZPMS_PERM_PATIENTS_VIEW_LIST's own
+        // docblock in web/rbac.php. A holder of only patients-view-list
+        // (e.g. the secretary role) can open this page and read
+        // everything on it; patient_edit_post() below still requires
+        // patients-edit-patient regardless of what a tampered request
+        // submits, and $canEditPatient/$canEditAppointment (computed
+        // below) drive edit_patient.zetem/view_appointment.zetem
+        // rendering the page fully read-only (disabled fields, no
+        // save/appointment/attachment controls) when the viewer lacks
+        // the corresponding edit permission.
+        if(($errmsg = rbacClass::require(ZPMS_PERM_PATIENTS_VIEW_LIST)))return $errmsg;
+
+        $canEditPatient = rbacClass::isPermitted(ZPMS_PERM_PATIENTS_EDIT_PATIENT);
+        $canEditAppointment = rbacClass::isPermitted(ZPMS_PERM_APPOINTMENT_EDIT);
 
         if(!isset($params['id'])) {
             $kernel->addStatus('error', 'Ο φάκελος του ασθενή δεν βρέθηκε!');
@@ -346,26 +328,41 @@ require_once(__DIR__ . '/rbac.php');
         // $loc = locationsClass::sgetAll();
         $loc = locationsClassEx::sgetAll( $kernel->getCurrentLanguage() );
 
+        // A viewer without appointment-edit (e.g. the secretary role)
+        // never sees the full editable appointment/operation cards
+        // (view_appointment.zetem -- notes, save/delete, file uploads) --
+        // instead gets a compact, read-only summary listing just the date
+        // and location of each, per request. Only one of these two arrays
+        // is ever built, since edit_patient.zetem renders one or the
+        // other, never both.
         $apprender = array();
         $appdates = array();
+        $appointmentSummary = array();
         foreach($app_list as $ap) {
-            
+
             if($ap->getdeleted() == null) {
-                $apprender[] = [
-                    'index' => count($apprender),
-                    'markup' => Renderer::render('view_appointment.zetem', [
-                                                    'action' => rel_url('/appointment/' . $ap->getid() . '/edit'),
-                                                    'index' => count($apprender)+1,
-                                                    'checked' => "checked",/*(!count($apprender)?"checked":""),*/
-                                                    'id' => $params['id'], 
-                                                    'patient' => $pat,
-                                                    'appointment' => $ap,
-                                                    'locations' => $loc,
-                                                    'files' => appointmentFilesClassEx::getFilesForAppointment($ap->getid())
-                                                ]),
-                    'attributes' => new Attributes()
-                ];
-                $appdates[] = [ 'index' => count($apprender), 'date' => $ap->getadate() ];
+                if ($canEditAppointment) {
+                    $apprender[] = [
+                        'index' => count($apprender),
+                        'markup' => Renderer::render('view_appointment.zetem', [
+                                                        'action' => rel_url('/appointment/' . $ap->getid() . '/edit'),
+                                                        'index' => count($apprender)+1,
+                                                        'checked' => "checked",/*(!count($apprender)?"checked":""),*/
+                                                        'id' => $params['id'],
+                                                        'patient' => $pat,
+                                                        'appointment' => $ap,
+                                                        'locations' => $loc,
+                                                        'files' => appointmentFilesClassEx::getFilesForAppointment($ap->getid())
+                                                    ]),
+                        'attributes' => new Attributes()
+                    ];
+                    $appdates[] = [ 'index' => count($apprender), 'date' => $ap->getadate() ];
+                } else {
+                    $appointmentSummary[] = [
+                        'date' => $ap->getadate(),
+                        'location' => $ap->getaplace(),
+                    ];
+                }
             }
         }
 
@@ -375,8 +372,11 @@ require_once(__DIR__ . '/rbac.php');
             'patient' => $pat,
             'appdates' => $appdates,
             'appointments' => $apprender,
+            'appointment_summary' => $appointmentSummary,
             'financials' => $financials,
-            'has_financials' => $hasFinancials
+            'has_financials' => $hasFinancials,
+            'can_edit_patient' => $canEditPatient,
+            'can_edit_appointment' => $canEditAppointment
         ]));
     }
     function patient_edit_post($params) {
@@ -466,7 +466,16 @@ require_once(__DIR__ . '/rbac.php');
         ]);
         
         // $pat = $pc->getById($params['id']);
-        return (Renderer::render("edit_patient.zetem", ['action' => 'new', 'id' => null, 'patient' => $pc]));
+        // A brand-new, not-yet-saved patient form is always fully
+        // editable -- reaching this handler already required
+        // patients-new-patient above, so there's no read-only case here.
+        return (Renderer::render("edit_patient.zetem", [
+            'action' => 'new',
+            'id' => null,
+            'patient' => $pc,
+            'can_edit_patient' => true,
+            'can_edit_appointment' => true
+        ]));
     }
 
     function patient_delete($params) {
@@ -864,6 +873,336 @@ require_once(__DIR__ . '/rbac.php');
         header('location: '.rel_url('/patient/'.$pat->getid().'/edit'));
     }
 
+    // Default length of a plain phone-booked consultation, for the
+    // Calendar event's end time only -- neither pending_appointments nor
+    // appointments has a duration column, and nothing here needs one
+    // beyond sizing the block Calendar shows.
+    const ZPMS_CONSULTATION_DEFAULT_DURATION_MINUTES = 30;
+
+    /**
+     * Every currently-defined location's display name, for the <select>
+     * on the booking/edit/convert forms -- same locationsClassEx source
+     * view_appointment.zetem's own location field already reads,
+     * returned as plain strings (not objects) since pending_appointments.
+     * location is a plain varchar, same convention appointments.aplace
+     * already uses.
+     */
+    function zpms_pending_appointment_location_options(): array {
+        global $kernel;
+        $names = [];
+        foreach (locationsClassEx::sgetAll($kernel->getCurrentLanguage()) as $loc) {
+            $names[] = $loc->getname();
+        }
+        return $names;
+    }
+
+    /**
+     * Pushes a pending_appointments row's current fields to its Calendar
+     * event -- create if it has no google_event_id yet, otherwise patch
+     * the existing one in place. Shared by consultation_new_post() and
+     * pending_appointment_edit_post(); entirely a no-op, silently, when
+     * googleCalendarClass::isEnabled() is false (not configured yet) --
+     * never blocks or fails the pending-row save itself, matching every
+     * other optional integration in this app family's fail-soft
+     * convention.
+     */
+    function zpms_pending_appointment_sync_to_calendar(pendingAppointmentsClass $pending): void {
+        if (!googleCalendarClass::isEnabled()) {
+            return;
+        }
+
+        if ($pending->getgoogle_event_id() === null) {
+            $eventId = googleCalendarClass::createEvent(
+                $pending->getid(),
+                $pending->getpatient_name(),
+                $pending->getappointment_datetime(),
+                ZPMS_CONSULTATION_DEFAULT_DURATION_MINUTES,
+                $pending->getpatient_phone() ?? '',
+                $pending->getpatient_amka() ?? '',
+                $pending->getpatient_email() ?? '',
+                $pending->getlocation() ?? '',
+                $pending->getnotes() ?? ''
+            );
+            if ($eventId === null) {
+                return;
+            }
+            $pending->setgoogle_event_id($eventId);
+        } else {
+            googleCalendarClass::updateEvent(
+                $pending->getgoogle_event_id(),
+                $pending->getpatient_name(),
+                $pending->getappointment_datetime(),
+                ZPMS_CONSULTATION_DEFAULT_DURATION_MINUTES,
+                $pending->getpatient_phone() ?? '',
+                $pending->getpatient_amka() ?? '',
+                $pending->getpatient_email() ?? '',
+                $pending->getlocation() ?? '',
+                $pending->getnotes() ?? ''
+            );
+        }
+        $pending->setgoogle_synced_at(getDBtime());
+        $pending->update();
+    }
+
+    function consultation_new($params) {
+        global $kernel;
+
+        if(($errmsg = rbacClass::require(ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE)))return $errmsg;
+
+        return (Renderer::render("new_consultation.zetem", [
+            'calendar_enabled' => googleCalendarClass::isEnabled(),
+            'locations' => zpms_pending_appointment_location_options(),
+        ]));
+    }
+
+    function consultation_new_post($params) {
+        global $kernel;
+
+        if(($errmsg = rbacClass::require(ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE)))return $errmsg;
+
+        if(!csrfClass::verifyRequest()) {
+            $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
+            header('location: '.rel_url('/consultation/new'));
+            exit();
+        }
+
+        // No patient/appointment row yet -- see pending_appointments.yaml's
+        // own docblock for why this table exists at all: a patient record
+        // is only ever created once the patient actually shows up and the
+        // doctor asks for one (pending_appointment_convert_post() below).
+        $pending = new pendingAppointmentsClass([
+            'id' => null,
+            'cuser' => $kernel->getUserName(),
+            'cdate' => getDBtime(),
+            'guid' => guid(),
+            'patient_name' => $_POST['patient-name'],
+            'patient_phone' => $_POST['patient-telephone'] ?? '',
+            'patient_amka' => $_POST['patient-amka'] ?? '',
+            'patient_email' => $_POST['patient-email'] ?? '',
+            'appointment_datetime' => getDBformattime($_POST['appointment-date']),
+            'location' => $_POST['appointment-location'] ?? '',
+            'notes' => $_POST['appointment-notes'] ?? '',
+        ]);
+        $pending->insert();
+
+        zpms_pending_appointment_sync_to_calendar($pending);
+
+        $kernel->addStatus('notice', 'Καταχωρήθηκε εκκρεμές ραντεβού για τον/την <b>'
+            . htmlspecialchars($pending->getpatient_name(), ENT_QUOTES, 'UTF-8') . '</b>'
+            . ($pending->getgoogle_event_id() ? ' (συγχρονίστηκε με το Google Calendar).' : '.'));
+
+        header('location: '.rel_url('/consultation/pending'));
+        exit();
+    }
+
+    /**
+     * "Εκκρεμή Ραντεβού" -- every not-yet-converted, not-yet-cancelled
+     * pending_appointments row, regardless of whether it was booked on
+     * /consultation/new or pulled in from a Calendar-native event by
+     * bin/sync_google_calendar.php. Secretary-level: viewing/editing/
+     * cancelling a phone booking never needs real patient-record access.
+     */
+    function pending_appointments_list($params) {
+        global $kernel;
+
+        if(($errmsg = rbacClass::require(ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE)))return $errmsg;
+
+        $pending = pendingAppointmentsClass::sgetAll(
+            'converted_at IS NULL AND cancelled_at IS NULL',
+            null
+        );
+        usort($pending, fn($a, $b) => strcmp($a->getappointment_datetime(), $b->getappointment_datetime()));
+
+        return (Renderer::render("pending_appointments_list.zetem", [
+            'pending' => $pending,
+            // Gates the per-row "Δημιουργία Φακέλου" button -- a
+            // secretary-only account sees the list but not that action,
+            // same permission split pending_appointment_convert()
+            // enforces server-side (this is display-only, not the real
+            // access check).
+            'can_convert' => rbacClass::isPermitted(ZPMS_PERM_PATIENTS_NEW_PATIENT)
+                && rbacClass::isPermitted(ZPMS_PERM_APPOINTMENT_EDIT),
+        ]));
+    }
+
+    function pending_appointment_edit($params) {
+        global $kernel;
+
+        if(($errmsg = rbacClass::require(ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE)))return $errmsg;
+
+        $pending = pendingAppointmentsClass::sgetById((int)$params['id']);
+        if (!$pending || $pending->getconverted_at() !== null || $pending->getcancelled_at() !== null) {
+            $kernel->addStatus('error', 'Η καταχώρηση δεν βρέθηκε ή έχει ήδη επεξεργαστεί.');
+            header('location: '.rel_url('/consultation/pending'));
+            exit();
+        }
+
+        return (Renderer::render("pending_appointment_edit.zetem", [
+            'pending' => $pending,
+            'locations' => zpms_pending_appointment_location_options(),
+        ]));
+    }
+
+    function pending_appointment_edit_post($params) {
+        global $kernel;
+
+        if(($errmsg = rbacClass::require(ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE)))return $errmsg;
+
+        if(!csrfClass::verifyRequest()) {
+            $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
+            header('location: '.rel_url('/consultation/pending'));
+            exit();
+        }
+
+        $pending = pendingAppointmentsClass::sgetById((int)$params['id']);
+        if (!$pending || $pending->getconverted_at() !== null || $pending->getcancelled_at() !== null) {
+            $kernel->addStatus('error', 'Η καταχώρηση δεν βρέθηκε ή έχει ήδη επεξεργαστεί.');
+            header('location: '.rel_url('/consultation/pending'));
+            exit();
+        }
+
+        $pending->setpatient_name($_POST['patient-name']);
+        $pending->setpatient_phone($_POST['patient-telephone'] ?? '');
+        $pending->setpatient_amka($_POST['patient-amka'] ?? '');
+        $pending->setpatient_email($_POST['patient-email'] ?? '');
+        $pending->setappointment_datetime(getDBformattime($_POST['appointment-date']));
+        $pending->setlocation($_POST['appointment-location'] ?? '');
+        $pending->setnotes($_POST['appointment-notes'] ?? '');
+        $pending->update();
+
+        zpms_pending_appointment_sync_to_calendar($pending);
+
+        $kernel->addStatus('notice', 'Ενημερώθηκε το εκκρεμές ραντεβού.');
+        header('location: '.rel_url('/consultation/pending'));
+        exit();
+    }
+
+    /**
+     * Cancels a pending appointment with no patient record ever created
+     * -- the caller cancelled, or (for a Calendar-native row) it was a
+     * personal event that landed on the shared calendar by mistake.
+     * Deletes the linked Calendar event too, if there is one, so
+     * cancelling here doesn't leave a booking Calendar still shows.
+     */
+    function pending_appointment_delete($params) {
+        global $kernel;
+
+        if(($errmsg = rbacClass::require(ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE)))return $errmsg;
+
+        if(!csrfClass::verifyRequest()) {
+            $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
+            header('location: '.rel_url('/consultation/pending'));
+            exit();
+        }
+
+        $pending = pendingAppointmentsClass::sgetById((int)$params['id']);
+        if ($pending && $pending->getconverted_at() === null && $pending->getcancelled_at() === null) {
+            if ($pending->getgoogle_event_id() !== null) {
+                googleCalendarClass::deleteEvent($pending->getgoogle_event_id());
+            }
+            $pending->setcancelled_at(getDBtime());
+            $pending->update();
+            $kernel->addStatus('notice', 'Το ραντεβού ακυρώθηκε.');
+        }
+
+        header('location: '.rel_url('/consultation/pending'));
+        exit();
+    }
+
+    /**
+     * The patient showed up (or called to confirm) and the doctor wants
+     * a real record -- pre-fills the same duplicate-name check
+     * patient_new()/patient_new_check_name() already provide, so an
+     * existing patient can be picked instead of creating a second record
+     * for someone already on file.
+     */
+    function pending_appointment_convert($params) {
+        global $kernel;
+
+        if(($errmsg = rbacClass::require(ZPMS_PERM_PATIENTS_NEW_PATIENT)))return $errmsg;
+        if(($errmsg = rbacClass::require(ZPMS_PERM_APPOINTMENT_EDIT)))return $errmsg;
+
+        $pending = pendingAppointmentsClass::sgetById((int)$params['id']);
+        if (!$pending || $pending->getconverted_at() !== null || $pending->getcancelled_at() !== null) {
+            $kernel->addStatus('error', 'Η καταχώρηση δεν βρέθηκε ή έχει ήδη επεξεργαστεί.');
+            header('location: '.rel_url('/consultation/pending'));
+            exit();
+        }
+
+        return (Renderer::render("pending_appointment_convert.zetem", ['pending' => $pending]));
+    }
+
+    function pending_appointment_convert_post($params) {
+        global $kernel;
+
+        if(($errmsg = rbacClass::require(ZPMS_PERM_PATIENTS_NEW_PATIENT)))return $errmsg;
+        if(($errmsg = rbacClass::require(ZPMS_PERM_APPOINTMENT_EDIT)))return $errmsg;
+
+        if(!csrfClass::verifyRequest()) {
+            $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
+            header('location: '.rel_url('/consultation/pending'));
+            exit();
+        }
+
+        $pending = pendingAppointmentsClass::sgetById((int)$params['id']);
+        if (!$pending || $pending->getconverted_at() !== null || $pending->getcancelled_at() !== null) {
+            $kernel->addStatus('error', 'Η καταχώρηση δεν βρέθηκε ή έχει ήδη επεξεργαστεί.');
+            header('location: '.rel_url('/consultation/pending'));
+            exit();
+        }
+
+        $existingPatientId = trim((string)($_POST['existing-patient-id'] ?? ''));
+
+        if ($existingPatientId !== '') {
+            $pat = patientsClass::sgetById((int)$existingPatientId);
+            if (!$pat) {
+                $kernel->addStatus('error', 'Ο επιλεγμένος ασθενής δεν βρέθηκε.');
+                header('location: '.rel_url('/consultation/pending/'.$pending->getid().'/convert'));
+                exit();
+            }
+        } else {
+            $pat = new patientsClass([
+                'id' => null,
+                'cuser' => $kernel->getUserName(),
+                'cdate' => getDBtime(),
+                'pname' => $_POST['patient-name'],
+                'pdob' => getDBtime(),
+                'pamka' => $_POST['patient-amka'] ?? '',
+                'ptel' => $_POST['patient-telephone'] ?? '',
+                'paddr' => '',
+                'pemail' => $_POST['patient-email'] ?? '',
+                'pnote' => '',
+                'guid' => guid(),
+            ]);
+            $pat->insert();
+        }
+
+        $app = new appointmentsClass([
+            'id' => null,
+            'cuser' => $kernel->getUserName(),
+            'cdate' => getDBtime(),
+            'adate' => $pending->getappointment_datetime(),
+            'aplace' => $pending->getlocation() ?? '',
+            'anote' => $pending->getnotes() ?? '',
+            'atype' => 'appointment',
+            'guid' => guid(),
+            'pguid' => $pat->getguid(),
+            'google_event_id' => $pending->getgoogle_event_id(),
+            'google_synced_at' => $pending->getgoogle_event_id() !== null ? getDBtime() : null,
+        ]);
+        $app->insert();
+
+        $pending->setconverted_at(getDBtime());
+        $pending->setconverted_patient_id($pat->getid());
+        $pending->setconverted_appointment_id($app->getid());
+        $pending->update();
+
+        $kernel->addStatus('notice', 'Δημιουργήθηκε φάκελος και ραντεβού για τον ασθενή <b>'
+            . htmlspecialchars($pat->getpname(), ENT_QUOTES, 'UTF-8') . '</b>.');
+
+        header('location: '.rel_url('/patient/'.$pat->getid().'/edit'));
+        exit();
+    }
 
 
     function settings($params) {
@@ -893,11 +1232,11 @@ require_once(__DIR__ . '/rbac.php');
             'doctors' => formsClass::renderForm('doctors'),
 
             // A settings-manage holder doesn't necessarily also have
-            // users-manage (deliberately not granted to power-user by
-            // default -- see ZEUSFW_PERM_MANAGE_USERS's own comment in
-            // zeusfw's core/lib/Rbac.php), so this link is only shown when
-            // the current user actually has it, rather than to everyone
-            // who can reach this page at all.
+            // users-manage (deliberately not granted to doctor or
+            // maintenance by default -- see ZEUSFW_PERM_MANAGE_USERS's own
+            // comment in zeusfw's core/lib/Rbac.php), so this link is only
+            // shown when the current user actually has it, rather than to
+            // everyone who can reach this page at all.
             'show_user_management' => rbacClass::isPermitted(ZEUSFW_PERM_MANAGE_USERS),
         ]);
 

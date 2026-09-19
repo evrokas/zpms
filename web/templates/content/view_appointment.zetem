@@ -92,7 +92,13 @@
          swept into the place/date/notes save). Collapsed by default and
          expanded by clicking the heading, except it starts already
          expanded when there are existing files, so staff land straight
-         on them instead of an empty-looking closed section. -->
+         on them instead of an empty-looking closed section.
+
+         This whole template is only ever rendered for a viewer holding
+         appointment-edit (see patient_edit() in web/index.php -- a
+         viewer without it gets a compact read-only summary instead,
+         built inline in edit_patient.zetem, never this full form), so
+         nothing here needs its own permission check. -->
     <div class="file-upload-section{{(isset($files) && count($files) > 0) ? ' is-expanded' : ''}}">
         <h5 class="file-upload-section-heading" data-toggle-attachments>
             <i class='bx bx-chevron-right toggle-icon'></i>

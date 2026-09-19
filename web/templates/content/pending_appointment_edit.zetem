@@ -1,0 +1,73 @@
+{% attach_library('loader-library'); %}
+{% attach_library('flatpickr-library'); %}
+
+<div class="edit-patient">
+    <div class="header">
+        <h4>Επεξεργασία Εκκρεμούς Ραντεβού</h4>
+    </div>
+
+    <p class="muted" style="padding: 0 1rem;">
+        <a href="{{rel_url('/consultation/pending')}}">&larr; Πίσω στα Εκκρεμή Ραντεβού</a>
+    </p>
+
+    <form action="{{rel_url('/consultation/pending/'.$pending->getid().'/edit')}}" method="post">
+        {{ csrf_field() }}
+
+        <div class="input-div">
+            <label for="patient-name">Όνομα ασθενή</label>
+            <input type="text" name="patient-name" id="" value="{{{$pending->getpatient_name()}}}" required>
+        </div>
+
+        <div class="input-div">
+            <label for="patient-telephone">Τηλέφωνο</label>
+            <input type="text" name="patient-telephone" id="" value="{{{$pending->getpatient_phone()}}}">
+        </div>
+
+        <div class="input-div">
+            <label for="patient-amka">ΑΜΚΑ</label>
+            <input type="text" name="patient-amka" id="" value="{{{$pending->getpatient_amka()}}}">
+        </div>
+
+        <div class="input-div">
+            <label for="patient-email">Email</label>
+            <input type="text" name="patient-email" id="" value="{{{$pending->getpatient_email()}}}">
+        </div>
+
+        <div class="input-div">
+            <label for="appointment-date">Ημ/νία &amp; Ώρα Ραντεβού</label>
+            <input type="text" name="appointment-date" id="consultation-date" value="{{$pending->getappointment_datetime() | date('Y-m-d H:i')}}" required>
+        </div>
+
+        <div class="input-div">
+            <label for="appointment-location">Τοποθεσία</label>
+            <select name="appointment-location" id="">
+                <option value="">-- Επιλογή τοποθεσίας --</option>
+                {% foreach($locations as $loc): %}
+                <option value="{{{$loc}}}" {{($loc == $pending->getlocation())?'selected':''}}>{{{$loc}}}</option>
+                {% endforeach %}
+            </select>
+        </div>
+
+        <div class="input-div input-notes">
+            <label for="appointment-notes">Σημειώσεις</label>
+            <textarea name="appointment-notes" id="" rows="4">{{{$pending->getnotes()}}}</textarea>
+        </div>
+
+        <div class="buttons">
+            <input type="submit" name="submit" value="Αποθήκευση">
+        </div>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        flatpickr('#consultation-date', {
+            enableTime: true,
+            time_24hr: true,
+            dateFormat: 'Y-m-d H:i',
+            altInput: true,
+            altFormat: 'd-m-Y H:i',
+            allowInput: true
+        });
+    });
+</script>

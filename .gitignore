@@ -5,6 +5,8 @@ config/db.test.php
 config/docarc_api.php
 config/apyweb_api.php
 config/ernsauth.php
+config/google_calendar.php
+config/google_calendar_key.json
 config/site.info.yaml
 lib/ernsauth
 sql/admin.sql

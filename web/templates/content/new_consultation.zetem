@@ -1,0 +1,85 @@
+{% attach_library('loader-library'); %}
+{% attach_library('flatpickr-library'); %}
+
+<div class="edit-patient">
+    <div class="header">
+        <h4>Νέο Εκκρεμές Ραντεβού (τηλεφωνικά)</h4>
+    </div>
+    <p class="muted" style="padding: 0 1rem;">
+        Δεν δημιουργείται φάκελος ασθενή τώρα -- μόνο όταν ο ασθενής
+        προσέλθει, ο ιατρός θα δημιουργήσει τον φάκελο από τη λίστα
+        «Εκκρεμή Ραντεβού».
+    </p>
+
+    {% if(!$calendar_enabled): %}
+    <p class="muted" style="padding: 0 1rem;">
+        Το Google Calendar δεν είναι ρυθμισμένο -- το ραντεβού θα καταχωρηθεί
+        κανονικά στο ΖΠΜΣ, χωρίς συγχρονισμό.
+    </p>
+    {% endif %}
+
+    <form action="/consultation/new" method="post">
+        {{ csrf_field() }}
+
+        <div class="input-div">
+            <label for="patient-name">Όνομα ασθενή</label>
+            <input type="text" name="patient-name" id="" value="" placeholder="όνομα ασθενούς"
+                data-check-duplicate="1" autocomplete="off" required>
+        </div>
+
+        <div class="duplicate-warning" id="duplicate-warning" style="display:none;"></div>
+
+        <div class="input-div">
+            <label for="patient-telephone">Τηλέφωνο</label>
+            <input type="text" name="patient-telephone" id="" value="" placeholder="τηλέφωνο ασθενούς" required>
+        </div>
+
+        <div class="input-div">
+            <label for="patient-amka">ΑΜΚΑ</label>
+            <input type="text" name="patient-amka" id="" value="" placeholder="ΑΜΚΑ ασθενούς">
+        </div>
+
+        <div class="input-div">
+            <label for="patient-email">Email</label>
+            <input type="text" name="patient-email" id="" value="" placeholder="email ασθενούς (προαιρετικό)">
+        </div>
+
+        <div class="input-div">
+            <label for="appointment-date">Ημ/νία &amp; Ώρα Ραντεβού</label>
+            <input type="text" name="appointment-date" id="consultation-date" value="" required>
+        </div>
+
+        <div class="input-div">
+            <label for="appointment-location">Τοποθεσία</label>
+            <select name="appointment-location" id="">
+                <option value="">-- Επιλογή τοποθεσίας --</option>
+                {% foreach($locations as $loc): %}
+                <option value="{{{$loc}}}">{{{$loc}}}</option>
+                {% endforeach %}
+            </select>
+        </div>
+
+        <div class="input-div input-notes">
+            <label for="appointment-notes">Σημειώσεις</label>
+            <textarea name="appointment-notes" id="" rows="4"></textarea>
+        </div>
+
+        <div class="buttons">
+            <input type="submit" name="submit" value="Καταχώρηση">
+        </div>
+    </form>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        flatpickr('#consultation-date', {
+            enableTime: true,
+            time_24hr: true,
+            dateFormat: 'Y-m-d H:i',
+            altInput: true,
+            altFormat: 'd-m-Y H:i',
+            allowInput: true,
+            minDate: 'today'
+        });
+    });
+</script>

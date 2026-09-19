@@ -1,0 +1,28 @@
+<?php
+
+// Connection details for the ZPMS <-> Google Calendar consultation-
+// scheduling sync (see README.md, "Google Calendar sync"). Read by
+// googleCalendarClass::getConfig() (web/google_calendar_client.php).
+//
+// Setup, once per deployment:
+//   1. Create a Google Cloud project, enable the Calendar API, create a
+//      service account, and download its JSON key -- see README.md for
+//      the exact console steps.
+//   2. Save that JSON key file somewhere outside the web root (this repo
+//      keeps it at config/google_calendar_key.json, gitignored -- never
+//      commit it, it's a bearer credential for the calendar below).
+//   3. Create a Google Calendar for consultations and share it with the
+//      service account's email (shown on its Credentials page) with
+//      "Make changes to events" permission.
+//   4. Copy this file to google_calendar.php (gitignored, same pattern as
+//      db.php.in -> db.php / ernsauth.php.in -> ernsauth.php) and fill in
+//      the two values below.
+//
+// A missing file, or one naming a key file that doesn't exist, leaves
+// googleCalendarClass::isEnabled() false -- the "Νέο Ραντεβού" booking
+// screen still creates the ZPMS appointment normally, it just never calls
+// the Calendar API and google_event_id stays NULL. Never a fatal error.
+return [
+    'service_account_key_path' => __DIR__ . '/google_calendar_key.json',
+    'calendar_id'              => '<<calendar-id>>@group.calendar.google.com',
+];

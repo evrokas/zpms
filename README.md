@@ -19,7 +19,7 @@ dedicated, disposable test database — never the live one. See
 Staff accounts (the `users` table) are authorized via a standard
 role-based model: `permissions` (the fixed set of things the app actually
 checks — `patients-view-list`, `appointment-edit`, etc.), `roles` (named,
-assignable bundles like `power-user`), `role_permissions` (which
+assignable bundles like `doctor`), `role_permissions` (which
 permissions a role grants), and `user_roles` (which roles a user has). The
 *engine* — this schema, the `rolesClassEx`/`permissionsClassEx`/
 `role_permissionsClassEx`/`user_rolesClassEx` extension classes, and the
@@ -34,6 +34,53 @@ importantly, every permission check silently passed for any logged-in
 user regardless of role). This app only owns its own permission
 *vocabulary*: the `ZPMS_PERM_*` constants + `zpms_all_permission_slugs()`
 in `web/rbac.php`, and the seed role/label data in `web/rbac_seed.php`.
+
+**Four roles, matching four real job functions at this practice**
+(`web/rbac_seed.php`'s `zpms_role_seed_definitions()`):
+
+| Role | Label | Permissions |
+|---|---|---|
+| `administrator` | Διαχειριστής | Everything (`is_superuser` bypasses the permission check entirely — no explicit grants needed or shown) |
+| `doctor` | Ιατρός | `patients-view-list`, `patients-new-patient`, `patients-edit-patient`, `patients-delete-patient`, `appointment-edit`, `backup-access`, `settings-manage`, `pending-appointments-manage` — full clinical access |
+| `secretary` | Γραμματεία | `patients-view-list`, `pending-appointments-manage` — see below |
+| `maintenance` | Συντήρηση | `backup-access`, `settings-manage` — ops-only, zero patient-data access |
+
+**`secretary` can see a patient, not change one.** `patients-view-list`
+covers both the patient list *and* opening an individual patient's page
+(name/AMKA/contact details/appointment history) — deliberately one
+permission for "can see patient data, read-only" rather than a separate
+view-list/view-record split (see that constant's own docblock in
+`web/rbac.php`). `patient_edit()` (`web/index.php`) renders the page for
+anyone holding just this permission with every patient field inside a
+disabled `<fieldset>`, no save button (a plain "← Back to list" link
+instead), and no "New appointment"/"New operation" links. Appointments/
+operations themselves render as a compact, read-only table (date +
+location only, per-row — see `$appointment_summary` in `patient_edit()`)
+rather than the full editable card (`view_appointment.zetem` — notes,
+save/delete, file uploads) a holder of `appointment-edit` gets: neither
+the appointment's own notes nor its attachments are shown, since those
+can carry more clinical detail than a front-desk lookup needs, and every
+`appointment_file_*` route still requires `appointment-edit` regardless
+of what this page shows, so hiding the section is a UI courtesy matching
+a gate that already exists, not the only thing enforcing it. The patient
+list's own "Add new patient" button and per-row delete form are likewise
+hidden when the viewer lacks `patients-new-patient`/
+`patients-delete-patient`. Actually saving a change always re-checks
+`patients-edit-patient`/`appointment-edit` server-side in
+`patient_edit_post()`/`appointment_edit_post()`, regardless of what a
+tampered request submits — the read-only rendering is a UX nicety on top
+of a real, independently-enforced gate, not the gate itself. `secretary`
+additionally holds `pending-appointments-manage` (see "Google Calendar
+sync" below) — it can book/edit/cancel a phone
+appointment in the waiting room, but converting one into a real patient
+record stays a `doctor`-only action.
+
+**`maintenance` is a technical/ops account**, for whoever administers the
+server — `backup-access` (check that backups actually ran) and
+`settings-manage` (keep the clinics/doctors reference data current), and
+nothing else: no patient, appointment, or pending-appointment access at
+all, and no `users-manage` either (account/role administration stays an
+`administrator`-only concern, same as it already was for `doctor`).
 
 **Admin UI:** list/add/edit/delete for users and all four RBAC tables
 lives at `/admin/{entity}` (`entity` is `users`, `permissions`, `roles`,
@@ -50,14 +97,14 @@ own comments, and `web/core/lib/Packages.php`, for the general
 enable/disable mechanism any future framework package uses the same way).
 Gated behind the framework's own `ZEUSFW_PERM_MANAGE_USERS`
 permission (slug `users-manage`, seeded by this app under that same
-string value), deliberately **not** granted to `power-user` by default:
-this page can create a new `is_superuser` role and assign it to any
-account, including its own operator's, so treat it as more sensitive than
-the `settings-manage`-gated Clinics/Doctors pages. Grant it explicitly
-(via the User Roles page itself, or `user_rolesClassEx::assignRole(...)`
-directly) to whichever accounts should have it — an `is_superuser` account
-(the seeded `administrator` role) always has it implicitly and needs no
-explicit grant.
+string value), deliberately **not** granted to `doctor` or `maintenance`
+by default: this page can create a new `is_superuser` role and assign it
+to any account, including its own operator's, so treat it as more
+sensitive than the `settings-manage`-gated Clinics/Doctors pages. Grant it
+explicitly (via the User Roles page itself, or
+`user_rolesClassEx::assignRole(...)` directly) to whichever accounts
+should have it — an `is_superuser` account (the seeded `administrator`
+role) always has it implicitly and needs no explicit grant.
 
 **Deploying this for the first time / to a server still on the old
 scheme:** the RBAC tables must exist before the app code that uses them
@@ -95,6 +142,42 @@ including a warning for any account whose legacy `roles` value doesn't
 match a known role name (nothing is ever silently dropped — see the
 script's own header comment). It's idempotent, so re-running it after
 fixing something it flagged is safe.
+
+**Upgrading an existing deployment that still has `power-user`/`user`
+roles** (from before the role-vocabulary refactor above) — run this once,
+after deploying this code, in the same order:
+
+```sh
+php bin/migrate_role_refactor.php --dry-run    # always first
+php bin/migrate_role_refactor.php --yes
+```
+
+Renames `power-user` to `doctor` **in place** — the role's id is
+preserved, so every account already assigned `power-user` keeps its exact
+access under the new name with zero manual reassignment. Retires `user`,
+but refuses to delete it (and reports exactly who) if any account is
+still assigned it, rather than silently locking that account out of
+every permission check — reassign those accounts to another role first
+(e.g. via `/admin/user_roles`), then re-run. Also seeds the new
+`maintenance` role in the same pass. Safe to run more than once —
+each step is a no-op once it's already done (see
+`zpms_rename_role()`/`zpms_retire_role()` in `web/rbac_seed.php` for the
+exact idempotence/merge behavior, including the out-of-order case where
+`bin/migrate_roles.php`'s own additive seeding already created a fresh
+`doctor` role before this script got a chance to rename the old one).
+
+**Verified**: `bin/migrate_role_refactor.php` was run against a database
+seeded with the *old* shape (a `power-user`-assigned account, a
+`user`-assigned account) — the rename preserved the account's access
+under the new `doctor` name with no reassignment needed (confirmed
+directly against `user_roles`); the retire step correctly refused to
+delete `user` while an account still held it, reported that account by
+name, and then correctly deleted it once that account was reassigned and
+the script re-run; a second `--yes` run afterward was a clean no-op
+(every step reported "exists"/"not found" rather than re-doing anything).
+`bin/run_tests.sh` (34/34 static, 35/35 functional, including a new
+`secretary`-role functional test covering the read-only patient page)
+stayed green throughout.
 
 ## Settings page: Clinics/Doctors management
 
@@ -315,3 +398,265 @@ visible "alt" input displays and accepts typing in this app's usual
 field (`dobChange()` in `web/js/scripts.js`) needed no changes: it's
 simply pointed at that alt input instead of the original one, via
 flatpickr's `onReady`/`onValueUpdate` hooks.
+
+## Google Calendar sync
+
+Consultation scheduling: a patient calls, staff take their name/phone/
+AMKA/email/location and a date/time on one fast screen (`/consultation/new`,
+"Ραντεβού → Νέο (τηλεφωνικά)" in the nav), which pushes a matching event to
+a shared Google Calendar in the same request — so the practice's day-to-day
+calendar (glanceable from anyone's phone, gets Google's own reminders)
+always reflects what's been booked, with no separate "now go create the
+calendar event too" step.
+
+**No patient record is created at booking time.** A phone call is not yet
+a patient on file — the doctor creates that record deliberately, once the
+person actually shows up (or calls back to confirm), by "converting" the
+booking. Every booking, whether made on this screen or directly in the
+Calendar app, first becomes a row in a dedicated **Εκκρεμή Ραντεβού**
+("pending appointments") list — a waiting room, not the patient list. A
+**secretary** role can book, view, edit, and cancel entries on that list
+(front-desk work), and can look up/open a real patient record read-only
+(see "Roles and permissions" above), but cannot create, edit, or delete
+one; only a **doctor** (which already has both `patients-new-patient` and
+`appointment-edit`) sees the "create patient record" action and can
+perform the actual conversion. See "Front-desk role: secretary" below for
+the full permission shape.
+
+Staff who reschedule or cancel directly in the Calendar app have that
+reflected back automatically by a periodic sync — against the pending
+entry if it's still pending, or against the real appointment if it's
+already been converted. Staff who create an event directly in Calendar (no
+ZPMS screen involved at all) get it queued as a new pending appointment
+(patient name from the event title, time from the event) for a human to
+fill in phone/AMKA/location and either convert or cancel — same list,
+same flow, regardless of where the booking originated.
+
+**Why this direction, not Calendar-first with ZPMS parsing the event
+text**: AMKA/phone/dedup only exist as structured, validated fields in
+ZPMS today. Typing them into a Calendar event's title/description and
+parsing them back out later is fragile (Greek name spelling variants,
+staff typos, no shared convention for what goes where) — the "Calendar →
+ZPMS" pull sync deliberately never tries to extract that from free text.
+It only crosses two things safely both ways: the *time* an appointment is
+at, and cancellation — never patient PII. That data flows into ZPMS
+exactly once, at intake, structured, either on the quick-booking screen or
+via a human filling in the review queue.
+
+### Setup (one-time)
+
+1. **Google Cloud**: create a project, enable the Calendar API, create a
+   service account, download its JSON key. No OAuth consent screen,
+   nothing per-user — a service account is a long-lived credential this
+   app signs its own short-lived (1h) access tokens with, on every
+   process that needs one (`web/google_calendar_client.php`, RFC 7523
+   JWT bearer flow, hand-rolled via `openssl_sign()`+cURL — no Composer/
+   SDK, consistent with this app family having no build step anywhere).
+2. **Create a Google Calendar** for consultations (e.g. "ΖΠΜΣ Ραντεβού")
+   in the normal Google Calendar UI, and share it with the service
+   account's email (shown on its Credentials page) with "Make changes to
+   events" permission. Staff keep using this calendar exactly as before —
+   the service account is just a second, silent editor on it.
+3. Save the JSON key somewhere outside the web root (this repo expects
+   `config/google_calendar_key.json`, gitignored — never commit it).
+4. `cp config/google_calendar.php.in config/google_calendar.php` and fill
+   in `service_account_key_path`/`calendar_id` (gitignored, same
+   `*.php.in` → `*.php` convention as `config/db.php`/`config/
+   ernsauth.php`).
+
+A missing/invalid config file leaves `googleCalendarClass::isEnabled()`
+false — `/consultation/new` still queues the pending appointment normally,
+`google_event_id` just stays `NULL`, and `bin/sync_google_calendar.php`
+exits immediately with a log line. Never a fatal error; nothing here can
+block a real phone booking.
+
+### Front-desk role: secretary
+
+A `secretary` role (`web/rbac_seed.php`) holds exactly two permissions:
+`patients-view-list` (read-only access to the existing patient list, same
+as the plain `user` role) and `pending-appointments-manage` (the new
+`ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE` slug, `web/rbac.php`) — book, edit,
+and cancel entries on the pending-appointments list. It deliberately has
+neither `patients-new-patient` nor `appointment-edit`, so a secretary
+account can never create a patient record or a real appointment directly,
+only queue and manage the waiting-room entries that a doctor later acts on.
+`bin/migrate_roles.php --yes` adds this role/permission to an existing
+deployment the same way any other RBAC change here is rolled out (see
+"Roles and permissions" above) — safe to re-run, it only ever inserts
+what's missing.
+
+The "Ραντεβού" nav menu (and its "Εκκρεμή Ραντεβού" list) is visible to both
+`doctor` and `secretary`; the "create patient record" (👤+) action on
+each pending row, and the `/consultation/pending/{id}/convert` route behind
+it, are gated on `ZPMS_PERM_PATIENTS_NEW_PATIENT` **and**
+`ZPMS_PERM_APPOINTMENT_EDIT` together — a secretary account never sees that
+action and is refused outright (the app's standard `error_401()` page) on a
+direct hit of the URL. The "Ασθενείς" (patient list) menu itself is
+also visible to `secretary` (via `access: doctor secretary` on that menu
+entry) — see "Roles and permissions" above for what a secretary account
+can actually do once there (view only; the "New" submenu item and the
+per-row/page-level create/edit/delete controls stay `doctor`-only).
+
+**Breadcrumb path on the edit/convert pages.** `pending_appointment_edit`
+and `pending_appointment_convert` are deliberately never menu items
+themselves (only reachable via a row-action link on
+`pending_appointments_list`'s own page) — that used to mean their
+breadcrumb was a single, parent-less segment (just their own page title,
+no "Ραντεβού / Εκκρεμή Ραντεβού /" leading up to it), since zeusfw's
+`Menutrail::search_menu_trail_for_key()` only ever matched a route name
+that's literally a menu item's own key. Fixed via a new, additive
+`breadcrumb_aliases: [pending_appointment_edit, pending_appointment_convert]`
+key on `pending_appointments_list`'s own menu entry (see zeusfw's own
+`CLAUDE.md`, "Breadcrumbs" entry, for the general mechanism) — both pages
+now show the full "Ραντεβού / Εκκρεμή Ραντεβού / ..." path. A second,
+unrelated bug in the same code path was fixed at the same time: any
+breadcrumb segment for a pure menu-grouping label with no route of its
+own (e.g. "Ραντεβού"/"Ασθενείς" themselves) was rendering the literal
+string `nolangtext` instead of its actual label — see that same zeusfw
+`CLAUDE.md` entry for the root cause. `pending_appointment_edit`/`_post`'s
+own route `title:` also gained a Greek translation in the same pass
+(`config/settings.info.yaml`), matching its sibling
+`pending_appointment_convert`, which already had one.
+
+### Schema
+
+`pending_appointments` (`web/classes/yaml/pending_appointments.yaml`) is
+the waiting-room table every booking lands in first, regardless of origin:
+`patient_name`/`patient_phone`/`patient_amka`/`patient_email`,
+`appointment_datetime`, `location` (free text — see "Locations" below),
+`notes`, `google_event_id` (nullable `UNIQUE`)/`google_synced_at` (the
+Calendar link, same shape as before), and three terminal markers:
+`converted_at`/`converted_patient_id`/`converted_appointment_id` (set once
+a doctor turns it into a real patient + appointment) and `cancelled_at`
+(set if it's cancelled/dismissed without ever being converted) — an entry
+is "still pending" exactly when both are `NULL`. `appointments.google_event_id`/
+`google_synced_at` are unchanged from before and still exist: once a
+pending entry is converted, its Calendar link carries over onto the new
+`appointments` row unchanged (see "The two sync directions" below for why
+the extendedProperty itself is never rewritten). `calendar_sync_state` is
+also unchanged — one row per synced calendar, holding the incremental
+`sync_token`.
+
+As with every other schema change in this app, there's no migration
+runner: `cd web/classes && php ../core/maker/maker.php spill:class:all
+spill:sql:all` regenerates the entity classes + `CREATE TABLE` SQL from
+the yaml (`web/classes/yaml/pending_appointments.yaml`) — directly
+`mysql`-runnable as-is on a live database, since this is a brand new table
+with nothing to `ALTER`.
+
+### Locations
+
+Consultations happen at more than one physical location, so both the
+booking screen and the pending-appointment edit form offer a `<select>`
+populated from `locationsClassEx::sgetAll()` — the same `locations` table
+this app already uses for the appointment-location field elsewhere in the
+codebase, so there's nothing new to configure. `location` on
+`pending_appointments` is plain text, not a foreign key (consistent with
+how this app already stores denormalized snapshot values elsewhere), and
+carries straight over onto the resulting `appointments.aplace` on
+conversion.
+
+### The two sync directions
+
+**ZPMS → Calendar (synchronous, on save)**: `consultation_new_post()` and
+`pending_appointment_edit_post()` (both in `web/index.php`) call
+`googleCalendarClass::createEvent()`/`updateEvent()` right after
+inserting/updating the pending-appointment row, storing the returned event
+id on that row. The event's
+`extendedProperties.private.zpms_pending_appointment_id` is what a later
+pull sync uses to recognize "this is one of ours" — patient name/phone/
+AMKA/email/location/notes go into the event's plain description text (for
+a human glancing at the calendar to read), never into `extendedProperties`
+itself. **This property always names a `pending_appointments.id`, never an
+`appointments.id`, even after conversion** — it is never rewritten once
+set, so the same Calendar event keeps working as a link across the
+pending → converted transition; the sync script (below) is what
+distinguishes the two cases.
+
+**Calendar → ZPMS (polling, every few minutes)**: `bin/sync_google_calendar.php`
+(reference cron: `deploy/zpms-calendar-sync.cron` — install manually, same
+"reference only" convention as `deploy/zpms-backup.cron`) calls
+`googleCalendarClass::listChangedEvents()`, which follows Google's
+incremental `syncToken` (only what changed since last run, not a full
+rescan) and its own pagination. Per changed event:
+
+- Carries the extendedProperty, and that pending appointment is already
+  **converted** → the booking became a real appointment since this event
+  was created; reschedule/cancel the linked *appointments* row instead
+  (mirroring `appointment_delete()`'s own `deleted` timestamp convention
+  on cancel). Never touches patient_name/phone/AMKA/notes on either table.
+- Carries the extendedProperty, still **pending** (not converted, not
+  cancelled) → reschedule/cancel that `pending_appointments` row directly.
+- Carries the extendedProperty, but it doesn't resolve to any row at all
+  (deleted from ZPMS some other way) → skip; nothing local left to update.
+- No extendedProperty → a Calendar-native event (created directly in the
+  Calendar app, or by hand during a call when ZPMS wasn't at hand).
+  Upserted into `pending_appointments` by `google_event_id` (only
+  `patient_name`, from the event summary, and `appointment_datetime` are
+  known — phone/AMKA/email/location are left blank for staff to fill in),
+  so it shows up in the same "Εκκρεμή Ραντεβού" list as everything booked
+  through `/consultation/new`.
+
+A `410 Gone` response (Google's documented signal that a stored
+`sync_token` is too old to resume from) clears the stored token so the
+next run does a full resync from "now" rather than silently missing
+whatever changed in between — never a caught, ignored error.
+
+Five minutes' polling latency (not real-time push notifications via
+Google's `events.watch()`) is a deliberate simplification: no public-
+facing webhook endpoint to expose, no channel-renewal job to keep
+running. Revisit only if that latency is ever a real problem in practice.
+
+### Verified
+
+`php -l` clean on every touched/new file; `bin/run_tests.sh` (34/34
+static, 35/35 functional) green throughout. The JWT/token-exchange half
+of `googleCalendarClient` was verified against Google's **real**
+`oauth2.googleapis.com` endpoint (this sandbox can reach it, unlike
+`www.google.com` — confirmed by a hand-signed JWT for a fake service
+account coming back `invalid_grant: account not found` rather than a
+malformed-request error, which only happens if Google successfully
+parsed and validated the JWT's structure/signature first).
+
+The full secretary-books → doctor-converts flow was verified end-to-end
+via Playwright against a real MariaDB-backed test server, using two real
+accounts (a `secretary`-role account and a `doctor` account — `power-user`
+at the time, since this predates the role-vocabulary refactor in "Roles
+and permissions" above): a secretary can book, edit, and cancel a pending
+appointment, cannot see the convert action anywhere in the UI, and is
+refused (the app's `error_401()` page) on a direct GET to the convert URL;
+a doctor sees the same entry pre-filled on the convert form (including the
+existing-patient duplicate-name check reused from `/patient/new`) and, on
+submit, gets a real patient + appointment created, with the pending list
+emptied afterward. Edit and cancel were verified separately: editing a
+pending entry's fields/location/datetime saves correctly and re-syncs to
+Calendar when configured; cancelling calls
+`googleCalendarClass::deleteEvent()` when a `google_event_id` is present
+and marks the row `cancelled_at` rather than deleting it outright. **Not**
+verified: a real, successful `createEvent()`/`listChangedEvents()` call
+against an actual configured calendar (needs real service-account
+credentials + a real shared calendar, which only a live deployment can
+provide) — same "known limitation, not a bug" caveat zeusfw's
+`Recaptcha.php` documents for its own reCAPTCHA integration, except here a
+live test is realistically possible once real credentials exist, since
+the sandbox's network access to Google's endpoints turned out not to be
+the blocker it was there.
+
+**A real, framework-level bug was found and fixed while verifying this
+(at the time secretary still had no patient-page access at all, before
+the read-only-view change in "Roles and permissions" above)**: `zeusfw`'s
+`core/modules/mainnavigation/mainnavigation.php` gated a nav menu item's
+`access:` string via `SecurityClass::require()`, which treats the
+`"authenticated"` role — always present for any logged-in user — as an
+automatic pass regardless of what `access:` actually requires. That made
+every `access:`-restricted nav menu item visible to every logged-in user
+no matter their role (caught here because the secretary account could see
+the "Ασθενείς" menu despite it being `access: power-user` at the time —
+now `access: doctor secretary`, since a secretary account genuinely is
+meant to see that menu today), even though both this app's own
+`config/settings.info.yaml` comments and zeusfw's `core/lib/Rbac.php`
+docblock already documented nav-menu gating as going through
+`SecurityClass::userIsPermitted()` instead — a plain role-identity check
+with no such special case. Fixed in `zeusfw` by switching that one call
+site to `userIsPermitted()`, matching the framework's own documented
+design; `zpms`'s full test suite stayed green throughout.

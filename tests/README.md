@@ -115,7 +115,7 @@ looking for a way around it.
    check (a broken/renamed YAML field fails loudly here).
 2. `DROP DATABASE IF EXISTS` / `CREATE DATABASE` on the test database
    (guarded as above), then load the SQL generated in step 1.
-3. Insert a `power-user` test account directly via the entity class (there
+3. Insert a `doctor` test account directly via the entity class (there
    being no user-management UI to create one through).
 4. Start `php -S` (`tests/lib/router.php` replicates `web/.htaccess`'s
    rewrite rule, which `php -S` doesn't read on its own) and run the

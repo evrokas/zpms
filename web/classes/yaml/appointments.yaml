@@ -38,6 +38,23 @@ table:
   - name: deleted
     type: datetime
     default: null
+  - name: google_event_id
+    # UNIQUE baked into the type string, not a separate ALTER -- same
+    # convention as ernsauth_sso_attempts.yaml's `username` field (see
+    # zeusfw's CLAUDE.md for why: createFieldDefinition() has no separate
+    # `unique:` option, and a hand-added ALTER doesn't survive the next
+    # spill:sql). NULL = never pushed to/pulled from Google Calendar --
+    # every pre-existing appointment, and every appointment created before
+    # this feature is configured, is simply not synced; nothing reads this
+    # column as anything but an opt-in link.
+    type: varchar(255) UNIQUE
+  - name: google_synced_at
+    # Last successful push (ZPMS -> Calendar) or pull (Calendar -> ZPMS)
+    # touching this row -- surfaced on the appointment card so staff can
+    # tell "not synced yet" from "synced a while ago" from "just synced",
+    # not enforcement of anything.
+    type: datetime
+    default: null
 ...
 
 # - guid appointment guid

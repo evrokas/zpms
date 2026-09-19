@@ -1,0 +1,57 @@
+{% attach_library('boxicons') %}
+
+<div class="patients-header">
+    <h2 class="page-title">Εκκρεμή Ραντεβού</h2>
+    <a class="btn-add-patient" href="{{rel_url('/consultation/new')}}">
+        <i class="bx bx-plus"></i>Νέο Ραντεβού
+    </a>
+</div>
+
+<div class="pending-appointments-list">
+{% if(count($pending) == 0): %}
+    <div class="patients-empty">
+        <i class="bx bx-calendar"></i>
+        <p>Δεν υπάρχουν εκκρεμή ραντεβού.</p>
+    </div>
+{% else: %}
+    <table>
+        <thead>
+            <th>Όνομα</th>
+            <th>Τηλέφωνο</th>
+            <th>Τοποθεσία</th>
+            <th>Ημ/νία &amp; Ώρα</th>
+            <th>Ημερολόγιο</th>
+            <th>Ενέργειες</th>
+        </thead>
+        <tbody>
+            {% foreach($pending as $p): %}
+            <tr>
+                <td data-column="name">{{{$p->getpatient_name()}}}</td>
+                <td data-column="phone">{{{$p->getpatient_phone() ?: '-'}}}</td>
+                <td data-column="location">{{{$p->getlocation() ?: '-'}}}</td>
+                <td data-column="datetime">{{$p->getappointment_datetime() | date('d-m-Y H:i')}}</td>
+                <td data-column="synced">
+                    {% if($p->getgoogle_event_id()): %}
+                        <i class="bx bx-check" style="color:#00aa00" title="Συγχρονισμένο"></i>
+                    {% else: %}
+                        <i class="bx bx-x" style="color:#999" title="Μη συγχρονισμένο"></i>
+                    {% endif %}
+                </td>
+                <td class="actions" data-column="actions">
+                    <a class="icon-btn" href="{{rel_url('/consultation/pending/'.$p->getid().'/edit')}}" title="Επεξεργασία"><i class="bx bx-edit"></i></a>
+
+                    {% if($can_convert): %}
+                    <a class="icon-btn" href="{{rel_url('/consultation/pending/'.$p->getid().'/convert')}}" title="Δημιουργία Φακέλου Ασθενή"><i class="bx bx-user-plus"></i></a>
+                    {% endif %}
+
+                    <form class="inline-delete-form" method="post" action="{{rel_url('/consultation/pending/'.$p->getid().'/delete')}}" confirmation>
+                        {{ csrf_field() }}
+                        <button type="submit" class="icon-btn icon-btn-danger" title="Ακύρωση"><i class="bx bx-trash"></i></button>
+                    </form>
+                </td>
+            </tr>
+            {% endforeach %}
+        </tbody>
+    </table>
+{% endif %}
+</div>

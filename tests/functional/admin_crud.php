@@ -5,8 +5,8 @@
  * CLAUDE.md entry) covering users and the RBAC tables (permissions/roles/
  * role_permissions/user_roles). Uses its own is_superuser account
  * (users-manage, i.e. ZEUSFW_PERM_MANAGE_USERS, is deliberately not
- * granted to power-user -- see web/rbac.php's own comment) rather than
- * the shared, already-logged-in power-user client the other functional
+ * granted to doctor -- see web/rbac.php's own comment) rather than
+ * the shared, already-logged-in doctor client the other functional
  * suites use. */
 
 function zpms_functional_admin_crud(TestRunner $runner, string $baseUrl): void {
@@ -50,12 +50,12 @@ function zpms_functional_admin_crud(TestRunner $runner, string $baseUrl): void {
         $GLOBALS['zpms_test_admin_crud_http'] = $http;
     });
 
-    $runner->add('a power-user (not is_superuser, no explicit grant) is refused /admin/*', function () use ($baseUrl) {
+    $runner->add('a doctor (not is_superuser, no explicit grant) is refused /admin/*', function () use ($baseUrl) {
         // The single most important property of this whole page: the
         // permission it's gated on (users-manage) is deliberately NOT in
-        // power-user's role_permissions grants, unlike every other
+        // doctor's role_permissions grants, unlike every other
         // permission this app checks. If this ever starts passing, the
-        // seed data has drifted and any power-user can now grant
+        // seed data has drifted and any doctor can now grant
         // themselves is_superuser through this very UI.
         $http = new TestHttpClient($baseUrl);
         $loginPage = $http->get('/login');
@@ -63,7 +63,7 @@ function zpms_functional_admin_crud(TestRunner $runner, string $baseUrl): void {
         $http->post('/login', ['csrf_token' => $token, 'username' => TestFixtures::USERNAME, 'password' => TestFixtures::PASSWORD]);
 
         $res = $http->get('/admin/users');
-        assert_contains('401', $res['body'], 'a plain power-user account was NOT refused /admin/users -- users-manage may have leaked into power-user\'s grants');
+        assert_contains('401', $res['body'], 'a plain doctor account was NOT refused /admin/users -- users-manage may have leaked into doctor\'s grants');
     });
 
     $runner->add('an unauthenticated request to /admin/* is refused', function () use ($baseUrl) {
@@ -150,9 +150,11 @@ function zpms_functional_admin_crud(TestRunner $runner, string $baseUrl): void {
         TestSchema::assertSafeToMutate();
         $http = $GLOBALS['zpms_test_admin_crud_http'];
 
-        $userRole = rolesClassEx::sgetByName('user');
+        // 'secretary' doesn't hold backup-access (see web/rbac_seed.php)
+        // -- a good, narrow role to grant a NEW permission to for this test.
+        $secretaryRole = rolesClassEx::sgetByName('secretary');
         $backupPerm = permissionsClassEx::sgetByName('backup-access');
-        assert_not_null($userRole, "the 'user' role was not seeded");
+        assert_not_null($secretaryRole, "the 'secretary' role was not seeded");
         assert_not_null($backupPerm, "the 'backup-access' permission was not seeded");
 
         $newForm = $http->get('/admin/role_permissions/new');
@@ -160,12 +162,12 @@ function zpms_functional_admin_crud(TestRunner $runner, string $baseUrl): void {
         // Every seeded role name should appear as a <select> option, by
         // label -- proves the select is actually populated from the
         // roles table, not just present as an empty control.
-        assert_contains('power-user', $newForm['body'], 'role_id <select> is missing the power-user option');
+        assert_contains('doctor', $newForm['body'], 'role_id <select> is missing the doctor option');
         $token = TestHttpClient::extractCsrfToken($newForm['body']);
 
         $res = $http->post('/admin/role_permissions/new', [
             'csrf_token' => $token,
-            'role_id' => (string)$userRole->getid(),
+            'role_id' => (string)$secretaryRole->getid(),
             'permission_id' => (string)$backupPerm->getid(),
         ]);
         assert_equal(302, $res['status'], "new-role_permissions POST did not redirect (got {$res['status']})");
@@ -181,9 +183,9 @@ function zpms_functional_admin_crud(TestRunner $runner, string $baseUrl): void {
         TestSchema::assertSafeToMutate();
         $http = $GLOBALS['zpms_test_admin_crud_http'];
 
-        // A fresh, disposable role (not one of the seeded 3) so this test
-        // doesn't disturb the shared user/power-user/administrator roles
-        // other tests in this run still rely on.
+        // A fresh, disposable role (not one of the seeded ones) so this
+        // test doesn't disturb the shared doctor/secretary/maintenance/
+        // administrator roles other tests in this run still rely on.
         $roleForm = $http->get('/admin/roles/new');
         $token = TestHttpClient::extractCsrfToken($roleForm['body']);
         $http->post('/admin/roles/new', [
