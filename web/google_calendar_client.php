@@ -47,6 +47,15 @@ define('GOOGLE_CALENDAR_TIMEOUT_SECONDS', 8);
 // pending_appointments.yaml's own docblock for the full lifecycle.
 define('GOOGLE_CALENDAR_PENDING_APPOINTMENT_PROPERTY', 'zpms_pending_appointment_id');
 
+// Default length of a plain phone-booked consultation, for the Calendar
+// event's end time only -- neither pending_appointments nor appointments
+// has a duration column, and nothing here needs one beyond sizing the
+// block Calendar shows. Lives here (rather than inline in web/index.php,
+// where it previously sat between unrelated route-handler function
+// definitions) since it's used exclusively by this file's own
+// createEvent()/updateEvent() call sites in web/index.php.
+define('ZPMS_CONSULTATION_DEFAULT_DURATION_MINUTES', 30);
+
 class googleCalendarClass {
 
     private static ?array $config = null;

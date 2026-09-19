@@ -873,12 +873,6 @@ require_once(__DIR__ . '/rbac.php');
         header('location: '.rel_url('/patient/'.$pat->getid().'/edit'));
     }
 
-    // Default length of a plain phone-booked consultation, for the
-    // Calendar event's end time only -- neither pending_appointments nor
-    // appointments has a duration column, and nothing here needs one
-    // beyond sizing the block Calendar shows.
-    const ZPMS_CONSULTATION_DEFAULT_DURATION_MINUTES = 30;
-
     /**
      * Every currently-defined location's display name, for the <select>
      * on the booking/edit/convert forms -- same locationsClassEx source
