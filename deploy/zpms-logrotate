@@ -1,0 +1,17 @@
+# Reference logrotate config for ZPMS's zops logs.
+#
+# Install:
+#   sudo cp deploy/zpms-logrotate /etc/logrotate.d/zpms
+#   sudo logrotate -d /etc/logrotate.d/zpms   # dry run first
+
+/var/log/zops/zpms-backup.log
+/var/log/zops/zpms-backup-cron.log
+/var/log/zops/zpms-monitor-cron.log {
+    size 10M
+    rotate 12
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0660 www-data www-data
+}

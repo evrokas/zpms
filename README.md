@@ -117,63 +117,89 @@ php ../core/maker/maker.php form:load yaml/doctors.yaml
 Needs `config/db.php` in place (the real, live database config) since this
 writes directly to it — same prerequisite as the RBAC deploy steps above.
 
-## Backups
+## Backups + health monitoring
 
-`bin/backup.sh`, run nightly via cron/systemd (reference configs:
-`deploy/zpms-backup.cron`, `deploy/zpms-backup.timer`/`.service` — install
-one or the other manually, neither is auto-applied by anything in this
-repo), takes a consistent MySQL dump (`mysqldump --single-transaction`, so
-InnoDB doesn't need locking for a consistent snapshot) and hardlinks
-`web/files/` (the app's upload/library store — e.g. appointment
-attachments) alongside it, then ships both off-site via rsync
-over SSH using rotating `--link-dest` generations: `daily/` (kept 14 by
-default), promoted into `weekly/` (8) and `monthly/` (12) using the first
-generation of each new ISO week/month, so a missed cron night never leaves
-a permanent gap in a tier. An unchanged file costs zero extra network/disk
-on every run after the first. `web/cache/` (ephemeral QR codes, purged
-every request) is excluded.
+Backups and health checks both run on **zops**
+(<https://github.com/evrokas/zops>), a shared engine used across this
+practice's app suite — replacing the old app-specific `bin/backup.sh`
+(deleted; see git history if ever needed for reference) and this app's
+own `web/modules/backup/` (replaced by a generalized module now in
+zeusfw core, `core/modules/backup/` — see zeusfw's own CLAUDE.md).
+`deploy/backup-handler.php`/`deploy/health-handler.php` tell zops how to
+back up and health-check ZPMS specifically; zops itself carries no
+knowledge of this app's schema.
+
+`deploy/backup-handler.php` ships 3 elements: `db` (`mysqldump
+--single-transaction`), `files` (`web/files/appointment_files/` — patient
+appointment files + generated JPEG thumbnails, hardlinked live), and
+`config` (`config/db.php`, plus `config/docarc_api.php` if the DocArc
+patient-lookup integration is configured) — and reports
+`missing_files` in `stats` by cross-checking
+`appointment_files.file_path`/`thumbnail_path` against what's actually on
+disk. An unchanged file costs zero extra network/disk on every run after
+the first (`--link-dest`-style hardlinking, both locally and over SSH).
 
 **GDPR erasure vs. retention.** The newest generation always reflects
 current state — a deleted patient/record is simply absent from the next
 night's dump. Older, already-published generations still contain it
-(retention *expiry*, not active scrubbing) since `--link-dest` hardlinks
+(retention *expiry*, not active scrubbing) since hardlinked generations
 preserve content regardless of what happens on the primary afterward. With
 the default 14/8/12 tiers, a record deleted right after a monthly snapshot
 was promoted can remain recoverable from that monthly generation for up to
-~13 months before it ages out — lower `BACKUP_KEEP_MONTHLY` in
-`backup.conf` if your erasure obligations need a tighter bound.
+~13 months before it ages out — lower `KEEP_MONTHLY` in this site's zops
+config if your erasure obligations need a tighter bound.
 
 **Setup:**
 ```sh
-sudo mkdir -p /etc/zpms
-sudo cp deploy/backup.conf.example /etc/zpms/backup.conf
-sudo $EDITOR /etc/zpms/backup.conf
-sudo chmod 600 /etc/zpms/backup.conf
+git clone https://github.com/evrokas/zops lib/zops
+sudo mkdir -p /etc/zops/sites.d
+sudo cp deploy/backup.conf.example /etc/zops/sites.d/zpms.conf
+sudo $EDITOR /etc/zops/sites.d/zpms.conf
+sudo chmod 600 /etc/zops/sites.d/zpms.conf
+sudo cp deploy/zpms-backup.cron /etc/cron.d/zpms-backup
 ```
 See `deploy/backup.conf.example` for every variable. Credentials for
-`mysqldump`/`mysql` are read from this app's own `config/db.php` — never
-placed on the command line or in an environment variable, both of which
-leak to `ps`/shell history/`/proc` — instead handed to the MySQL client
-tools via a temporary, mode-600 `--defaults-extra-file` that's deleted the
-moment the script exits.
+`mysqldump` are read from this app's own `config/db.php` — never placed
+on the command line or in an environment variable, both of which leak to
+`ps`/shell history/`/proc` — instead handed to the MySQL client tools via
+a temporary, mode-600 `--defaults-extra-file` that's deleted the moment
+the run exits.
 
-Each run writes `web/files/logs/backup_status.json` (last run time,
-success/failure), surfaced read-only on the admin **Backups** page
-(`/apps/backup`) — that page doesn't trigger backups itself, it just shows
-whether last night's run succeeded.
+Verify before trusting cron with it:
+```sh
+php lib/zops/bin/zops-doctor --site=zpms
+php lib/zops/bin/zops-backup --site=zpms --dry-run
+```
+
+Each run writes a status report (see `lib/zops/docs/PROTOCOL.md`) to
+`STATUS_FILE`; set `zops_backup_status_file` to that same path in
+`config/site.info.yaml` and the admin **Backups** page (`/apps/backup`,
+now backed by zeusfw core's own module, gated by the
+`ZEUSFW_PERM_MANAGE_USERS` permission rather than this app's own
+`ZPMS_PERM_BACKUP_ACCESS`, which is no longer consumed anywhere) surfaces
+the full report — status, per-element sizes, destination tiers — not just
+a last-run timestamp. That page doesn't trigger backups itself.
 
 **Restoring:**
 ```sh
-bin/restore.sh --list
-bin/restore.sh daily/2026-08-08T020000Z
+php lib/zops/bin/zops-restore --site=zpms list
+php lib/zops/bin/zops-restore --site=zpms fetch --tier=daily --gen=<name> --to=/tmp/zpms-restore
 ```
-Fetches the chosen generation, verifies the dump loads cleanly into a
-throwaway scratch database, and restores `web/files/`. It deliberately
-does **not** auto-import the dump into your live database — overwriting a
+Fetches the chosen generation's `db.sql.gz` and `files/` down to a local
+directory. Deliberately **no** `restore` verb on this app's handler —
+same reasoning the old `bin/restore.sh` already documented: overwriting a
 live production database automatically is a much higher-consequence
-action than restoring files, so the verified dump is left in place with
-the exact `mysql ... < zpms.sql` command printed for you to run manually
-against whichever database you choose.
+action than restoring files, so importing the verified dump
+(`zcat db.sql.gz | mysql ...`) into whichever database you choose stays a
+deliberate, manual step.
+
+**Health checks**: `php lib/zops/bin/zops-monitor --site=zpms` checks the
+database connects, `web/files/appointment_files/` is genuinely writable
+(a real write-and-delete probe), and the home route + (if configured)
+`api_patients.php` behave correctly with no credentials involved. Surfaces
+`patients_total`, `appointments_today`, and `files_uploaded_today`. The
+same `zpms-backup.cron` file runs this every 15 minutes with
+`--email-on-change`.
 
 ## ErnsAuth SSO login
 
