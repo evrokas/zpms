@@ -113,9 +113,16 @@ class UserProfileModule extends moduleClass {
             $newPassword = trim((string)($_POST['new_password'] ?? ''));
             $confirmPassword = trim((string)($_POST['confirm_password'] ?? ''));
             $newName = trim((string)($_POST['user_name'] ?? ''));
+            $newEmail = trim((string)($_POST['user_email'] ?? ''));
 
             if($newName === '') {
                 $kernel->addStatus('error', 'Το όνομα δεν μπορεί να είναι κενό.');
+                header('location: ' . rel_url('/profile'));
+                exit();
+            }
+
+            if($newEmail === '' || !filter_var($newEmail, FILTER_VALIDATE_EMAIL)) {
+                $kernel->addStatus('error', 'Το email δεν είναι έγκυρο.');
                 header('location: ' . rel_url('/profile'));
                 exit();
             }
@@ -124,6 +131,7 @@ class UserProfileModule extends moduleClass {
                 'active' => isset($_POST['useractive']) ? 1 : 0,
                 'expired' => isset($_POST['userexpired']) ? 1 : 0,
                 'name' => $newName,
+                'email' => $newEmail,
             ];
 
             if($newPassword !== '') {

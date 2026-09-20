@@ -994,6 +994,27 @@ form .input-div {
         gap: 0.3rem;
     }
 
+    /* Every other field's stacked label-then-input layout (the rule
+       above) puts a whole extra line under a checkbox's label just to
+       show one small box, which reads as clutter for a control this
+       small -- a checkbox belongs inline with its label, box first. Only
+       the two checkbox fields opt into this via .checkbox-field; every
+       text/password/select field keeps the generic stacked layout. */
+    .user-profile .fields.checkbox-field {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 0.6rem;
+    }
+
+    .user-profile .fields.checkbox-field label {
+        order: 2;
+    }
+
+    .user-profile .fields.checkbox-field input[type="checkbox"] {
+        order: 1;
+    }
+
     /* overflow-x on the wrapper only takes effect if the table itself
        can't shrink to fit -- width: 100% alone just compresses every
        column instead, which is what clipped the Actions/Revoke column

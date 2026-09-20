@@ -25,17 +25,21 @@
     <form action="{{rel_url('/profile')}}" method="post">
         {{ csrf_field() }}
         <input type="hidden" name="action" value="update_account">
-        <div class="fields">
+        <div class="fields checkbox-field">
             <label for="useractive">Ενεργός λογαριασμός</label>
             <input type="checkbox" name="useractive" id="useractive" {{ ($user->getactive()==1)?"checked":"" }}>
         </div>
-        <div class="fields">
+        <div class="fields checkbox-field">
             <label for="userexpired">Ληγμένος λογαριασμός</label>
             <input type="checkbox" name="userexpired" id="userexpired" {{ ($user->getexpired()==1)?"checked":"" }}>
         </div>
         <div class="fields">
             <label for="user_name">Όνομα</label>
             <input type="text" name="user_name" id="user_name" value="{{$user->getname()}}" required>
+        </div>
+        <div class="fields">
+            <label for="user_email">Email</label>
+            <input type="email" name="user_email" id="user_email" value="{{{$user->getemail()}}}" required>
         </div>
         <div class="fields">
             <label for="new_password">Νέος Κωδικός</label>

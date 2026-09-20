@@ -771,3 +771,37 @@ a real, reachable SMTP server (this sandbox has no such server available)
 Calendar integration above; a real deployment with real SMTP credentials
 configured should work correctly, since the send path itself has no
 sandbox-specific workaround.
+
+## Profile page: editable email + mobile checkbox layout
+
+`/profile`'s account form (`web/modules/userprofile/`) let staff edit their
+own display name and password but never their `users.email` — a required
+schema column (see zeusfw core's `users.yaml`) that was otherwise only
+settable via the admin-only `/admin/users` CRUD. It's now a normal field
+on the self-service form, right after Όνομα, validated with
+`FILTER_VALIDATE_EMAIL` on save (rejected with a flash error and nothing
+written on an invalid value, same "validate, don't silently coerce"
+pattern used elsewhere in this app) and pre-filled with the account's
+current value (never blank-by-default the way a password field is).
+
+**Mobile checkbox layout**: `.user-profile .fields`' mobile breakpoint
+(`@media (max-width: 470px)`, `web/css/styles.css`) collapses its normal
+two-column `label | input` grid to a single stacked column — fine for a
+text/password/select field, but a checkbox row rendered as a whole line
+of label text followed by a separate line holding just a small box below
+it, which read as clutter for a control that small. The two checkbox
+rows (Ενεργός λογαριασμός/Ληγμένος λογαριασμός) now carry an explicit
+`checkbox-field` class; on mobile only, that class switches the row to a
+single inline flex row with `order` putting the checkbox before its
+label, box-then-text like a checkbox normally reads, while every other
+field on the same form keeps the generic stacked layout unchanged.
+
+**Verified** end-to-end against a real MariaDB-backed `php -S` test
+server: the email field renders pre-filled with the account's real
+current address; submitting an invalid value is rejected and the stored
+value is confirmed unchanged; submitting a valid one is confirmed saved;
+the served `web/css/styles.css` was fetched directly over HTTP and
+confirmed to carry the new `.checkbox-field` mobile rule. `php -l` clean;
+`bin/run_tests.sh` (40/40 static, 35/35 functional) stayed green
+throughout. **Files**: `web/templates/blocks/user_profile.zetem`,
+`web/modules/userprofile/userprofile.php`, `web/css/styles.css`.
