@@ -1,0 +1,55 @@
+---
+# Singleton row (id=1, seeded by bin/migrate_mail_settings.php) holding
+# SMTP configuration for the appointment-assignment notification email --
+# see README.md/CLAUDE.md, "Appointment email notifications", and
+# apyweb's own mail_settings table (evrokas/apyweb, scripts/migrate_mail.sql)
+# for the identical shape this deliberately follows: SMTP config edited
+# from a settings page, never committed to code, with the same
+# "blank password on save = keep current" convention used everywhere
+# else in this app family for a value that's never re-displayed.
+#
+# No guid/cdate/cuser -- unlike every other table in this app, this isn't
+# a managed record staff create/browse a list of; it's config, always
+# read/written as the one row with id=1, same as DocArc's key/value
+# `settings` table skips the same audit columns for the same reason.
+table:
+  name: mail_settings
+  class: mailSettingsClass
+  fields:
+  - name: smtp_host
+    type: varchar(255)
+    default: null
+
+  - name: smtp_port
+    type: int(11)
+    default: null
+
+  # No SQL-level default here -- maker.php's field-definition generator
+  # (core/maker/functions.php) addslashes()'s a string `default:` value
+  # with no surrounding quotes of its own, so there's no way to express
+  # a valid quoted string literal (same limitation appointments.yaml's
+  # own atype field docblock spells out in full). NULL/empty is treated
+  # as 'tls' at the application level instead (zpms_mailer_settings()
+  # and the settings-save handler both apply that fallback) -- the same
+  # "blank = fall back to a sensible default" convention this app
+  # already uses elsewhere.
+  - name: smtp_encryption
+    type: varchar(16)
+    default: null
+
+  - name: smtp_username
+    type: varchar(255)
+    default: null
+
+  - name: smtp_password
+    type: varchar(255)
+    default: null
+
+  - name: from_email
+    type: varchar(255)
+    default: null
+
+  - name: from_name
+    type: varchar(255)
+    default: null
+...

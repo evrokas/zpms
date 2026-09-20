@@ -660,3 +660,114 @@ docblock already documented nav-menu gating as going through
 with no such special case. Fixed in `zeusfw` by switching that one call
 site to `userIsPermitted()`, matching the framework's own documented
 design; `zpms`'s full test suite stayed green throughout.
+
+## Appointment email notifications
+
+`/consultation/new` (and the pending-appointment edit form) now has a
+"Ιατρός" field next to Location: which `users` account (one holding the
+RBAC `doctor` role — see "Roles and permissions" above) this consultation
+is for. **Preselected, not just left as the sole option, when exactly one
+doctor account exists** — a single-doctor practice (this app's own,
+today) shouldn't make staff click a dropdown with nothing to actually
+choose between; a practice with several doctor accounts sees a real
+choice with nothing preselected. The submitted value is never trusted
+directly — `zpms_resolve_assigned_doctor()` (`web/index.php`) re-checks it
+against the real, current list of doctor accounts, so a tampered request
+can't assign a booking to an arbitrary `users.id`.
+
+**On a new booking only** (not on a later edit — editing lets staff
+correct an initial mis-selection or fill one in on a Calendar-native row,
+but never re-sends the notification), `consultation_new_post()` emails the
+assigned doctor a summary (patient name/phone, date, time, location,
+notes) right after the pending row is saved and synced to Calendar. This
+never blocks or fails the booking itself — a phone call that already
+happened must be recorded regardless of whether the notification email
+goes out; a missing doctor selection, an unconfigured/unreachable SMTP
+server, or a doctor account with no email on file all just mean no email
+is sent, with a flash warning shown to whoever booked it and the reason
+logged via `error_log()`.
+
+**The email body is rendered via `Renderer::render()`** against
+`web/templates/email/consultation_assigned.zetem` — a plain, standalone
+`.zetem` template with no page chrome (`Renderer::render()` just
+compiles+executes the one file; the header/nav/footer composition only
+happens inside `Kernel::renderPage()`, which this never goes through),
+using the same `{{{ }}}`-escaped-output/`{% if %}` syntax as every other
+template in this app. The Subject line is a plain PHP string
+(`web/zpms_mailer.php`), same as apyweb's own invoice-email code.
+
+### SMTP transport
+
+Sending goes through PHPMailer over real SMTP, not PHP's built-in
+`mail()` — the same choice DocArc and apyweb already made for exactly the
+same reason (unreliable without a properly configured local MTA, prone to
+being flagged as spam). `lib/phpmailer/` is a manually-cloned checkout
+(pinned to tag `v7.1.1`, git-ignored, not a Composer dependency — same
+"no build step" convention as `lib/ernsauth`):
+
+```sh
+git clone --branch v7.1.1 https://github.com/PHPMailer/PHPMailer.git lib/phpmailer
+```
+
+Only `src/{Exception,PHPMailer,SMTP}.php` are ever `require_once`'d, and
+only lazily, inside `zpms_build_mailer()` (`web/zpms_mailer.php`) — a
+normal page view never loads any of it. Host/port/encryption/credentials/
+sender identity live in the `mail_settings` table (a singleton row,
+`id = 1`, same shape as apyweb's own `mail_settings` — see
+`scripts/migrate_mail.sql` there for the identical convention this
+followed), edited from Settings → Email (`/settings/mail`,
+`settings-manage`-gated). The password field is never pre-filled with the
+stored value — a blank submission means "leave it as it is", not "clear
+it", same convention used everywhere else in this app family for a value
+that's never re-displayed. `zpms_build_mailer()` fails closed on every
+error path (unconfigured settings, PHPMailer not vendored, a real SMTP
+connection failure) — a friendly Greek error string or `false`, never an
+uncaught exception.
+
+### Schema
+
+`web/classes/yaml/pending_appointments.yaml` gained `assigned_user_id`
+(nullable `int(11)`, not a real foreign key — this framework's tables
+never declare DB-level FK constraints, referential integrity is app-level
+only) and a new `web/classes/yaml/mail_settings.yaml` table (no
+`guid`/`cdate`/`cuser` — unlike every other table in this app, this isn't
+a managed record staff browse a list of, it's config, always read/written
+as the one row with `id = 1`, same as DocArc's key/value `settings` table
+skipping the same audit columns for the same reason).
+
+**Deploying this against an existing database** (this table already has
+real data on any real install, unlike `pending_appointments`' own
+original rollout, which needed no migration at all):
+
+```sh
+php bin/migrate_appointment_email.php --dry-run     # preview
+php bin/migrate_appointment_email.php --yes         # ALTER + CREATE + seed
+```
+
+Idempotent and safe to re-run — it checks whether the column/table/row
+already exist before touching anything. A fresh install gets both from a
+normal `spill:class:all`/`update:bootstrap`/`spill:sql:all` regeneration
+instead (see the top of this file's own setup instructions), same as
+every other table.
+
+### Verified
+
+`php -l` clean on every touched/new file; `bin/run_tests.sh` (40/40
+static, 35/35 functional) green throughout — unaffected by this feature,
+which touches no code path any existing test exercises. A dedicated
+end-to-end run against a real MariaDB-backed `php -S` test server (not
+just the static suite) drove the actual HTTP flow: logged in as a real
+`doctor`-role test account, confirmed the "Ιατρός" `<select>` renders and
+is genuinely preselected when exactly one doctor account exists, POSTed a
+real booking, confirmed `pending_appointments.assigned_user_id` was
+stored correctly, and confirmed the post-booking flash correctly reported
+the notification email failing to send when `mail_settings` pointed at a
+real-but-unreachable host/port (`127.0.0.1:2525`) — proving PHPMailer
+genuinely attempted a real SMTP connection (not just a "not configured"
+short-circuit) and that a failure there degrades to a warning rather than
+breaking the booking. **Not verified**: an actual successful send against
+a real, reachable SMTP server (this sandbox has no such server available)
+— same "known limitation, not a bug" caveat as this app's own Google
+Calendar integration above; a real deployment with real SMTP credentials
+configured should work correctly, since the send path itself has no
+sandbox-specific workaround.

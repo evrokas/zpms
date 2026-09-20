@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<title>Νέο Ραντεβού</title>
+</head>
+<body style="font-family: Arial, Helvetica, sans-serif; color:#1f2937; margin:0; padding:0; background:#f3f4f6;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6; padding:24px 0;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background:#ffffff; border-radius:8px; overflow:hidden;">
+          <tr>
+            <td style="background:#0f2a4a; padding:20px 24px;">
+              <h1 style="margin:0; font-size:18px; color:#ffffff; font-family: Arial, Helvetica, sans-serif;">Νέο Ραντεβού</h1>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:24px;">
+              <p style="margin:0 0 16px;">Γεια σας {{{$doctor_name}}},</p>
+              <p style="margin:0 0 16px;">Καταχωρήθηκε νέο ραντεβού με τα παρακάτω στοιχεία:</p>
+              <table role="presentation" width="100%" cellpadding="6" cellspacing="0" style="border-collapse:collapse; font-size:14px;">
+                <tr><td style="font-weight:bold; width:140px; vertical-align:top;">Ασθενής</td><td>{{{$patient_name}}}</td></tr>
+                {% if($patient_phone): %}
+                <tr><td style="font-weight:bold; vertical-align:top;">Τηλέφωνο</td><td>{{{$patient_phone}}}</td></tr>
+                {% endif %}
+                <tr><td style="font-weight:bold; vertical-align:top;">Ημερομηνία</td><td>{{{$appointment_date}}}</td></tr>
+                <tr><td style="font-weight:bold; vertical-align:top;">Ώρα</td><td>{{{$appointment_time}}}</td></tr>
+                {% if($location): %}
+                <tr><td style="font-weight:bold; vertical-align:top;">Τοποθεσία</td><td>{{{$location}}}</td></tr>
+                {% endif %}
+                {% if($notes): %}
+                <tr><td style="font-weight:bold; vertical-align:top;">Σημειώσεις</td><td>{{{$notes}}}</td></tr>
+                {% endif %}
+              </table>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 24px; background:#f9fafb; font-size:12px; color:#6b7280;">
+              Αυτό το μήνυμα δημιουργήθηκε αυτόματα από το ZPMS.
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

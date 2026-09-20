@@ -192,11 +192,17 @@ routes:
     url: "/logout"
     handler: logout
   settings:
-    title: 
+    title:
       gr: "Ρυθμίσεις"
       en: "Settings"
     url: "/settings"
     handler: settings
+  settings_mail_save:
+    title: "Save email settings"
+    url: "/settings/mail"
+    handler: settings_mail_save
+    method: post
+    access: authenticated
   applications:
     title: 
       gr: "Εφαρμογές"

@@ -9,6 +9,7 @@ config/google_calendar.php
 config/google_calendar_key.json
 config/site.info.yaml
 lib/ernsauth
+lib/phpmailer
 sql/admin.sql
 sql/backup
 web/classes/sql/*

@@ -24,6 +24,69 @@
     {{$doctors}}
 </p>
 
+<hr>
+
+<h3 style="text-align: center">Email (SMTP)</h3>
+<p style="text-align: center">
+    Στοιχεία αποστολής για το email ειδοποίησης ανάθεσης ραντεβού
+    (βλ. README.md, "Appointment email notifications").
+</p>
+
+{% if(!$mail_settings): %}
+<p style="text-align: center">
+    Ο πίνακας ρυθμίσεων email δεν υπάρχει ακόμη -- εκτελέστε
+    <code>php bin/migrate_appointment_email.php --yes</code>.
+</p>
+{% else: %}
+<form action="{{rel_url('/settings/mail')}}" method="post" style="max-width: 480px; margin: 0 auto;">
+    {{ csrf_field() }}
+
+    <div class="input-div">
+        <label for="smtp_host">SMTP Host</label>
+        <input type="text" name="smtp_host" id="smtp_host" value="{{{$mail_settings->getsmtp_host()}}}">
+    </div>
+
+    <div class="input-div">
+        <label for="smtp_port">SMTP Port</label>
+        <input type="text" name="smtp_port" id="smtp_port" value="{{{$mail_settings->getsmtp_port()}}}">
+    </div>
+
+    <div class="input-div">
+        <label for="smtp_encryption">Κρυπτογράφηση</label>
+        <select name="smtp_encryption" id="smtp_encryption">
+            {% $enc = $mail_settings->getsmtp_encryption() ?: 'tls'; %}
+            <option value="tls" {{($enc == 'tls')?'selected':''}}>TLS (STARTTLS)</option>
+            <option value="ssl" {{($enc == 'ssl')?'selected':''}}>SSL</option>
+            <option value="none" {{($enc == 'none')?'selected':''}}>Καμία</option>
+        </select>
+    </div>
+
+    <div class="input-div">
+        <label for="smtp_username">SMTP Username</label>
+        <input type="text" name="smtp_username" id="smtp_username" value="{{{$mail_settings->getsmtp_username()}}}" autocomplete="off">
+    </div>
+
+    <div class="input-div">
+        <label for="smtp_password">SMTP Password</label>
+        <input type="password" name="smtp_password" id="smtp_password" value="" placeholder="{{($mail_settings->getsmtp_password())?'(αμετάβλητο)':''}}" autocomplete="new-password">
+    </div>
+
+    <div class="input-div">
+        <label for="from_email">Email αποστολέα</label>
+        <input type="text" name="from_email" id="from_email" value="{{{$mail_settings->getfrom_email()}}}">
+    </div>
+
+    <div class="input-div">
+        <label for="from_name">Όνομα αποστολέα</label>
+        <input type="text" name="from_name" id="from_name" value="{{{$mail_settings->getfrom_name()}}}">
+    </div>
+
+    <div class="buttons">
+        <input type="submit" value="Αποθήκευση">
+    </div>
+</form>
+{% endif %}
+
 {% if($show_user_management): %}
 <hr>
 

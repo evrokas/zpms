@@ -24,6 +24,7 @@ require_once(__DIR__ . '/appointment_files.php');
 require_once(__DIR__ . '/apyweb_client.php');
 require_once(__DIR__ . '/google_calendar_client.php');
 require_once(__DIR__ . '/rbac.php');
+require_once(__DIR__ . '/zpms_mailer.php');
 
 
     ini_set('session.gc_maxlifetime', 3600);
@@ -891,6 +892,67 @@ require_once(__DIR__ . '/rbac.php');
     }
 
     /**
+     * Every active, non-expired account holding the 'doctor' RBAC role
+     * (web/rbac_seed.php) -- who a consultation booking can be assigned
+     * to, and who the notification email goes to. Not a user_rolesClassEx
+     * method (zeusfw's own helper only resolves roles for a given user,
+     * never the reverse -- see core/user_rolesClassEx.php's own
+     * docblock), so this is a plain join, same "write the SQL zeusfw's
+     * generic helpers don't cover" pattern zpms already uses elsewhere
+     * (e.g. the fee-sync/patient-lookup queries in this file).
+     *
+     * @return array<int, array{id:int, uname:string, name:string, email:string}>
+     */
+    function zpms_pending_appointment_doctor_options(): array {
+        $doctorRole = rolesClassEx::sgetByName('doctor');
+        if (!$doctorRole) {
+            return [];
+        }
+
+        $st = dbConnection::getConnection()->prepare(
+            "SELECT u.id, u.uname, u.name, u.email
+               FROM users u
+               JOIN user_roles ur ON ur.user_id = u.id
+              WHERE ur.role_id = :role_id AND u.active = 1 AND u.expired = 0
+              ORDER BY u.name"
+        );
+        $st->bindValue(':role_id', (int)$doctorRole->getid(), PDO::PARAM_INT);
+        $st->execute();
+
+        $doctors = [];
+        while ($row = $st->fetch(PDO::FETCH_ASSOC)) {
+            $doctors[] = [
+                'id' => (int)$row['id'],
+                'uname' => $row['uname'],
+                'name' => $row['name'],
+                'email' => $row['email'],
+            ];
+        }
+        return $doctors;
+    }
+
+    /**
+     * Resolves a submitted doctor id against the real, current list of
+     * doctor accounts (zpms_pending_appointment_doctor_options() above)
+     * rather than trusting the posted value blindly -- a tampered
+     * appointment-user field could otherwise name any users.id at all,
+     * doctor or not. Returns the matching doctor row, or null if the
+     * submitted id doesn't resolve to one.
+     */
+    function zpms_resolve_assigned_doctor(?string $submittedId): ?array {
+        $submittedId = (int)($submittedId ?? 0);
+        if (!$submittedId) {
+            return null;
+        }
+        foreach (zpms_pending_appointment_doctor_options() as $doctor) {
+            if ($doctor['id'] === $submittedId) {
+                return $doctor;
+            }
+        }
+        return null;
+    }
+
+    /**
      * Pushes a pending_appointments row's current fields to its Calendar
      * event -- create if it has no google_event_id yet, otherwise patch
      * the existing one in place. Shared by consultation_new_post() and
@@ -943,9 +1005,16 @@ require_once(__DIR__ . '/rbac.php');
 
         if(($errmsg = rbacClass::require(ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE)))return $errmsg;
 
+        $doctors = zpms_pending_appointment_doctor_options();
+
         return (Renderer::render("new_consultation.zetem", [
             'calendar_enabled' => googleCalendarClass::isEnabled(),
             'locations' => zpms_pending_appointment_location_options(),
+            'doctors' => $doctors,
+            // Preselected (not just the sole <option> left available) --
+            // a practice with one doctor account shouldn't make staff
+            // click a dropdown with nothing to actually choose between.
+            'preselected_doctor_id' => count($doctors) === 1 ? $doctors[0]['id'] : null,
         ]));
     }
 
@@ -959,6 +1028,11 @@ require_once(__DIR__ . '/rbac.php');
             header('location: '.rel_url('/consultation/new'));
             exit();
         }
+
+        // Validated against the real, current doctor-account list
+        // (zpms_resolve_assigned_doctor()) rather than trusted from the
+        // posted value directly -- see that function's own docblock.
+        $assignedDoctor = zpms_resolve_assigned_doctor($_POST['appointment-user'] ?? null);
 
         // No patient/appointment row yet -- see pending_appointments.yaml's
         // own docblock for why this table exists at all: a patient record
@@ -975,15 +1049,29 @@ require_once(__DIR__ . '/rbac.php');
             'patient_email' => $_POST['patient-email'] ?? '',
             'appointment_datetime' => getDBformattime($_POST['appointment-date']),
             'location' => $_POST['appointment-location'] ?? '',
+            'assigned_user_id' => $assignedDoctor['id'] ?? null,
             'notes' => $_POST['appointment-notes'] ?? '',
         ]);
         $pending->insert();
 
         zpms_pending_appointment_sync_to_calendar($pending);
 
+        // Never blocks the save above on failure -- a booking that
+        // already happened over the phone must go through regardless of
+        // whether the notification email does. A missing/unresolved
+        // doctor selection (an un-migrated form field, or a tampered
+        // request) just means no email to send, silently -- not a reason
+        // to reject an otherwise-valid booking.
+        $emailSent = $assignedDoctor ? zpms_send_appointment_assignment_email($pending, $assignedDoctor) : false;
+
         $kernel->addStatus('notice', 'Καταχωρήθηκε εκκρεμές ραντεβού για τον/την <b>'
             . htmlspecialchars($pending->getpatient_name(), ENT_QUOTES, 'UTF-8') . '</b>'
             . ($pending->getgoogle_event_id() ? ' (συγχρονίστηκε με το Google Calendar).' : '.'));
+
+        if ($assignedDoctor && !$emailSent) {
+            $kernel->addStatus('warning', 'Δεν ήταν δυνατή η αποστολή email ειδοποίησης στον/στην '
+                . htmlspecialchars($assignedDoctor['name'] ?: $assignedDoctor['uname'], ENT_QUOTES, 'UTF-8') . '.');
+        }
 
         header('location: '.rel_url('/consultation/pending'));
         exit();
@@ -1034,6 +1122,7 @@ require_once(__DIR__ . '/rbac.php');
         return (Renderer::render("pending_appointment_edit.zetem", [
             'pending' => $pending,
             'locations' => zpms_pending_appointment_location_options(),
+            'doctors' => zpms_pending_appointment_doctor_options(),
         ]));
     }
 
@@ -1055,12 +1144,20 @@ require_once(__DIR__ . '/rbac.php');
             exit();
         }
 
+        // Editable here too (for correcting an initial mis-selection or a
+        // Calendar-native row that never had one), same validation as the
+        // booking screen -- but changing it here never re-sends the
+        // notification email, only the initial booking on /consultation/new
+        // does (see that handler's own comment).
+        $assignedDoctor = zpms_resolve_assigned_doctor($_POST['appointment-user'] ?? null);
+
         $pending->setpatient_name($_POST['patient-name']);
         $pending->setpatient_phone($_POST['patient-telephone'] ?? '');
         $pending->setpatient_amka($_POST['patient-amka'] ?? '');
         $pending->setpatient_email($_POST['patient-email'] ?? '');
         $pending->setappointment_datetime(getDBformattime($_POST['appointment-date']));
         $pending->setlocation($_POST['appointment-location'] ?? '');
+        $pending->setassigned_user_id($assignedDoctor['id'] ?? null);
         $pending->setnotes($_POST['appointment-notes'] ?? '');
         $pending->update();
 
@@ -1232,8 +1329,69 @@ require_once(__DIR__ . '/rbac.php');
             // shown when the current user actually has it, rather than to
             // everyone who can reach this page at all.
             'show_user_management' => rbacClass::isPermitted(ZEUSFW_PERM_MANAGE_USERS),
+
+            // SMTP settings for the appointment-assignment notification
+            // email -- see README.md, "Appointment email notifications".
+            // null on an un-migrated database (bin/migrate_appointment_email.php
+            // not run yet); settings.zetem shows a plain notice instead of
+            // the form in that case, same "optional integration, never a
+            // fatal error" convention as $calendar_enabled above.
+            'mail_settings' => zpms_mail_settings(),
         ]);
 
+    }
+
+    /**
+     * Ρυθμίσεις -> Email -> save. Singleton row (id=1, created by
+     * bin/migrate_appointment_email.php), always UPDATEd, never inserted
+     * here -- same convention as apyweb's own save_mail_settings action.
+     */
+    function settings_mail_save($params) {
+        global $kernel;
+
+        if(($errmsg = rbacClass::require(ZPMS_PERM_SETTINGS_MANAGE)))return $errmsg;
+
+        if(!csrfClass::verifyRequest()) {
+            $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
+            header('location: '.rel_url('/settings'));
+            exit();
+        }
+
+        $settings = zpms_mail_settings();
+        if (!$settings) {
+            $kernel->addStatus('error', 'Ο πίνακας ρυθμίσεων email δεν υπάρχει ακόμη -- εκτελέστε το bin/migrate_appointment_email.php.');
+            header('location: '.rel_url('/settings'));
+            exit();
+        }
+
+        $encryption = $_POST['smtp_encryption'] ?? 'tls';
+        if (!in_array($encryption, ['none', 'tls', 'ssl'], true)) {
+            $encryption = 'tls';
+        }
+
+        $settings->setsmtp_host(trim($_POST['smtp_host'] ?? '') ?: null);
+        $settings->setsmtp_port(trim($_POST['smtp_port'] ?? '') !== '' ? (int)$_POST['smtp_port'] : null);
+        $settings->setsmtp_encryption($encryption);
+        $settings->setsmtp_username(trim($_POST['smtp_username'] ?? '') ?: null);
+        $settings->setfrom_email(trim($_POST['from_email'] ?? '') ?: null);
+        $settings->setfrom_name(trim($_POST['from_name'] ?? '') ?: null);
+
+        // A blank password submission means "leave it as it is", not
+        // "clear it" -- the field is never pre-filled with the stored
+        // value (see settings.zetem), so re-saving the host after a typo
+        // must not silently wipe a working password. $settings already
+        // holds the current stored password (loaded by zpms_mail_settings()
+        // above), so simply not calling setsmtp_password() here leaves it
+        // untouched in the UPDATE below.
+        if (trim($_POST['smtp_password'] ?? '') !== '') {
+            $settings->setsmtp_password($_POST['smtp_password']);
+        }
+
+        $settings->update();
+
+        $kernel->addStatus('notice', 'Οι ρυθμίσεις email αποθηκεύτηκαν.');
+        header('location: '.rel_url('/settings'));
+        exit();
     }
 
 

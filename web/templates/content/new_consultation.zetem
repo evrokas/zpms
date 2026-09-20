@@ -59,6 +59,16 @@
             </select>
         </div>
 
+        <div class="input-div">
+            <label for="appointment-user">Ιατρός</label>
+            <select name="appointment-user" id="" required>
+                <option value="">-- Επιλογή ιατρού --</option>
+                {% foreach($doctors as $doctor): %}
+                <option value="{{{$doctor['id']}}}" {{($doctor['id'] == $preselected_doctor_id)?'selected':''}}>{{{$doctor['name']}}}</option>
+                {% endforeach %}
+            </select>
+        </div>
+
         <div class="input-div input-notes">
             <label for="appointment-notes">Σημειώσεις</label>
             <textarea name="appointment-notes" id="" rows="4"></textarea>
