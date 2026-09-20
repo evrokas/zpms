@@ -230,6 +230,27 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
         assert_not_contains('401', $profile['body'], '/patients still shows the 401 page after a successful login');
     });
 
+    $runner->add('the topbar user block shows the account name and username', function () use ($baseUrl) {
+        // web/templates/modules/userblock.zetem overrides zeusfw core's
+        // own core/templates/modules/userblock.zetem (same filename,
+        // scanned after core's per config/settings.info.yaml's
+        // templates: list -- see that file's own docblock) so this app
+        // shows the real Όνομα (users.name) next to the bare username the
+        // framework module renders on its own, without any change to
+        // zeusfw core or any other app on it.
+        $http = new TestHttpClient($baseUrl);
+        TestFixtures::loginAsTestUser($http);
+
+        $profile = $http->get('/patients');
+        assert_contains('user-block', $profile['body'], 'no .user-block rendered for a logged-in request');
+        assert_contains(TestFixtures::USERNAME, $profile['body'], 'user-block does not show the bare username');
+        // The account name sits inside its own <a href="/profile">...</a>
+        // (see web/templates/modules/userblock.zetem), so the rendered
+        // fragment reads "...>ZPMS Test User</a> (zpms_test_user)" rather
+        // than the two pieces being directly adjacent text.
+        assert_contains('>ZPMS Test User</a> (' . TestFixtures::USERNAME . ')', $profile['body'], 'user-block does not show "name (username)"');
+    });
+
     $runner->add('a logged-in doctor can still reach clinics management', function () use ($baseUrl) {
         // Confirms settings-manage (granted to doctor, see
         // config/settings.info.yaml) preserves existing access -- this is

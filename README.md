@@ -805,3 +805,53 @@ confirmed to carry the new `.checkbox-field` mobile rule. `php -l` clean;
 `bin/run_tests.sh` (40/40 static, 35/35 functional) stayed green
 throughout. **Files**: `web/templates/blocks/user_profile.zetem`,
 `web/modules/userprofile/userprofile.php`, `web/css/styles.css`.
+
+## Topbar user block: show the account name alongside the username
+
+zeusfw core's own `userblock` module (`core/modules/userblock/`, shared by
+every app on the framework) renders a bare `User <username>. Logout` in
+the topbar — it only ever has the raw session username
+(`Kernel::getUserName()`) to work with, not the account's real Όνομα
+(`users.name`). This app now shows both: "User **{Όνομα}** (username).
+Logout" — e.g. "User **ZPMS Test User** (zpms_test_user). Logout" — so an
+account can still be told apart from another with a similar display name
+at a glance.
+
+**Done entirely at this app's own template layer, with zero change to
+zeusfw core.** `web/templates/modules/userblock.zetem` is a new file with
+the exact same basename as core's own
+`core/templates/modules/userblock.zetem` — `config/settings.info.yaml`'s
+`templates:` list already scans `./core/templates/` before `./templates/`,
+and `Renderer::scanTemplates()`/`findTemplates()` resolve a duplicate
+basename by simple last-write-wins across that scan order (confirmed by
+reading `ZETEMTemplate.php` directly, not assumed), so this app's own
+copy silently wins over core's for every render — no `core/bootstrap.php`
+change, no module-registration reordering, and every other app on the
+framework (mweb/zweb/erweb) keeps rendering core's original bare-username
+block exactly as before, unaffected. `UserModule::render()` (zeusfw core)
+already passes the raw username into the template as `$name` — the
+override template just does more with that same value than core's own
+version does.
+
+The account lookup itself is a new small helper,
+`zpms_userblock_display_name(string $uname): string` (`web/ClassesEx.php`,
+right after `usersClassEx`, since it needs
+`usersClassEx::getUserAccount()`), called directly from the template
+(`{{{zpms_userblock_display_name($name)}}}` — HTML-escaped, since
+`users.name` is admin/self-service-editable free text, unlike the
+session-derived username next to it). Falls back to the bare username if
+the account can't be found or has no name on file, so the block can never
+render blank.
+
+**Verified** with a new, permanent regression test
+(`tests/functional/auth_csrf.php`, "the topbar user block shows the
+account name and username") rather than a one-off manual check: logs in
+as the suite's own fixture account (`name` = "ZPMS Test User", `uname` =
+`zpms_test_user`) and confirms the rendered `.user-block` reads
+`>ZPMS Test User</a> (zpms_test_user)` — the `</a>` in the middle is real:
+the name sits inside its own link to `/profile`, the username in
+parentheses sits outside it as plain text right after. `php -l` clean on
+`web/ClassesEx.php`; `bin/run_tests.sh` (41/41 static, 36/36 functional —
+the one new test included) stayed fully green throughout. **Files**:
+`web/ClassesEx.php`, `web/templates/modules/userblock.zetem` (new),
+`tests/functional/auth_csrf.php`.

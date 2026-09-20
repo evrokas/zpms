@@ -36,6 +36,23 @@ class usersClassEx extends usersClass {
 
 }
 
+// Resolves the account's real Όνομα (users.name) for the topbar's
+// userblock -- see web/templates/modules/userblock.zetem, which
+// overrides zeusfw core's own core/templates/modules/userblock.zetem
+// purely at this app's template layer (same filename, scanned after
+// core's per config/settings.info.yaml's templates: list, so it wins --
+// no zeusfw core file was touched for this, and every other app on the
+// framework keeps the bare-username block it always had). Falls back to
+// the bare username itself when the account can't be found or has no
+// name on file, so the block never renders blank.
+function zpms_userblock_display_name(string $uname): string {
+    $account = usersClassEx::getUserAccount($uname);
+    if ($account && trim((string)$account->getname()) !== '') {
+        return $account->getname();
+    }
+    return $uname;
+}
+
 class patientsClassEx extends patientsClass {
     
     static function sgetByGuid($aguid) {

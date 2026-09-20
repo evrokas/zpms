@@ -1,0 +1,8 @@
+<div class="user-block">
+    {% if($loggedin): %}
+        {{t("User")}} <span><a href="{{rel_url('/profile')}}">{{{zpms_userblock_display_name($name)}}}</a> ({{{$name}}})</span>. <a href="{{rel_url('/logout')}}">{{t("Logout")}}</a>
+    {% else: %}
+        <a href="{{rel_url('/login')}}">{{t("Login")}}</a>
+    {% endif %}
+
+</div>
