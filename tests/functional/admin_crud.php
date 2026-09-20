@@ -146,6 +146,124 @@ function zpms_functional_admin_crud(TestRunner $runner, string $baseUrl): void {
         assert_equal('1', (string)$row['active'], 'the new user was not marked active despite the checkbox being checked');
     });
 
+    $runner->add('assign and unassign roles for a user via the Roles checklist on the edit form', function () {
+        TestSchema::assertSafeToMutate();
+        $http = $GLOBALS['zpms_test_admin_crud_http'];
+
+        // Reuses the account the previous test just created via the admin
+        // form -- it has no user_roles rows yet, so this exercises the
+        // checklist's "starts fully unchecked" path too.
+        $row = dbConnection::getConnection()
+            ->query("SELECT id FROM users WHERE uname = 'zpms_test_admin_created_user'")
+            ->fetch();
+        assert_not_null($row, 'zpms_test_admin_created_user was not found -- did the previous test run first?');
+        $userId = (int)$row['id'];
+
+        $doctorRole = rolesClassEx::sgetByName('doctor');
+        $secretaryRole = rolesClassEx::sgetByName('secretary');
+        assert_not_null($doctorRole, "the 'doctor' role was not seeded");
+        assert_not_null($secretaryRole, "the 'secretary' role was not seeded");
+
+        $editForm = $http->get("/admin/users/$userId/edit");
+        assert_equal(200, $editForm['status'], "GET /admin/users/$userId/edit did not return 200");
+        assert_contains('name="roles[]"', $editForm['body'], 'edit form has no Roles checklist');
+        assert_contains('doctor', $editForm['body'], 'Roles checklist is missing the doctor role');
+        assert_contains('secretary', $editForm['body'], 'Roles checklist is missing the secretary role');
+        // A fresh user has no roles yet -- neither checkbox should be
+        // pre-checked.
+        assert_equal(0, preg_match('/name="roles\[\]"\s+value="' . $doctorRole->getid() . '"\s+checked/', $editForm['body']), 'a brand-new user\'s doctor checkbox was pre-checked');
+
+        $token = TestHttpClient::extractCsrfToken($editForm['body']);
+
+        // Check both roles.
+        $res = $http->post("/admin/users/$userId/edit", [
+            'csrf_token' => $token,
+            'name' => 'Admin-Created User',
+            'email' => 'admin-created@example.invalid',
+            'uname' => 'zpms_test_admin_created_user',
+            'active' => '1',
+            'roles' => [(string)$doctorRole->getid(), (string)$secretaryRole->getid()],
+        ]);
+        assert_equal(302, $res['status'], "edit-user POST (assign 2 roles) did not redirect (got {$res['status']})");
+
+        $assigned = dbConnection::getConnection()
+            ->query("SELECT role_id FROM user_roles WHERE user_id = $userId ORDER BY role_id")
+            ->fetchAll(PDO::FETCH_COLUMN);
+        sort($assigned);
+        $expected = [(int)$doctorRole->getid(), (int)$secretaryRole->getid()];
+        sort($expected);
+        assert_equal(json_encode($expected), json_encode(array_map('intval', $assigned)), 'user_roles does not hold exactly the 2 submitted roles');
+
+        // Re-open the edit form -- both boxes must now render checked.
+        $editForm2 = $http->get("/admin/users/$userId/edit");
+        assert_equal(1, preg_match('/name="roles\[\]"\s+value="' . $doctorRole->getid() . '"\s+checked/', $editForm2['body']), 'doctor checkbox was not re-rendered as checked after assignment');
+        assert_equal(1, preg_match('/name="roles\[\]"\s+value="' . $secretaryRole->getid() . '"\s+checked/', $editForm2['body']), 'secretary checkbox was not re-rendered as checked after assignment');
+        $token2 = TestHttpClient::extractCsrfToken($editForm2['body']);
+
+        // Uncheck secretary (submit doctor only) -- must remove exactly
+        // the secretary row and leave doctor alone.
+        $res = $http->post("/admin/users/$userId/edit", [
+            'csrf_token' => $token2,
+            'name' => 'Admin-Created User',
+            'email' => 'admin-created@example.invalid',
+            'uname' => 'zpms_test_admin_created_user',
+            'active' => '1',
+            'roles' => [(string)$doctorRole->getid()],
+        ]);
+        assert_equal(302, $res['status'], "edit-user POST (unassign 1 role) did not redirect (got {$res['status']})");
+
+        $assigned = dbConnection::getConnection()
+            ->query("SELECT role_id FROM user_roles WHERE user_id = $userId")
+            ->fetchAll(PDO::FETCH_COLUMN);
+        assert_equal(json_encode([(int)$doctorRole->getid()]), json_encode(array_map('intval', $assigned)), 'unassigning secretary did not leave exactly [doctor] in user_roles');
+
+        // Submit with no 'roles' field at all (as if every box were
+        // unchecked) -- must clear every remaining assignment, matching
+        // this feature's documented "no special-case self-protection,
+        // extends admin_delete()'s own trust model" design.
+        $editForm3 = $http->get("/admin/users/$userId/edit");
+        $token3 = TestHttpClient::extractCsrfToken($editForm3['body']);
+        $res = $http->post("/admin/users/$userId/edit", [
+            'csrf_token' => $token3,
+            'name' => 'Admin-Created User',
+            'email' => 'admin-created@example.invalid',
+            'uname' => 'zpms_test_admin_created_user',
+            'active' => '1',
+        ]);
+        assert_equal(302, $res['status'], "edit-user POST (clear all roles) did not redirect (got {$res['status']})");
+
+        $count = dbConnection::getConnection()
+            ->query("SELECT COUNT(*) AS c FROM user_roles WHERE user_id = $userId")
+            ->fetch();
+        assert_equal(0, (int)$count['c'], 'submitting the edit form with no roles[] field did not clear every assignment');
+
+        // A tampered POST naming a role id that doesn't exist must never
+        // create a dangling user_roles row -- no FK constraint anywhere
+        // in this framework would otherwise catch it.
+        $bogusId = 999999;
+        $editForm4 = $http->get("/admin/users/$userId/edit");
+        $token4 = TestHttpClient::extractCsrfToken($editForm4['body']);
+        $res = $http->post("/admin/users/$userId/edit", [
+            'csrf_token' => $token4,
+            'name' => 'Admin-Created User',
+            'email' => 'admin-created@example.invalid',
+            'uname' => 'zpms_test_admin_created_user',
+            'active' => '1',
+            'roles' => [(string)$bogusId],
+        ]);
+        assert_equal(302, $res['status'], "edit-user POST (bogus role id) did not redirect (got {$res['status']})");
+        $count = dbConnection::getConnection()
+            ->query("SELECT COUNT(*) AS c FROM user_roles WHERE user_id = $userId")
+            ->fetch();
+        assert_equal(0, (int)$count['c'], 'a nonexistent role id in roles[] was inserted into user_roles');
+
+        // The 'new user' form (no id yet) must not render the checklist
+        // at all -- there is nothing to assign roles to before the user
+        // exists.
+        $newForm = $http->get('/admin/users/new');
+        assert_equal(0, preg_match('/name="roles\[\]"/', $newForm['body']), 'the new-user form unexpectedly rendered a Roles checklist');
+    });
+
     $runner->add('grant a role a permission via role_permissions, then see it resolved by name in the list', function () {
         TestSchema::assertSafeToMutate();
         $http = $GLOBALS['zpms_test_admin_crud_http'];
