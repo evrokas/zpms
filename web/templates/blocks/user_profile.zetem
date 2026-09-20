@@ -27,11 +27,11 @@
         <input type="hidden" name="action" value="update_account">
         <div class="fields checkbox-field">
             <label for="useractive">Ενεργός λογαριασμός</label>
-            <input type="checkbox" name="useractive" id="useractive" {{ ($user->getactive()==1)?"checked":"" }}>
+            <input type="checkbox" name="useractive" id="useractive" {{ ($user->getactive()==1)?"checked":"" }} disabled>
         </div>
         <div class="fields checkbox-field">
             <label for="userexpired">Ληγμένος λογαριασμός</label>
-            <input type="checkbox" name="userexpired" id="userexpired" {{ ($user->getexpired()==1)?"checked":"" }}>
+            <input type="checkbox" name="userexpired" id="userexpired" {{ ($user->getexpired()==1)?"checked":"" }} disabled>
         </div>
         <div class="fields">
             <label for="user_name">Όνομα</label>
