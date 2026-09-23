@@ -358,16 +358,34 @@ function dobChange(e) {
 }
 
 
-/* live duplicate-name check on the "new patient" form -- see
- * patient_new_check_name() in index.php, reused by /consultation/new's
- * phone-booking form and /consultation/pending/{id}/convert's
- * create-patient-record form (their own consultation_new_namecheck/
- * pending_appointment_convert_namecheck routes in
- * config/settings.info.yaml both point at the same handler). The URL is
- * derived from the current page's own path, so each page's namecheck
- * request lands on its own matching route with no page-specific code
- * here. Only ever finds a [data-check-duplicate] input on one of those
- * pages, so this whole block is a no-op everywhere else. */
+/* live duplicate-name check, shared by three forms via
+ * patient_new_check_name() in index.php: the "new patient" form
+ * (edit_patient.zetem), /consultation/new's phone-booking form, and
+ * /consultation/pending/{id}/convert's create-patient-record form (their
+ * own consultation_new_namecheck/pending_appointment_convert_namecheck
+ * routes in config/settings.info.yaml all point at the same handler --
+ * convert's own page has its own separate inline script instead, since
+ * it also has to coordinate with the server-side auto-match in
+ * pending_appointment_convert(), not just this generic one). The
+ * namecheck URL is derived from the current page's own path, so each
+ * page's request lands on its own matching route with no page-specific
+ * code here. Only ever finds a [data-check-duplicate] input on one of
+ * these pages, so this whole block is a no-op everywhere else.
+ *
+ * Two modes, picked by the attribute's own value:
+ * - data-check-duplicate="1" (edit_patient.zetem): a match is someone
+ *   already on file under that name -- offer a link straight to their
+ *   existing record, since creating a plain patient record has nothing
+ *   else on the page worth keeping if that's who this is.
+ * - data-check-duplicate="fill" (new_consultation.zetem): abandoning the
+ *   booking screen (date/time/location/doctor already chosen) just to
+ *   look up a phone number would be actively unhelpful -- offer to copy
+ *   that patient's phone/AMKA/email straight into the fields named by
+ *   this input's own data-fill-target-* attributes instead, without
+ *   navigating anywhere.
+ *
+ * data-check-duplicate-minlen (default 2) sets how many characters must
+ * be typed before a lookup fires -- new_consultation.zetem asks for 3. */
 function escapeHtml(str) {
     if(str === null || str === undefined) return '';
     return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -378,6 +396,16 @@ let duplicateCheckBox = document.getElementById('duplicate-warning');
 
 if(duplicateCheckInput && duplicateCheckBox) {
     let duplicateCheckTimeout;
+    let duplicateCheckMode = duplicateCheckInput.dataset.checkDuplicate === 'fill' ? 'fill' : 'link';
+    let duplicateCheckMinLen = parseInt(duplicateCheckInput.dataset.checkDuplicateMinlen, 10) || 2;
+
+    function fillTargets(match) {
+        ['phone', 'amka', 'email'].forEach((field) => {
+            let targetId = duplicateCheckInput.dataset['fillTarget' + field.charAt(0).toUpperCase() + field.slice(1)];
+            let target = targetId ? document.getElementById(targetId) : null;
+            if(target) target.value = match[field] || '';
+        });
+    }
 
     function renderDuplicateWarning(matches) {
         if(!matches || matches.length === 0) {
@@ -386,15 +414,18 @@ if(duplicateCheckInput && duplicateCheckBox) {
             return;
         }
 
-        let html = '<p>' + (matches.length > 1
+        let intro = matches.length > 1
             ? 'Βρέθηκαν ήδη ασθενείς με αυτό το όνομα:'
-            : 'Υπάρχει ήδη ασθενής με αυτό το όνομα:') + '</p><ul>';
+            : 'Υπάρχει ήδη ασθενής με αυτό το όνομα:';
+        let html = '<p>' + intro + '</p><ul>';
 
-        matches.forEach(m => {
+        matches.forEach((m, i) => {
             html += '<li>'
                 + '<span class="name">' + escapeHtml(m.name) + '</span>'
                 + '<span class="amka">ΑΜΚΑ: ' + escapeHtml(m.amka || '—') + '</span>'
-                + '<a class="load-existing" href="' + escapeHtml(m.link) + '">Φόρτωση φακέλου</a>'
+                + (duplicateCheckMode === 'fill'
+                    ? '<button type="button" class="use-existing-data" data-index="' + i + '">Χρήση στοιχείων</button>'
+                    : '<a class="load-existing" href="' + escapeHtml(m.link) + '">Φόρτωση φακέλου</a>')
                 + '</li>';
         });
 
@@ -402,13 +433,25 @@ if(duplicateCheckInput && duplicateCheckBox) {
 
         duplicateCheckBox.innerHTML = html;
         duplicateCheckBox.style.display = 'block';
+
+        if(duplicateCheckMode === 'fill') {
+            duplicateCheckBox.querySelectorAll('.use-existing-data').forEach((btn) => {
+                btn.addEventListener('click', () => {
+                    let match = matches[parseInt(btn.dataset.index, 10)];
+                    if(!match) return;
+                    fillTargets(match);
+                    duplicateCheckBox.innerHTML = '<p>Συμπληρώθηκαν τα στοιχεία του/της <b>'
+                        + escapeHtml(match.name) + '</b> από τον υπάρχοντα φάκελο.</p>';
+                });
+            });
+        }
     }
 
     duplicateCheckInput.addEventListener('input', (ev) => {
         clearTimeout(duplicateCheckTimeout);
 
         let term = ev.target.value.trim();
-        if(term.length < 2) {
+        if(term.length < duplicateCheckMinLen) {
             renderDuplicateWarning([]);
             return;
         }
@@ -427,15 +470,17 @@ if(duplicateCheckInput && duplicateCheckBox) {
         }, 300);
     });
 
-    /* clicking a match navigates away and abandons whatever else was
-     * typed into the new-patient form so far -- confirm first */
-    duplicateCheckBox.addEventListener('click', (ev) => {
-        let link = ev.target.closest('a.load-existing');
-        if(!link) return;
+    if(duplicateCheckMode === 'link') {
+        /* clicking a match navigates away and abandons whatever else was
+         * typed into the new-patient form so far -- confirm first */
+        duplicateCheckBox.addEventListener('click', (ev) => {
+            let link = ev.target.closest('a.load-existing');
+            if(!link) return;
 
-        if(!confirm('Υπάρχει ήδη ασθενής με αυτό το όνομα. Θέλετε να φορτώσετε τον υπάρχοντα φάκελο ασθενή; Τα στοιχεία που καταχωρήσατε δεν θα αποθηκευτούν.')) {
-            ev.preventDefault();
-        }
-    });
+            if(!confirm('Υπάρχει ήδη ασθενής με αυτό το όνομα. Θέλετε να φορτώσετε τον υπάρχοντα φάκελο ασθενή; Τα στοιχεία που καταχωρήσατε δεν θα αποθηκευτούν.')) {
+                ev.preventDefault();
+            }
+        });
+    }
 }
 

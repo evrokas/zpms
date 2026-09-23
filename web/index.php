@@ -608,13 +608,22 @@ require_once(__DIR__ . '/zpms_mailer.php');
 
     /**
      * Live duplicate-name check for the "new patient" form
-     * (edit_patient.zetem, action=='new'). Called on every keystroke
-     * (debounced client-side, see [data-check-duplicate] in scripts.js)
-     * so staff creating a patient record are warned before they save a
-     * second record for someone already on file, and can jump straight
-     * to the existing one instead. Name-only scope (unlike the general
+     * (edit_patient.zetem, action=='new'), shared as-is by
+     * /consultation/new (the phone-booking screen -- see
+     * consultation_new_namecheck in config/settings.info.yaml) and
+     * /consultation/pending/{id}/convert (pending_appointment_convert_namecheck).
+     * Called on every keystroke (debounced client-side, see
+     * [data-check-duplicate] in scripts.js) so staff are warned before
+     * creating a second record for someone already on file, and can
+     * either jump straight to the existing one (edit_patient.zetem) or
+     * pull that patient's phone/AMKA/email straight into the form
+     * they're already filling in (new_consultation.zetem's "fill" mode --
+     * see scripts.js). Name-only search scope (unlike the general
      * patients_list_search_ajax, which also matches ptel/pamka) since a
-     * phone/AMKA coincidence isn't a "same patient name" duplicate.
+     * phone/AMKA coincidence isn't a "same patient name" duplicate --
+     * phone/email are still included in each match's payload below purely
+     * so the "fill" mode has something to copy, not as extra search
+     * criteria.
      */
     function patient_new_check_name($params) {
         header('Content-Type: application/json');
@@ -640,6 +649,8 @@ require_once(__DIR__ . '/zpms_mailer.php');
                 'id' => $p->getid(),
                 'name' => $p->getpname(),
                 'amka' => $p->getpamka(),
+                'phone' => $p->getptel(),
+                'email' => $p->getpemail(),
                 'link' => rel_url('/patient/' . $p->getid() . '/edit'),
             ];
         }
@@ -1277,6 +1288,17 @@ require_once(__DIR__ . '/zpms_mailer.php');
      * patient_new()/patient_new_check_name() already provide, so an
      * existing patient can be picked instead of creating a second record
      * for someone already on file.
+     *
+     * Also runs patientsClassEx::findMatchingPatient() (name, then AMKA,
+     * then phone -- see that method's own docblock) against whatever the
+     * pending booking's own fields hold, and pre-selects the match here
+     * if one resolves, so the page opens already showing "this will
+     * attach to <existing patient>" rather than making the doctor
+     * manually re-search for someone the system can already identify
+     * with confidence. pending_appointment_convert.zetem still lets the
+     * doctor cancel this pre-selection (back to a blank/new-patient form)
+     * or search again by hand for anything this exact-match check didn't
+     * resolve.
      */
     function pending_appointment_convert($params) {
         global $kernel;
@@ -1291,7 +1313,16 @@ require_once(__DIR__ . '/zpms_mailer.php');
             exit();
         }
 
-        return (Renderer::render("pending_appointment_convert.zetem", ['pending' => $pending]));
+        $matchedPatient = patientsClassEx::findMatchingPatient(
+            $pending->getpatient_name(),
+            $pending->getpatient_amka(),
+            $pending->getpatient_phone()
+        );
+
+        return (Renderer::render("pending_appointment_convert.zetem", [
+            'pending' => $pending,
+            'matched_patient' => $matchedPatient,
+        ]));
     }
 
     function pending_appointment_convert_post($params) {
@@ -1316,12 +1347,29 @@ require_once(__DIR__ . '/zpms_mailer.php');
         $existingPatientId = trim((string)($_POST['existing-patient-id'] ?? ''));
 
         if ($existingPatientId !== '') {
+            // Either the doctor explicitly picked a suggestion (or kept
+            // the page's own auto-selected match -- see
+            // pending_appointment_convert() above) via the hidden
+            // existing-patient-id field.
             $pat = patientsClass::sgetById((int)$existingPatientId);
             if (!$pat) {
                 $kernel->addStatus('error', 'Ο επιλεγμένος ασθενής δεν βρέθηκε.');
                 header('location: '.rel_url('/consultation/pending/'.$pending->getid().'/convert'));
                 exit();
             }
+        } elseif (($pat = patientsClassEx::findMatchingPatient(
+            (string)($_POST['patient-name'] ?? ''),
+            $_POST['patient-amka'] ?? null,
+            $_POST['patient-telephone'] ?? null
+        )) !== null) {
+            // Safety net, not the primary path: the form should already
+            // arrive with existing-patient-id set whenever this same
+            // check found a match on page load. Re-running it here means
+            // the "attach to the existing record instead of creating a
+            // duplicate" rule holds even if the doctor edited the name/
+            // AMKA/phone fields before submitting (a fresh match against
+            // the *submitted* values, not just the pending row's
+            // original ones), or if JS never ran at all.
         } else {
             $pat = new patientsClass([
                 'id' => null,

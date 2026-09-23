@@ -2121,6 +2121,29 @@ ul.select-box li:hover {
     background-color: var(--primary-dark);
 }
 
+/* "fill this form's fields from an existing patient" (new_consultation.zetem)
+ * and "attach this appointment to an existing patient" (pending_appointment_convert.zetem)
+ * -- <button>, not <a>, since neither navigates anywhere; same look as
+ * .load-existing above so the three variants of "use this match" read as
+ * one family. */
+.duplicate-warning li button.use-existing-data,
+.duplicate-warning li button.use-existing {
+    flex: 0 0 auto;
+    background-color: var(--primary);
+    color: white;
+    padding: 0.3rem 0.6rem;
+    border: none;
+    border-radius: var(--border-radius-sm);
+    cursor: pointer;
+    white-space: nowrap;
+    font: inherit;
+}
+
+.duplicate-warning li button.use-existing-data:hover,
+.duplicate-warning li button.use-existing:hover {
+    background-color: var(--primary-dark);
+}
+
 .module-copyright {
     text-align: center;
     line-height: 1.3em;

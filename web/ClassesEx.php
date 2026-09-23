@@ -119,6 +119,79 @@ class patientsClassEx extends patientsClass {
         return ($list);
     }
 
+    /**
+     * Resolves a pending phone booking (name/AMKA/phone, all free text --
+     * see pending_appointments.yaml) to at most one existing patients row,
+     * for pending_appointment_convert()/_post() in web/index.php: "the
+     * patient showed up, does a record for them already exist, or do we
+     * create one." Checked in this order -- name first, then AMKA, then
+     * phone, stopping at the first that resolves -- because a name typo
+     * is the most likely disagreement between what was scribbled down
+     * during the phone call and what's actually on file, while a shared
+     * AMKA/phone is a much stronger signal once name doesn't match at
+     * all (e.g. a maiden name vs. married name, or a name spelled two
+     * different ways across two calls).
+     *
+     * Deliberately exact-match, not the fuzzy substring search()
+     * above -- this decides whether to silently attach a new appointment
+     * to somebody else's record, so a loose match here would be a real
+     * data-integrity risk, not just a noisier suggestion list. And
+     * deliberately refuses to guess when a check finds more than one row
+     * (two patients sharing a name, or two rows with the same phone
+     * number) -- every ambiguous case falls through to the next check,
+     * and if none resolve uniquely, returns null so the caller creates a
+     * new patient record rather than attaching to the wrong one.
+     *
+     * An empty AMKA/phone is never matched against -- patients.pamka/ptel
+     * left blank on file would otherwise all "match" a pending booking
+     * that also has no AMKA/phone, which is not a real signal of anything.
+     */
+    static function findMatchingPatient(string $name, ?string $amka, ?string $phone): ?patientsClass {
+        $name = trim($name);
+        $amka = trim((string)$amka);
+        $phone = trim((string)$phone);
+
+        if ($name !== '') {
+            $match = self::findUniqueMatchByColumn('pname', $name, true);
+            if ($match) return $match;
+        }
+        if ($amka !== '') {
+            $match = self::findUniqueMatchByColumn('pamka', $amka, false);
+            if ($match) return $match;
+        }
+        if ($phone !== '') {
+            $match = self::findUniqueMatchByColumn('ptel', $phone, false);
+            if ($match) return $match;
+        }
+        return null;
+    }
+
+    /**
+     * $column is always one of the three hardcoded literals passed by
+     * findMatchingPatient() above, never request data, so interpolating
+     * it directly into the SQL is safe -- same convention as this app's
+     * other internal-literal-column call sites (e.g.
+     * getPatientsByLastAppointment()'s $order below).
+     */
+    private static function findUniqueMatchByColumn(string $column, string $value, bool $caseInsensitive): ?patientsClass {
+        $comparison = $caseInsensitive ? "LOWER($column) = LOWER(:value)" : "$column = :value";
+        $sql = "SELECT * FROM patients WHERE ($comparison) AND deleted IS NULL LIMIT 2";
+        $st = dbConnection::getConnection()->prepare($sql);
+        $st->bindValue(':value', $value, PDO::PARAM_STR);
+        $st->execute();
+        $rows = $st->fetchAll();
+
+        if (count($rows) !== 1) {
+            // Zero matches, or more than one -- ambiguous either way is
+            // "don't guess", not "pick the first one".
+            return null;
+        }
+
+        $rclass = new patientsClass();
+        $rclass->loadFields($rows[0]);
+        return $rclass;
+    }
+
     static function getPatientsByLastAppointment($order) {
         // Concatenated directly into the SQL string below (ORDER BY takes
         // no bind parameter in any DB driver) -- the one caller today

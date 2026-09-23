@@ -12,29 +12,36 @@
 
     <form action="{{rel_url('/consultation/pending/'.$pending->getid().'/convert')}}" method="post">
         {{ csrf_field() }}
-        <input type="hidden" name="existing-patient-id" id="existing-patient-id" value="">
+        <input type="hidden" name="existing-patient-id" id="existing-patient-id" value="{{{$matched_patient ? $matched_patient->getid() : ''}}}">
 
         <div class="input-div">
             <label for="patient-name">Όνομα ασθενή</label>
-            <input type="text" name="patient-name" id="convert-patient-name" value="{{{$pending->getpatient_name()}}}"
-                autocomplete="off" required>
+            <input type="text" name="patient-name" id="convert-patient-name"
+                value="{{{$matched_patient ? $matched_patient->getpname() : $pending->getpatient_name()}}}"
+                autocomplete="off" required {% if($matched_patient): %}readonly{% endif %}>
         </div>
 
-        <div class="duplicate-warning" id="convert-duplicate-warning" style="display:none;"></div>
+        <div class="duplicate-warning" id="convert-duplicate-warning" {% if(!$matched_patient): %}style="display:none;"{% endif %}></div>
 
         <div class="input-div">
             <label for="patient-telephone">Τηλέφωνο</label>
-            <input type="text" name="patient-telephone" id="" value="{{{$pending->getpatient_phone()}}}">
+            <input type="text" name="patient-telephone" id="convert-patient-telephone"
+                value="{{{$matched_patient ? $matched_patient->getptel() : $pending->getpatient_phone()}}}"
+                {% if($matched_patient): %}readonly{% endif %}>
         </div>
 
         <div class="input-div">
             <label for="patient-amka">ΑΜΚΑ</label>
-            <input type="text" name="patient-amka" id="" value="{{{$pending->getpatient_amka()}}}">
+            <input type="text" name="patient-amka" id="convert-patient-amka"
+                value="{{{$matched_patient ? $matched_patient->getpamka() : $pending->getpatient_amka()}}}"
+                {% if($matched_patient): %}readonly{% endif %}>
         </div>
 
         <div class="input-div">
             <label for="patient-email">Email</label>
-            <input type="text" name="patient-email" id="" value="{{{$pending->getpatient_email()}}}">
+            <input type="text" name="patient-email" id="convert-patient-email"
+                value="{{{$matched_patient ? $matched_patient->getpemail() : $pending->getpatient_email()}}}"
+                {% if($matched_patient): %}readonly{% endif %}>
         </div>
 
         <div class="buttons">
@@ -46,6 +53,9 @@
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         var nameInput = document.getElementById('convert-patient-name');
+        var phoneInput = document.getElementById('convert-patient-telephone');
+        var amkaInput = document.getElementById('convert-patient-amka');
+        var emailInput = document.getElementById('convert-patient-email');
         var warningBox = document.getElementById('convert-duplicate-warning');
         var existingIdInput = document.getElementById('existing-patient-id');
         var timeout;
@@ -54,7 +64,48 @@
             return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
         }
 
-        function render(matches) {
+        function setLinkedFieldsReadonly(readonly) {
+            nameInput.readOnly = readonly;
+            phoneInput.readOnly = readonly;
+            amkaInput.readOnly = readonly;
+            emailInput.readOnly = readonly;
+        }
+
+        function clearExisting() {
+            existingIdInput.value = '';
+            setLinkedFieldsReadonly(false);
+            warningBox.style.display = 'none';
+            warningBox.innerHTML = '';
+        }
+
+        /* Used both for the server's own auto-match on page load (name,
+         * then AMKA, then phone -- see patientsClassEx::findMatchingPatient()
+         * in web/ClassesEx.php) and for a match the doctor picks by hand
+         * from the live name-search suggestions below -- same end state
+         * either way: existing-patient-id is set, and every field mirrors
+         * that patient's own stored data (not whatever was typed on the
+         * phone-booking screen) since that's what will actually be saved. */
+        function useExisting(id, name, amka, phone, email, auto) {
+            existingIdInput.value = id;
+            nameInput.value = name;
+            amkaInput.value = amka || '';
+            phoneInput.value = phone || '';
+            emailInput.value = email || '';
+            setLinkedFieldsReadonly(true);
+
+            warningBox.innerHTML = '<p>'
+                + (auto ? 'Βρέθηκε ήδη φάκελος ασθενή με αυτά τα στοιχεία -- ' : '')
+                + 'Το ραντεβού θα προστεθεί στον υπάρχοντα φάκελο: <b>' + escapeHtml(name) + '</b> '
+                + '&mdash; <button type="button" id="clear-existing">Άκυρο (νέος ασθενής)</button></p>';
+            warningBox.style.display = 'block';
+            document.getElementById('clear-existing').addEventListener('click', clearExisting);
+        }
+
+        function renderSuggestions(matches) {
+            // A match is already selected (auto or manual) -- a fresh
+            // keystroke's suggestion list must never silently replace it.
+            if (existingIdInput.value !== '') return;
+
             if (!matches || matches.length === 0) {
                 warningBox.style.display = 'none';
                 warningBox.innerHTML = '';
@@ -65,7 +116,10 @@
                 html += '<li>'
                     + '<span class="name">' + escapeHtml(m.name) + '</span>'
                     + '<span class="amka">ΑΜΚΑ: ' + escapeHtml(m.amka || '—') + '</span>'
-                    + '<button type="button" class="use-existing" data-id="' + escapeHtml(m.id) + '" data-name="' + escapeHtml(m.name) + '">Χρήση αυτού</button>'
+                    + '<button type="button" class="use-existing" data-id="' + escapeHtml(m.id)
+                    + '" data-name="' + escapeHtml(m.name) + '" data-amka="' + escapeHtml(m.amka || '')
+                    + '" data-phone="' + escapeHtml(m.phone || '') + '" data-email="' + escapeHtml(m.email || '')
+                    + '">Χρήση αυτού</button>'
                     + '</li>';
             });
             html += '</ul>';
@@ -74,26 +128,32 @@
 
             warningBox.querySelectorAll('.use-existing').forEach(function(btn) {
                 btn.addEventListener('click', function() {
-                    existingIdInput.value = btn.dataset.id;
-                    nameInput.value = btn.dataset.name;
-                    nameInput.readOnly = true;
-                    warningBox.innerHTML = '<p>Επιλέχθηκε υπάρχων ασθενής: <b>' + escapeHtml(btn.dataset.name)
-                        + '</b> -- <button type="button" id="clear-existing">Άκυρο (νέος ασθενής)</button></p>';
-                    document.getElementById('clear-existing').addEventListener('click', function() {
-                        existingIdInput.value = '';
-                        nameInput.readOnly = false;
-                        warningBox.style.display = 'none';
-                        warningBox.innerHTML = '';
-                    });
+                    useExisting(btn.dataset.id, btn.dataset.name, btn.dataset.amka, btn.dataset.phone, btn.dataset.email, false);
                 });
             });
         }
 
+        {% if($matched_patient): %}
+        // Pre-selected server-side (see pending_appointment_convert() in
+        // web/index.php) -- rendered directly rather than re-fetched here,
+        // so the page shows the correct linked-record state even before
+        // this script has a chance to run.
+        useExisting(
+            {{ json_encode($matched_patient->getid()) }},
+            {{ json_encode($matched_patient->getpname()) }},
+            {{ json_encode($matched_patient->getpamka()) }},
+            {{ json_encode($matched_patient->getptel()) }},
+            {{ json_encode($matched_patient->getpemail()) }},
+            true
+        );
+        {% endif %}
+
         nameInput.addEventListener('input', function(ev) {
+            if (existingIdInput.value !== '') return;
             clearTimeout(timeout);
             var term = ev.target.value.trim();
             if (term.length < 2) {
-                render([]);
+                renderSuggestions([]);
                 return;
             }
             timeout = setTimeout(function() {
@@ -103,7 +163,7 @@
                     body: 'pname=' + encodeURIComponent(term)
                 })
                     .then(r => r.json())
-                    .then(data => render(data.matches))
+                    .then(data => renderSuggestions(data.matches))
                     .catch(() => {});
             }, 300);
         });
