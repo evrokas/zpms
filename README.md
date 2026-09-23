@@ -1159,3 +1159,31 @@ included. `php -l` clean on `web/ClassesEx.php`/`web/index.php`;
 throughout. **Files**: `web/ClassesEx.php`, `web/index.php`,
 `web/templates/content/pending_appointments_list.zetem`,
 `tests/functional/appointment_crud.php`.
+
+## Mobile header: location and language selector kept on one line
+
+Direct request. The header's `right-column` (`config/settings.info.yaml`'s
+`structure:`) holds the location badge and the language selector
+side by side on desktop (`.section-right-column`, `web/css/styles.css`) --
+but the `@media screen and (max-width: 768px)` block switched that same
+container to `flex-direction: column`, stacking them as two separate
+centered rows on any tablet/phone width. Changed to `flex-direction: row`
+(with `flex-wrap: wrap` kept as a safety net, and `justify-content: center`
+replacing the per-child `text-align: center`/`justify-content: center`
+rules already on `.location-place`/`.language-selector ul`, which still
+apply and now center each element's own internal content instead of the
+whole stacked column). Both elements are compact -- a small icon + short
+text badge, and a short row of flag icons -- so there's no real width
+pressure that motivated stacking them in the first place.
+
+**Verified** with a standalone static reproduction of the real header
+markup (`.section-header-grid-2x1`/`.section-left-column`/
+`.section-right-column`/`.location-place`/`.language-selector`) styled
+with the actual, unmodified `styles.css`/`location.css`/
+`language_selector.css` files, screenshotted via Playwright at 375px,
+430px, 600px (all inside the 768px breakpoint) and 900px (desktop, outside
+it) -- confirmed location and the language selector sit on one line at
+every mobile width tested, and the desktop layout is pixel-for-pixel
+unchanged. `bin/run_tests.sh` (99/99 static, 43/43 functional) stayed
+fully green throughout -- no template or handler changes were needed for
+this, it's CSS-only. **Files**: `web/css/styles.css`.

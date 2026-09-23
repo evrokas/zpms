@@ -696,12 +696,17 @@ form .input-div {
         gap: var(--spacing-sm);
     }
     
-    /* Desktop lays location/language/git-hash out as one row (see
-       .section-right-column above) -- too cramped at this width, so back
-       to a stacked, centered column here, same as this block already did
-       before that change. */
+    /* Location and the language selector stay on one row even at this
+       width, matching desktop's .section-right-column layout above --
+       this used to switch to a stacked column here, but both of these
+       are compact (an icon + short text badge, and a small row of flag
+       icons), so there's no real need to give up the row on a phone.
+       flex-wrap is kept as a safety net for a viewport too narrow to fit
+       both on one line, rather than forcing an overflow. */
     .section-right-column {
-        flex-direction: column;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
         align-items: center;
         gap: var(--spacing-sm);
     }
