@@ -70,17 +70,23 @@
     <table>
         <thead>
             <th>Ημ/νία &amp; Ώρα</th>
-            <th>Ασθενής</th>
-            <th>Τύπος</th>
+            <th>Όνομα</th>
+            <th>Τηλέφωνο</th>
             <th>Τοποθεσία</th>
         </thead>
         <tbody>
-            {% foreach($previous as $ap): %}
+            {% foreach($previous as $p): %}
             <tr>
-                <td data-column="datetime">{{$ap['adate'] | date('d-m-Y H:i')}}</td>
-                <td data-column="name"><a href="{{rel_url('/patient/'.$ap['patient_id'].'/edit')}}">{{{$ap['patient_name']}}}</a></td>
-                <td data-column="type">{{($ap['atype'] == 'operation') ? 'Χειρουργείο' : 'Ραντεβού'}}</td>
-                <td data-column="location">{{{$ap['aplace'] ?: '-'}}}</td>
+                <td data-column="datetime">{{$p->getappointment_datetime() | date('d-m-Y H:i')}}</td>
+                <td data-column="name">
+                    {% if($p->getconverted_patient_id()): %}
+                    <a href="{{rel_url('/patient/'.$p->getconverted_patient_id().'/edit')}}">{{{$p->getpatient_name()}}}</a>
+                    {% else: %}
+                    {{{$p->getpatient_name()}}}
+                    {% endif %}
+                </td>
+                <td data-column="phone">{{{$p->getpatient_phone() ?: '-'}}}</td>
+                <td data-column="location">{{{$p->getlocation() ?: '-'}}}</td>
             </tr>
             {% endforeach %}
         </tbody>

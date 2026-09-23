@@ -1101,3 +1101,61 @@ included) stayed fully green throughout. **Files**:
 `web/templates/content/view_appointment.zetem`,
 `tests/functional/appointment_crud.php`, `tests/functional/auth_csrf.php`,
 `tests/functional/patient_crud.php`.
+
+## "Προηγούμενα Ραντεβού" re-sourced from the Google Calendar sync, not the patient list
+
+Direct follow-up correction to "Calendar Sync menu item restored;
+'Προηγούμενα Ραντεβού' added to the pending-appointments page" above: that
+section originally sourced from `appointments` (real, patient-record-linked
+visits — `appointmentsClassEx::getPreviousAppointments()`), i.e. exactly
+"the appointments in the patient list". Per direct request, it now shows
+**Google Calendar's own history instead** — `appointmentsClassEx::
+getPreviousAppointments()` is deleted outright (grepped first to confirm
+its one and only call site was this page); the section is now built from
+`pendingAppointmentsClassEx::getPreviousFromCalendar()` (`web/ClassesEx.php`,
+new), which reads `pending_appointments` — the same table
+`bin/sync_google_calendar.php` already pulls Calendar-native events into —
+filtered to rows with a `google_event_id` (i.e. actually synced with
+Calendar, not a plain phone booking taken on `/consultation/new`) whose
+`appointment_datetime` has already passed, newest first.
+
+**Deliberately not filtered on `converted_at`/`cancelled_at`.** A past
+Calendar event is history either way, whether or not it was ever turned
+into a real patient record through this app, or cancelled here — none of
+that changes what the calendar itself shows already happened. This is
+also *why* this had to stop reading `appointments` at all: a Calendar
+event that came and went with no action taken in ZPMS (cancelled on the
+calendar directly, a no-show, or simply never converted) never gets an
+`appointments` row, so the old query silently missed exactly the events
+this feature was asked to surface, while including only the subset that
+happened to go through the *patient*-record side of this app.
+
+Each row still links the patient's name to their real record when one
+exists (`converted_patient_id` set), and falls back to plain text
+otherwise — `pending_appointments.patient_name`/`patient_phone`/
+`location` are free text either way, not looked up from `patients`, so
+there's no join needed regardless of conversion state.
+`pending_appointments_list.zetem`'s table columns changed to match this
+new source's own fields (Ημ/νία & Ώρα / Όνομα / Τηλέφωνο / Τοποθεσία,
+dropping the old "Τύπος" column — real appointments can be a Ραντεβού or
+a Χειρουργείο, `pending_appointments` has no equivalent distinction at
+all).
+
+**Verified** by updating the existing regression test in
+`tests/functional/appointment_crud.php` rather than adding a parallel one
+(the old fixture — a real `patients`+`appointments` row — no longer
+proves anything about this section, so it was replaced rather than kept
+alongside a new one): inserts a past, `google_event_id`-bearing
+`pending_appointments` row and confirms it's listed under "Προηγούμενα
+Ραντεβού" with its location; separately inserts a past
+`pending_appointments` row with **no** `google_event_id` (a plain phone
+booking that simply elapsed) and confirms it still shows under the
+still-pending "Εκκρεμή Ραντεβού" section above (nothing converted/
+cancelled it, so that section's own rule is unaffected) but does **not**
+appear under "Προηγούμενα Ραντεβού" — proving the calendar filter
+actually excludes non-Calendar rows, not just that Calendar rows are
+included. `php -l` clean on `web/ClassesEx.php`/`web/index.php`;
+`bin/run_tests.sh` (99/99 static, 43/43 functional) stayed fully green
+throughout. **Files**: `web/ClassesEx.php`, `web/index.php`,
+`web/templates/content/pending_appointments_list.zetem`,
+`tests/functional/appointment_crud.php`.

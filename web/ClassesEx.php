@@ -270,29 +270,6 @@ class appointmentsClassEx extends appointmentsClass {
         return 1;
     }
 
-    // Every real (already-converted, or created directly off a patient's
-    // own file) appointment across every patient, newest first -- powers
-    // the "Προηγούμενα Ραντεβού" section on pending_appointments_list.zetem,
-    // below the still-pending ones. Distinct from getAppointmentsForPatient()
-    // above, which scopes to one patient's own pguid; this is the
-    // cross-patient view the old, removed appointments_list() handler
-    // used to provide (see git history: "Remove standalone appointments
-    // menu/list/new-appointment flow") -- a real JOIN here instead of that
-    // version's per-row patientsClassEx::sgetByGuid() lookup, since this
-    // walks every appointment ever logged rather than one patient's own
-    // handful. Same "exclude soft-deleted on both sides" filter that
-    // removed handler applied by hand.
-    static function getPreviousAppointments(): array {
-        $sql = "SELECT a.*, p.id AS patient_id, p.pname AS patient_name
-                FROM appointments a
-                JOIN patients p ON p.guid = a.pguid
-                WHERE a.deleted IS NULL AND p.deleted IS NULL
-                ORDER BY a.adate DESC, a.id DESC";
-        $st = dbConnection::getConnection()->prepare( $sql );
-        $st->execute();
-
-        return $st->fetchAll();
-    }
 }
 
 // Attachments (photos/scanned documents) uploaded against a specific
@@ -384,5 +361,39 @@ class appointmentHistoryClassEx extends appointmentHistoryClass {
         }
 
         return ($list);
+    }
+}
+
+// The "Εκκρεμή Ραντεβού" waiting room table -- see
+// web/classes/yaml/pending_appointments.yaml's own docblock for the full
+// shape (a row here regardless of origin: booked on /consultation/new, or
+// pulled in by bin/sync_google_calendar.php from a Calendar-native
+// event). pending_appointments_list() (web/index.php) itself fetches the
+// still-pending rows directly via the base class's own sgetAll(); this
+// class exists for the one query specific enough to document separately.
+class pendingAppointmentsClassEx extends pendingAppointmentsClass {
+
+    // Powers the "Προηγούμενα Ραντεβού" section on
+    // pending_appointments_list.zetem, below the still-pending list --
+    // deliberately sourced from the Google Calendar sync (any row this
+    // app ever pulled in or pushed out via bin/sync_google_calendar.php,
+    // identified by a non-null google_event_id) whose own
+    // appointment_datetime has already passed, rather than from
+    // `appointments` (real, patient-record-linked visits). The two are
+    // not the same list: `appointments` only has a row once a doctor
+    // actually converts a pending entry (or logs one directly on a
+    // patient's file), so a calendar-native event nobody ever acted on
+    // -- cancelled in person without touching this app, or simply a
+    // no-show -- would never appear there at all despite genuinely having
+    // been on the calendar. Deliberately NOT filtered on
+    // converted_at/cancelled_at -- a past calendar event is "history"
+    // either way, whether or not it was ever turned into a patient
+    // record. A converted row's patient name still links through to
+    // their real record (via converted_patient_id); an unconverted one
+    // shows as plain text, since there's no patient record to link to.
+    static function getPreviousFromCalendar(): array {
+        $rows = self::sgetAll('google_event_id IS NOT NULL AND appointment_datetime < NOW()', null);
+        usort($rows, fn($a, $b) => strcmp($b->getappointment_datetime(), $a->getappointment_datetime()));
+        return $rows;
     }
 }

@@ -238,30 +238,60 @@ function zpms_functional_appointment_crud(TestRunner $runner, TestHttpClient $ht
         assert_contains('Συγχρονισμός Ημερολογίου', $nav['body'], 'nav is missing the Calendar Sync menu item');
         assert_contains('href="/consultation/pending"', $nav['body'], 'Calendar Sync menu item does not link to /consultation/pending');
 
-        // A real, already-converted appointment -- this is what the
-        // "Προηγούμενα Ραντεβού" section should list.
-        $p = new patientsClass([
+        // A past, Calendar-sourced pending_appointments row (google_event_id
+        // set, appointment_datetime already elapsed) -- this is what the
+        // "Προηγούμενα Ραντεβού" section should list now (sourced from the
+        // calendar sync, not the `appointments`/patient-record table --
+        // see pendingAppointmentsClassEx::getPreviousFromCalendar()'s own
+        // docblock). Deliberately left unconverted/uncancelled, to confirm
+        // the section doesn't require either state.
+        $pa = new pendingAppointmentsClass([
             'guid' => guid(), 'cuser' => 'test-fixture', 'cdate' => getDBtime(),
-            'pname' => 'Ασθενής Προηγούμενου Ραντεβού', 'pdob' => '1990-01-01 00:00:00',
-            'pamka' => '44444444444', 'ptel' => '', 'paddr' => '', 'pemail' => '', 'pnote' => '',
+            'patient_name' => 'Ασθενής Προηγούμενου Ραντεβού',
+            'patient_phone' => '2109998888',
+            'appointment_datetime' => date('Y-m-d H:i:s', strtotime('-30 days')),
+            'location' => 'Previous Appt Clinic',
+            'google_event_id' => 'test-fixture-calendar-event-' . guid(),
+            'google_synced_at' => getDBtime(),
         ]);
-        $p->insert();
-        $ap = new appointmentsClass([
+        $pa->insert();
+
+        // A past pending_appointments row with NO google_event_id (a plain
+        // phone booking that simply elapsed, never touched by the calendar
+        // sync) must NOT appear in "Προηγούμενα Ραντεβού" -- this section
+        // is specifically the calendar's own history, not "every past
+        // pending_appointments row".
+        $paNoCalendar = new pendingAppointmentsClass([
             'guid' => guid(), 'cuser' => 'test-fixture', 'cdate' => getDBtime(),
-            'pguid' => $p->getguid(), 'adate' => '2026-01-10 09:00:00', 'aplace' => 'Previous Appt Clinic',
+            'patient_name' => 'Ασθενής Χωρίς Ημερολόγιο',
+            'appointment_datetime' => date('Y-m-d H:i:s', strtotime('-30 days')),
+            'location' => 'Non-Calendar Clinic',
         ]);
-        $ap->insert();
+        $paNoCalendar->insert();
 
         $page = $http->get('/consultation/pending');
         assert_equal(200, $page['status'], 'GET /consultation/pending did not return 200');
-        assert_contains('Προηγούμενα Ραντεβού', $page['body'], '/consultation/pending is missing the "previous appointments" section');
-        assert_contains('Ασθενής Προηγούμενου Ραντεβού', $page['body'], 'previous appointments section does not list the fixture appointment\'s patient');
-        assert_contains('Previous Appt Clinic', $page['body'], 'previous appointments section does not show the fixture appointment\'s location');
 
         $posPending = strpos($page['body'], 'Εκκρεμή Ραντεβού');
         $posPrevious = strpos($page['body'], 'Προηγούμενα Ραντεβού');
         assert_not_null($posPending, 'pending-appointments heading is missing');
+        assert_not_null($posPrevious, '/consultation/pending is missing the "previous appointments" section');
         assert_true($posPending < $posPrevious, 'pending appointments must be listed before previous appointments');
+
+        // The non-calendar past booking belongs in the still-pending
+        // section above (nothing has converted/cancelled it, so it's
+        // correctly still "outstanding" by that section's own rule) --
+        // checked against that slice specifically, not the whole page,
+        // since its name would otherwise trivially satisfy a page-wide
+        // assert_contains regardless of which section it actually landed in.
+        $pendingSection = substr($page['body'], $posPending, $posPrevious - $posPending);
+        $previousSection = substr($page['body'], $posPrevious);
+
+        assert_contains('Ασθενής Χωρίς Ημερολόγιο', $pendingSection, 'the non-calendar past booking should still list as "still pending"');
+
+        assert_contains('Ασθενής Προηγούμενου Ραντεβού', $previousSection, 'previous appointments section does not list the calendar-sourced fixture');
+        assert_contains('Previous Appt Clinic', $previousSection, 'previous appointments section does not show the fixture\'s location');
+        assert_not_contains('Ασθενής Χωρίς Ημερολόγιο', $previousSection, 'previous appointments section listed a past booking with no google_event_id');
     });
 
     $runner->add('the Home Screen has an appointments card linking to the pending/previous appointments page', function () use ($http) {
