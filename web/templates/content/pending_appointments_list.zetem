@@ -55,3 +55,35 @@
     </table>
 {% endif %}
 </div>
+
+<div class="patients-header">
+    <h2 class="page-title">Προηγούμενα Ραντεβού</h2>
+</div>
+
+<div class="previous-appointments-list">
+{% if(count($previous) == 0): %}
+    <div class="patients-empty">
+        <i class="bx bx-history"></i>
+        <p>Δεν υπάρχουν προηγούμενα ραντεβού.</p>
+    </div>
+{% else: %}
+    <table>
+        <thead>
+            <th>Ημ/νία &amp; Ώρα</th>
+            <th>Ασθενής</th>
+            <th>Τύπος</th>
+            <th>Τοποθεσία</th>
+        </thead>
+        <tbody>
+            {% foreach($previous as $ap): %}
+            <tr>
+                <td data-column="datetime">{{$ap['adate'] | date('d-m-Y H:i')}}</td>
+                <td data-column="name"><a href="{{rel_url('/patient/'.$ap['patient_id'].'/edit')}}">{{{$ap['patient_name']}}}</a></td>
+                <td data-column="type">{{($ap['atype'] == 'operation') ? 'Χειρουργείο' : 'Ραντεβού'}}</td>
+                <td data-column="location">{{{$ap['aplace'] ?: '-'}}}</td>
+            </tr>
+            {% endforeach %}
+        </tbody>
+    </table>
+{% endif %}
+</div>

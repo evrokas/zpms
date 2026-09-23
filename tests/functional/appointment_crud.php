@@ -150,4 +150,42 @@ function zpms_functional_appointment_crud(TestRunner $runner, TestHttpClient $ht
             ->fetch();
         assert_not_null($row['deleted'], "deleting the patient did not cascade-delete their appointment");
     });
+
+    $runner->add('nav has the Calendar Sync menu item, and /consultation/pending lists pending appointments before previous ones', function () use ($http) {
+        TestSchema::assertSafeToMutate();
+
+        // Restored menu item -- see config/settings.info.yaml's
+        // `calendar_sync` submenu entry docblock: Calendar-native events
+        // land in the same pending-appointments list now, so this just
+        // points at that page under a calendar-flavored label rather than
+        // reviving the old, removed review-queue page.
+        $nav = $http->get('/patients');
+        assert_contains('Συγχρονισμός Ημερολογίου', $nav['body'], 'nav is missing the Calendar Sync menu item');
+        assert_contains('href="/consultation/pending"', $nav['body'], 'Calendar Sync menu item does not link to /consultation/pending');
+
+        // A real, already-converted appointment -- this is what the
+        // "Προηγούμενα Ραντεβού" section should list.
+        $p = new patientsClass([
+            'guid' => guid(), 'cuser' => 'test-fixture', 'cdate' => getDBtime(),
+            'pname' => 'Ασθενής Προηγούμενου Ραντεβού', 'pdob' => '1990-01-01 00:00:00',
+            'pamka' => '44444444444', 'ptel' => '', 'paddr' => '', 'pemail' => '', 'pnote' => '',
+        ]);
+        $p->insert();
+        $ap = new appointmentsClass([
+            'guid' => guid(), 'cuser' => 'test-fixture', 'cdate' => getDBtime(),
+            'pguid' => $p->getguid(), 'adate' => '2026-01-10 09:00:00', 'aplace' => 'Previous Appt Clinic',
+        ]);
+        $ap->insert();
+
+        $page = $http->get('/consultation/pending');
+        assert_equal(200, $page['status'], 'GET /consultation/pending did not return 200');
+        assert_contains('Προηγούμενα Ραντεβού', $page['body'], '/consultation/pending is missing the "previous appointments" section');
+        assert_contains('Ασθενής Προηγούμενου Ραντεβού', $page['body'], 'previous appointments section does not list the fixture appointment\'s patient');
+        assert_contains('Previous Appt Clinic', $page['body'], 'previous appointments section does not show the fixture appointment\'s location');
+
+        $posPending = strpos($page['body'], 'Εκκρεμή Ραντεβού');
+        $posPrevious = strpos($page['body'], 'Προηγούμενα Ραντεβού');
+        assert_not_null($posPending, 'pending-appointments heading is missing');
+        assert_true($posPending < $posPrevious, 'pending appointments must be listed before previous appointments');
+    });
 }

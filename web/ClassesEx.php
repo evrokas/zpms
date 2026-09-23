@@ -269,6 +269,30 @@ class appointmentsClassEx extends appointmentsClass {
         // was itself soft-deleted) -- fall back to "1st" rather than 0
         return 1;
     }
+
+    // Every real (already-converted, or created directly off a patient's
+    // own file) appointment across every patient, newest first -- powers
+    // the "Προηγούμενα Ραντεβού" section on pending_appointments_list.zetem,
+    // below the still-pending ones. Distinct from getAppointmentsForPatient()
+    // above, which scopes to one patient's own pguid; this is the
+    // cross-patient view the old, removed appointments_list() handler
+    // used to provide (see git history: "Remove standalone appointments
+    // menu/list/new-appointment flow") -- a real JOIN here instead of that
+    // version's per-row patientsClassEx::sgetByGuid() lookup, since this
+    // walks every appointment ever logged rather than one patient's own
+    // handful. Same "exclude soft-deleted on both sides" filter that
+    // removed handler applied by hand.
+    static function getPreviousAppointments(): array {
+        $sql = "SELECT a.*, p.id AS patient_id, p.pname AS patient_name
+                FROM appointments a
+                JOIN patients p ON p.guid = a.pguid
+                WHERE a.deleted IS NULL AND p.deleted IS NULL
+                ORDER BY a.adate DESC, a.id DESC";
+        $st = dbConnection::getConnection()->prepare( $sql );
+        $st->execute();
+
+        return $st->fetchAll();
+    }
 }
 
 // Attachments (photos/scanned documents) uploaded against a specific

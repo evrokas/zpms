@@ -618,6 +618,20 @@ menu:
           # See zeusfw's core/lib/Menutrail.php, search_menu_trail_for_key()
           # for what this key does.
           breadcrumb_aliases: [pending_appointment_edit, pending_appointment_convert]
+        # Restores the standalone "calendar sync" menu entry removed when
+        # the old calendar_pending_events review-queue design was folded
+        # into the pending-appointments waiting room above (see git
+        # history: "Redesign consultation scheduling around a pending-
+        # appointments waiting room") -- Calendar-native events created
+        # without going through ZPMS land in that exact same list now
+        # (bin/sync_google_calendar.php), so this points at the identical
+        # page as pending_appointments_list above under its own, more
+        # calendar-flavored label rather than reviving a second page.
+        - calendar_sync:
+          text:
+            gr: 'Συγχρονισμός Ημερολογίου'
+            en: 'Calendar Sync'
+          url: /consultation/pending
     - settings:
       text:
         gr: "Ρυθμίσεις"

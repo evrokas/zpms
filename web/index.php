@@ -1097,6 +1097,12 @@ require_once(__DIR__ . '/zpms_mailer.php');
 
         return (Renderer::render("pending_appointments_list.zetem", [
             'pending' => $pending,
+            // Real appointments (already converted, or logged directly on
+            // a patient's own file), newest first -- shown below the
+            // still-pending list above as a "Προηγούμενα Ραντεβού"
+            // history section. See appointmentsClassEx::getPreviousAppointments()'s
+            // own docblock.
+            'previous' => appointmentsClassEx::getPreviousAppointments(),
             // Gates the per-row "Δημιουργία Φακέλου" button -- a
             // secretary-only account sees the list but not that action,
             // same permission split pending_appointment_convert()

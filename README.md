@@ -855,3 +855,53 @@ parentheses sits outside it as plain text right after. `php -l` clean on
 the one new test included) stayed fully green throughout. **Files**:
 `web/ClassesEx.php`, `web/templates/modules/userblock.zetem` (new),
 `tests/functional/auth_csrf.php`.
+
+## Calendar Sync menu item restored; "Προηγούμενα Ραντεβού" added to the pending-appointments page
+
+Direct request, after the calendar_pending_events review-queue design (its
+own removed page, `calendar_review_queue.zetem`, and its "Νέα από
+Ημερολόγιο" menu item) was folded into the single pending-appointments
+waiting room (see this file's own "Google Calendar sync"/"Pending
+appointments" sections) — a Calendar-native event with no ZPMS id now
+lands directly in that same "Εκκρεμή Ραντεβού" list
+(`bin/sync_google_calendar.php`), so there's no second page left to point
+a restored menu item at.
+
+**Menu** (`config/settings.info.yaml`, the `consultations:` submenu): a
+new `calendar_sync` entry, "Συγχρονισμός Ημερολογίου" / "Calendar Sync",
+sitting alongside "Νέο (τηλεφωνικά)" and "Εκκρεμή Ραντεβού" — same
+`/consultation/pending` URL as the latter, under its own calendar-flavored
+label, rather than a second page duplicating that list's content. No new
+route or handler needed for this on its own.
+
+**"Προηγούμενα Ραντεβού"** — a real-appointments history section, added to
+`pending_appointments_list.zetem` below the still-pending list, since a
+call-in that's already been converted into a patient (or an appointment
+logged directly from a patient's own file) previously had nowhere to show
+up on this page at all. `appointmentsClassEx::getPreviousAppointments()`
+(`web/ClassesEx.php`) is the cross-patient equivalent of the existing
+`getAppointmentsForPatient()` right above it — a single `JOIN` against
+`patients` (excluding soft-deleted rows on both sides, the same filter the
+old, removed `appointments_list()` handler applied by hand via a
+per-row `patientsClassEx::sgetByGuid()` lookup) rather than an N+1 query,
+since this one walks every appointment ever logged, not one patient's own
+handful. `pending_appointments_list()` (`web/index.php`) passes the result
+through as `previous`, newest first; each row links the patient's name to
+their own `/patient/{id}/edit` page.
+
+**Verified** with a new, permanent regression test
+(`tests/functional/appointment_crud.php`, "nav has the Calendar Sync menu
+item, and /consultation/pending lists pending appointments before previous
+ones") rather than a one-off manual check: confirms the nav's `/patients`
+render includes "Συγχρονισμός Ημερολογίου" linking to
+`/consultation/pending`; inserts a fresh patient + real appointment and
+confirms `/consultation/pending` shows both the patient's name and the
+appointment's location under a "Προηγούμενα Ραντεβού" heading; and
+confirms that heading's position in the response body comes *after*
+"Εκκρεμή Ραντεβού"'s, so pending appointments are never pushed below the
+history section. `php -l` clean on `web/index.php`/`web/ClassesEx.php`;
+`bin/run_tests.sh` (43/43 static, 38/38 functional — the one new test
+included) stayed fully green throughout. **Files**: `config/settings.info.yaml`,
+`web/ClassesEx.php`, `web/index.php`,
+`web/templates/content/pending_appointments_list.zetem`,
+`tests/functional/appointment_crud.php`.
