@@ -1,5 +1,6 @@
 {% attach_library('textarea-autoexpand-library') %}
 {% attach_library('appointment-improvements') %}
+{% attach_library('flatpickr-library') %}
 
 <h2>{{($appointment->getatype() == 'operation')?'Νέο Χειρουργείο':'Νέο Ραντεβού'}}</h2>
 
@@ -12,14 +13,20 @@
 {#
   Visually matches the inline appointment card on the patient page
   (view_appointment.zetem) -- same .appointment-entry/.input-header/
-  .edit-appointment/.input-notes classes -- but deliberately carries none
-  of that card's AJAX auto-save wiring: no loader="..." attributes, no
-  .loader0 element, no field_update()/enableLoader() call sites. The
-  appointment doesn't exist yet, so there's no id to PATCH against; this
-  page only ever does a single, explicit full-page POST via the
-  Αποθήκευση/Ακύρωση buttons below. The attachments section is likewise
-  absent -- file uploads target an existing appointment id, which this
-  page doesn't have until after that POST.
+  .edit-appointment/.input-notes classes, and the same flatpickr-styled
+  date field every other date input in this app uses (see
+  new_consultation.zetem/pending_appointment_edit.zetem for the identical
+  enableTime/altInput setup) -- but deliberately carries none of that
+  card's AJAX auto-save wiring: no loader="..." attributes, no .loader0
+  element, no field_update()/enableLoader() call sites, and no onChange
+  listener re-dispatching flatpickr's own change as a synthetic 'input'
+  event (that trick exists solely to feed loader.js's autosave hook,
+  which doesn't run on this page at all). The appointment doesn't exist
+  yet, so there's no id to PATCH against; this page only ever does a
+  single, explicit full-page POST via the Αποθήκευση/Ακύρωση buttons
+  below. The attachments section is likewise absent -- file uploads
+  target an existing appointment id, which this page doesn't have until
+  after that POST.
 #}
 <div class="appointment-entry">
     <form action="{{$action}}" method="post">
@@ -27,7 +34,7 @@
         <div class="input-header">
             <div class="input-div" role="rendezvouz">
                 <label for="appointment-date">Ημ/νια &amp; Ώρα ραντεβού</label>
-                <input type="datetime-local" name="appointment-date" id="appointment-date" value="{{$appointment->getadate()}}">
+                <input type="text" name="appointment-date" id="appointment-date" value="{{$appointment->getadate() | date('Y-m-d H:i')}}">
             </div>
 
             <div class="input-div">
@@ -67,3 +74,16 @@
         </div>
     </form>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        flatpickr('#appointment-date', {
+            enableTime: true,
+            time_24hr: true,
+            dateFormat: 'Y-m-d H:i',
+            altInput: true,
+            altFormat: 'd-m-Y H:i',
+            allowInput: true
+        });
+    });
+</script>

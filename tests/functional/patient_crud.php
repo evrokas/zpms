@@ -79,9 +79,12 @@ function zpms_functional_patient_crud(TestRunner $runner, TestHttpClient $http):
         $id = $GLOBALS['zpms_test_patient_id'] ?? null;
         assert_not_null($id, 'previous test did not record a patient id');
 
-        // Deletion is a POST + CSRF token now, not a bare GET link -- see
-        // patients_list.zetem's delete form. The token is session-wide, so
-        // any already-rendered page's copy works; /patients renders one.
+        // Deletion is a POST + CSRF token, not a bare GET link -- the
+        // control itself lives on the patient's own record now
+        // (edit_patient.zetem's "Διαγραφή Ασθενή" danger-zone form), not
+        // as a per-row action on /patients (see the next test below).
+        // The token is session-wide, so any already-rendered page's copy
+        // works; /patients renders one regardless.
         $listPage = $http->get('/patients');
         $token = TestHttpClient::extractCsrfToken($listPage['body']);
         assert_not_null($token, 'no csrf_token field found on /patients');
@@ -107,5 +110,31 @@ function zpms_functional_patient_crud(TestRunner $runner, TestHttpClient $http):
         $list = $http->get('/patients');
         assert_equal(200, $list['status'], 'GET /patients did not return 200');
         assert_not_contains('Δοκιμαστική Ασθενής Ενημερωμένη', $list['body'], 'deleted patient still appears on /patients');
+    });
+
+    $runner->add('patient deletion is a per-record control, not a per-row action on the patient list', function () use ($http) {
+        // The delete button used to be a per-row action on /patients
+        // itself; it now lives inside the patient's own record
+        // (edit_patient.zetem's "Διαγραφή Ασθενή" danger zone) instead --
+        // confirmed here for an account (the doctor test user) that DOES
+        // hold patients-delete-patient, so this is a UI-placement check,
+        // not a permission-gating one (auth_csrf.php's secretary test
+        // already covers the permission being absent).
+        TestSchema::assertSafeToMutate();
+
+        $p = new patientsClass([
+            'guid' => guid(), 'cuser' => 'test-fixture', 'cdate' => getDBtime(),
+            'pname' => 'Ασθενής Για Θέση Διαγραφής', 'pdob' => '1990-01-01 00:00:00',
+            'pamka' => '66666666666', 'ptel' => '', 'paddr' => '', 'pemail' => '', 'pnote' => '',
+        ]);
+        $p->insert();
+
+        $list = $http->get('/patients');
+        assert_not_contains('inline-delete-form', $list['body'], '/patients still renders a per-row delete form');
+        assert_not_contains('Ενέργειες', $list['body'], '/patients still has an "Ενέργειες" (actions) column header');
+
+        $editPage = $http->get('/patient/' . $p->getid() . '/edit');
+        assert_contains('inline-delete-form', $editPage['body'], "the patient's own record does not render the delete control");
+        assert_contains('Διαγραφή Ασθενή', $editPage['body'], "the patient's own record is missing the delete button label");
     });
 }

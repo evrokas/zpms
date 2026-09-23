@@ -123,8 +123,11 @@ if(trashelements.length>0) {
    .pending-appointments-list covers cancelling a pending appointment
    (web/templates/content/pending_appointments_list.zetem) -- same
    reasoning, an extra container added to this same list rather than
-   inventing a second confirmation mechanism. */
-let trashforms = document.querySelectorAll('.patients-list form[confirmation], .admin-list form[confirmation], .settings-table-scroll form[confirmation], .pending-appointments-list form[confirmation]');
+   inventing a second confirmation mechanism. .edit-patient covers the
+   "Διαγραφή Ασθενή" danger-zone action on a patient's own record
+   (edit_patient.zetem) -- moved there from the patients list, which no
+   longer has a delete action of its own. */
+let trashforms = document.querySelectorAll('.patients-list form[confirmation], .admin-list form[confirmation], .settings-table-scroll form[confirmation], .pending-appointments-list form[confirmation], .edit-patient form[confirmation]');
 if(trashforms.length>0) {
     trashforms.forEach(el => {
         el.addEventListener('submit', (e) => {

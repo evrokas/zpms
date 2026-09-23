@@ -21,6 +21,7 @@ if (is_file(__DIR__ . '/../config/apyweb_api.php')) {
 require_once(__FWDIR__ . '/bootstrap.php');
 require_once(__DIR__ . '/api_patients.php');
 require_once(__DIR__ . '/appointment_files.php');
+require_once(__DIR__ . '/appointment_history.php');
 require_once(__DIR__ . '/apyweb_client.php');
 require_once(__DIR__ . '/google_calendar_client.php');
 require_once(__DIR__ . '/rbac.php');
@@ -132,6 +133,16 @@ require_once(__DIR__ . '/zpms_mailer.php');
             // menu.main).
             'can_view_patients' => rbacClass::isPermitted(ZPMS_PERM_PATIENTS_VIEW_LIST),
             'can_create_patients' => rbacClass::isPermitted(ZPMS_PERM_PATIENTS_NEW_PATIENT),
+            // New "Ραντεβού" card -- links to the same "Εκκρεμή Ραντεβού"
+            // waiting room the nav's own Calendar Sync/Pending
+            // Appointments entries already point at (pending_appointments_list(),
+            // which -- since the earlier "bring back the calendar sync
+            // menu item" change -- lists both pending AND previous/real
+            // appointments on one page), rather than a second, separate
+            // appointments page. Gated on the same permission that page
+            // itself requires, so this card never links anywhere a
+            // viewer would immediately get refused from.
+            'can_manage_appointments' => rbacClass::isPermitted(ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE),
         ]);
     }
 
@@ -196,8 +207,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
         return Renderer::render("patients_list.zetem",
             ['pat_list' => $pp,
                 // 'notice' => $kernel->ifelseStatus('patient_edit', '', true)
-                'can_create_patient' => rbacClass::isPermitted(ZPMS_PERM_PATIENTS_NEW_PATIENT),
-                'can_delete_patient' => rbacClass::isPermitted(ZPMS_PERM_PATIENTS_DELETE_PATIENT)
+                'can_create_patient' => rbacClass::isPermitted(ZPMS_PERM_PATIENTS_NEW_PATIENT)
             ]);
     }
 
@@ -240,8 +250,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
             [   'search_term' => $params['term'],
                 'pat_list' => $pp,
                 // 'notice' => $kernel->ifelseStatus('patient_edit', '', true)
-                'can_create_patient' => rbacClass::isPermitted(ZPMS_PERM_PATIENTS_NEW_PATIENT),
-                'can_delete_patient' => rbacClass::isPermitted(ZPMS_PERM_PATIENTS_DELETE_PATIENT)
+                'can_create_patient' => rbacClass::isPermitted(ZPMS_PERM_PATIENTS_NEW_PATIENT)
             ]);
     }
 
@@ -302,6 +311,12 @@ require_once(__DIR__ . '/zpms_mailer.php');
 
         $canEditPatient = rbacClass::isPermitted(ZPMS_PERM_PATIENTS_EDIT_PATIENT);
         $canEditAppointment = rbacClass::isPermitted(ZPMS_PERM_APPOINTMENT_EDIT);
+        // Read-only counterpart -- see ZPMS_PERM_APPOINTMENT_VIEW's own
+        // docblock in web/rbac.php. An editor already implies "can view",
+        // so the full-card branch below checks either permission.
+        $canViewAppointment = rbacClass::isPermitted(ZPMS_PERM_APPOINTMENT_VIEW);
+        $canDeletePatient = rbacClass::isPermitted(ZPMS_PERM_PATIENTS_DELETE_PATIENT);
+        $canViewFinancials = rbacClass::isPermitted(ZPMS_PERM_PATIENT_FINANCIAL_VIEW);
 
         if(!isset($params['id'])) {
             $kernel->addStatus('error', 'Ο φάκελος του ασθενή δεν βρέθηκε!');
@@ -316,33 +331,43 @@ require_once(__DIR__ . '/zpms_mailer.php');
         // Read-only financial-info block (APYweb integration) -- silent
         // no-op (null) when unconfigured/unreachable/no match, see
         // apyweb_client.php's own docblock for why this has no
-        // user-facing error unlike an interactive lookup.
-        $financials = zpms_apyweb_fetch_financials($pat->getpname());
-        $hasFinancials = $financials !== null && (
-            count($financials['invoices']) > 0
-            || count($financials['operations']) > 0
-            || count($financials['fee_reports']) > 0
-        );
+        // user-facing error unlike an interactive lookup. Gated on
+        // ZPMS_PERM_PATIENT_FINANCIAL_VIEW (see that constant's own
+        // docblock in web/rbac.php) -- a viewer without it never triggers
+        // the outbound APYweb lookup at all, not just a hidden block.
+        if ($canViewFinancials) {
+            $financials = zpms_apyweb_fetch_financials($pat->getpname());
+            $hasFinancials = $financials !== null && (
+                count($financials['invoices']) > 0
+                || count($financials['operations']) > 0
+                || count($financials['fee_reports']) > 0
+            );
+        } else {
+            $financials = null;
+            $hasFinancials = false;
+        }
 
         // echo "<pre>patient: " . print_r($pat, 1) . "</pre>";
         $app_list = appointmentsClassEx::getAppointmentsForPatient($pat->getguid(), 'DESC');
         // $loc = locationsClass::sgetAll();
         $loc = locationsClassEx::sgetAll( $kernel->getCurrentLanguage() );
 
-        // A viewer without appointment-edit (e.g. the secretary role)
-        // never sees the full editable appointment/operation cards
-        // (view_appointment.zetem -- notes, save/delete, file uploads) --
-        // instead gets a compact, read-only summary listing just the date
-        // and location of each, per request. Only one of these two arrays
-        // is ever built, since edit_patient.zetem renders one or the
-        // other, never both.
+        // A viewer with neither appointment-edit nor appointment-view
+        // (e.g. a role holding only patients-view-list) never sees the
+        // full appointment/operation cards (view_appointment.zetem --
+        // notes, dates, attachments) -- instead gets a compact, read-only
+        // summary listing just the date and location of each. A holder of
+        // appointment-view but not appointment-edit still gets the full
+        // card, just rendered read-only (see 'can_edit' below) -- only one
+        // of these two arrays is ever built, since edit_patient.zetem
+        // renders one or the other, never both.
         $apprender = array();
         $appdates = array();
         $appointmentSummary = array();
         foreach($app_list as $ap) {
 
             if($ap->getdeleted() == null) {
-                if ($canEditAppointment) {
+                if ($canEditAppointment || $canViewAppointment) {
                     $apprender[] = [
                         'index' => count($apprender),
                         'markup' => Renderer::render('view_appointment.zetem', [
@@ -353,7 +378,9 @@ require_once(__DIR__ . '/zpms_mailer.php');
                                                         'patient' => $pat,
                                                         'appointment' => $ap,
                                                         'locations' => $loc,
-                                                        'files' => appointmentFilesClassEx::getFilesForAppointment($ap->getid())
+                                                        'files' => appointmentFilesClassEx::getFilesForAppointment($ap->getid()),
+                                                        'can_edit' => $canEditAppointment,
+                                                        'history' => zpms_appointment_history_for_display((int)$ap->getid())
                                                     ]),
                         'attributes' => new Attributes()
                     ];
@@ -377,7 +404,9 @@ require_once(__DIR__ . '/zpms_mailer.php');
             'financials' => $financials,
             'has_financials' => $hasFinancials,
             'can_edit_patient' => $canEditPatient,
-            'can_edit_appointment' => $canEditAppointment
+            'can_edit_appointment' => $canEditAppointment,
+            'can_view_appointment' => $canViewAppointment,
+            'can_delete_patient' => $canDeletePatient
         ]));
     }
     function patient_edit_post($params) {
@@ -475,7 +504,12 @@ require_once(__DIR__ . '/zpms_mailer.php');
             'id' => null,
             'patient' => $pc,
             'can_edit_patient' => true,
-            'can_edit_appointment' => true
+            'can_edit_appointment' => true,
+            // Never relevant for a not-yet-saved patient -- the danger-
+            // zone block is also gated on $action != 'new', so this is
+            // belt-and-suspenders against relying on evaluation order
+            // alone for the undefined-variable case.
+            'can_delete_patient' => false
         ]));
     }
 
@@ -645,6 +679,21 @@ require_once(__DIR__ . '/zpms_mailer.php');
 
         $ap = appointmentsClass::sgetById($params['id']);
         // error_log("\bFound appointment: " . print_r($ap, 1) . "\n");
+
+        // Captured before any of the setters below run, so each field can
+        // be diffed against what was actually already stored -- this is
+        // what zpms_record_appointment_change() logs (see
+        // web/appointment_history.php), and it deliberately only counts a
+        // field as "changed" when its value actually differs, never just
+        // "present in this POST": loader.js's own autosave always submits
+        // the WHOLE form on every keystroke debounce, so without this
+        // diff every autosave call would look like all three fields were
+        // just edited.
+        $oldPlace = $ap->getaplace();
+        $oldDate = $ap->getadate();
+        $oldNote = $ap->getanote();
+        $changedFields = [];
+
         // $ap->setaplace($_POST['appointment-place']);
         // Null-safe -- same pattern already used by patient_appointment_new_post()
         // for this identical lookup. A machine name with no matching row (empty
@@ -652,7 +701,11 @@ require_once(__DIR__ . '/zpms_mailer.php');
         // be an uncaught fatal error (getname() on null) instead of just saving
         // an empty place, a real crash on a plain edit-and-save.
         $loc = locationsClassEx::getbyMachineName($_POST['appointment-place'], $kernel->getCurrentLanguage());
-        $ap->setaplace($loc ? $loc->getname() : '');
+        $newPlace = $loc ? $loc->getname() : '';
+        if ($newPlace !== $oldPlace) {
+            $changedFields[] = 'appointment-place';
+        }
+        $ap->setaplace($newPlace);
 
         // we cannot search for appointment-date, because of special handling of
         // date fields in the view page, we must search for appointmenet-date-?
@@ -660,15 +713,24 @@ require_once(__DIR__ . '/zpms_mailer.php');
         // the index itself, but for the value of that key
         // ON THE OTHER HAND
         // in the single page new appointment, the post field
-        // is named 'appointment-date' 
+        // is named 'appointment-date'
+        $newDate = $oldDate;
         foreach($_POST as $postkey => $postval) {
             if(strstr($postkey, "appointment-date")) {
                 // error_log($postkey . ' ==> ' . print_r($postkey, 1));
-                $ap->setadate(getDBformattime($postval));    //$_POST['appointment-date']));
+                $newDate = getDBformattime($postval);    //$_POST['appointment-date']));
+                $ap->setadate($newDate);
             }
         }
+        if ($newDate !== $oldDate) {
+            $changedFields[] = 'appointment-date';
+        }
 
-        $ap->setanote($_POST['appointment-notes']);
+        $newNote = $_POST['appointment-notes'];
+        if ($newNote !== $oldNote) {
+            $changedFields[] = 'appointment-notes';
+        }
+        $ap->setanote($newNote);
 
         // atype is deliberately never read/set here -- it's fixed at
         // creation (see patient_appointment_new()'s own comment for where
@@ -676,6 +738,8 @@ require_once(__DIR__ . '/zpms_mailer.php');
         // for it at all, so there's nothing in $_POST to trust or ignore.
 
         $ap->update();
+
+        zpms_record_appointment_change((int)$ap->getid(), $kernel->getUserName(), $changedFields);
 
         // error_log('patient appointment saved');
         if(key_exists('use_ajax', $_POST)) {

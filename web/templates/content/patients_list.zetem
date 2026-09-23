@@ -51,7 +51,6 @@
                 </div>
 
             </th>
-            <th>{{t("Ενέργειες")}}</th>
         </thead>
         {% $loop=0; %}
         <tbody>
@@ -78,14 +77,6 @@
                         {% echo explode(' ', $pat['lastapp'])[0]; %}
                     {% else: %}
                         -
-                    {% endif %}
-                </td>
-                <td class="actions" data-column="actions">
-                    {% if($can_delete_patient): %}
-                    <form class="inline-delete-form" method="post" action="{{rel_url('/patient/'.$pat['id'].'/delete')}}" confirmation>
-                        {{ csrf_field() }}
-                        <button type="submit" class="icon-btn icon-btn-danger" title="{{t('Delete')}}"><i class="bx bx-trash"></i></button>
-                    </form>
                     {% endif %}
                 </td>
             </tr>

@@ -7,6 +7,7 @@
 <div class="appointment-entry" id="app-{{$index}}">
     <form action="{{$action}}" method="post">
         {{ csrf_field() }}
+        <fieldset {% if(!$can_edit): %}disabled{% endif %}>
         <div class="input-header">
             <div class="input-div" role="rendezvouz">
                 <!-- <label for="patient-date">Ημ/νια & Ώρα ραντεβού</label> -->
@@ -74,7 +75,9 @@
                     <textarea name="appointment-notes" id="" autoexpand rows="5"
                         loader="app-loader-{{$index}}">{{$appointment->getanote()}}</textarea>
                 </div>
+                </fieldset>
 
+                {% if($can_edit): %}
                 <div class="buttons">
                     <input type="submit" name="submit" value="Αποθήκευση">
                     <input type="submit" name="delete" value="Διαγραφή">
@@ -82,6 +85,7 @@
                     <button hidden type="button" loader="app-loader-{{$index}}"
                         onclick="field_update(this)">Update</button>
                 </div>
+                {% endif %}
             </div>
         </div>
 
@@ -94,11 +98,23 @@
          expanded when there are existing files, so staff land straight
          on them instead of an empty-looking closed section.
 
-         This whole template is only ever rendered for a viewer holding
-         appointment-edit (see patient_edit() in web/index.php -- a
-         viewer without it gets a compact read-only summary instead,
-         built inline in edit_patient.zetem, never this full form), so
-         nothing here needs its own permission check. -->
+         This template is now rendered for two kinds of viewer:
+         appointment-edit (full read/write) and appointment-view
+         (read-only -- 'secretary' in web/rbac_seed.php), never for a
+         viewer holding neither (see patient_edit() in web/index.php --
+         that case gets a compact summary instead, built inline in
+         edit_patient.zetem, never this full form). $can_edit (passed
+         from patient_edit()) tells the two apart: the fieldset above
+         already disables the date/place/notes fields and the save/
+         delete buttons are omitted outright when it's false. Below,
+         the same flag hides the upload dropzone, the clipboard-paste
+         row, and each file's own Διαγραφή button -- appointment_files.php's
+         own handlers independently call rbacClass::require(ZPMS_PERM_APPOINTMENT_EDIT)
+         regardless, so this is purely cosmetic, not the actual
+         authorization boundary. The existing-files list and each
+         file's Προβολή (view/download) button stay visible either way,
+         since "view appointment details" is explicitly what
+         appointment-view is meant to allow. -->
     <div class="file-upload-section{{(isset($files) && count($files) > 0) ? ' is-expanded' : ''}}">
         <h5 class="file-upload-section-heading" data-toggle-attachments>
             <i class='bx bx-chevron-right toggle-icon'></i>
@@ -109,6 +125,7 @@
         </h5>
 
         <div class="file-upload-section-body">
+            {% if($can_edit): %}
             <form class="file-upload-form" enctype="multipart/form-data"
                 data-upload-url="{{rel_url('/appointment/' . $appointment->getid() . '/files')}}">
                 <div class="file-upload-area" data-dropzone>
@@ -128,6 +145,7 @@
                     placeholder="Περιγραφή (προαιρετικό)" maxlength="255">
                 <span class="paste-status" data-paste-status></span>
             </div>
+            {% endif %}
 
             <!-- Local previews for in-progress uploads -->
             <div class="file-previews" id="file-previews-{{$index}}">
@@ -164,8 +182,10 @@
                     <div class="file-actions">
                         <button type="button" class="view-btn"
                             data-file="{{rel_url('/appointment/' . $appointment->getid() . '/files/' . $f->getid() . '/download')}}">Προβολή</button>
+                        {% if($can_edit): %}
                         <button type="button" class="delete-btn"
                             data-delete-url="{{rel_url('/appointment/' . $appointment->getid() . '/files/' . $f->getid() . '/delete')}}">Διαγραφή</button>
+                        {% endif %}
                     </div>
                 </div>
                 {% endforeach %}
@@ -173,4 +193,59 @@
             </div>
         </div>
     </div>
+
+    <!-- Aggregated edit history for this appointment -- see
+         web/appointment_history.php's own docblock for the 5-minute
+         session design (a session here means "one user's burst of saves
+         on this appointment, each no more than 5 minutes after the
+         last", not a login/browser session). Read-only regardless of
+         $can_edit -- this is a log, not an editable control -- and shown
+         to the same audience as the rest of this card (appointment-edit
+         AND appointment-view), since "see what changed" is exactly what
+         appointment-view is meant to allow (see that permission's own
+         docblock in web/rbac.php). A deliberately separate container
+         from the attachments section above, not a second
+         .file-upload-section -- appointment-files.js auto-initializes
+         upload/dropzone handling on every .file-upload-section element
+         on the page, which this section has no business triggering. -->
+    <div class="appointment-history-section" id="appointment-history-{{$index}}">
+        <h5 class="appointment-history-heading" id="appointment-history-heading-{{$index}}">
+            <i class='bx bx-chevron-right toggle-icon'></i>
+            <span>Ιστορικό Αλλαγών</span>
+            {% if(isset($history) && count($history) > 0): %}
+            <span class="file-count-badge">{{count($history)}}</span>
+            {% endif %}
+        </h5>
+
+        <div class="appointment-history-body">
+            {% if(!isset($history) || count($history) == 0): %}
+            <p class="no-files">Δεν υπάρχουν καταγεγραμμένες αλλαγές</p>
+            {% else: %}
+            <ul class="appointment-history-list">
+                {% foreach($history as $h): %}
+                <li class="appointment-history-item">
+                    <span class="history-user">{{{$h['user']}}}</span>
+                    <span class="history-time">
+                        {% if($h['single_moment']): %}{{$h['started_at']}}{% else: %}{{$h['started_at']}} &ndash; {{$h['ended_at']}}{% endif %}
+                    </span>
+                    <span class="history-fields">{{implode(', ', $h['fields'])}}</span>
+                    <span class="history-count">({{$h['change_count']}} {{($h['change_count'] == 1) ? 'αλλαγή' : 'αλλαγές'}})</span>
+                </li>
+                {% endforeach %}
+            </ul>
+            {% endif %}
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var historyHeading = document.getElementById('appointment-history-heading-{{$index}}');
+            var historySection = document.getElementById('appointment-history-{{$index}}');
+            if (historyHeading && historySection) {
+                historyHeading.addEventListener('click', function() {
+                    historySection.classList.toggle('is-expanded');
+                });
+            }
+        });
+    </script>
 </div>

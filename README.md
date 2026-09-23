@@ -905,3 +905,199 @@ included) stayed fully green throughout. **Files**: `config/settings.info.yaml`,
 `web/ClassesEx.php`, `web/index.php`,
 `web/templates/content/pending_appointments_list.zetem`,
 `tests/functional/appointment_crud.php`.
+
+## New-appointment form styling, backups menu visibility, patient deletion placement, appointment-view permission, financial-view permission, a Home Screen appointments card, and per-appointment edit history
+
+A batch of eight direct requests, landed together:
+
+**1. New-appointment form now matches the edit form's look, with no
+autosave.** `edit_appointment.zetem` (the single-page "Νέο
+Ραντεβού"/"Νέο Χειρουργείο" form, reached from a patient's own record)
+previously used a native `datetime-local` input and none of the shared
+`.appointment-entry`/`.input-header`/`.edit-appointment` styling
+`view_appointment.zetem` already had. Restyled to match: the same
+flatpickr-backed `dateFormat: 'Y-m-d H:i'`/`altFormat: 'd-m-Y H:i'` text
+input every other date field in this app uses (see "Date fields" above),
+inside the same markup classes. Deliberately carries **none** of
+`view_appointment.zetem`'s autosave wiring — no `loader="..."`
+attributes, no `.loader0` element, no `onChange` re-dispatching a
+synthetic `input` event — since the appointment doesn't have an id yet to
+`PATCH` against; this page only ever does one explicit, full-page POST via
+its own Αποθήκευση button.
+
+**2. Backups menu item no longer shown to doctors.** Backup status is an
+ops/infrastructure concern, not a clinical one, and — worth flagging
+separately — the item was already effectively dead for doctors before
+this change: the real gate on `/apps/backup` is zeusfw core's
+`ZEUSFW_PERM_MANAGE_USERS` (since the backup module moved into
+`core/modules/backup/`), which `doctor` has never held. The menu link was
+reachable but any click landed on a 401. `config/settings.info.yaml`'s
+`backup:` menu entry now reads `access: maintenance` (was
+`access: doctor maintenance`). **`maintenance` has the identical problem**
+— it doesn't hold `ZEUSFW_PERM_MANAGE_USERS` either, so it's the intended
+audience of this menu item and still can't actually open the page it links
+to. That's a pre-existing bug this change doesn't fix (out of scope for
+what was asked), and is called out explicitly here so it isn't mistaken
+for resolved: granting `maintenance` (or a purpose-built permission)
+`ZEUSFW_PERM_MANAGE_USERS` — or, better, gating `/apps/backup` on
+something narrower than "can manage users/roles/permissions" — is a
+follow-up someone should pick up deliberately, not as a side effect of a
+menu-visibility change.
+
+**3. Patient deletion moved off the list page, onto the patient's own
+record.** `patients_list.zetem` no longer has an "Ενέργειες" column or a
+per-row delete form at all. `edit_patient.zetem` gained a "Διαγραφή
+Ασθενή" danger-zone block (a `.btn-danger` button, same confirmation-form
+shape as the removed list-row version) right below the main edit form,
+shown only when `$can_delete_patient` (`ZPMS_PERM_PATIENTS_DELETE_PATIENT`)
+is held and `$action !== 'new'` (nothing to delete on the not-yet-saved
+new-patient form). `web/js/scripts.js`'s `trashforms` confirmation-dialog
+list gained `.edit-patient form[confirmation]` alongside the existing
+container selectors, since the delete form now lives inside that
+container instead of `.patients-list`. New `.patient-danger-zone`/
+`.patient-danger-zone .btn-danger` rules in `web/css/styles.css` (border/
+color from the existing `--error` token, same shape as `.btn-secondary`).
+
+**4 + 7. `appointment-view`: read-only appointment/operation detail for
+secretary.** These two bullets were the same request from two angles —
+"secretary can view patient records" and "a permission so secretary can
+view appointment details... but not update them" — implemented as one
+new permission, `ZPMS_PERM_APPOINTMENT_VIEW` (`appointment-view`,
+`web/rbac.php`), granted to `secretary` alongside its existing
+`patients-view-list`/`pending-appointments-manage` (`web/rbac_seed.php`).
+`patient_edit()` (`web/index.php`) now checks
+`$canEditAppointment || $canViewAppointment` (was `$canEditAppointment`
+alone) to decide whether a patient's appointments render as the full
+`view_appointment.zetem` card (notes/dates/attachments) or the bare
+date+location summary — a `appointment-view`-only holder now gets the
+full card, exactly like an editor, just rendered inside a disabled
+`<fieldset>` with the Αποθήκευση/Διαγραφή buttons omitted outright
+(`can_edit` passed into the template as `$canEditAppointment`, unchanged
+in meaning — it always meant "render this editable", it just now also
+controls a `disabled` fieldset instead of being the sole gate on whether
+the card renders at all). The same flag hides the attachment upload
+dropzone, the clipboard-paste control, and each file's Διαγραφή button —
+`appointment_files.php`'s own handlers already independently require
+`ZPMS_PERM_APPOINTMENT_EDIT` regardless of what a crafted request submits,
+so this is cosmetic, not the authorization boundary. The existing-files
+list and each file's Προβολή (view/download) button stay visible either
+way, since viewing historic attachments is exactly what this permission is
+for.
+
+**5. `patient-financial-view`: doctor only, not secretary.** New
+`ZPMS_PERM_PATIENT_FINANCIAL_VIEW` (`patient-financial-view`), granted to
+`doctor` only. `patient_edit()` now only calls
+`zpms_apyweb_fetch_financials()` (the APYweb integration) at all when this
+permission is held — a viewer without it never triggers the outbound
+lookup, not just a hidden result block.
+
+**6. Home Screen "Ραντεβού" card.** A new card on `homepage.zetem`,
+matching the existing Ασθενείς/Νέος Ασθενής/Δημιουργία QR cards' shape,
+linking to `/consultation/pending` — the same "Εκκρεμή Ραντεβού" +
+"Προηγούμενα Ραντεβού" page the nav's Calendar Sync/Pending Appointments
+entries already point at (see the section above), rather than a second,
+separate appointments page. Gated on `ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE`,
+the exact permission that page itself requires, so the card never links
+anywhere its viewer would immediately be refused from.
+
+**8. Appointment edit history, aggregated into 5-minute sessions.** New
+`appointment_history` table (`web/classes/yaml/appointment_history.yaml`)
+and `web/appointment_history.php`. The instrumentation point is
+`appointment_edit_post()` (`web/index.php`) — the single write path for
+every save on an appointment, whether from the explicit Αποθήκευση button
+or from `loader.js`'s own per-keystroke autosave (which submits the
+*whole* form on a 1-second debounce after the last edit, regardless of
+which single field the user actually typed into). The handler now
+captures each field's stored value before its own setters run, and only
+counts a field as "changed" when the newly posted value actually differs
+— never just "present in the POST" — before calling
+`zpms_record_appointment_change($appointmentId, $cuser, $changedFields)`.
+
+That function is the aggregation logic: it looks up the most recent
+`appointment_history` row for this exact appointment+user pair
+(`appointmentHistoryClassEx::getMostRecentSession()`, `web/ClassesEx.php`)
+and, if its `last_change_at` is within `ZPMS_APPOINTMENT_HISTORY_SESSION_MINUTES`
+(5) of now, **extends** that row — merges the newly changed field names
+into its de-duplicated `changed_fields` list, bumps `change_count`, and
+moves `last_change_at` to now — rather than inserting a new row. A gap of
+5+ minutes starts a fresh row instead. This is a **sliding** window, not a
+fixed bucket from the session's start: a user who keeps steadily editing
+(never idle for a full 5 minutes) stays in one session no matter how long
+the whole stretch runs, so "aggregate 5-minute sessions" means "don't
+create a new history entry for every single autosave call", not "cap a
+session at 5 minutes of wall-clock time". Two different users editing the
+same appointment within the same window still get two separate rows —
+`cuser` is part of what identifies "the same session" — since attributing
+a change to the wrong person would defeat the point of a feature titled
+"see what changes everybody made".
+
+Displayed in a new collapsed-by-default "Ιστορικό Αλλαγών" section on
+`view_appointment.zetem` (`zpms_appointment_history_for_display()`,
+`web/appointment_history.php` — resolves each raw field name like
+`appointment-notes` to its Greek label via
+`zpms_appointment_history_field_labels()`, and formats each session as
+either one timestamp or a start–end range depending on whether it was a
+single save), visible to both `appointment-edit` and `appointment-view`
+holders — this is a read-only log, not an editable control, and "see what
+changed" is squarely what `appointment-view` is meant to allow. Uses its
+own `.appointment-history-section` class (`web/css/file-uploads.css`),
+not a second `.file-upload-section`, since `appointment-files.js`
+auto-initializes upload/dropzone/delete handling on every
+`.file-upload-section` element on the page — reusing that class here
+would have it wire up (harmlessly, but pointlessly) against a container
+that has none of those controls. The section's own collapse/expand click
+handler is instead a small inline `<script>` in `view_appointment.zetem`,
+scoped per-appointment-index the same way that template's own flatpickr
+init script already is (`getElementById` with an `{{$index}}`-suffixed
+id), so it doesn't double-bind across the several appointment cards one
+patient page can render.
+
+As with every other schema change in this app, there's no migration
+runner: only `web/classes/yaml/appointment_history.yaml` is committed
+(`web/classes/*.php`/`web/classes/sql/*` are gitignored, generated
+locally) — deploying this means, from `web/classes`:
+```sh
+php ../core/maker/maker.php spill:class:all
+php ../core/maker/maker.php update:bootstrap
+php ../core/maker/maker.php spill:sql:all
+mysql -u <user> -p <db> < sql/appointment_history.sql
+```
+a brand new table with nothing to `ALTER`, same as `pending_appointments`
+before it.
+
+**Deploying items 4/5 above also needs a database step**, separate from
+the schema step: the two new permissions
+(`ZPMS_PERM_APPOINTMENT_VIEW`/`ZPMS_PERM_PATIENT_FINANCIAL_VIEW`) and
+their role grants only take effect once seeded into the existing
+`permissions`/`role_permissions` tables — `bin/migrate_roles.php --yes` is
+idempotent and safe to re-run against a live, already-migrated database
+(it only ever grants a missing (role, permission) pair; it never revokes
+one), so this is exactly the same one command a from-scratch RBAC
+deployment already runs.
+
+**Verified** with new permanent regression tests across
+`tests/functional/patient_crud.php` ("patient deletion is a per-record
+control, not a per-row action on the patient list"),
+`tests/functional/auth_csrf.php` ("a secretary account sees full
+appointment details read-only via appointment-view, but no save/upload/
+delete controls" and "doctor holds patient-financial-view; secretary does
+not"), and `tests/functional/appointment_crud.php` ("appointment history
+aggregates consecutive edits into one 5-minute session" — covers a fresh
+session, a same-session merge, and a backdated `last_change_at` correctly
+starting a new session instead of extending a stale one, via a direct
+`UPDATE ... DATE_SUB(...)` rather than sleeping in the suite — and "the
+Home Screen has an appointments card linking to the pending/previous
+appointments page"). `php -l` clean on every touched PHP file;
+`bin/run_tests.sh` (99/99 static, 43/43 functional — five new tests
+included) stayed fully green throughout. **Files**:
+`config/settings.info.yaml`, `web/ClassesEx.php`,
+`web/appointment_history.php` (new), `web/classes/yaml/appointment_history.yaml`
+(new), `web/css/file-uploads.css`, `web/css/styles.css`, `web/index.php`,
+`web/js/scripts.js`, `web/rbac.php`, `web/rbac_seed.php`,
+`web/templates/content/edit_appointment.zetem`,
+`web/templates/content/edit_patient.zetem`,
+`web/templates/content/homepage.zetem`,
+`web/templates/content/patients_list.zetem`,
+`web/templates/content/view_appointment.zetem`,
+`tests/functional/appointment_crud.php`, `tests/functional/auth_csrf.php`,
+`tests/functional/patient_crud.php`.

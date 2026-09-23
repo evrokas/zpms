@@ -180,6 +180,17 @@
         </div>
     </form>
 
+    {% if($action != 'new' && $can_delete_patient): %}
+        <div class="patient-danger-zone">
+            <form class="inline-delete-form" method="post" action="{{rel_url('/patient/'.$id.'/delete')}}" confirmation>
+                {{ csrf_field() }}
+                <button type="submit" class="btn-danger">
+                    <i class="bx bx-trash"></i> Διαγραφή Ασθενή
+                </button>
+            </form>
+        </div>
+    {% endif %}
+
     {% if($action != 'new' && $can_edit_appointment): %}
         <hr>
         <div class="patient-appointments">

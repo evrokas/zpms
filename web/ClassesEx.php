@@ -339,3 +339,50 @@ class appointmentFilesClassEx extends appointmentFilesClass {
         } else return (null);
     }
 }
+
+// Aggregated per-appointment edit history -- see
+// web/classes/yaml/appointment_history.yaml's own docblock for the
+// 5-minute-session design this table exists to support, and
+// web/appointment_history.php for the write-side merge-or-insert logic
+// (zpms_record_appointment_change()) that's the only thing that ever
+// inserts/updates a row here.
+class appointmentHistoryClassEx extends appointmentHistoryClass {
+
+    // The one session row this appointment/user pair could still extend --
+    // i.e. the most recent one, regardless of how long ago that was.
+    // zpms_record_appointment_change() itself decides whether "most
+    // recent" is actually within the 5-minute window; this just finds the
+    // candidate to check that against.
+    static function getMostRecentSession($appointmentId, string $cuser) {
+        $sql = "SELECT * FROM appointment_history WHERE appointment_id=:appointment_id AND cuser=:cuser ORDER BY last_change_at DESC LIMIT 1";
+        $st = dbConnection::getConnection()->prepare( $sql );
+        $st->bindValue(":appointment_id", $appointmentId, PDO::PARAM_INT);
+        $st->bindValue(":cuser", $cuser, PDO::PARAM_STR);
+        $st->execute();
+        $row = $st->fetch();
+
+        if($row) {
+            $rclass = new appointmentHistoryClass();
+            $rclass->loadFields( $row );
+            return $rclass;
+        } else return (null);
+    }
+
+    // Every session for one appointment, newest first -- powers the
+    // "Ιστορικό Αλλαγών" section on view_appointment.zetem.
+    static function getHistoryForAppointment($appointmentId): array {
+        $sql = "SELECT * FROM appointment_history WHERE appointment_id=:appointment_id ORDER BY last_change_at DESC";
+        $st = dbConnection::getConnection()->prepare( $sql );
+        $st->bindValue(":appointment_id", $appointmentId, PDO::PARAM_INT);
+        $st->execute();
+
+        $list = array();
+        while( $row = $st->fetch() ) {
+            $rclass = new appointmentHistoryClass();
+            $rclass->loadFields( $row );
+            $list[] = $rclass;
+        }
+
+        return ($list);
+    }
+}

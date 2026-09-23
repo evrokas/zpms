@@ -1,0 +1,74 @@
+---
+# Change history for appointments -- "what changed, when, and by whom",
+# aggregated into 5-minute editing sessions rather than one row per raw
+# save. Necessary because every field on the inline appointment card
+# (view_appointment.zetem) autosaves on keystroke via loader.js -- each
+# one submits the WHOLE form 1s after the user stops typing (see that
+# file's own debounce), so a single sentence typed into the notes field
+# would otherwise produce a dozen near-identical raw history rows. See
+# zpms_record_appointment_change() (web/appointment_history.php) for the
+# merge-or-insert logic this table exists to support: a row is extended
+# (last_change_at bumped, changed_fields/change_count updated) rather than
+# duplicated whenever the same user's next save on the same appointment
+# arrives within 5 minutes of their last one on it; a gap longer than that
+# starts a fresh row (a new "session").
+table:
+  name: appointment_history
+  class: appointmentHistoryClass
+
+  fields:
+  - name: guid
+    type: '@guid'
+
+  # Session START time -- when the FIRST save in this aggregated session
+  # happened. Never updated after the row is created; last_change_at
+  # below tracks the most recent one.
+  - name: cdate
+    type: '@cdate'
+
+  # The acting user for this whole session -- one row is always scoped to
+  # exactly one appointment + one user, so two people editing the same
+  # appointment within the same 5 minutes still get two separate rows,
+  # never merged into one ("what changes EVERYBODY made" -- attributing a
+  # change to the wrong person would defeat the point of this table).
+  - name: cuser
+    type: '@cuser'
+
+  # Plain int, not a real FK -- consistent with every other table in this
+  # app referencing appointments.id (see appointment_files.yaml's own
+  # note on this same convention).
+  - name: appointment_id
+    type: int
+    required: true
+
+  # Session END time -- the most recent save folded into this row.
+  # zpms_record_appointment_change() compares "now" against this column
+  # (not cdate) to decide whether the next incoming save extends this
+  # same session or starts a new one -- a sliding window, so a user who
+  # keeps editing steadily (each save under 5 minutes after the last)
+  # stays in one session no matter how long the whole editing stretch
+  # runs, while a gap of 5+ minutes always starts a fresh row.
+  - name: last_change_at
+    type: datetime
+    required: true
+
+  # Comma-separated, de-duplicated, insertion-ordered list of which
+  # fields (appointment-date / appointment-place / appointment-notes)
+  # were actually touched at least once during this session -- "touched"
+  # meaning the posted value differed from what was already stored
+  # (appointment_edit_post() diffs old vs. new before calling this),
+  # never just "present in the autosave POST", since loader.js's own
+  # debounce always submits the whole form regardless of which single
+  # field the user actually typed into.
+  - name: changed_fields
+    type: text
+    required: true
+
+  # How many individual save/autosave POSTs were folded into this one
+  # session row -- lets the history view distinguish "one quick edit"
+  # from "spent several minutes revising this".
+  - name: change_count
+    type: int
+    required: true
+
+...

@@ -44,6 +44,7 @@ function zpms_role_seed_definitions(): array {
                 ZPMS_PERM_BACKUP_ACCESS,
                 ZPMS_PERM_SETTINGS_MANAGE,
                 ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE,
+                ZPMS_PERM_PATIENT_FINANCIAL_VIEW,
             ],
         ],
         // A front-desk account that books/manages phone appointments
@@ -58,12 +59,19 @@ function zpms_role_seed_definitions(): array {
         // once the patient actually shows up (see
         // pending_appointment_convert_post() in web/index.php, gated on
         // exactly the two permissions this role doesn't have).
+        // ZPMS_PERM_APPOINTMENT_VIEW grants full read-only appointment
+        // detail (notes/dates/attachments -- see that constant's own
+        // docblock in web/rbac.php), so a secretary can actually look at
+        // what happened at a past visit, not just that one existed on a
+        // given date. Deliberately no ZPMS_PERM_PATIENT_FINANCIAL_VIEW --
+        // billing history stays doctor-only.
         'secretary' => [
             'label' => 'Γραμματεία',
             'is_superuser' => false,
             'permissions' => [
                 ZPMS_PERM_PATIENTS_VIEW_LIST,
                 ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE,
+                ZPMS_PERM_APPOINTMENT_VIEW,
             ],
         ],
         // A technical/ops account for whoever administers the server --
@@ -97,9 +105,11 @@ function zpms_permission_label_seed(): array {
         ZPMS_PERM_PATIENTS_EDIT_PATIENT => 'Edit a patient record',
         ZPMS_PERM_PATIENTS_DELETE_PATIENT => 'Delete a patient record',
         ZPMS_PERM_APPOINTMENT_EDIT => 'Create/edit/delete appointments and their attachments',
+        ZPMS_PERM_APPOINTMENT_VIEW => 'View full appointment/operation details (read-only)',
         ZPMS_PERM_BACKUP_ACCESS => 'View backup status',
         ZPMS_PERM_SETTINGS_MANAGE => 'Manage clinics/doctors reference data',
         ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE => 'View/create/edit/delete pending (not-yet-a-patient) appointments',
+        ZPMS_PERM_PATIENT_FINANCIAL_VIEW => 'View a patient\'s APYweb financial info (invoices/operations/fee reports)',
         ZEUSFW_PERM_MANAGE_USERS => 'Manage user accounts and roles/permissions',
     ];
 }

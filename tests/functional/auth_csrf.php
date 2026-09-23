@@ -123,6 +123,92 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
         assert_null($row['deleted'], 'the patient was deleted despite the acting account lacking patients-delete-patient');
     });
 
+    $runner->add('a secretary account sees full appointment details read-only via appointment-view, but no save/upload/delete controls', function () use ($baseUrl) {
+        // ZPMS_PERM_APPOINTMENT_VIEW (web/rbac.php) is secretary's new
+        // read-only counterpart to ZPMS_PERM_APPOINTMENT_EDIT -- a holder
+        // of only the former sees the SAME full appointment card
+        // (view_appointment.zetem: notes/dates/attachments) an editor
+        // gets, just rendered inside a disabled <fieldset> with no save/
+        // delete buttons and no upload/paste/delete-attachment controls,
+        // rather than the bare date+location summary a role with neither
+        // permission would get instead (see patient_edit() in
+        // web/index.php).
+        TestSchema::assertSafeToMutate();
+
+        $http = new TestHttpClient($baseUrl);
+        TestFixtures::loginAsSecretary($http);
+
+        $p = new patientsClass([
+            'guid' => guid(), 'cuser' => 'test-fixture', 'cdate' => getDBtime(),
+            'pname' => 'Ασθενής Για Appointment View', 'pdob' => '1990-01-01 00:00:00',
+            'pamka' => '77777777777', 'ptel' => '', 'paddr' => '', 'pemail' => '', 'pnote' => '',
+        ]);
+        $p->insert();
+        $ap = new appointmentsClass([
+            'guid' => guid(), 'cuser' => 'test-fixture', 'cdate' => getDBtime(),
+            'pguid' => $p->getguid(), 'adate' => getDBtime(), 'aplace' => '',
+            'anote' => 'appointment-view fixture note',
+        ]);
+        $ap->insert();
+
+        $page = $http->get('/patient/' . $p->getid() . '/edit');
+        assert_equal(200, $page['status'], 'secretary account could not open a patient with an appointment');
+        assert_contains('appointment-view fixture note', $page['body'],
+            'secretary account did not see the full appointment card (its notes) -- got the bare summary instead');
+        assert_contains('<fieldset disabled', $page['body'], 'the appointment card did not render read-only for a secretary account');
+        assert_not_contains('name="submit" value="Αποθήκευση"', $page['body'], 'secretary account saw a save button on the appointment card');
+        assert_not_contains('name="delete" value="Διαγραφή"', $page['body'], 'secretary account saw a delete button on the appointment card');
+        assert_not_contains('file-upload-form', $page['body'], 'secretary account saw the attachment upload form');
+        assert_not_contains('paste-clipboard-btn', $page['body'], 'secretary account saw the clipboard-paste control');
+        assert_not_contains('delete-btn', $page['body'], 'secretary account saw an attachment delete button');
+
+        // Server-side authorization is unchanged and independent of any
+        // of the above -- appointment_files.php's own handlers still
+        // require ZPMS_PERM_APPOINTMENT_EDIT regardless of what a
+        // crafted request submits.
+        $res = $http->post('/appointment/' . $ap->getid() . '/edit', [
+            'csrf_token' => TestHttpClient::extractCsrfToken($page['body']),
+            'submit' => '1',
+            'appointment-date-1' => '2026-09-03',
+            'appointment-place' => '',
+            'appointment-notes' => 'tampered by a view-only account',
+        ]);
+        assert_contains('401', $res['body'], 'secretary account was NOT refused appointment-edit on a crafted POST');
+        $row = dbConnection::getConnection()
+            ->query('SELECT anote FROM appointments WHERE id = ' . $ap->getid())
+            ->fetch();
+        assert_equal('appointment-view fixture note', $row['anote'], 'the appointment was modified despite the acting account lacking appointment-edit');
+    });
+
+    $runner->add('doctor holds patient-financial-view; secretary does not', function () {
+        // patient_edit() only calls out to APYweb at all when
+        // ZPMS_PERM_PATIENT_FINANCIAL_VIEW is held (see that constant's
+        // own docblock in web/rbac.php) -- the integration itself is
+        // unconfigured in this test environment, so asserting on the
+        // rendered page would pass for every role regardless of
+        // permission. Checked directly against role_permissions instead,
+        // the same way admin_crud.php's own role/permission tests do.
+        TestSchema::assertSafeToMutate();
+
+        $financialPerm = permissionsClassEx::sgetByName(ZPMS_PERM_PATIENT_FINANCIAL_VIEW);
+        assert_not_null($financialPerm, "the '" . ZPMS_PERM_PATIENT_FINANCIAL_VIEW . "' permission was not seeded");
+
+        $doctorRole = rolesClassEx::sgetByName('doctor');
+        $secretaryRole = rolesClassEx::sgetByName('secretary');
+        assert_not_null($doctorRole, "the 'doctor' role was not seeded");
+        assert_not_null($secretaryRole, "the 'secretary' role was not seeded");
+
+        $db = dbConnection::getConnection();
+        $hasGrant = function ($roleId, $permId) use ($db) {
+            $stmt = $db->prepare('SELECT id FROM role_permissions WHERE role_id = :r AND permission_id = :p');
+            $stmt->execute([':r' => $roleId, ':p' => $permId]);
+            return (bool)$stmt->fetch();
+        };
+
+        assert_true($hasGrant($doctorRole->getid(), $financialPerm->getid()), 'doctor role is missing patient-financial-view');
+        assert_false($hasGrant($secretaryRole->getid(), $financialPerm->getid()), 'secretary role unexpectedly holds patient-financial-view');
+    });
+
     $runner->add('a logged-in administrator (is_superuser) account passes every permission check', function () use ($baseUrl) {
         // The old system's 'administrator: all' config value crashed with a
         // fatal TypeError the moment any permission check actually reached

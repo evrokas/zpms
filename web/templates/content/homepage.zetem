@@ -30,5 +30,13 @@
             <span class="dashboard-card-title">Δημιουργία QR</span>
             <span class="dashboard-card-desc">Δημιουργία κωδικού QR</span>
         </a>
+
+        {% if($can_manage_appointments): %}
+        <a class="dashboard-card hover-lift" href="{{rel_url('/consultation/pending')}}">
+            <i class="bx bx-calendar"></i>
+            <span class="dashboard-card-title">Ραντεβού</span>
+            <span class="dashboard-card-desc">Εκκρεμή και προηγούμενα ραντεβού</span>
+        </a>
+        {% endif %}
     </div>
 </div>

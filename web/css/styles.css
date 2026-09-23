@@ -295,6 +295,37 @@ form .input-div {
         color: var(--text);
     }
 
+    /* "Διαγραφή Ασθενή" (Delete patient) -- edit_patient.zetem's own
+       .patient-danger-zone, a real <button> (not input[type=submit]),
+       since the delete action is its own small <form>, separate from
+       the main patient-fields form above. Same shape as .btn-secondary,
+       colored with the --error tokens icon-btn-danger already uses, so
+       it reads as the one genuinely destructive action on the page. */
+    .patient-danger-zone {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--medium-gray);
+    }
+
+    .patient-danger-zone .btn-danger {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0.6rem 1rem;
+        border: 1.5px solid var(--error);
+        border-radius: var(--border-radius);
+        background-color: white;
+        color: var(--error);
+        font-weight: bold;
+        cursor: pointer;
+        transition: background-color var(--transition-fast), color var(--transition-fast);
+    }
+
+    .patient-danger-zone .btn-danger:hover {
+        background-color: var(--error);
+        color: white;
+    }
+
     form .input-div .date-picker-input input {
         margin: 0;
         padding: 0;

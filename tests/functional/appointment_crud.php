@@ -96,6 +96,81 @@ function zpms_functional_appointment_crud(TestRunner $runner, TestHttpClient $ht
         assert_equal('edited by the regression suite', $row['anote'], 'appointment note was not updated');
     });
 
+    $runner->add('appointment history aggregates consecutive edits into one 5-minute session', function () use ($http) {
+        // zpms_record_appointment_change() (web/appointment_history.php)
+        // is the write side of this feature -- called from
+        // appointment_edit_post() every time a field's posted value
+        // actually differs from what was stored. The previous test just
+        // changed appointment-place + appointment-notes, so exactly one
+        // appointment_history row should now exist for this appointment,
+        // recording both fields.
+        TestSchema::assertSafeToMutate();
+        $apptId = $GLOBALS['zpms_test_appointment_id'];
+        $db = dbConnection::getConnection();
+
+        $rows = $db->query("SELECT * FROM appointment_history WHERE appointment_id = $apptId ORDER BY id")->fetchAll();
+        assert_equal(1, count($rows), 'expected exactly one appointment_history row after the first edit');
+        assert_equal(1, (int)$rows[0]['change_count'], 'a fresh session should start with change_count = 1');
+        // appointment-notes is the one field guaranteed to genuinely
+        // differ from what was stored (each edit in this suite posts a
+        // distinct note) -- appointment-place/-date may or may not also
+        // show up here depending on how the fixture's "test-clinic"
+        // machine name (which doesn't resolve to a real locationsClassEx
+        // row) and the exact date string happen to normalize, so this
+        // test doesn't assert on those two either way.
+        assert_contains('appointment-notes', $rows[0]['changed_fields'], 'the notes change was not recorded');
+        $firstRowId = (int)$rows[0]['id'];
+
+        // A second, immediate edit on the same appointment by the same
+        // user (well under 5 minutes after the first) must extend that
+        // same row rather than create a new one.
+        $patientId = $GLOBALS['zpms_test_appt_patient_id'];
+        $page = $http->get("/patient/$patientId/edit");
+        $token = TestHttpClient::extractCsrfToken($page['body']);
+
+        $res = $http->post("/appointment/$apptId/edit", [
+            'csrf_token' => $token,
+            'submit' => '1',
+            "appointment-date-$apptId" => '2026-09-02',
+            'appointment-place' => 'test-clinic',
+            'appointment-notes' => 'edited again, moments later',
+        ]);
+        assert_equal(302, $res['status'], "second edit-appointment POST did not redirect (got {$res['status']})");
+
+        $rows = $db->query("SELECT * FROM appointment_history WHERE appointment_id = $apptId ORDER BY id")->fetchAll();
+        assert_equal(1, count($rows), 'a second edit within 5 minutes created a new session row instead of extending the existing one');
+        assert_equal($firstRowId, (int)$rows[0]['id'], 'the extended row is not the same row as the first session');
+        assert_equal(2, (int)$rows[0]['change_count'], 'change_count was not incremented on the extended session');
+
+        // Backdate that session's last_change_at by 6 minutes (past the
+        // 5-minute window) to deterministically exercise the "gap too
+        // long -- start a fresh session" branch without sleeping in the
+        // test suite.
+        $db->exec("UPDATE appointment_history SET last_change_at = DATE_SUB(last_change_at, INTERVAL 6 MINUTE) WHERE id = $firstRowId");
+
+        $page = $http->get("/patient/$patientId/edit");
+        $token = TestHttpClient::extractCsrfToken($page['body']);
+        $res = $http->post("/appointment/$apptId/edit", [
+            'csrf_token' => $token,
+            'submit' => '1',
+            "appointment-date-$apptId" => '2026-09-02',
+            'appointment-place' => 'test-clinic',
+            'appointment-notes' => 'edited after the session window elapsed',
+        ]);
+        assert_equal(302, $res['status'], "third edit-appointment POST did not redirect (got {$res['status']})");
+
+        $rows = $db->query("SELECT * FROM appointment_history WHERE appointment_id = $apptId ORDER BY id")->fetchAll();
+        assert_equal(2, count($rows), 'an edit after the 5-minute window should start a new session row, not extend the stale one');
+        assert_equal(1, (int)$rows[1]['change_count'], 'the new session should start its own change_count at 1');
+
+        // The patient page renders the aggregated sessions, newest first,
+        // with the resolved Greek field label and a change count.
+        $editPage = $http->get("/patient/$patientId/edit");
+        assert_contains('Ιστορικό Αλλαγών', $editPage['body'], 'the appointment card is missing the history section');
+        assert_contains('Σημειώσεις', $editPage['body'], 'the history section does not show the resolved "Σημειώσεις" field label');
+        assert_contains('2 αλλαγές', $editPage['body'], 'the history section does not show the merged session\'s change count');
+    });
+
     $runner->add('delete (soft-delete) the appointment', function () use ($http) {
         TestSchema::assertSafeToMutate();
         $apptId = $GLOBALS['zpms_test_appointment_id'] ?? null;
@@ -187,5 +262,19 @@ function zpms_functional_appointment_crud(TestRunner $runner, TestHttpClient $ht
         $posPrevious = strpos($page['body'], 'Προηγούμενα Ραντεβού');
         assert_not_null($posPending, 'pending-appointments heading is missing');
         assert_true($posPending < $posPrevious, 'pending appointments must be listed before previous appointments');
+    });
+
+    $runner->add('the Home Screen has an appointments card linking to the pending/previous appointments page', function () use ($http) {
+        // homepage() (web/index.php) gates this card on
+        // ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE, the same permission
+        // /consultation/pending itself requires -- deliberately points at
+        // that existing page rather than a second, separate appointments
+        // list. The doctor test user holds this permission (see
+        // web/rbac_seed.php).
+        $page = $http->get('/');
+        assert_equal(200, $page['status'], 'GET / did not return 200 for a logged-in doctor account');
+        assert_contains('dashboard-card', $page['body'], 'homepage did not render as the dashboard grid');
+        assert_contains('Ραντεβού', $page['body'], 'homepage is missing the appointments card');
+        assert_contains('href="/consultation/pending"', $page['body'], 'the appointments card does not link to /consultation/pending');
     });
 }
