@@ -456,16 +456,23 @@ class pendingAppointmentsClassEx extends pendingAppointmentsClass {
     // not the same list: `appointments` only has a row once a doctor
     // actually converts a pending entry (or logs one directly on a
     // patient's file), so a calendar-native event nobody ever acted on
-    // -- cancelled in person without touching this app, or simply a
-    // no-show -- would never appear there at all despite genuinely having
-    // been on the calendar. Deliberately NOT filtered on
-    // converted_at/cancelled_at -- a past calendar event is "history"
-    // either way, whether or not it was ever turned into a patient
-    // record. A converted row's patient name still links through to
-    // their real record (via converted_patient_id); an unconverted one
+    // -- simply a no-show, say -- would never appear there at all despite
+    // genuinely having been on the calendar.
+    //
+    // Filtered on cancelled_at IS NULL -- an earlier version of this
+    // deliberately did NOT filter on it, on the theory that a cancelled
+    // event is still "history" either way. In practice that was wrong:
+    // pending_appointment_delete() and bin/sync_google_calendar.php both
+    // delete the event from Calendar itself when cancelling (see either's
+    // own docblock), so a cancelled row was never a real appointment that
+    // happened -- it was un-done, and showing it here read as "this
+    // appointment is shown even though it was deleted," not as history.
+    // converted_at is still NOT filtered on -- a converted row's patient
+    // name links through to their real record (via converted_patient_id);
+    // an unconverted-but-not-cancelled one (a no-show nobody dismissed)
     // shows as plain text, since there's no patient record to link to.
     static function getPreviousFromCalendar(): array {
-        $rows = self::sgetAll('google_event_id IS NOT NULL AND appointment_datetime < NOW()', null);
+        $rows = self::sgetAll('google_event_id IS NOT NULL AND appointment_datetime < NOW() AND cancelled_at IS NULL', null);
         usort($rows, fn($a, $b) => strcmp($b->getappointment_datetime(), $a->getappointment_datetime()));
         return $rows;
     }

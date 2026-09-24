@@ -269,6 +269,25 @@ function zpms_functional_appointment_crud(TestRunner $runner, TestHttpClient $ht
         ]);
         $paNoCalendar->insert();
 
+        // A CANCELLED calendar-sourced pending_appointments row -- must NOT
+        // appear in "Προηγούμενα Ραντεβού" either, even though it has a
+        // google_event_id and its date has passed. Both
+        // pending_appointment_delete() and bin/sync_google_calendar.php
+        // delete the actual Calendar event when cancelling one of these
+        // (see either's own docblock), so a cancelled row was never a real
+        // appointment that happened -- it was undone, and this section is
+        // "what actually took place," not "everything ZPMS ever synced."
+        $paCancelled = new pendingAppointmentsClass([
+            'guid' => guid(), 'cuser' => 'test-fixture', 'cdate' => getDBtime(),
+            'patient_name' => 'Ασθενής Ακυρωμένου Ραντεβού',
+            'appointment_datetime' => date('Y-m-d H:i:s', strtotime('-30 days')),
+            'location' => 'Cancelled Appt Clinic',
+            'google_event_id' => 'test-fixture-calendar-event-' . guid(),
+            'google_synced_at' => getDBtime(),
+            'cancelled_at' => getDBtime(),
+        ]);
+        $paCancelled->insert();
+
         $page = $http->get('/consultation/pending');
         assert_equal(200, $page['status'], 'GET /consultation/pending did not return 200');
 
@@ -292,6 +311,8 @@ function zpms_functional_appointment_crud(TestRunner $runner, TestHttpClient $ht
         assert_contains('Ασθενής Προηγούμενου Ραντεβού', $previousSection, 'previous appointments section does not list the calendar-sourced fixture');
         assert_contains('Previous Appt Clinic', $previousSection, 'previous appointments section does not show the fixture\'s location');
         assert_not_contains('Ασθενής Χωρίς Ημερολόγιο', $previousSection, 'previous appointments section listed a past booking with no google_event_id');
+        assert_not_contains('Ασθενής Ακυρωμένου Ραντεβού', $previousSection, 'previous appointments section listed a cancelled/deleted appointment');
+        assert_not_contains('Ασθενής Ακυρωμένου Ραντεβού', $pendingSection, 'a cancelled appointment should not show as still pending either');
     });
 
     $runner->add('the Home Screen has an appointments card linking to the pending/previous appointments page', function () use ($http) {
