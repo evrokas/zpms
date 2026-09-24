@@ -1,0 +1,28 @@
+---
+cmd: ../../fw/maker/maker.php --name locations.feeder.yaml --dir ../classes/yaml/
+  feed:gen:yaml
+createdate: 12-05-2024 16:15:06
+schema: ../classes/yaml/locations.yaml
+key:
+  name: lang
+  value:
+  - en
+  - gr
+data:
+  en:
+    guid: ed17ba2c-b7f0-11f1-a6a7-00163ee13daa
+    lang: en
+    cdate: "2024-04-28 17:40:02"
+    cuser: guest
+    name: Henry Dunant
+    machinename: henry_dunant
+    address: Eleftheriou Venizelou 1 & Ethnarchou Makariou 8, 18547, Neo Faliro
+  gr:
+    guid: edb74fe2-b7f0-11f1-97cf-00163ee13daa
+    lang: gr
+    cdate: "2024-04-28 17:40:02"
+    cuser: guest
+    name: Ερρίκος Ντυνάν
+    machinename: henry_dunant
+    address: Ελευθερίου Βενιζέλου 1 & Εθνάρχου Μακαρίου 9, 18547, Νέο Φάληρο
+...
