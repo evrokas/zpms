@@ -1,0 +1,28 @@
+---
+cmd: ../../fw/maker/maker.php --name locations.feeder.yaml --dir ../classes/yaml/
+  feed:gen:yaml
+createdate: 12-05-2024 16:15:06
+schema: ../classes/yaml/locations.yaml
+key:
+  name: lang
+  value:
+  - en
+  - gr
+data:
+  en:
+    guid: eeae9842-b7f0-11f1-8937-00163ee13daa
+    lang: en
+    cdate: "2024-04-28 17:40:02"
+    cuser: guest
+    name: Bioclinic Athens
+    machinename: bioclinic_athens
+    address: Eleftheriou Venizelou 1 & Ethnarchou Makariou 8, 18547, Neo Faliro
+  gr:
+    guid: ef3f8dde-b7f0-11f1-b241-00163ee13daa
+    lang: gr
+    cdate: "2024-04-28 17:40:02"
+    cuser: guest
+    name: Βιοκλινική Αθηνών
+    machinename: bioclinic_athens
+    address: Ελευθερίου Βενιζέλου 1 & Εθνάρχου Μακαρίου 9, 18547, Νέο Φάληρο
+...
