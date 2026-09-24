@@ -1232,3 +1232,55 @@ footer/status blocks.
 `BUILD_NUMBER`, `web/modules/buildnumber/{buildnumber.php,
 buildnumber.info.yaml}`, `web/templates/blocks/buildnumber.zetem`,
 `config/settings.info.yaml`.
+
+## Stale pending appointments now drop into "Προηγούμενα Ραντεβού" instead of lingering forever, with a reschedule action
+
+Direct bug report: a booking from a past day, nobody having converted or
+cancelled it, was still showing in "Εκκρεμή Ραντεβού" mixed in with
+genuinely upcoming ones — that query never filtered on date at all, so a
+stale entry just accumulated there indefinitely. Fixed by adding
+`DATE(appointment_datetime) >= CURDATE()` to `pending_appointments_list()`'s
+query (`web/index.php`) — compared by calendar day, not exact time
+(`NOW()`), so today's own bookings stay visible all day regardless of
+what hour they were for; only entries from a fully past day drop off.
+
+**Nothing is lost — it moves into "Προηγούμενα Ραντεβού" below.** That
+section's own query (`pendingAppointmentsClassEx::getPreviousFromCalendar()`,
+renamed `getPastPendingAppointments()`) used to require a non-null
+`google_event_id`, i.e. "only rows that synced with Google Calendar." That
+had to go: a stale, non-Calendar-synced booking newly excluded from the
+still-pending list above would otherwise have nowhere to go at all — on an
+install with no Calendar integration configured, every row's
+`google_event_id` is permanently `NULL`, so it would simply vanish from
+the page the instant its date passed. Dropping that filter also fixed a
+narrower, pre-existing version of the same gap: a row that got converted
+without ever having synced to Calendar had nowhere to show up here either,
+despite being exactly the kind of settled history this section exists
+for. The section's actual scope is now "every past `pending_appointments`
+row that isn't cancelled," Calendar-linked or not.
+
+**A new "Ενέργειες" column on "Προηγούμενα Ραντεβού"** offers a
+"Επαναπρογραμματισμός" (reschedule) action — a plain link to
+`/consultation/pending/{id}/edit`, the same edit form the still-pending
+list already uses — for any row that hasn't been converted. A converted
+row gets none: `pending_appointment_edit()` itself already refuses a
+converted row ("already processed"), so offering that link there would
+just be a dead end; its row already links the patient's name through to
+their real record instead, unchanged from before.
+
+**Verified**: extended the existing regression test in
+`tests/functional/appointment_crud.php` rather than replacing it —
+confirms a past-due, non-Calendar-synced booking now shows under
+"Προηγούμενα Ραντεβού" (previously asserted the opposite, back when that
+was the deliberate, if ultimately wrong, design) rather than "Εκκρεμή
+Ραντεβού"; a genuinely upcoming booking still shows under "Εκκρεμή
+Ραντεβού" (the date filter isn't over-broad); a cancelled row still shows
+under neither (unchanged from the previous fix); and — checked by each
+fixture's own specific edit URL, not a page-wide search for the label
+text, so one row's link can't be mistaken for another's — both an
+unconverted Calendar-synced and an unconverted non-Calendar fixture offer
+a reschedule link, while a converted fixture does not and links to its
+real patient record instead. `bin/run_tests.sh` (99/99 static, 43/43
+functional) stayed fully green throughout. **Files**: `web/index.php`,
+`web/ClassesEx.php`, `web/templates/content/pending_appointments_list.zetem`,
+`tests/functional/appointment_crud.php`.

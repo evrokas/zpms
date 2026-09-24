@@ -448,16 +448,25 @@ class pendingAppointmentsClassEx extends pendingAppointmentsClass {
 
     // Powers the "Προηγούμενα Ραντεβού" section on
     // pending_appointments_list.zetem, below the still-pending list --
-    // deliberately sourced from the Google Calendar sync (any row this
-    // app ever pulled in or pushed out via bin/sync_google_calendar.php,
-    // identified by a non-null google_event_id) whose own
-    // appointment_datetime has already passed, rather than from
-    // `appointments` (real, patient-record-linked visits). The two are
-    // not the same list: `appointments` only has a row once a doctor
-    // actually converts a pending entry (or logs one directly on a
-    // patient's file), so a calendar-native event nobody ever acted on
-    // -- simply a no-show, say -- would never appear there at all despite
-    // genuinely having been on the calendar.
+    // every pending_appointments row whose own appointment_datetime has
+    // already passed and isn't cancelled, whether or not it ever synced
+    // with Google Calendar (google_event_id) and whether or not it was
+    // ever converted into a real `appointments`/patient record.
+    //
+    // Used to require google_event_id IS NOT NULL -- deliberately dropped:
+    // pending_appointments_list() (web/index.php) now excludes any row
+    // whose date has passed from the still-pending section above (staff
+    // asked for that queue to only ever show upcoming/today's actionable
+    // bookings, not clutter indefinitely with stale ones nobody acted on),
+    // so a past, non-Calendar-synced booking needed somewhere to still be
+    // visible -- otherwise it would simply vanish from the page the moment
+    // its date passed, on an install with no Calendar integration
+    // configured at all (every row's google_event_id stays NULL there
+    // forever, so the old filter would have hidden every one of these).
+    // This also fixed a narrower, pre-existing version of the same gap: a
+    // row converted without ever having synced to Calendar previously had
+    // nowhere to show up here either, despite being exactly the kind of
+    // settled history this section exists for.
     //
     // Filtered on cancelled_at IS NULL -- an earlier version of this
     // deliberately did NOT filter on it, on the theory that a cancelled
@@ -469,10 +478,13 @@ class pendingAppointmentsClassEx extends pendingAppointmentsClass {
     // appointment is shown even though it was deleted," not as history.
     // converted_at is still NOT filtered on -- a converted row's patient
     // name links through to their real record (via converted_patient_id);
-    // an unconverted-but-not-cancelled one (a no-show nobody dismissed)
-    // shows as plain text, since there's no patient record to link to.
-    static function getPreviousFromCalendar(): array {
-        $rows = self::sgetAll('google_event_id IS NOT NULL AND appointment_datetime < NOW() AND cancelled_at IS NULL', null);
+    // an unconverted one (a no-show, or simply never acted on before its
+    // date passed) shows as plain text with its own "Επαναπρογραμματισμός"
+    // (reschedule) action, since there's no patient record to link to and
+    // -- unlike a converted or cancelled row -- it's still something a
+    // reschedule can meaningfully apply to.
+    static function getPastPendingAppointments(): array {
+        $rows = self::sgetAll('appointment_datetime < NOW() AND cancelled_at IS NULL', null);
         usort($rows, fn($a, $b) => strcmp($b->getappointment_datetime(), $a->getappointment_datetime()));
         return $rows;
     }

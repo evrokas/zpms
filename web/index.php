@@ -1154,10 +1154,23 @@ require_once(__DIR__ . '/zpms_mailer.php');
 
     /**
      * "Εκκρεμή Ραντεβού" -- every not-yet-converted, not-yet-cancelled
-     * pending_appointments row, regardless of whether it was booked on
-     * /consultation/new or pulled in from a Calendar-native event by
-     * bin/sync_google_calendar.php. Secretary-level: viewing/editing/
-     * cancelling a phone booking never needs real patient-record access.
+     * pending_appointments row whose own date hasn't already passed,
+     * regardless of whether it was booked on /consultation/new or pulled
+     * in from a Calendar-native event by bin/sync_google_calendar.php.
+     * Secretary-level: viewing/editing/cancelling a phone booking never
+     * needs real patient-record access.
+     *
+     * DATE(appointment_datetime) >= CURDATE() -- without this, a booking
+     * nobody converted or cancelled by the end of its own day just sits
+     * here indefinitely, mixed in with genuinely upcoming ones, since
+     * neither converting nor cancelling happens automatically just
+     * because the date passed. Compares by calendar day, not exact time
+     * (NOW()), so today's own appointments stay visible all day
+     * regardless of what time they were booked for -- only entries from
+     * a fully past day (yesterday and older) drop off. Nothing is lost:
+     * a stale entry moves down into "Προηγούμενα Ραντεβού" below
+     * (getPastPendingAppointments(), which has no such cutoff) instead,
+     * with its own reschedule action there.
      */
     function pending_appointments_list($params) {
         global $kernel;
@@ -1165,20 +1178,20 @@ require_once(__DIR__ . '/zpms_mailer.php');
         if(($errmsg = rbacClass::require(ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE)))return $errmsg;
 
         $pending = pendingAppointmentsClass::sgetAll(
-            'converted_at IS NULL AND cancelled_at IS NULL',
+            'converted_at IS NULL AND cancelled_at IS NULL AND DATE(appointment_datetime) >= CURDATE()',
             null
         );
         usort($pending, fn($a, $b) => strcmp($a->getappointment_datetime(), $b->getappointment_datetime()));
 
         return (Renderer::render("pending_appointments_list.zetem", [
             'pending' => $pending,
-            // Google Calendar's own past events (not real, patient-linked
-            // appointments) -- newest first, shown below the still-pending
-            // list above as a "Προηγούμενα Ραντεβού" history section. See
-            // pendingAppointmentsClassEx::getPreviousFromCalendar()'s own
-            // docblock for why this reads from pending_appointments/
-            // Calendar rather than the appointments table.
-            'previous' => pendingAppointmentsClassEx::getPreviousFromCalendar(),
+            // Every past pending_appointments row not cancelled -- newest
+            // first, shown below the still-pending list above as a
+            // "Προηγούμενα Ραντεβού" history section, including anything
+            // that just dropped off the still-pending list above by date.
+            // See pendingAppointmentsClassEx::getPastPendingAppointments()'s
+            // own docblock for the full reasoning.
+            'previous' => pendingAppointmentsClassEx::getPastPendingAppointments(),
             // Gates the per-row "Δημιουργία Φακέλου" button -- a
             // secretary-only account sees the list but not that action,
             // same permission split pending_appointment_convert()

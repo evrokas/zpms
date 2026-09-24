@@ -73,6 +73,7 @@
             <th>Όνομα</th>
             <th>Τηλέφωνο</th>
             <th>Τοποθεσία</th>
+            <th>Ενέργειες</th>
         </thead>
         <tbody>
             {% foreach($previous as $p): %}
@@ -87,6 +88,11 @@
                 </td>
                 <td data-column="phone">{{{$p->getpatient_phone() ?: '-'}}}</td>
                 <td data-column="location">{{{$p->getlocation() ?: '-'}}}</td>
+                <td class="actions" data-column="actions">
+                    {% if(!$p->getconverted_patient_id()): %}
+                    <a class="icon-btn" href="{{rel_url('/consultation/pending/'.$p->getid().'/edit')}}" title="Επαναπρογραμματισμός"><i class="bx bx-calendar-edit"></i></a>
+                    {% endif %}
+                </td>
             </tr>
             {% endforeach %}
         </tbody>
