@@ -243,7 +243,7 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
         $loginPage = $http->get('/login');
         $token = TestHttpClient::extractCsrfToken($loginPage['body']);
         $loginRes = $http->post('/login', ['csrf_token' => $token, 'username' => $uname, 'password' => $password]);
-        assert_contains('/profile', (string)$loginRes['location'], 'login with the administrator account did not succeed');
+        assert_equal('/', (string)$loginRes['location'], 'login with the administrator account did not succeed');
 
         $settingsPage = $http->get('/apps/edit_clinics');
         assert_equal(200, $settingsPage['status'], 'administrator account did not get 200 from /apps/edit_clinics');
@@ -261,7 +261,10 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
             'username' => TestFixtures::USERNAME,
             'password' => 'definitely-the-wrong-password',
         ]);
-        assert_not_equal('/profile', (string)$res['location'], 'login succeeded with a wrong password');
+        // A successful login redirects to '/' (zeusfw core's login_post())
+        // -- checked against that target, not '/profile', to still be a
+        // real check that this login did NOT succeed.
+        assert_not_equal('/', (string)$res['location'], 'login succeeded with a wrong password');
     });
 
     $runner->add('a successful login upgrades a legacy sha256 password hash to bcrypt', function () use ($baseUrl) {
@@ -298,7 +301,7 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
         $loginPage = $http->get('/login');
         $token = TestHttpClient::extractCsrfToken($loginPage['body']);
         $res = $http->post('/login', ['csrf_token' => $token, 'username' => $uname, 'password' => $password]);
-        assert_contains('/profile', (string)$res['location'], 'login with the legacy-hash account did not succeed');
+        assert_equal('/', (string)$res['location'], 'login with the legacy-hash account did not succeed');
 
         $after = dbConnection::getConnection()
             ->query("SELECT upass FROM users WHERE uname = '$uname'")
@@ -347,6 +350,27 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
         $res = $http->get('/apps/edit_clinics');
         assert_equal(200, $res['status'], 'GET /apps/edit_clinics did not return 200 for a logged-in doctor');
         assert_not_contains('401', $res['body'], '/apps/edit_clinics still shows the 401 page for a logged-in doctor');
+    });
+
+    $runner->add('a doctor (backup-access holder) can reach /apps/backup; a secretary (no backup-access) is refused', function () use ($baseUrl) {
+        // zeusfw core's core/modules/backup/backup.php checks
+        // zeusfw_app_backup_permission() (web/rbac.php), which this app
+        // points at its own ZPMS_PERM_BACKUP_ACCESS instead of the
+        // framework default (ZEUSFW_PERM_MANAGE_USERS) -- 'doctor' and
+        // 'maintenance' both hold that permission (web/rbac_seed.php),
+        // 'secretary' holds neither it nor ZEUSFW_PERM_MANAGE_USERS.
+        $http = new TestHttpClient($baseUrl);
+        TestFixtures::loginAsTestUser($http);
+
+        $res = $http->get('/apps/backup');
+        assert_equal(200, $res['status'], 'GET /apps/backup did not return 200 for a logged-in doctor');
+        assert_not_contains('401', $res['body'], '/apps/backup still shows the 401 page for a logged-in doctor');
+
+        $http2 = new TestHttpClient($baseUrl);
+        TestFixtures::loginAsSecretary($http2);
+
+        $res2 = $http2->get('/apps/backup');
+        assert_contains('401', $res2['body'], 'a secretary account (no backup-access) should be refused /apps/backup');
     });
 
     $runner->add('a POST without a CSRF token is rejected and does not write data', function () use ($baseUrl) {

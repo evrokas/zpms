@@ -1319,3 +1319,32 @@ horizontally on mobile exactly like `.patients-list` already does
 the underlying `overflow-x: auto` is working correctly). `bin/run_tests.sh`
 (99/99 static, 43/43 functional) stayed green throughout — CSS-only, no
 template or handler changes. **Files**: `web/css/styles.css`.
+
+## Restored real "Backups" nav access for `backup-access` holders
+
+The "Backups" nav menu item (Apps → Αντίγραφα Ασφαλείας, `/apps/backup`)
+was visible to `maintenance` but every click 401'd — the page's own
+permission check, in zeusfw core's `core/modules/backup/backup.php`, had
+been switched to the framework-level `ZEUSFW_PERM_MANAGE_USERS`, which
+`maintenance` deliberately never holds (see that role's own docblock in
+`web/rbac_seed.php`: "account/role administration stays an
+administrator-only concern"). `doctor` — which *does* hold this app's own
+`backup-access` permission — had been dropped from the menu's `access:`
+list entirely for the same reason, one step earlier.
+
+Fixed at the source: zeusfw core now offers
+`zeusfw_app_backup_permission()`, an opt-in override (see zeusfw's own
+CLAUDE.md, same date, for the framework-level half of this). `web/rbac.php`
+defines it to return `ZPMS_PERM_BACKUP_ACCESS` — the permission this app
+already had seeded and granted to `doctor`/`maintenance`, just never
+actually wired to the page that name implies — instead of accepting the
+framework's broader default. `config/settings.info.yaml`'s "Backups" menu
+item is `access: doctor maintenance` again, matching exactly who holds
+that permission now that the page-level check does too.
+
+**Verified**: a real `doctor` test account now gets a genuine `200` from
+`/apps/backup` (previously `401`); a `secretary` account (holds neither
+`backup-access` nor `users-manage`) is still correctly refused.
+`bin/run_tests.sh` (99/99 static, 44/44 functional — one new test added)
+stayed fully green throughout. **Files**: `web/rbac.php`,
+`config/settings.info.yaml`, `tests/functional/auth_csrf.php`.

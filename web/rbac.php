@@ -68,6 +68,12 @@ const ZPMS_PERM_APPOINTMENT_EDIT = 'appointment-edit';
 // patient list/record without full appointment detail, so this stays its
 // own permission rather than folding into that one.
 const ZPMS_PERM_APPOINTMENT_VIEW = 'appointment-view';
+// Gates /apps/backup (zeusfw core's core/modules/backup/backup.php) via
+// zeusfw_app_backup_permission() below -- kept as this app's own,
+// narrower permission specifically so a role like 'maintenance' (see
+// web/rbac_seed.php) can view backup status without also being trusted
+// with ZEUSFW_PERM_MANAGE_USERS (user/role administration), which that
+// role deliberately never holds.
 const ZPMS_PERM_BACKUP_ACCESS = 'backup-access';
 const ZPMS_PERM_SETTINGS_MANAGE = 'settings-manage';
 // Gates the read-only APYweb financial-info block on a patient's own
@@ -104,6 +110,17 @@ const ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE = 'pending-appointments-manage';
 // too; ZEUSFW_PERM_MANAGE_USERS is the exact same string value the old
 // ZPMS_PERM_USERS_MANAGE constant held, so no permissions/role_permissions
 // data migration was needed when adopting this.
+// Opt-in override zeusfw core's core/modules/backup/backup.php checks via
+// function_exists() before falling back to ZEUSFW_PERM_MANAGE_USERS --
+// same extension-point convention as zeusfw_app_resolve_user_roles() in
+// that framework's own core/lib/Rbac.php. Must be defined before
+// $kernel->boot() (web/index.php) registers modules -- web/rbac.php is
+// required well before that call, same ordering
+// zeusfw_app_resolve_user_roles() itself already depends on.
+function zeusfw_app_backup_permission(): string {
+    return ZPMS_PERM_BACKUP_ACCESS;
+}
+
 function zpms_all_permission_slugs(): array {
     return [
         ZPMS_PERM_PATIENTS_VIEW_LIST,

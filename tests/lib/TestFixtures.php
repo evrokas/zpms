@@ -99,6 +99,9 @@ class TestFixtures {
             'password' => $password,
         ]);
         assert_equal(302, $res['status'], "login POST did not redirect (got {$res['status']}) -- body:\n" . $res['body']);
-        assert_contains('/profile', (string)$res['location'], 'login did not redirect to /profile');
+        // zeusfw core's login_post() (core/lib/UserLogin.php) redirects to
+        // the homepage ('/'), not '/profile' -- updated to match once that
+        // redirect target changed.
+        assert_equal('/', (string)$res['location'], 'login did not redirect to the homepage');
     }
 }

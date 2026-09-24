@@ -41,7 +41,10 @@ function zpms_functional_admin_crud(TestRunner $runner, string $baseUrl): void {
             'username' => 'zpms_test_admin_crud_user',
             'password' => 'AdminCrud!Passw0rd',
         ]);
-        assert_contains('/profile', (string)$res['location'], 'login with the admin-crud test account did not succeed');
+        // zeusfw core's login_post() redirects to the homepage ('/'), not
+        // '/profile' -- see tests/lib/TestFixtures.php's own comment on
+        // the same assertion.
+        assert_equal('/', (string)$res['location'], 'login with the admin-crud test account did not succeed');
 
         $list = $http->get('/admin/permissions');
         assert_equal(200, $list['status'], 'GET /admin/permissions did not return 200 for an is_superuser account');

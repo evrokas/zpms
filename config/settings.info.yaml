@@ -659,14 +659,16 @@ menu:
             gr: "Αντίγραφα Ασφαλείας"
             en: "Backups"
           url: /apps/backup
-          # Doctor removed at direct request -- backup status is an
-          # ops/infrastructure concern, not a clinical one, and the real
-          # gate on /apps/backup (zeusfw core's core/modules/backup/
-          # backup.php) checks ZEUSFW_PERM_MANAGE_USERS, which doctor
-          # never held anyway -- the menu item was reachable but any
-          # click just landed on a 401. maintenance is the intended
-          # audience (see web/rbac_seed.php's own docblock on that role).
-          access: maintenance
+          # doctor + maintenance -- the two roles that actually hold
+          # ZPMS_PERM_BACKUP_ACCESS (web/rbac_seed.php). Restored doctor
+          # here now that zeusfw core's core/modules/backup/backup.php
+          # checks that permission (via the zeusfw_app_backup_permission()
+          # override in web/rbac.php) instead of ZEUSFW_PERM_MANAGE_USERS --
+          # doctor was previously removed from this list specifically
+          # because it never held that broader permission and the menu
+          # item just landed on a 401, which no longer applies now that
+          # the gate matches this app's own, narrower permission.
+          access: doctor maintenance
 
 
 
