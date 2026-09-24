@@ -1425,6 +1425,102 @@ a.btn-secondary:hover {
     }
 }
 
+/* pending_appointments_list.zetem's two tables ("Εκκρεμή Ραντεβού" /
+   "Προηγούμενα Ραντεβού") -- matches .patients-list table's own look
+   (gradient header, row hover, zebra striping, rounded shadowed card)
+   rather than inventing a new one, same reasoning .settings-table-scroll
+   above gives for doing the same thing. One shared rule set for both,
+   rather than duplicating it twice, since the two tables are genuine
+   twins on the same page. */
+.pending-appointments-list,
+.previous-appointments-list {
+    padding: 1rem;
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    margin: 0 1rem var(--spacing);
+}
+
+.pending-appointments-list table,
+.previous-appointments-list table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.pending-appointments-list table thead,
+.previous-appointments-list table thead {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+    color: white;
+}
+
+.pending-appointments-list table thead th,
+.previous-appointments-list table thead th {
+    padding: 12px 8px;
+    text-align: left;
+    font-weight: 600;
+}
+
+.pending-appointments-list table tr,
+.previous-appointments-list table tr {
+    transition: background-color var(--transition-fast);
+}
+
+.pending-appointments-list table tr:hover,
+.previous-appointments-list table tr:hover {
+    background-color: rgba(var(--primary-rgb), 0.05);
+}
+
+.pending-appointments-list table tr:nth-child(even),
+.previous-appointments-list table tr:nth-child(even) {
+    background-color: var(--light-gray);
+}
+
+.pending-appointments-list table td,
+.previous-appointments-list table td {
+    padding: 0.85rem 0.75rem;
+    border-bottom: 1px solid var(--medium-gray);
+}
+
+.pending-appointments-list table td[data-column="name"],
+.previous-appointments-list table td[data-column="name"] {
+    font-weight: 600;
+}
+
+.pending-appointments-list table td[data-column="datetime"],
+.previous-appointments-list table td[data-column="datetime"] {
+    color: var(--dark-gray);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.pending-appointments-list table td[data-column="synced"] {
+    text-align: center;
+    width: 3rem;
+}
+
+.pending-appointments-list table td.actions,
+.previous-appointments-list table td.actions {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+}
+
+@media screen and (max-width: 470px) {
+    .pending-appointments-list,
+    .previous-appointments-list {
+        padding: 0;
+        border-radius: 0;
+        margin: 0 0 var(--spacing);
+    }
+
+    .pending-appointments-list table,
+    .previous-appointments-list table {
+        display: block;
+        overflow-x: auto;
+    }
+}
+
 .edit-patient .header {
     text-align: center;
     margin-bottom: var(--spacing-md);

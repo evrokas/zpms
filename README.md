@@ -1284,3 +1284,38 @@ real patient record instead. `bin/run_tests.sh` (99/99 static, 43/43
 functional) stayed fully green throughout. **Files**: `web/index.php`,
 `web/ClassesEx.php`, `web/templates/content/pending_appointments_list.zetem`,
 `tests/functional/appointment_crud.php`.
+
+## Styled the pending/previous appointments tables to match the patients list
+
+Direct request: `pending_appointments_list.zetem`'s two tables rendered
+as bare, unstyled `<table>`s — `.pending-appointments-list`/
+`.previous-appointments-list` (the wrapper `<div>` classes the template
+already used) had no CSS of their own at all, unlike `.patients-list`'s
+gradient header, row hover, zebra striping, and rounded shadowed card.
+Added a shared rule set in `web/css/styles.css` targeting both selectors
+together (the two tables are genuine twins on the same page, so one
+block covers both rather than duplicating it) that matches `.patients-list`
+table's own look — same "match the existing look via a dedicated,
+purpose-named class" pattern `.settings-table-scroll` already uses
+elsewhere in this file, rather than attaching the literal `patients-list`
+class to unrelated content. Column-specific touches: bold patient names,
+tabular-nums on the datetime column, a centered fixed-width sync-icon
+column, and the same centered-icon-row treatment as `.patients-list table
+td.actions` for both tables' actions columns (previously plain, unstyled,
+left-aligned icons with no consistent spacing).
+
+**Verified visually**, not just via the static template-compile check
+(which doesn't touch layout): booted a real MariaDB-backed test server
+with a representative spread of fixtures (upcoming, today, a past
+Calendar-synced one, a past non-Calendar one, a cancelled one, a
+converted one) and screenshotted `/consultation/pending` via Playwright
+at desktop (1280px) and mobile (390px) — confirmed the gradient header,
+zebra striping, and reschedule/edit icons render correctly, the cancelled
+fixture appears in neither table, the converted fixture links to its
+patient record with no reschedule icon, and both tables scroll
+horizontally on mobile exactly like `.patients-list` already does
+(confirmed via `scrollWidth > clientWidth`, not just visually — a
+`fullPage` screenshot at a narrow viewport can look "cut off" even when
+the underlying `overflow-x: auto` is working correctly). `bin/run_tests.sh`
+(99/99 static, 43/43 functional) stayed green throughout — CSS-only, no
+template or handler changes. **Files**: `web/css/styles.css`.
