@@ -561,6 +561,7 @@ structure:
     - footer
     - copyright
     - githash
+    - buildnumber
 
 menu:
   main:
@@ -709,6 +710,7 @@ modules:
     - htmltext
     - githash
     - copyright
+    - buildnumber
     - content
     - location
     - flatpickr

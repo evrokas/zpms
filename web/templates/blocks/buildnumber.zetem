@@ -1,0 +1,13 @@
+{#
+  buildnumber.zetem
+
+  variables:
+    $build      contents of the project root's BUILD_NUMBER file (a plain
+                integer bumped by githooks/pre-commit on every commit), or
+                null if that file doesn't exist yet
+#}
+{% if($build): %}
+<div class="build-number">
+    Build #{{$build}}
+</div>
+{% endif %}

@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+#
+# Bumps BUILD_NUMBER by 1 and stages it, so the bump lands in the very
+# commit that's about to be created -- no separate "now commit the bump"
+# step, and no dangling uncommitted change left behind. See README.md's
+# "Build number" section for the full design and bin/install_git_hooks.sh
+# for how this script gets wired up as a real git hook (this directory is
+# tracked, but .git/hooks/ never is -- git won't run this on its own
+# until that one-time setup step points core.hooksPath at it).
+#
+# Deliberately not a post-commit hook: a post-commit hook would have to
+# amend the just-made commit to fold the bump in (rewriting its hash) or
+# leave the bump as a separate, easy-to-forget follow-up commit. Running
+# before the commit is created means `git add` here is simply part of
+# what gets committed -- the standard trick for this exact problem.
+#
+# Runs on every commit, including a real (non-fast-forward) merge and a
+# `commit --amend` -- both are still "a commit happened" from this file's
+# point of view, not something this script tries to special-case out.
+
+set -euo pipefail
+
+repo_root="$(git rev-parse --show-toplevel)"
+build_file="$repo_root/BUILD_NUMBER"
+
+current=0
+if [ -f "$build_file" ]; then
+    current="$(cat "$build_file")"
+fi
+
+echo "$((current + 1))" > "$build_file"
+git add "$build_file"

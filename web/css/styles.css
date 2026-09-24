@@ -114,6 +114,14 @@ body {
     word-wrap: anywhere;
 }
 
+/* buildnumberModule -- same teal-footer-background treatment as
+   .git-hash right above it, since the two sit next to each other there. */
+.build-number {
+    padding: 0.2rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 12px;
+}
+
 .wrapper {
     /* Caps at 900px on desktop, shrinks to fit narrow viewports on
        mobile -- this was previously max(900px, 80%), which always

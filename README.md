@@ -1187,3 +1187,48 @@ every mobile width tested, and the desktop layout is pixel-for-pixel
 unchanged. `bin/run_tests.sh` (99/99 static, 43/43 functional) stayed
 fully green throughout -- no template or handler changes were needed for
 this, it's CSS-only. **Files**: `web/css/styles.css`.
+
+## Build number
+
+A plain, tracked `BUILD_NUMBER` file at the project root -- a single
+integer, bumped by 1 on every commit -- shown in the page footer next to
+the existing git-hash block ("Build #N"). Not derived from
+`git rev-list --count HEAD` at request time (the simpler option, and
+what `githashModule` right next to this one already does by reading
+`.git/HEAD` directly): a plain counter file keeps incrementing across a
+future rebase/squash the same way a build number normally would, where a
+commit-count would instead move backwards or jump.
+
+**Setup (one-time per clone)**, since git never runs a hook it doesn't
+know about, and `.git/hooks/` itself is never version-controlled:
+
+```sh
+bin/install_git_hooks.sh
+```
+
+This points the repo's `core.hooksPath` at the tracked `githooks/`
+directory instead of the default `.git/hooks/`. From then on,
+`githooks/pre-commit` increments `BUILD_NUMBER` and stages it *before*
+each commit is created, so the bump lands in that same commit -- no
+separate follow-up commit, nothing left uncommitted. A clone that never
+runs this setup step simply keeps whatever `BUILD_NUMBER` value it
+checked out; the number itself, and every other part of the app, work
+fine either way.
+
+Every real commit action bumps it once, deliberately including a real
+(non-fast-forward) merge and a `commit --amend` -- this counts commit
+*events* through the hook, not unique logical changes, so a rebase or
+cherry-pick replay of N commits can jump the number by N. That's expected,
+not a bug.
+
+`web/modules/buildnumber/` (`buildnumberModule`, registered like every
+other opt-in module in `config/settings.info.yaml`'s `modules:` list, and
+added to the `footer` region's `structure:` block list right after
+`githash`) reads the file and renders nothing at all when it's missing --
+same "optional, never a fatal error" convention as the rest of this app's
+footer/status blocks.
+
+**Files**: `githooks/pre-commit`, `bin/install_git_hooks.sh`,
+`BUILD_NUMBER`, `web/modules/buildnumber/{buildnumber.php,
+buildnumber.info.yaml}`, `web/templates/blocks/buildnumber.zetem`,
+`config/settings.info.yaml`.
