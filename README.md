@@ -1348,3 +1348,35 @@ that permission now that the page-level check does too.
 `bin/run_tests.sh` (99/99 static, 44/44 functional — one new test added)
 stayed fully green throughout. **Files**: `web/rbac.php`,
 `config/settings.info.yaml`, `tests/functional/auth_csrf.php`.
+
+## `administrator` also restored to nav items gated by roles it doesn't literally hold
+
+Follow-up to the entry above: `administrator` (is_superuser) still didn't
+see "Backups" — or "Settings", same `access: doctor maintenance` — even
+after that fix, despite always being able to open either page directly.
+Root cause was in zeusfw core, not this app's own config: the nav's
+`access:` check (`SecurityClass::userIsPermitted()`) is a plain role-name
+match against the session, with no concept of `is_superuser` at all —
+unlike the actual permission check each page runs (`rbacClass::
+isPermitted()`), which does bypass for `is_superuser`. An administrator-only
+account's session literally has `['administrator', 'authenticated']` as its
+role list; neither string is in `doctor maintenance`, so the nav item was
+hidden even though the page underneath it always worked.
+
+Considered switching nav `access:` onto the RBAC permission-slug system
+outright (it already has the bypass) and rejected it — see zeusfw's own
+CLAUDE.md, same date, for the concrete reasons (it isn't nav-specific, the
+role-name validator hard-crashes on an unrecognized token, RBAC's own check
+takes one permission at a time rather than "any of these", it re-queries the
+database per check where the current one doesn't, and it's shared code used
+by apps with no RBAC setup at all). Fixed narrowly in zeusfw core instead:
+`SecurityClass::userIsPermitted()` now bypasses for `is_superuser` too, via
+a new, defensive `rbacClass::currentUserIsSuperuser()` helper — nothing in
+this app's own config changed.
+
+**Verified**: a real `administrator` test account now sees both `/apps/backup`
+and `/settings` in its rendered nav (previously absent) and can still open
+both pages, unchanged. `bin/run_tests.sh` (101/101 static, 45/45
+functional — two new tests added) stayed fully green throughout. **Files**:
+`core/lib/Rbac.php`, `core/lib/Security.php` (zeusfw, see its own CLAUDE.md);
+`tests/lib/TestFixtures.php`, `tests/functional/auth_csrf.php` (this repo).

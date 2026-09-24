@@ -7,6 +7,8 @@ class TestFixtures {
     const PASSWORD = 'ZpmsTest!Passw0rd';
     const SECRETARY_USERNAME = 'zpms_test_secretary';
     const SECRETARY_PASSWORD = 'ZpmsTest!Secretary0';
+    const ADMIN_USERNAME = 'zpms_test_admin';
+    const ADMIN_PASSWORD = 'ZpmsTest!Admin0';
 
     /**
      * Inserts a `doctor` test account directly through the entity
@@ -76,6 +78,32 @@ class TestFixtures {
         user_rolesClassEx::assignRole((int)$u->getid(), $seeded['roleIdsByName']['secretary'], 'test-fixture');
     }
 
+    /**
+     * An is_superuser account (web/rbac_seed.php's 'administrator' role,
+     * empty permissions array, is_superuser=true) -- for exercising the
+     * SecurityClass::userIsPermitted() is_superuser bypass (core/lib/
+     * Security.php, zeusfw), since that's a different code path than
+     * rbacClass::isPermitted()'s own, already-covered bypass.
+     */
+    static function createAdministratorUser(): void {
+        TestSchema::assertSafeToMutate();
+
+        $u = new usersClass([
+            'name' => 'ZPMS Test Administrator',
+            'email' => 'zpms-test-admin@example.invalid',
+            'uname' => self::ADMIN_USERNAME,
+            'upass' => hash('sha256', self::ADMIN_PASSWORD),
+            'active' => 1,
+            'expired' => 0,
+            'wrongpasscount' => 0,
+            'roles' => 'administrator',
+        ]);
+        $u->insert();
+
+        $seeded = zpms_seed_permissions_and_roles(false, function () {});
+        user_rolesClassEx::assignRole((int)$u->getid(), $seeded['roleIdsByName']['administrator'], 'test-fixture');
+    }
+
     /** Logs in through the real /login form (scrapes the CSRF token like a browser would) and returns the client. */
     static function loginAsTestUser(TestHttpClient $http): void {
         self::loginAs($http, self::USERNAME, self::PASSWORD);
@@ -84,6 +112,11 @@ class TestFixtures {
     /** Same as loginAsTestUser(), for the secretary fixture account. */
     static function loginAsSecretary(TestHttpClient $http): void {
         self::loginAs($http, self::SECRETARY_USERNAME, self::SECRETARY_PASSWORD);
+    }
+
+    /** Same as loginAsTestUser(), for the administrator (is_superuser) fixture account. */
+    static function loginAsAdministrator(TestHttpClient $http): void {
+        self::loginAs($http, self::ADMIN_USERNAME, self::ADMIN_PASSWORD);
     }
 
     private static function loginAs(TestHttpClient $http, string $username, string $password): void {

@@ -373,6 +373,39 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
         assert_contains('401', $res2['body'], 'a secretary account (no backup-access) should be refused /apps/backup');
     });
 
+    $runner->add('an is_superuser account sees nav items gated by roles it does not literally hold', function () use ($baseUrl) {
+        // SecurityClass::userIsPermitted() (zeusfw core/lib/Security.php) is
+        // a plain role-identity check -- Kernel::loginUser() only ever puts
+        // an account's actual role NAMES plus 'authenticated' into the
+        // session, never anything reflecting is_superuser. So an
+        // administrator-only account (web/rbac_seed.php: is_superuser=true,
+        // permissions=[]) used to be invisible to any `access: doctor
+        // maintenance`-gated nav item, like Settings and Backups above,
+        // despite always being able to open either page directly by URL
+        // (rbacClass::isPermitted()'s own, separate is_superuser bypass).
+        // rbacClass::currentUserIsSuperuser() (zeusfw core/lib/Rbac.php),
+        // called from userIsPermitted() itself, closes that gap.
+        TestSchema::assertSafeToMutate();
+        TestFixtures::createAdministratorUser();
+
+        $http = new TestHttpClient($baseUrl);
+        TestFixtures::loginAsAdministrator($http);
+
+        $page = $http->get('/patients');
+        assert_equal(200, $page['status'], 'administrator account could not view a basic page');
+        assert_contains('/apps/backup', $page['body'], 'administrator account did not see the Backups nav item (access: doctor maintenance)');
+        assert_contains('/settings', $page['body'], 'administrator account did not see the Settings nav item (access: doctor maintenance)');
+
+        // And the underlying pages still actually load for this account --
+        // confirming the nav now matches what was already true at the page
+        // level, not a new, separate bypass.
+        $backupPage = $http->get('/apps/backup');
+        assert_equal(200, $backupPage['status'], 'administrator account could not open /apps/backup despite now seeing its nav link');
+
+        $settingsPage = $http->get('/settings');
+        assert_equal(200, $settingsPage['status'], 'administrator account could not open /settings despite now seeing its nav link');
+    });
+
     $runner->add('a POST without a CSRF token is rejected and does not write data', function () use ($baseUrl) {
         TestSchema::assertSafeToMutate();
 
