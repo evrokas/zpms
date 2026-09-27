@@ -154,7 +154,10 @@ roles:
   maintenance: []
 
 
-# reduce analytics entries, by not logging localhost calls
+# Built-in request analytics (the `analytics` log and `pageanalytics`
+# counters) are off: zeusfw only writes them when `enabled: true` is set
+# here. Keep them off -- they logged raw URLs, and zpms URLs carry patient
+# search terms and ids. ignore_ips only matters if analytics is enabled.
 analytics:
   ignore_ips: []
   # [127.0.0.1]
