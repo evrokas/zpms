@@ -134,5 +134,6 @@ function zpms_all_permission_slugs(): array {
         ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE,
         ZPMS_PERM_PATIENT_FINANCIAL_VIEW,
         ZEUSFW_PERM_MANAGE_USERS,
+        ZEUSFW_PERM_LIVE_EDIT,
     ];
 }

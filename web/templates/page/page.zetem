@@ -11,3 +11,13 @@
         {{ $reg }}
     {% endforeach %}
 </div>
+{# live_edit (zeusfw core/modules/live_edit/) -- Step 1 of a planned
+   live-editing feature, a small overlay showing which .zetem template the
+   current page's content came from. No region of its own (same reasoning
+   accessibility/google_analytics already document), so it's invoked ad
+   hoc here rather than through the regions: loop above. Gated by both
+   live_edit_enabled (true here -- content-live-edit is a new, narrow
+   permission nobody but maintenance/is_superuser holds, see web/rbac_seed.php)
+   and rbacClass::isPermitted(ZEUSFW_PERM_LIVE_EDIT) -- renders '' for
+   anyone else, including a logged-out visitor. #}
+{{ module('live_edit', ['enabled' => true]) }}

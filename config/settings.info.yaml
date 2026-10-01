@@ -713,6 +713,7 @@ modules:
     - githash
     - copyright
     - buildnumber
+    - live_edit
     - content
     - location
     - flatpickr

@@ -1380,3 +1380,52 @@ both pages, unchanged. `bin/run_tests.sh` (101/101 static, 45/45
 functional — two new tests added) stayed fully green throughout. **Files**:
 `core/lib/Rbac.php`, `core/lib/Security.php` (zeusfw, see its own CLAUDE.md);
 `tests/lib/TestFixtures.php`, `tests/functional/auth_csrf.php` (this repo).
+
+## Live-editing, step 1: a content-source overlay (`core/modules/live_edit/`)
+
+A small, transparent, opt-in overlay (top-right corner on every page) showing
+which `.zetem` template the page's main content actually came from — e.g.
+`templates/content/patients_list.zetem` on `/patients`. Nothing editable
+yet; this is explicitly step 1 toward a planned live-editing feature, laying
+down the "which file" indicator later steps (click-to-edit, write-back to
+disk) build on. Built as a real, reusable zeusfw module
+(`core/modules/live_edit/`) — see that repo's own CLAUDE.md for the full
+design writeup (how "which template" is known via a new, generic,
+content-agnostic tracking mechanism in `Renderer::render()`/
+`RouterClass::routerCallFunction()` — nothing zpms-specific) — this app just
+opts in: `live_edit` added to `config/settings.info.yaml`'s `modules:` list,
+one call site in `web/templates/page/page.zetem`
+(`module('live_edit', ['enabled' => true])`).
+
+**Gated by a new, dedicated permission, `content-live-edit`** (`ZEUSFW_PERM_LIVE_EDIT`,
+zeusfw core) — not `users-manage`, since seeing a template path has nothing
+to do with user/role administration. Granted to `maintenance` in
+`web/rbac_seed.php` (the existing "ops-only, zero patient access" role,
+the natural home for a dev-tooling permission like this); `administrator`
+sees it for free via the existing is_superuser bypass, same as every other
+permission in this app. `doctor`/`secretary`/a logged-out visitor never see
+it.
+
+**A real, unrelated test-infrastructure bug was found and fixed while
+verifying this**: `tests/lib/ServerManager.php`'s `TestServer` opened its
+`php -S` child's stdout/stderr as pipes nothing ever read from — once
+enough requests accumulated across a long functional run (php -S's own
+per-request log line, plus every PHP warning the app emits), the unread
+64KB pipe buffer filled and the *child* blocked on its next write, hanging
+the dev server mid-request with no warning. Fixed by redirecting both to
+real files instead (cleaned up in `stop()`) — see zeusfw's own CLAUDE.md,
+same date, for the full root-cause story (found via this exact feature,
+reproduced twice, confirmed fixed across 5 consecutive full suite runs).
+
+**Verified**: the overlay shows the correct relative path on both a plain
+list page and a form-heavy create page (confirming it picks the real page
+template, not one of the many individual form-field sub-templates rendered
+first); an `administrator` and a real `maintenance`-role account both see
+it; a `secretary` account and a logged-out visitor don't. `bin/run_tests.sh`
+(101/101 static, 46/46 functional — one new test added) stayed fully green
+across 5 consecutive runs. **Files**: `config/settings.info.yaml`,
+`web/rbac.php`, `web/rbac_seed.php`, `web/templates/page/page.zetem`,
+`tests/functional/auth_csrf.php`, `tests/lib/ServerManager.php` (this repo);
+`core/templates/ZETEMTemplate.php`, `core/router/Router.php`,
+`core/lib/Rbac.php`, `core/modules/live_edit/`,
+`core/templates/modules/live_edit/` (zeusfw, see its own CLAUDE.md).

@@ -457,4 +457,69 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
             ->fetch();
         assert_equal(0, (int)$row['c'], 'a patient was inserted despite a tampered CSRF token');
     });
+
+    $runner->add('live_edit overlay shows the real content template, gated by content-live-edit/is_superuser', function () use ($baseUrl) {
+        // core/modules/live_edit/ (zeusfw core, see its own docblock) --
+        // Step 1 of a planned live-editing feature. Confirms both gates
+        // (web/templates/page/page.zetem's own module('live_edit',
+        // ['enabled' => true]) call site, and rbacClass::isPermitted(
+        // ZEUSFW_PERM_LIVE_EDIT)) and that the shown path is the real
+        // content template, including on a form-heavy page where many
+        // FormElement field sub-templates render before the real page
+        // template -- Router.php's dispatch-boundary capture has to pick
+        // the latter, not one of the former.
+        //
+        // Deliberately doesn't re-create the administrator/secretary
+        // fixtures -- both already exist by this point in the suite
+        // (created by the earlier "is_superuser account sees nav items..."
+        // and "a logged-in secretary account can view..." tests), and
+        // this suite's own established convention is to create a fixture
+        // account once and have every later test needing it just log in,
+        // not re-insert it (TestFixtures::ADMIN_USERNAME/SECRETARY_USERNAME
+        // are fixed strings, so a second insert would collide on uname).
+        TestSchema::assertSafeToMutate();
+
+        // is_superuser bypasses rbacClass::isPermitted() -- sees it with
+        // no content-live-edit grant needed.
+        $adminHttp = new TestHttpClient($baseUrl);
+        TestFixtures::loginAsAdministrator($adminHttp);
+        $adminPage = $adminHttp->get('/patients');
+        assert_contains('id="zfw-live-root"', $adminPage['body'], 'administrator (is_superuser) did not see the live_edit overlay');
+        assert_contains('data-zfw-live-path="templates/content/patients_list.zetem"', $adminPage['body'], 'live_edit overlay showed the wrong template for /patients');
+
+        $newPatientPage = $adminHttp->get('/patient/new');
+        assert_contains('data-zfw-live-path="templates/content/edit_patient.zetem"', $newPatientPage['body'], 'live_edit overlay showed the wrong template for /patient/new (likely a field sub-template, not the real page template)');
+
+        // A real maintenance-role account (holds ZEUSFW_PERM_LIVE_EDIT
+        // explicitly, not is_superuser -- web/rbac_seed.php) also sees it.
+        $seeded = zpms_seed_permissions_and_roles(false, function () {});
+        $mUname = 'zpms_test_live_edit_maint';
+        $mPass = 'LiveEditMaint!Pass0';
+        $mu = new usersClass([
+            'name' => 'Live Edit Maintenance Test', 'email' => 'zpms-test-live-edit-maint@example.invalid',
+            'uname' => $mUname, 'upass' => password_hash($mPass, PASSWORD_DEFAULT),
+            'active' => 1, 'expired' => 0, 'wrongpasscount' => 0, 'roles' => 'maintenance',
+        ]);
+        $mu->insert();
+        user_rolesClassEx::assignRole((int)$mu->getid(), $seeded['roleIdsByName']['maintenance'], 'test-fixture');
+
+        $maintHttp = new TestHttpClient($baseUrl);
+        $loginPage = $maintHttp->get('/login');
+        $token = TestHttpClient::extractCsrfToken($loginPage['body']);
+        $maintHttp->post('/login', ['csrf_token' => $token, 'username' => $mUname, 'password' => $mPass]);
+        $maintPage = $maintHttp->get('/patients');
+        assert_contains('id="zfw-live-root"', $maintPage['body'], 'a maintenance-role account (holds content-live-edit explicitly) did not see the live_edit overlay');
+
+        // A logged-in account with neither is_superuser nor
+        // content-live-edit must never see it.
+        $secretaryHttp = new TestHttpClient($baseUrl);
+        TestFixtures::loginAsSecretary($secretaryHttp);
+        $secretaryPage = $secretaryHttp->get('/patients');
+        assert_not_contains('id="zfw-live-root"', $secretaryPage['body'], 'secretary account (no content-live-edit) saw the live_edit overlay');
+
+        // Nor a logged-out visitor.
+        $anonHttp = new TestHttpClient($baseUrl);
+        $loginRenderedPage = $anonHttp->get('/login');
+        assert_not_contains('id="zfw-live-root"', $loginRenderedPage['body'], 'a logged-out visitor saw the live_edit overlay');
+    });
 }

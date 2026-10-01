@@ -88,6 +88,7 @@ function zpms_role_seed_definitions(): array {
             'permissions' => [
                 ZPMS_PERM_BACKUP_ACCESS,
                 ZPMS_PERM_SETTINGS_MANAGE,
+                ZEUSFW_PERM_LIVE_EDIT,
             ],
         ],
         'administrator' => [
@@ -111,6 +112,13 @@ function zpms_permission_label_seed(): array {
         ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE => 'View/create/edit/delete pending (not-yet-a-patient) appointments',
         ZPMS_PERM_PATIENT_FINANCIAL_VIEW => 'View a patient\'s APYweb financial info (invoices/operations/fee reports)',
         ZEUSFW_PERM_MANAGE_USERS => 'Manage user accounts and roles/permissions',
+        // zeusfw core's own default permission for core/modules/live_edit/
+        // (a dev-tooling overlay showing which .zetem template a page's
+        // content came from -- see that module's own docblock). Used here
+        // directly, no zeusfw_app_live_edit_permission() override, since
+        // this is exactly the dedicated, narrow slug the framework already
+        // defines for it.
+        ZEUSFW_PERM_LIVE_EDIT => 'See the live_edit content-source overlay',
     ];
 }
 
