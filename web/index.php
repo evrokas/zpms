@@ -364,6 +364,13 @@ require_once(__DIR__ . '/zpms_mailer.php');
         $apprender = array();
         $appdates = array();
         $appointmentSummary = array();
+        // Collected across every appointment, not just the loop's own
+        // $ap -- feeds zpms_patient_appointment_history_for_display()
+        // below so edit_patient.zetem can show one combined, patient-wide
+        // "Ιστορικό Αλλαγών" section instead of a separate one per
+        // appointment card (view_appointment.zetem no longer renders one
+        // at all -- see that template's own comment).
+        $appointmentIdsForHistory = array();
         foreach($app_list as $ap) {
 
             if($ap->getdeleted() == null) {
@@ -379,12 +386,12 @@ require_once(__DIR__ . '/zpms_mailer.php');
                                                         'appointment' => $ap,
                                                         'locations' => $loc,
                                                         'files' => appointmentFilesClassEx::getFilesForAppointment($ap->getid()),
-                                                        'can_edit' => $canEditAppointment,
-                                                        'history' => zpms_appointment_history_for_display((int)$ap->getid())
+                                                        'can_edit' => $canEditAppointment
                                                     ]),
                         'attributes' => new Attributes()
                     ];
                     $appdates[] = [ 'index' => count($apprender), 'date' => $ap->getadate() ];
+                    $appointmentIdsForHistory[] = (int)$ap->getid();
                 } else {
                     $appointmentSummary[] = [
                         'date' => $ap->getadate(),
@@ -401,6 +408,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
             'appdates' => $appdates,
             'appointments' => $apprender,
             'appointment_summary' => $appointmentSummary,
+            'patient_history' => zpms_patient_appointment_history_for_display($appointmentIdsForHistory),
             'financials' => $financials,
             'has_financials' => $hasFinancials,
             'can_edit_patient' => $canEditPatient,

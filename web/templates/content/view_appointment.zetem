@@ -75,7 +75,6 @@
                     <textarea name="appointment-notes" id="" autoexpand rows="5"
                         loader="app-loader-{{$index}}">{{$appointment->getanote()}}</textarea>
                 </div>
-                </fieldset>
 
                 {% if($can_edit): %}
                 <div class="buttons">
@@ -88,7 +87,7 @@
                 {% endif %}
             </div>
         </div>
-
+        </fieldset>
     </form>
 
     <!-- Attachments for this appointment -- deliberately outside the form
@@ -194,58 +193,12 @@
         </div>
     </div>
 
-    <!-- Aggregated edit history for this appointment -- see
-         web/appointment_history.php's own docblock for the 5-minute
-         session design (a session here means "one user's burst of saves
-         on this appointment, each no more than 5 minutes after the
-         last", not a login/browser session). Read-only regardless of
-         $can_edit -- this is a log, not an editable control -- and shown
-         to the same audience as the rest of this card (appointment-edit
-         AND appointment-view), since "see what changed" is exactly what
-         appointment-view is meant to allow (see that permission's own
-         docblock in web/rbac.php). A deliberately separate container
-         from the attachments section above, not a second
-         .file-upload-section -- appointment-files.js auto-initializes
-         upload/dropzone handling on every .file-upload-section element
-         on the page, which this section has no business triggering. -->
-    <div class="appointment-history-section" id="appointment-history-{{$index}}">
-        <h5 class="appointment-history-heading" id="appointment-history-heading-{{$index}}">
-            <i class='bx bx-chevron-right toggle-icon'></i>
-            <span>Ιστορικό Αλλαγών</span>
-            {% if(isset($history) && count($history) > 0): %}
-            <span class="file-count-badge">{{count($history)}}</span>
-            {% endif %}
-        </h5>
-
-        <div class="appointment-history-body">
-            {% if(!isset($history) || count($history) == 0): %}
-            <p class="no-files">Δεν υπάρχουν καταγεγραμμένες αλλαγές</p>
-            {% else: %}
-            <ul class="appointment-history-list">
-                {% foreach($history as $h): %}
-                <li class="appointment-history-item">
-                    <span class="history-user">{{{$h['user']}}}</span>
-                    <span class="history-time">
-                        {% if($h['single_moment']): %}{{$h['started_at']}}{% else: %}{{$h['started_at']}} &ndash; {{$h['ended_at']}}{% endif %}
-                    </span>
-                    <span class="history-fields">{{implode(', ', $h['fields'])}}</span>
-                    <span class="history-count">({{$h['change_count']}} {{($h['change_count'] == 1) ? 'αλλαγή' : 'αλλαγές'}})</span>
-                </li>
-                {% endforeach %}
-            </ul>
-            {% endif %}
-        </div>
-    </div>
-
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var historyHeading = document.getElementById('appointment-history-heading-{{$index}}');
-            var historySection = document.getElementById('appointment-history-{{$index}}');
-            if (historyHeading && historySection) {
-                historyHeading.addEventListener('click', function() {
-                    historySection.classList.toggle('is-expanded');
-                });
-            }
-        });
-    </script>
+    <!-- Per-appointment edit history used to live here, one
+         .appointment-history-section per card -- moved to a single,
+         patient-level section on edit_patient.zetem instead (see that
+         template and zpms_patient_appointment_history_for_display() in
+         web/appointment_history.php): a patient's edit history is one
+         continuous record of who touched their file and when, not
+         something that should fragment into a separate, easy-to-miss
+         list per appointment card. -->
 </div>

@@ -163,12 +163,74 @@ function zpms_functional_appointment_crud(TestRunner $runner, TestHttpClient $ht
         assert_equal(2, count($rows), 'an edit after the 5-minute window should start a new session row, not extend the stale one');
         assert_equal(1, (int)$rows[1]['change_count'], 'the new session should start its own change_count at 1');
 
-        // The patient page renders the aggregated sessions, newest first,
-        // with the resolved Greek field label and a change count.
+        // The patient page renders one combined history section (not a
+        // separate one per appointment card -- see edit_patient.zetem),
+        // aggregated sessions newest first, with the resolved Greek field
+        // label, a change count, and which appointment each session
+        // belongs to.
         $editPage = $http->get("/patient/$patientId/edit");
-        assert_contains('Ιστορικό Αλλαγών', $editPage['body'], 'the appointment card is missing the history section');
+        assert_contains('Ιστορικό Αλλαγών', $editPage['body'], 'the patient page is missing the history section');
         assert_contains('Σημειώσεις', $editPage['body'], 'the history section does not show the resolved "Σημειώσεις" field label');
         assert_contains('2 αλλαγές', $editPage['body'], 'the history section does not show the merged session\'s change count');
+        assert_contains('Ραντεβού', $editPage['body'], 'the history section does not label which appointment each session belongs to');
+    });
+
+    $runner->add('a patient with more than one appointment renders both correctly (no cross-card HTML corruption)', function () use ($http) {
+        // Regression test for a real bug reported directly: "in records
+        // with more than one appointment, the appointments are messed
+        // up". Root cause -- view_appointment.zetem's <fieldset> closing
+        // tag appeared one nesting level too shallow (crossing two <div>
+        // boundaries instead of nesting inside them, i.e. overlapping,
+        // not properly nested, tags). That's invalid HTML -- a browser's
+        // parser force-closes every element opened after a tag once it
+        // hits that tag's own mismatched close, so the two <div>s opened
+        // after <fieldset> here got silently closed the moment </fieldset>
+        // was reached, leaving the *explicit* closing </div></div> a few
+        // lines later with nothing left on the stack to close. With only
+        // one appointment card on the page this mostly self-corrected
+        // invisibly; with two or more cards concatenated into one page
+        // (edit_patient.zetem's <ul class="patient-appointments-list">),
+        // the stray tags from card 1 could swallow or corrupt card 2's
+        // own markup -- exactly this report's shape.
+        TestSchema::assertSafeToMutate();
+        $patientId = $GLOBALS['zpms_test_appt_patient_id'];
+
+        $page = $http->get("/patient/$patientId/edit");
+        $token = TestHttpClient::extractCsrfToken($page['body']);
+
+        $res = $http->post("/appointment/$patientId/newappointment", [
+            'csrf_token' => $token,
+            'submit' => '1',
+            'appointment-date' => '2026-09-10T09:00',
+            'appointment-place' => 'test-clinic',
+            'appointment-notes' => 'second appointment, distinct note',
+        ]);
+        assert_equal(302, $res['status'], "second new-appointment POST did not redirect (got {$res['status']})");
+
+        $page = $http->get("/patient/$patientId/edit");
+        assert_equal(200, $page['status'], "GET /patient/$patientId/edit did not return 200 with two appointments");
+
+        // Both notes must appear intact -- a corrupted/merged DOM from
+        // the first card's malformed nesting would be exactly the kind
+        // of bug that silently drops or garbles the second card's
+        // content.
+        assert_contains('edited after the session window elapsed', $page['body'], 'first appointment\'s note is missing/corrupted once a second appointment exists');
+        assert_contains('second appointment, distinct note', $page['body'], 'second appointment\'s note is missing/corrupted');
+
+        // Every <fieldset ...> on the page (edit_patient.zetem's own
+        // patient-fields fieldset, plus one per appointment card) must get
+        // exactly one matching </fieldset> -- a stray/duplicated/missing
+        // closing tag (the shape of the original bug) throws this off
+        // immediately. HTML comments stripped first -- edit_patient.zetem
+        // has one literally documenting "<fieldset>" as prose, which a
+        // naive tag count would otherwise miscount as a real, unmatched
+        // open. At least 3 real opens expected: 1 patient fieldset + 2
+        // appointment cards.
+        $withoutComments = preg_replace('/<!--.*?-->/s', '', $page['body']);
+        $openCount = preg_match_all('/<fieldset\b/', $withoutComments);
+        $closeCount = preg_match_all('#</fieldset>#', $withoutComments);
+        assert_true($openCount >= 3, "expected at least 3 <fieldset> opens (1 patient + 2 appointments), got $openCount");
+        assert_equal($openCount, $closeCount, '<fieldset> open/close counts do not match -- malformed tag nesting');
     });
 
     $runner->add('delete (soft-delete) the appointment', function () use ($http) {

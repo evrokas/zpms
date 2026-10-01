@@ -1429,3 +1429,108 @@ across 5 consecutive runs. **Files**: `config/settings.info.yaml`,
 `core/templates/ZETEMTemplate.php`, `core/router/Router.php`,
 `core/lib/Rbac.php`, `core/modules/live_edit/`,
 `core/templates/modules/live_edit/` (zeusfw, see its own CLAUDE.md).
+
+## Live-editing overlay moved in-flow (top, right-aligned); a CSS typo had zero'd out its styling entirely
+
+Direct follow-up to the entry above, at the requester's explicit instruction
+after reporting the overlay wasn't visible: `position: fixed` wasn't
+pinning the badge to the viewport's top-right corner on this app's real
+pages — it rendered wherever it fell in the normal document flow instead,
+almost certainly the same `transform`/`filter`/`perspective`/`will-change`-
+on-an-ancestor containing-block hazard zeusfw's own accessibility-widget
+CLAUDE.md entry already documents once. Rather than chase down which of
+this app's own ancestor rules causes it, the module's CSS switched to a
+plain in-flow, right-aligned flex block instead, and `page.zetem`'s call
+site moved to render it first, before the header/nav/footer regions —
+guaranteed visible regardless of any ancestor's CSS, at the cost of nudging
+the rest of the page down one row. A disclosed, temporary trade-off, per
+the requester's own "this might mess up the page a bit, let's try it for
+now."
+
+**That move then exposed a second, independent, pre-existing bug**: with
+the new CSS in place, the overlay was still invisible, this time with zero
+visible styling (plain browser-default block/button chrome). Root cause,
+found entirely on the zeusfw side — see that repo's own CLAUDE.md entry,
+same date, for the full story — was a typo in `live_edit.css`'s own leading
+doc-comment: describing this module's `--zfl-*` custom property next to
+`accessibility.css`'s `--zfa-*`/`google-analytics.css`'s `--zga-*` wrote
+`--zfa-*/--zga-*`, and `*` immediately followed by `/` is a literal CSS
+comment-closing token — regardless of being inside a sentence. That closed
+the file's doc-comment nine lines early, and every word of prose after it
+up to the *real* closing `*/` got fed to the browser's CSS parser as
+syntax, invalidating the *entire* stylesheet (zero parsed rules, not just
+the comment itself coming out wrong). Fixed with a single space around the
+slash; no change needed on this app's side.
+
+**Verified**: a Playwright screenshot of `/patients` after both fixes shows
+the overlay exactly as designed — a small, semi-transparent, pill-shaped,
+right-aligned block at the top of the page, monospace font, rounded
+corners, showing `templates/content/patients_list.zetem`.
+`bin/run_tests.sh` (101/101 static, 47/47 functional) stayed fully green.
+**Files**: `web/templates/page/page.zetem` (this repo);
+`core/modules/live_edit/css/live_edit.css`,
+`core/modules/live_edit/live_edit.php` (zeusfw, see its own CLAUDE.md).
+
+## Appointment card markup had a cross-card closing-tag bug; "Ιστορικό Αλλαγών" moved from per-appointment to per-patient scope
+
+Two bugs/design changes reported together against a patient with more than
+one appointment: the appointment cards rendered "messed up", and the
+existing per-appointment edit-history section (see "a Home Screen
+appointments card, and per-appointment edit history" above) was asked to
+become a single, patient-wide section instead of fragmenting across every
+appointment card.
+
+**The rendering bug**: `web/templates/content/view_appointment.zetem`'s
+`</fieldset>` closed right after the notes `<div>`, but the fieldset it
+belonged to had opened *before* `.appointment-wrapper`/`.edit-appointment`
+— two levels of `<div>` the closing tag never actually closed, since it
+sat between them instead of after both. Overlapping (not properly nested)
+tags force a browser's HTML parser to close elements up through whichever
+one actually matches a mismatched closing tag, which can orphan later,
+otherwise-correct closing tags in ways that only become visible once a
+page renders *two or more* of these cards back to back — a single-
+appointment patient never exposed it, since there was nothing after the
+first card's malformed structure for the corruption to bleed into. Fixed
+by moving `</fieldset>` to its correct position, right before `</form>`,
+after every element it was actually meant to wrap.
+
+**The history redesign**: the per-appointment `<div class="appointment-
+history-section" id="appointment-history-{{$index}}">` block (one per
+card, independently toggleable) is gone from `view_appointment.zetem`
+entirely. In its place, `edit_patient.zetem` now renders one
+`#patient-history` section, once per patient, aggregating every edit
+across *all* of that patient's appointments into a single chronological
+list — a patient's edit history is one continuous record of who touched
+their file and when, not something that should fragment into a
+separate, easy-to-miss list per appointment card. Each history line now
+also names which appointment it belongs to (`{{{$h['appointment_label']}}}`,
+e.g. "Ραντεβού 12-03-2026" or "Χειρουργείο 02-04-2026"), since merging
+several appointments' histories into one list would otherwise lose that
+context. `appointmentHistoryClassEx::getHistoryForAppointments(array
+$appointmentIds): array` (`web/ClassesEx.php`) replaces the old
+single-id `getHistoryForAppointment()`, joining against `appointments`
+for `adate`/`atype`; `zpms_patient_appointment_history_for_display(array
+$appointmentIds): array` (`web/appointment_history.php`) is its matching
+display-layer wrapper. `web/index.php` collects every appointment id the
+viewer can edit/view into `$appointmentIdsForHistory` alongside the
+existing `$appdates` loop and passes the aggregated result to
+`edit_patient.zetem` as `patient_history`, instead of rendering
+per-appointment history inside each `view_appointment.zetem` call.
+`.history-appointment` (`web/css/file-uploads.css`) styles the new
+per-line appointment label.
+
+**Verified with a new, permanent regression test**
+(`tests/functional/appointment_crud.php`, "a patient with more than one
+appointment renders both correctly (no cross-card HTML corruption)"):
+creates two appointments with distinct, distinguishable notes on the same
+patient, loads the edit page, and confirms both notes survive intact and
+every `<fieldset>` tag the page renders is properly opened and closed
+(comments stripped first, so prose mentioning `<fieldset>` inside an HTML
+comment elsewhere on the same page can't produce a false match). The
+pre-existing per-appointment history test was updated to assert the
+history now renders once, patient-wide, and includes the appointment
+label. `bin/run_tests.sh` (101/101 static, 47/47 functional) stayed fully
+green. **Files**: `web/templates/content/view_appointment.zetem`,
+`web/templates/content/edit_patient.zetem`, `web/index.php`,
+`web/ClassesEx.php`, `web/appointment_history.php`,
+`web/css/file-uploads.css`, `tests/functional/appointment_crud.php`.

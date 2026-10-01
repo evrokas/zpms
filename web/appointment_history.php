@@ -83,34 +83,47 @@ function zpms_record_appointment_change(int $appointmentId, string $cuser, array
 }
 
 /**
- * One display-ready row per session: who, when (session start -> last
- * change, or just the one time if it was a single save), which fields
- * (resolved to their Greek labels, unrecognized/legacy field names left
- * as-is rather than silently dropped), and how many saves were folded in.
+ * One display-ready row per session, across every appointment in
+ * $appointmentIds, newest first: which appointment it belongs to, who
+ * changed it, when (session start -> last change, or just the one time if
+ * it was a single save), which fields (resolved to their Greek labels,
+ * unrecognized/legacy field names left as-is rather than silently
+ * dropped), and how many saves were folded in.
+ *
+ * Patient-scoped, not appointment-scoped, on purpose: a patient's edit
+ * history is one continuous record of who touched their file and when,
+ * not something that should fragment into a separate, easy-to-miss list
+ * per appointment card -- see edit_patient.zetem's own single "Ιστορικό
+ * Αλλαγών" section (one per patient page, not one per appointment).
  */
-function zpms_appointment_history_for_display(int $appointmentId): array {
+function zpms_patient_appointment_history_for_display(array $appointmentIds): array {
+    if (empty($appointmentIds)) {
+        return [];
+    }
+
     $labels = zpms_appointment_history_field_labels();
-    $rows = appointmentHistoryClassEx::getHistoryForAppointment($appointmentId);
+    $rows = appointmentHistoryClassEx::getHistoryForAppointments($appointmentIds);
 
     $out = [];
     foreach ($rows as $row) {
-        $fieldNames = array_filter(explode(',', $row->getchanged_fields()));
+        $fieldNames = array_filter(explode(',', $row['changed_fields']));
         $fieldLabels = array_map(function ($f) use ($labels) {
             return $labels[$f] ?? $f;
         }, $fieldNames);
 
-        $start = $row->getcdate();
-        $end = $row->getlast_change_at();
+        $start = $row['cdate'];
+        $end = $row['last_change_at'];
 
         $out[] = [
-            'user' => $row->getcuser(),
+            'appointment_label' => (($row['appointment_type'] === 'operation') ? 'Χειρουργείο ' : 'Ραντεβού ') . formatDate($row['appointment_date']),
+            'user' => $row['cuser'],
             'started_at' => formatDateTime($start),
             'ended_at' => formatDateTime($end),
             // A single-save session has start == end -- the template
             // shows just one timestamp rather than "12:00 -- 12:00".
             'single_moment' => (strtotime($start) === strtotime($end)),
             'fields' => $fieldLabels,
-            'change_count' => (int)$row->getchange_count(),
+            'change_count' => (int)$row['change_count'],
         ];
     }
 

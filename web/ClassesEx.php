@@ -418,22 +418,35 @@ class appointmentHistoryClassEx extends appointmentHistoryClass {
         } else return (null);
     }
 
-    // Every session for one appointment, newest first -- powers the
-    // "Ιστορικό Αλλαγών" section on view_appointment.zetem.
-    static function getHistoryForAppointment($appointmentId): array {
-        $sql = "SELECT * FROM appointment_history WHERE appointment_id=:appointment_id ORDER BY last_change_at DESC";
-        $st = dbConnection::getConnection()->prepare( $sql );
-        $st->bindValue(":appointment_id", $appointmentId, PDO::PARAM_INT);
-        $st->execute();
-
-        $list = array();
-        while( $row = $st->fetch() ) {
-            $rclass = new appointmentHistoryClass();
-            $rclass->loadFields( $row );
-            $list[] = $rclass;
+    // Every session across every one of a patient's appointments, newest
+    // first -- powers the single, patient-level "Ιστορικό Αλλαγών" section
+    // on edit_patient.zetem. Joined against `appointments` (not just a
+    // plain WHERE ... IN) so the display layer can show which appointment
+    // each session belongs to (zpms_patient_appointment_history_for_display()
+    // reads the joined adate/atype columns directly off the raw row --
+    // appointmentHistoryClass's own loadFields()/getters only know the
+    // appointment_history table's own columns, so this deliberately
+    // returns plain associative arrays instead of hydrated objects, same
+    // as any other multi-table read in this app that doesn't need the
+    // write-side convenience those classes exist for).
+    static function getHistoryForAppointments(array $appointmentIds): array {
+        if (empty($appointmentIds)) {
+            return array();
         }
 
-        return ($list);
+        $placeholders = implode(',', array_fill(0, count($appointmentIds), '?'));
+        $sql = "SELECT ah.*, a.adate AS appointment_date, a.atype AS appointment_type
+                FROM appointment_history ah
+                JOIN appointments a ON a.id = ah.appointment_id
+                WHERE ah.appointment_id IN ($placeholders)
+                ORDER BY ah.last_change_at DESC";
+        $st = dbConnection::getConnection()->prepare( $sql );
+        foreach (array_values($appointmentIds) as $i => $id) {
+            $st->bindValue($i + 1, $id, PDO::PARAM_INT);
+        }
+        $st->execute();
+
+        return $st->fetchAll(PDO::FETCH_ASSOC);
     }
 }
 

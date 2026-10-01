@@ -239,6 +239,60 @@
             </ul>
         </div>
 
+        <!-- One combined edit-history log for the whole patient record --
+             covers every appointment above, not a separate list per card
+             (each appointment card used to carry its own; see
+             view_appointment.zetem's own comment on why that moved here).
+             Read-only regardless of $can_edit_appointment -- this is a
+             log, not an editable control -- and shown to the same
+             audience as the appointment cards above (appointment-edit AND
+             appointment-view), since "see what changed" is exactly what
+             appointment-view is meant to allow (web/rbac.php). See
+             web/appointment_history.php's own docblock for the 5-minute
+             session design (a session here means "one user's burst of
+             saves on one appointment, each no more than 5 minutes after
+             the last", not a login/browser session). -->
+        <div class="appointment-history-section" id="patient-history">
+            <h5 class="appointment-history-heading" id="patient-history-heading">
+                <i class='bx bx-chevron-right toggle-icon'></i>
+                <span>Ιστορικό Αλλαγών</span>
+                {% if(isset($patient_history) && count($patient_history) > 0): %}
+                <span class="file-count-badge">{{count($patient_history)}}</span>
+                {% endif %}
+            </h5>
+
+            <div class="appointment-history-body">
+                {% if(!isset($patient_history) || count($patient_history) == 0): %}
+                <p class="no-files">Δεν υπάρχουν καταγεγραμμένες αλλαγές</p>
+                {% else: %}
+                <ul class="appointment-history-list">
+                    {% foreach($patient_history as $h): %}
+                    <li class="appointment-history-item">
+                        <span class="history-appointment">{{{$h['appointment_label']}}}</span>
+                        <span class="history-user">{{{$h['user']}}}</span>
+                        <span class="history-time">
+                            {% if($h['single_moment']): %}{{$h['started_at']}}{% else: %}{{$h['started_at']}} &ndash; {{$h['ended_at']}}{% endif %}
+                        </span>
+                        <span class="history-fields">{{implode(', ', $h['fields'])}}</span>
+                        <span class="history-count">({{$h['change_count']}} {{($h['change_count'] == 1) ? 'αλλαγή' : 'αλλαγές'}})</span>
+                    </li>
+                    {% endforeach %}
+                </ul>
+                {% endif %}
+            </div>
+        </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                var historyHeading = document.getElementById('patient-history-heading');
+                var historySection = document.getElementById('patient-history');
+                if (historyHeading && historySection) {
+                    historyHeading.addEventListener('click', function() {
+                        historySection.classList.toggle('is-expanded');
+                    });
+                }
+            });
+        </script>
 
     {% endif %}
 

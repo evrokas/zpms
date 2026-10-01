@@ -535,6 +535,18 @@
     padding-bottom: 0;
 }
 
+/* Which appointment a session belongs to -- only meaningful now that
+   .appointment-history-list is a single, patient-wide log (edit_patient.zetem)
+   spanning every appointment, not a separate list per appointment card. */
+.history-appointment {
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--dark-gray);
+    padding: 0.1rem 0.4rem;
+    border: 1px solid var(--medium-gray);
+    border-radius: 4px;
+}
+
 .history-user {
     font-weight: 600;
     color: var(--primary);
