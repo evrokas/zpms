@@ -1,7 +1,6 @@
 
 {% attach_library('loader-library'); %}
 {% attach_library('flatpickr-library'); %}
-{% attach_library('textarea-expandable-library'); %}
 
 <div class="edit-patient">    
     <div class="header">
@@ -158,7 +157,7 @@
 
         <div class="input-div">
             <label for="patient-note">Σημειώσεις</label>
-            <textarea name="patient-note" loader="info-loader" autoexpand id="" rows="5" placeholder="σημειώσεις">{{{$patient->getpnote()}}}</textarea>
+            <textarea name="patient-note" loader="info-loader" id="" rows="5" placeholder="σημειώσεις">{{{$patient->getpnote()}}}</textarea>
         </div>
         </fieldset>
 

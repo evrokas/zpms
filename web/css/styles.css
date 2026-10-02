@@ -11,8 +11,50 @@ h1, h2, h3, h4, h5, h6 {
     font-weight: 600;
 }
 
+/* Every textarea in the app now grows to fit its own content purely via
+   CSS -- field-sizing: content hands sizing to the browser instead of the
+   old web/js/textarea-autoexapand.js, which did the same job by hand on
+   every keyup (re-reading scrollHeight and writing it back as an inline
+   style). min-block-size: 5lh is the floor this still needs: field-sizing
+   alone would let an empty/short textarea collapse to its `rows` default
+   (often 2, e.g. an appointment's own notes field) rather than the more
+   comfortable minimum a note-taking field wants regardless of content --
+   5 lines, in the font's own line-height unit, so it scales with font
+   size rather than a fixed px value. Each textarea's own `rows` attribute
+   still exists as the pre-field-sizing-support fallback size for a
+   browser without it (Firefox/Safari, as of this writing). */
+textarea {
+    field-sizing: content;
+    min-block-size: 5lh;
+    /* field-sizing: content sizes BOTH axes to fit the content's own
+       natural size, not just the height -- confirmed directly: without
+       this, an empty/short textarea collapsed to ~19px wide (just enough
+       for the content it actually has) instead of filling its container,
+       which is a much more jarring regression than the tall-empty-field
+       problem field-sizing was adopted to fix in the first place. Every
+       textarea on this page already sits inside a container sized by its
+       surrounding layout (an .input-div/.input-notes block, a form
+       column, ...), so inline-size: 100% is the correct fill here, same
+       as every other full-width field already behaves. */
+    inline-size: 100%;
+}
+
 html {
     font-size: 16px;
+    /* This app has exactly one, fixed light design -- no dark-theme
+       toggle or @media (prefers-color-scheme: dark) override anywhere in
+       this codebase. Without this, a browser running in OS/browser dark
+       mode still renders native form-control chrome (a <select>'s own
+       dropdown, a date <input>'s native picker/background before
+       flatpickr finishes initializing) using ITS OWN dark palette, since
+       nothing here ever set an explicit background/color on them (grepped:
+       no input/select background-color rule exists anywhere in this
+       file) -- which is exactly why they could show up with a dark
+       background while every custom-styled element around them stayed
+       light. This one declaration tells the browser "only render this
+       page's native controls in light mode", regardless of the visitor's
+       own OS/browser preference. */
+    color-scheme: light;
 }
 
 /* you can chose any size here 16 is default */

@@ -69,12 +69,6 @@ libraries:
     css:
       - qrgen:
         src: 'css/qrgenerator.css'
-  textarea-autoexpand-library:
-    foot_script:
-      - textarea-autoexpand:
-        defer:
-        type: "text/javascript"
-        src: 'js/textarea-autoexapand.js'
   appointment-improvements:
     css:
       - uploads:

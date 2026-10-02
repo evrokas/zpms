@@ -1745,3 +1745,63 @@ closer inspection to confirm, not just assumed from the CSS). `bin/
 run_tests.sh` (101/101 static, 47/47 functional) stayed fully green.
 **Files**: `web/css/styles.css`, `web/templates/content/
 view_appointment.zetem`.
+
+## Fixed dark-background form controls; textareas auto-size via pure CSS, JS resize removed
+
+Two independent fixes requested together.
+
+**Date/select fields rendering with a dark background** -- this app has
+exactly one, fixed light design (no dark-theme toggle anywhere), but
+never declared that to the browser: without `color-scheme: light`, a
+visitor running their OS/browser in dark mode gets every native form
+control (a `<select>`'s own dropdown chrome, a date `<input>`'s native
+picker/background) rendered in the browser's *own* dark palette instead,
+since nothing in this app's CSS ever set an explicit background/color on
+them (confirmed by grep: no input/select `background-color` rule exists
+anywhere in `styles.css`) -- every custom-styled element around them
+stays light, so only the native-chrome ones stood out as wrong. Added
+`color-scheme: light` to the existing `html {}` rule -- a single
+declaration that fixes every native control on every page at once,
+rather than chasing down and hardcoding a background on each one
+individually. Verified by loading a real page with Playwright's
+`colorScheme: 'dark'` emulation (the only way to actually reproduce this
+-- a normal light-mode browser never shows the bug) and confirming via
+`getComputedStyle()` that `<select>`/date fields stayed light regardless.
+
+**Textareas now size to their own content via CSS (`field-sizing:
+content` + `min-block-size: 5lh`), not JS**: `web/js/
+textarea-autoexapand.js` (and its `textarea-autoexpand-library`/dead
+`textarea-expandable-library` `attach_library()` wiring) is gone
+entirely -- it did the identical job by hand on every keyup, reading
+`scrollHeight` and writing it back as an inline `style.height`.
+`min-block-size: 5lh` is the floor `field-sizing` alone wouldn't give:
+without it, an empty/short textarea would size down to its bare `rows`
+default instead of a comfortable minimum, in a unit (`lh`, line-heights)
+that scales with the font rather than a fixed px value. Applied globally
+to every `textarea` in the app, not just the three that used to carry the
+JS-only `autoexpand` attribute (now removed from all three, since nothing
+reads it anymore) -- the two `pending_appointment_edit.zetem`/
+`new_consultation.zetem` notes fields and the two webform search-response
+boxes get the same content-based growth for free.
+
+**A real, easy-to-miss side effect of `field-sizing: content`, caught
+only by measuring the rendered element, not by reading MDN's own
+description of the property**: it sizes *both* axes to the content's
+natural size, not just the height -- an empty textarea collapsed to
+~19px wide (just enough for its own placeholder/cursor) instead of
+filling its container, a far more jarring regression than the
+tall-empty-field problem this was adopted to fix. Added `inline-size:
+100%` alongside it, confirmed via `getBoundingClientRect()` that a fresh
+textarea now spans its full container width while still floored at the
+5-line height, and that typing ten lines into it grows the element
+(82.7px -> 183.6px) with zero JS involved.
+
+**Verified**: `bin/run_tests.sh` (100/100 static, 47/47 functional -- JS
+syntax dropped from 8/8 to 7/7, the exact file count after deleting
+`textarea-autoexapand.js`, confirmed expected rather than a missed
+reference) stayed fully green. Screenshotted the full-size appointment
+form, the compact appointment-card notes field, and a 10-line note mid-
+type, all at their real rendered sizes. **Files**: `web/css/styles.css`,
+`config/settings.info.yaml`, `web/templates/content/{edit_patient,
+edit_appointment,view_appointment}.zetem`, `web/js/
+textarea-autoexapand.js` (deleted).

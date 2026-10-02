@@ -1,4 +1,3 @@
-{% attach_library('textarea-autoexpand-library') %}
 {% attach_library('appointment-improvements') %}
 {% attach_library('loader-library') %}
 {% attach_library('flatpickr-library') %}
@@ -81,13 +80,13 @@
 
                 <div class="input-div input-notes">
                     <label for="appointment-notes">Σημειώσεις</label>
-                    <!-- rows was 5 -- autoexpand (web/js/textarea-autoexapand.js)
-                         grows this on input, so a tall starting height only
-                         ever bought blank space for the common case of a
-                         short or empty note; 2 is enough to show there's a
-                         notes field at all without reserving room nothing
-                         is using yet. -->
-                    <textarea name="appointment-notes" id="" autoexpand rows="2"
+                    <!-- Sizing is pure CSS now (field-sizing: content +
+                         min-block-size: 5lh on textarea, see styles.css)
+                         -- grows to fit content on its own, with no JS
+                         needed (web/js/textarea-autoexapand.js, which did
+                         this by hand on every keyup, is gone). rows="2" is
+                         just the pre-field-sizing-support fallback size. -->
+                    <textarea name="appointment-notes" id="" rows="2"
                         loader="app-loader-{{$index}}">{{$appointment->getanote()}}</textarea>
                 </div>
 
