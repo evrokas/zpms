@@ -304,18 +304,15 @@ form .input-div {
     }
 
     /* "Διαγραφή Ασθενή" (Delete patient) -- edit_patient.zetem's own
-       .patient-danger-zone, a real <button> (not input[type=submit]),
-       since the delete action is its own small <form>, separate from
-       the main patient-fields form above. Same shape as .btn-secondary,
-       colored with the --error tokens icon-btn-danger already uses, so
-       it reads as the one genuinely destructive action on the page. */
-    .patient-danger-zone {
-        margin-top: 1rem;
-        padding-top: 1rem;
-        border-top: 1px solid var(--medium-gray);
-    }
-
-    .patient-danger-zone .btn-danger {
+       .inline-delete-form, a real <button> (not input[type=submit]),
+       since the delete action is its own small <form>. Sits inline inside
+       .patient-appointments now, next to "Νέο Ραντεβού"/"Νέο Χειρουργείο"
+       (previously its own separated, full-width ".patient-danger-zone"
+       section) -- same shape as .btn-secondary, colored with the --error
+       tokens icon-btn-danger already uses, so it still reads as the one
+       genuinely destructive action on the page despite sitting next to
+       two harmless ones. */
+    .btn-danger {
         display: inline-flex;
         align-items: center;
         gap: 0.4rem;
@@ -329,7 +326,7 @@ form .input-div {
         transition: background-color var(--transition-fast), color var(--transition-fast);
     }
 
-    .patient-danger-zone .btn-danger:hover {
+    .btn-danger:hover {
         background-color: var(--error);
         color: white;
     }
@@ -528,10 +525,18 @@ form .input-div {
 }
 
 .appointment-entry {
-    padding: var(--spacing-md);
+    /* Was --spacing-md (1.5rem) -- stacked on top of
+       ul.patient-appointments-list's own border/padding and the <li>'s
+       own padding below, this read as a large band of dead space around
+       every card rather than a card with reasonable breathing room. */
+    padding: var(--spacing-sm);
 
     & .input-header {
-        margin: auto 1rem;
+        /* Was "auto 1rem" -- the 1rem side margin duplicated the
+           padding above (both insetting the same content horizontally
+           from the same edge), which is exactly the kind of compounding
+           this trim is meant to remove. */
+        margin: 0;
         /* display: flex; */
         /* flex-wrap: wrap; */
         /* justify-content: space-between; */
@@ -1628,7 +1633,7 @@ a.btn-secondary:hover {
 }
 
 .patient-appointments-list>li {
-    padding: 0.2rem;
+    padding: 0;
 }
 
 .patient-appointments-list>li:nth-child(odd) {
@@ -1817,9 +1822,13 @@ a.btn-secondary:hover {
 
 ul.patient-appointments-list {
     list-style: none;
-    padding: 0.5rem;
+    /* Was padding: 0.5rem / margin-top: var(--spacing-md) (1.5rem) --
+       combined with .appointment-entry's own padding and the <li>'s own
+       (now removed) padding just above, this was several layers of inset
+       all compounding around the same card. */
+    padding: 0;
     border: 1px solid rgb(109, 109, 109);
-    margin-top: var(--spacing-md);
+    margin-top: var(--spacing-sm);
 }
 
 

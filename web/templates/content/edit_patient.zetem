@@ -180,20 +180,10 @@
         </div>
     </form>
 
-    {% if($action != 'new' && $can_delete_patient): %}
-        <div class="patient-danger-zone">
-            <form class="inline-delete-form" method="post" action="{{rel_url('/patient/'.$id.'/delete')}}" confirmation>
-                {{ csrf_field() }}
-                <button type="submit" class="btn-danger">
-                    <i class="bx bx-trash"></i> Διαγραφή Ασθενή
-                </button>
-            </form>
-        </div>
-    {% endif %}
-
-    {% if($action != 'new' && $can_edit_appointment): %}
+    {% if($action != 'new' && ($can_edit_appointment || $can_delete_patient)): %}
         <hr>
         <div class="patient-appointments">
+            {% if($can_edit_appointment): %}
             <a href="{{rel_url('/appointment/'.$id.'/newappointment')}}">
                 <div class="new-appointment">
                     Νέο Ραντεβού
@@ -213,6 +203,21 @@
                     Νέο Χειρουργείο
                 </div>
             </a>
+            {% endif %}
+
+            <!-- Patient deletion used to live in its own full-width
+                 ".patient-danger-zone" section, well below these two
+                 buttons -- moved in here, right next to them, so every
+                 record-level action on this page lives in one row rather
+                 than being spread across separate blocks. -->
+            {% if($can_delete_patient): %}
+            <form class="inline-delete-form" method="post" action="{{rel_url('/patient/'.$id.'/delete')}}" confirmation>
+                {{ csrf_field() }}
+                <button type="submit" class="btn-danger">
+                    <i class="bx bx-trash"></i> Διαγραφή Ασθενή
+                </button>
+            </form>
+            {% endif %}
         </div>
     {% endif %}
 

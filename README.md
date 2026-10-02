@@ -1534,3 +1534,46 @@ green. **Files**: `web/templates/content/view_appointment.zetem`,
 `web/templates/content/edit_patient.zetem`, `web/index.php`,
 `web/ClassesEx.php`, `web/appointment_history.php`,
 `web/css/file-uploads.css`, `tests/functional/appointment_crud.php`.
+
+## Patient edit page: delete button moved next to the Add buttons; appointment cards tightened
+
+Reported directly against a real patient record: "Διαγραφή Ασθενή" (Delete
+Patient) sat in its own separated, full-width section below "Νέο
+Ραντεβού"/"Νέο Χειρουργείο" instead of alongside them, and the appointment
+card below had a visibly large amount of dead space around it -- a thick
+gray margin from `ul.patient-appointments-list`'s own border/padding plus
+`margin-top`, then more again from the `<li>`'s own padding, then more
+again from `.appointment-entry`'s own padding (`--spacing-md`, 1.5rem) --
+four layers of inset all compounding around the same card.
+
+**Button move**: `edit_patient.zetem`'s separate `.patient-danger-zone`
+block is gone -- the delete form now renders inside `.patient-appointments`
+(the same flex row "Νέο Ραντεβού"/"Νέο Χειρουργείο" already use), after
+both buttons, gated on `$can_delete_patient` independently of
+`$can_edit_appointment` so the row still renders correctly for a viewer
+with only one of the two permissions. `.btn-danger`'s CSS (`web/css/
+styles.css`) is no longer scoped under the now-removed `.patient-danger-
+zone` selector -- it's a standalone rule now, same visual shape
+(red-outlined pill, inverts to solid red on hover) as before.
+
+**Spacing**: trimmed every layer that was compounding around the card --
+`ul.patient-appointments-list`'s `padding` (was 0.5rem, now 0) and
+`margin-top` (was `--spacing-md`/1.5rem, now `--spacing-sm`/0.5rem, the
+`<hr>` above it already provides separation from the Add-buttons row);
+`.patient-appointments-list>li`'s `padding` (was 0.2rem, now 0);
+`.appointment-entry`'s own `padding` (was `--spacing-md`/1.5rem, now
+`--spacing-sm`/0.5rem); and its `.input-header`'s side `margin` (was
+`auto 1rem`, now `0` -- it was only ever duplicating `.appointment-entry`'s
+own padding on the same edge, since the vertical half of `auto 1rem` was
+already computing to 0 in normal block flow).
+
+**Verified**: a fresh test patient with one appointment, screenshotted at
+both 390px (mobile) and 1280px (desktop) -- the delete button now sits in
+the same row as the two Add buttons on desktop (wraps to its own line on
+the narrow mobile width, same `flex-wrap` behavior the row already had),
+and the appointment card's computed padding/margins came out at the new,
+smaller values (confirmed via `getComputedStyle()`, not just reading the
+CSS). `bin/run_tests.sh` (101/101 static, 47/47 functional) stayed fully
+green, including the existing test that only checks for the "Διαγραφή
+Ασθενή" label text, unaffected by the button's new position. **Files**:
+`web/templates/content/edit_patient.zetem`, `web/css/styles.css`.
