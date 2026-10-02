@@ -272,6 +272,24 @@ form .input-div {
         padding: 0.5rem;
     }
 
+    /* Same leak as .inline-delete-form above: ".edit-patient form
+       .buttons" was meant for the big patient-fields form's own Save/
+       Cancel row, but .appointment-entry's <form> also sits under
+       .edit-patient, and this selector (2 classes + 1 element) is more
+       specific than ".appointment-entry .buttons" (2 classes) -- so it
+       was winning on justify-content/gap/margin-top/padding regardless
+       of this file's own source order, undoing the appointment card's
+       own, tighter button-row spacing a few dozen lines down. One more
+       class in the selector (3 classes) wins it back for this one case
+       without touching the rule above, which the main form still needs
+       unchanged. */
+    .appointment-entry .buttons {
+        justify-content: flex-end;
+        gap: var(--spacing-sm);
+        margin-top: 0;
+        padding: 0;
+    }
+
     /* The save-status spinner (#info-loader, .loader0 -- see loader.css)
        is a flex sibling of the two submit buttons here, so
        justify-content: space-between treated it as a third row item and
@@ -546,11 +564,10 @@ form .input-div {
 }
 
 .appointment-entry {
-    /* Was --spacing-md (1.5rem) -- stacked on top of
-       ul.patient-appointments-list's own border/padding and the <li>'s
-       own padding below, this read as a large band of dead space around
-       every card rather than a card with reasonable breathing room. */
-    padding: var(--spacing-sm);
+    /* Was --spacing-md (1.5rem), then --spacing-sm (0.5rem) -- still
+       stacked on top of ul.patient-appointments-list's own border and
+       the <li> above, so trimmed once more down to --spacing-xs. */
+    padding: var(--spacing-xs);
 
     & .input-header {
         /* Was "auto 1rem" -- the 1rem side margin duplicated the
@@ -565,7 +582,8 @@ form .input-div {
         display: grid;
         grid-template-columns: 1fr 1fr 1fr;
 
-        gap: var(--spacing);
+        /* Was --spacing (1rem) between the date/place columns. */
+        gap: var(--spacing-sm);
 
         & .input-div {
             display: grid;
@@ -574,7 +592,12 @@ form .input-div {
             min-width: max-content;
             /* flex: 1; */
             min-width: 200px;
-            gap: 1rem;
+            /* Was 1rem between a field's own label and its input/select
+               -- a label sitting almost flush against its field reads
+               fine (every other label/field pair on this page already
+               does) and this was the single largest remaining gap inside
+               the card. */
+            gap: var(--spacing-xs);
 
             width: auto !important;
 
@@ -610,7 +633,10 @@ form .input-div {
     form {
         display: flex;
         flex-direction: column;
-        gap: var(--spacing);
+        /* Was --spacing (1rem) between the date/place row, the loader
+           strip, and the notes/buttons block below -- the single
+           biggest remaining vertical gap inside the card. */
+        gap: var(--spacing-sm);
     }
 
     .input-div input,
@@ -639,8 +665,11 @@ form .input-div {
     .buttons {
         display: flex;
         justify-content: flex-end;
-        gap: var(--spacing);
-        margin-top: var(--spacing);
+        gap: var(--spacing-sm);
+        /* Was --spacing (1rem) -- form's own gap (above) already
+           separates this row from the notes field; this margin was
+           adding a second gap on top of that one. */
+        margin-top: 0;
     }
 
     .buttons input[type="submit"] {
@@ -1849,7 +1878,7 @@ ul.patient-appointments-list {
        all compounding around the same card. */
     padding: 0;
     border: 1px solid rgb(109, 109, 109);
-    margin-top: var(--spacing-sm);
+    margin-top: var(--spacing-xs);
 }
 
 

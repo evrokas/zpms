@@ -1645,3 +1645,38 @@ its own white 87px-tall card), the age badge produces correct output for
 every case above, and a fresh appointment card's notes textarea renders
 at the new, shorter height. **Files**: `web/css/styles.css`, `web/js/
 scripts.js`, `web/templates/content/view_appointment.zetem`.
+
+## Appointment card: another pass tightening margin/padding, plus a specificity leak it uncovered
+
+Direct follow-up, after the previous two passes: the card still had more
+room to tighten than margins alone, and the `.buttons` row specifically
+wasn't shrinking at all despite being edited in the previous commit.
+
+**Why `.buttons` wasn't shrinking**: `.edit-patient { form { .buttons
+{...} } }` -- `justify-content: space-between`, `gap: var(--spacing)`,
+`margin-top: var(--spacing)`, `padding: 0.5rem` -- is meant for the big
+patient-fields form's own Save/Cancel row, but `.appointment-entry`'s own
+`<form>` also sits under `.edit-patient`, and that selector (2 classes + 1
+element) is more specific than `.appointment-entry .buttons` (2 classes),
+so it silently won regardless of this file's own source order -- the
+exact same leak class as the delete-button fix two commits ago, just on a
+different property set. Fixed the same way: a more specific
+`.appointment-entry .buttons` override (3 classes) right after the
+leaking rule, resetting `justify-content`/`gap`/`margin-top`/`padding`
+back to what the card actually wants.
+
+**Further trims**: `.appointment-entry`'s own padding (`--spacing-sm` ->
+`--spacing-xs`); the gap between the date/place columns and between a
+field's own label and its input (`--spacing`/1rem -> `--spacing-sm`/
+`--spacing-xs`); the form's own vertical gap between the date/place row,
+loader strip, and notes/buttons block (`--spacing` -> `--spacing-sm`);
+`ul.patient-appointments-list`'s `margin-top` (`--spacing-sm` ->
+`--spacing-xs`).
+
+**Verified**: a fresh appointment card's height dropped further (398px vs
+426px immediately before this pass, measured via `getBoundingClientRect()`
+at 390px viewport width); `.appointment-entry .buttons`'s computed
+`margin-top` is now `0px` (was silently `1rem`-equivalent despite the
+earlier edit). Screenshotted at both 390px and 1280px. `bin/run_tests.sh`
+(101/101 static, 47/47 functional) stayed fully green. **Files**:
+`web/css/styles.css` only.
