@@ -564,11 +564,78 @@ form .input-div {
 }
 
 .appointment-entry {
-    /* Was --spacing-md (1.5rem), then --spacing-sm (0.5rem) -- still
-       stacked on top of ul.patient-appointments-list's own border and
-       the <li> above, so trimmed once more down to --spacing-xs. */
-    padding: var(--spacing-xs);
+    /* Now a real, individually-elevated card (white, rounded, shadowed,
+       a colored left accent) rather than a zebra-striped row inside one
+       shared bordered box (see ul.patient-appointments-list below, which
+       dropped its own border/striping in favor of just a gap between
+       these cards) -- bumped padding back up from --spacing-xs to
+       --spacing-sm now that the card has its own visual boundary to
+       breathe inside, rather than relying on margin trimming alone to
+       read as "compact". */
+    position: relative;
+    padding: var(--spacing-sm);
+    background-color: white;
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-sm);
+    border-left: 4px solid var(--primary);
+    transition: box-shadow var(--transition-fast);
+}
 
+.appointment-entry:hover {
+    box-shadow: var(--shadow-base);
+}
+
+/* Χειρουργείο gets a visually distinct accent from a plain Ραντεβού (its
+   own, not --error -- that color already means "destructive action"
+   everywhere else on this page, e.g. Διαγραφή, and a surgery card isn't
+   that) so the two are tellable apart at a glance down a list of several
+   cards, without reading each one's label text. */
+.appointment-entry.appointment-type-operation {
+    border-left-color: var(--warning-dark);
+}
+
+/* Small "which one is this" chip -- top-right corner of each card,
+   echoing the same index the "Date N: ..." jump-links above the list
+   already use (search for appdates in edit_patient.zetem), but visible
+   without having to scroll back up to that list once there are several
+   cards on the page. */
+.appointment-index-badge {
+    position: absolute;
+    top: var(--spacing-xs);
+    right: var(--spacing-xs);
+    /* Without this, the badge (z-index:auto) and the card's own <form>
+       (also position:relative -- ".edit-patient form", further up this
+       file, leaks that onto every form under .edit-patient, appointment
+       forms included) both paint in the same z-index:auto layer, ordered
+       by DOM position -- and the form comes after the badge in the
+       markup, so it silently painted over it completely. Confirmed via
+       document.elementFromPoint() at the badge's own coordinates
+       returning the <form>, not the badge, despite the badge measuring
+       as correctly positioned and fully opaque. An explicit z-index
+       moves it to its own, higher paint layer regardless of DOM order,
+       without needing to chase down (or risk disturbing) whatever else
+       relies on the form's own position:relative. */
+    z-index: 1;
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: white;
+    /* Was var(--dark-gray) text on var(--light-gray) -- both muted
+       enough that the badge all but disappeared against the card's own
+       white background (confirmed via getBoundingClientRect(): correctly
+       positioned, just not visible). White-on-accent instead, and tied
+       to the same color as this card's own type accent (left border/
+       label) just below, rather than a third, unrelated neutral. */
+    background-color: var(--primary);
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    line-height: 1.4;
+}
+
+.appointment-entry.appointment-type-operation .appointment-index-badge {
+    background-color: var(--warning-dark);
+}
+
+.appointment-entry {
     & .input-header {
         /* Was "auto 1rem" -- the 1rem side margin duplicated the
            padding above (both insetting the same content horizontally
@@ -620,12 +687,56 @@ form .input-div {
             }
         }
 
-        & .input-div[role="rendezvouz"] {
-            & label {
-                font-size: 1.2rem;
-                color: red;
+        & .input-div label[role="location"] {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            color: var(--dark-gray);
+
+            & i {
+                font-size: 0.95rem;
             }
         }
+
+        & .input-div[role="rendezvouz"] {
+            /* Was a flat 1.2rem red label -- red specifically reads as
+               "destructive/error" everywhere else on this page, which a
+               plain Ραντεβού never was. Color now comes from the card's
+               own type accent (.appointment-type-visit/-operation on the
+               ancestor .appointment-entry) instead, and an icon (bx-
+               calendar-check / bx-plus-medical, picked per type right
+               below) gives the same type information back at a glance
+               that the old, more alarming color used to. */
+            & label {
+                display: flex;
+                align-items: center;
+                gap: 0.35rem;
+                font-size: 1rem;
+                font-weight: 700;
+                color: var(--primary);
+            }
+
+            & label::before {
+                font-family: boxicons;
+                font-size: 1.05rem;
+                content: "\ea17"; /* bx-calendar-check, confirmed against web/css/bx/css/boxicons.min.css */
+            }
+        }
+    }
+
+    &.appointment-type-visit .input-div[role="rendezvouz"] label {
+        color: var(--primary);
+    }
+
+    &.appointment-type-operation .input-div[role="rendezvouz"] label {
+        color: var(--warning-dark);
+    }
+
+    /* "Χειρουργείο" cards get bx-plus-medical instead of the default
+       calendar icon above -- same codepoint .new-operation::before
+       already uses, confirmed against the same vendored stylesheet. */
+    &.appointment-type-operation .input-div[role="rendezvouz"] label::before {
+        content: "\ebc2";
     }
 }
 
@@ -1686,8 +1797,13 @@ a.btn-secondary:hover {
     padding: 0;
 }
 
+/* Each .appointment-entry card now carries its own white background/
+   shadow/colored accent (see styles.css above) -- the old zebra-striped
+   lightgray <li> background was telling cards apart for the previous,
+   flat/bordered-list design, and would now just show as a mismatched
+   gray halo around every other card's own white one. */
 .patient-appointments-list>li:nth-child(odd) {
-    background-color: lightgray;
+    background-color: transparent;
 }
 
 .appointments-list {
@@ -1872,13 +1988,19 @@ a.btn-secondary:hover {
 
 ul.patient-appointments-list {
     list-style: none;
-    /* Was padding: 0.5rem / margin-top: var(--spacing-md) (1.5rem) --
-       combined with .appointment-entry's own padding and the <li>'s own
-       (now removed) padding just above, this was several layers of inset
-       all compounding around the same card. */
+    /* Was padding: 0.5rem / border: 1px solid / margin-top:
+       var(--spacing-md) (1.5rem), wrapping every card in one shared
+       bordered box with zebra-striped <li> backgrounds to tell them
+       apart. Each .appointment-entry is now its own elevated card (white
+       background, shadow, colored accent -- see styles.css above), so
+       this outer box's own border/background just doubled up on that
+       same job; replaced with a plain flex column and a gap between
+       cards instead. */
     padding: 0;
-    border: 1px solid rgb(109, 109, 109);
     margin-top: var(--spacing-xs);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
 }
 
 

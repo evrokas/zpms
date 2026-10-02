@@ -4,7 +4,13 @@
 {% attach_library('flatpickr-library') %}
 
 <!-- <hr> -->
-<div class="appointment-entry" id="app-{{$index}}">
+<!-- appointment-type-operation/-visit drives this whole card's accent
+     color (left border + type label/icon color -- see .appointment-entry
+     in styles.css) so a surgery reads as visually distinct from a plain
+     appointment at a glance, scanning down a list of several cards,
+     without having to read the label text on each one. -->
+<div class="appointment-entry appointment-type-{{($appointment->getatype() == 'operation')?'operation':'visit'}}" id="app-{{$index}}">
+    <span class="appointment-index-badge" title="Ραντεβού/Χειρουργείο #{{$index}} σε σειρά για αυτόν τον ασθενή">#{{$index}}</span>
     <form action="{{$action}}" method="post">
         {{ csrf_field() }}
         <fieldset {% if(!$can_edit): %}disabled{% endif %}>
@@ -18,7 +24,10 @@
                      web/index.php for where the type is actually decided:
                      which "Add ..." button was clicked on the patient
                      page). No dropdown/badge/appointment-type field
-                     anywhere in this form. -->
+                     anywhere in this form. The icon (CSS ::before, see
+                     .appointment-type-visit/-operation in styles.css)
+                     is purely decorative/type-redundant, so nothing here
+                     needs an alt-text equivalent for it. -->
                 <label for="appointment-date-{{$index}}">{{($appointment->getatype() == 'operation')?'Χειρουργείο':'Ραντεβού'}}</label>
                 <input type="text" loader="app-loader-{{$index}}" name="appointment-date-{{$index}}" id="appointment-date-{{$index}}"
                     role="date-picker" value="{{formatBrowserDate($appointment->getadate())}}">
@@ -51,7 +60,7 @@
             </script>
 
             <div class="input-div">
-                <label for="appointment-place" role="location">Περιοχή</label>
+                <label for="appointment-place" role="location"><i class='bx bx-map-pin'></i> Περιοχή</label>
                 <!-- <input type="text" name="appointment-place" id=""  value="{{$appointment->getaplace()}}"> -->
 
                 <!-- {% if(isset($locations)): %} -->

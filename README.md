@@ -1680,3 +1680,68 @@ at 390px viewport width); `.appointment-entry .buttons`'s computed
 earlier edit). Screenshotted at both 390px and 1280px. `bin/run_tests.sh`
 (101/101 static, 47/47 functional) stayed fully green. **Files**:
 `web/css/styles.css` only.
+
+## Appointment/operation cards redesigned for visual clarity and scannability
+
+Direct request to make the cards "more visually appealing, better
+information and better appearance" -- up to this point the previous three
+passes had only ever trimmed the existing flat, zebra-striped list design
+(one shared bordered box, alternating `lightgray`/white `<li>` rows); this
+pass redesigns the cards themselves rather than just their spacing.
+
+**Each appointment/operation is now its own elevated card**, not a row in
+one shared box: `ul.patient-appointments-list` dropped its own border and
+the `<li>` zebra striping, replaced with a plain flex column and a gap
+between cards -- each `.appointment-entry` now carries its own white
+background, rounded corners, and a subtle shadow (`--shadow-sm`, slightly
+deeper on hover) instead.
+
+**Ραντεβού and Χειρουργείο are now visually distinct at a glance, not just
+by their label text**: each card gets a 4px colored left accent --
+`--primary` (teal) for a plain appointment, `--warning-dark` (amber) for a
+surgery, deliberately not `--error`/red, which already means "destructive
+action" everywhere else on this page (Διαγραφή). The type label itself
+dropped its old flat 1.2rem red text for a bold, icon-prefixed label in
+the same accent color (`bx-calendar-check` / `bx-plus-medical`, the latter
+the same codepoint `.new-operation`'s own button icon already uses), and
+the location field gained a `bx-map-pin` icon too, both confirmed against
+the vendored `boxicons.min.css` rather than guessed.
+
+**A small `#N` index badge** in each card's top-right corner, colored to
+match that card's own type accent, echoes the same index the "Date N:
+..." jump-links above the list already use -- useful once there are
+several cards and the jump-link row has scrolled out of view.
+
+**Two real bugs found building this, both the same recurring class as
+three earlier commits' `.inline-delete-form`/`.buttons` leaks**:
+1. The badge's text/background were both muted neutrals (`var(--dark-
+   gray)` on `var(--light-gray)`) that nearly disappeared against the
+   card's own white background -- confirmed positioned correctly via
+   `getBoundingClientRect()` but functionally invisible. Fixed with
+   white text on the card's own accent color instead.
+2. Even after that fix, the badge still didn't render -- confirmed via
+   `document.elementFromPoint()` at the badge's own coordinates that the
+   appointment's `<form>` was the topmost element there, not the badge.
+   Root cause: `.edit-patient { form { position: relative; ... } }`
+   (meant for the main patient-fields form) leaks `position: relative`
+   onto every form under `.edit-patient`, appointment forms included --
+   since the form comes after the badge in the markup and both ended up
+   in the same `z-index: auto` paint layer, the form silently painted
+   over it. Fixed with an explicit `z-index: 1` on the badge, which wins
+   regardless of DOM order without needing to chase down (or risk
+   disturbing) whatever else depends on the form's own `position:
+   relative`.
+
+**Verified against a real test server**: created a patient with one of
+each card type, confirmed via `getComputedStyle()` that each card's
+border-left/border-radius/box-shadow and the badge's text/background/
+z-index all resolve as intended, and via `document.elementFromPoint()`
+that the badge -- not the form -- is now the topmost element at its own
+coordinates. Screenshotted at 390px and 1280px widths, plus a high-
+resolution single-card crop and a zoomed left-edge crop to directly
+confirm the colored accent border and the map-pin icon render correctly
+(both were hard to make out at normal screenshot resolution and needed
+closer inspection to confirm, not just assumed from the CSS). `bin/
+run_tests.sh` (101/101 static, 47/47 functional) stayed fully green.
+**Files**: `web/css/styles.css`, `web/templates/content/
+view_appointment.zetem`.
