@@ -1805,3 +1805,55 @@ type, all at their real rendered sizes. **Files**: `web/css/styles.css`,
 `config/settings.info.yaml`, `web/templates/content/{edit_patient,
 edit_appointment,view_appointment}.zetem`, `web/js/
 textarea-autoexapand.js` (deleted).
+
+## Flatpickr's own date/time popup still showed a dark background, despite `color-scheme: light`
+
+Follow-up to the entry above: that fix covers a *plain* native control (a
+bare `<select>`, a date `<input>` before flatpickr takes over) correctly,
+but flatpickr's own calendar popup -- the custom widget that actually
+replaces those controls once JS initializes -- wraps several native
+`<input type="number">`/`<select>` elements of its own: the year field,
+the hour/minute fields on a date+time picker (`enableTime: true`, used by
+`edit_appointment.zetem`/`pending_appointment_edit.zetem`/
+`new_consultation.zetem`), and the month dropdown. Grepped `web/modules/
+flatpickr/vendor/flatpickr/flatpickr.min.css` directly: every one of these
+is given `background:transparent` by flatpickr's own stylesheet, relying
+on the white `.flatpickr-calendar` background behind them to show through
+-- and confirmed that file carries no `prefers-color-scheme`/
+`color-scheme` rule of its own either.
+
+A transparent background still lets a browser paint its own native-widget
+chrome underneath before compositing that transparency on top, and
+`color-scheme: light` on `<html>` is an inherited property, not a
+guarantee that every engine keys a deeply-nested, dynamically-inserted
+third-party widget's own descendants off it the same way for every native
+control type (`<input type="number">`, `<select>`) -- this sandbox's own
+Chromium rendered everything correctly either way (confirmed with
+Playwright's `colorScheme: 'dark'` emulation, both before and after this
+fix, same result), but the dark background was still reported in
+practice, consistent with a different browser/engine not fully extending
+`color-scheme` into that native-chrome base layer for elements this deep.
+
+Rather than keep trusting inheritance for elements inside a third-party
+widget's own DOM, added explicit, opaque `background-color`/`color` (plus
+a `color-scheme: light` declaration of their own, belt-and-suspenders) to
+every one of flatpickr's native sub-inputs directly: `.numInputWrapper
+input` (year, hour, minute), `.flatpickr-current-month input.cur-year`,
+`.flatpickr-current-month .flatpickr-monthDropdown-months` (+ its
+`<option>`s), and `.flatpickr-time input`/`.flatpickr-am-pm`. An explicit,
+opaque background is a real painted surface for the browser to show --
+never a transparent one a native dark-mode layer could show through
+instead, regardless of how faithfully any given engine propagates
+`color-scheme` into that specific layer.
+
+**Verified** with Playwright's `colorScheme: 'dark'` emulation against a
+real date+time picker (`edit_appointment.zetem`'s "Ημ/νια & Ώρα ραντεβού"
+field): `getComputedStyle()` on the hour/minute inputs, the month
+`<select>`, and the year input all now report an explicit
+`rgb(255, 255, 255)` background (were previously resolving to whatever
+the browser's own native chrome painted, invisible to `getComputedStyle()`
+since that's a UA-internal paint layer, not a CSS property value) -- and a
+full-page screenshot confirms the whole popup, including the "23 : 30"
+time row, renders light. `bin/run_tests.sh` (101/101 static, 47/47
+functional) stayed fully green throughout -- this is CSS-only, nothing
+behavioral changed. **Files**: `web/css/styles.css`.

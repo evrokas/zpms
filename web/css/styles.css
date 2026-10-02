@@ -57,6 +57,43 @@ html {
     color-scheme: light;
 }
 
+/* color-scheme: light on <html> above covers a plain native control (a
+   <select>, a bare date input) correctly, but flatpickr's own popup
+   (web/modules/flatpickr/vendor/flatpickr/flatpickr.min.css) wraps several
+   native <input type="number">/<select> elements of its own -- the year
+   field, the hour/minute/second fields, and the month dropdown -- and
+   deliberately gives every one of them `background:transparent` (grepped
+   that file directly: .numInputWrapper input, .flatpickr-time input and
+   .flatpickr-current-month input.cur-year/.flatpickr-monthDropdown-months
+   all do this, relying on the white .flatpickr-calendar background behind
+   them to show through). A transparent background still lets a browser
+   paint its own native widget chrome underneath before compositing that
+   transparency on top -- confirmed to render correctly in this sandbox's
+   Chromium either way, but reported as still dark in practice on another
+   browser/engine, which is consistent with some browsers keying that
+   underlying native-chrome layer off color-scheme in a way that doesn't
+   reliably reach a deeply nested, dynamically-inserted widget's own
+   descendants just because <html> declared it. Rather than keep trusting
+   inheritance for elements this deep in a third-party widget's own DOM,
+   every one of flatpickr's native sub-inputs gets an explicit, opaque
+   background + text color here, plus its own color-scheme declaration --
+   so there is a real painted surface for the browser to show, never a
+   transparent one a native dark-mode layer could show through. */
+.flatpickr-calendar .numInputWrapper input,
+.flatpickr-calendar .flatpickr-current-month input.cur-year,
+.flatpickr-calendar .flatpickr-current-month .flatpickr-monthDropdown-months,
+.flatpickr-calendar .flatpickr-time input,
+.flatpickr-calendar .flatpickr-time .flatpickr-am-pm {
+    color-scheme: light;
+    background-color: #fff;
+    color: #393939;
+}
+
+.flatpickr-calendar .flatpickr-current-month .flatpickr-monthDropdown-months option {
+    background-color: #fff;
+    color: #393939;
+}
+
 /* you can chose any size here 16 is default */
 @media screen and (max-width: 800px) {
     html {
