@@ -241,6 +241,27 @@ form .input-div {
         box-shadow: var(--shadow-base);
     }
 
+    /* The rule above matches ANY <form> under .edit-patient -- it was
+       meant for the big patient-fields form, but also caught the small
+       "Διαγραφή Ασθενή" form sitting in the .patient-appointments button
+       row (edit_patient.zetem), giving that one button the same white
+       card background/padding/box-shadow as the whole page's main form,
+       which is why it looked boxed-in and padded next to its two plain
+       "Νέο Ραντεβού"/"Νέο Χειρουργείο" neighbors. ".edit-patient
+       .inline-delete-form" (two classes) is more specific than
+       ".edit-patient form" (one class + one element) regardless of
+       source order, so this reliably wins without needing :not() on the
+       rule above -- which would have raised THAT rule's own specificity
+       past .appointment-entry form's (later in this file, same
+       specificity today, relying on source order to win) and broken the
+       appointment cards' own layout instead of just fixing this one. */
+    .inline-delete-form {
+        display: inline-flex;
+        padding: 0;
+        background-color: transparent;
+        border-radius: 0;
+        box-shadow: none;
+    }
 
     form .buttons {
         position: relative;

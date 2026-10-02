@@ -1577,3 +1577,71 @@ CSS). `bin/run_tests.sh` (101/101 static, 47/47 functional) stayed fully
 green, including the existing test that only checks for the "Διαγραφή
 Ασθενή" label text, unaffected by the button's new position. **Files**:
 `web/templates/content/edit_patient.zetem`, `web/css/styles.css`.
+
+## Three follow-up bugs from the previous layout pass: a leaked form style, a broken age badge, and a taller-than-needed notes field
+
+Reported directly against a real patient record, all three in one message.
+
+**"Διαγραφή Ασθενή" had visible whitespace around it, unlike its two
+neighbors.** Root cause: `.edit-patient { form { ... } }` (`web/css/
+styles.css`) targets *every* `<form>` under `.edit-patient` -- written for
+the big patient-fields form, it was also catching the small delete form
+that now lives in the same `.patient-appointments` row (see the previous
+entry), giving it the identical white card background/padding/box-shadow
+meant for the whole-page form. Fixed with a more specific override,
+`.edit-patient .inline-delete-form { display: inline-flex; padding: 0;
+background-color: transparent; border-radius: 0; box-shadow: none; }` --
+deliberately *not* `.edit-patient form:not(.inline-delete-form)` on the
+original rule, which would have raised that rule's own specificity above
+`.appointment-entry form`'s (same specificity today, relying on source
+order to win) and broken the appointment cards' own flex layout as a side
+effect of fixing an unrelated button.
+
+**The age badge showed nonsense like "-1y 11m" for a patient born today.**
+Two compounding bugs in `web/js/scripts.js`:
+1. `dobChange()` read the field's *alt* input (flatpickr's visible
+   `d-m-Y`-formatted one, per `edit_patient.zetem`'s own comment on why)
+   and built `new Date(ymd[2], ymd[1], ymd[0])` -- but `ymd[1]` is a
+   1-indexed month string ("10" for October) while `Date`'s own month
+   argument is 0-indexed, so every birth date was silently parsed one
+   month later than what was actually typed. A birth date of today
+   therefore parsed as next month -- in the future relative to "now".
+2. `dateAgo()` assumed its input date was always in the past:
+   `new Date(new Date() - startDate)` with a *negative* difference wraps
+   to just before the Unix epoch (a `-1` day difference lands on
+   1969-12-31), and reading the year/month off that gives exactly the
+   `"-1y 11m"`-shaped garbage that was reported -- a real date, just not
+   one that means anything as an age.
+
+Fixed both: `dobChange()` now subtracts 1 from the month
+(`ymd[1] - 1`), so a correctly-typed birth date parses to the actual day
+intended; `dateAgo()` now checks the diff up front and returns `'-'`
+whenever it's zero or negative, rather than ever constructing that
+pre-epoch date at all -- covering not just today's date (now fixed at the
+source) but any genuinely future date a typo could still produce.
+Verified directly in a real browser by calling `dobChange()`/`dateAgo()`
+against several dates, not just by reading the fix: today -> `"0y 0m"`;
+15-05-1990 -> `"36y 4m"` (correct against this session's real date);
+tomorrow -> `"-"`; 31-12-2020 (the day=31 edge the old, scrambled argument
+order could have also mishandled) -> `"5y 9m"` (correct).
+
+**Appointment cards still felt tall even after the previous pass's margin/
+padding trim** -- because the Σημειώσεις textarea's `rows="5"` reserved
+that height regardless of content. `textarea-autoexapand.js` already
+grows a `[autoexpand]` textarea to fit its content on input, so a tall
+starting size only ever bought blank space for the common case of a short
+or empty note. Reduced to `rows="2"` in `view_appointment.zetem` -- a
+genuinely shorter card for the common case, not just tighter margins
+around the same content, with no loss of capacity for a longer note
+(confirmed autoexpand still grows it: computed height for a fresh,
+empty-notes card dropped from what `rows="5"` reserved down to 54px at
+`rows="2"`).
+
+**Verified**: `bin/run_tests.sh` (101/101 static, 47/47 functional) stayed
+fully green. A real browser session confirmed the delete button's
+computed height/padding/background now exactly match "Νέο Ραντεβού"'s
+(43px tall, transparent background, no box-shadow, previously boxed in
+its own white 87px-tall card), the age badge produces correct output for
+every case above, and a fresh appointment card's notes textarea renders
+at the new, shorter height. **Files**: `web/css/styles.css`, `web/js/
+scripts.js`, `web/templates/content/view_appointment.zetem`.

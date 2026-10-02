@@ -72,7 +72,13 @@
 
                 <div class="input-div input-notes">
                     <label for="appointment-notes">Σημειώσεις</label>
-                    <textarea name="appointment-notes" id="" autoexpand rows="5"
+                    <!-- rows was 5 -- autoexpand (web/js/textarea-autoexapand.js)
+                         grows this on input, so a tall starting height only
+                         ever bought blank space for the common case of a
+                         short or empty note; 2 is enough to show there's a
+                         notes field at all without reserving room nothing
+                         is using yet. -->
+                    <textarea name="appointment-notes" id="" autoexpand rows="2"
                         loader="app-loader-{{$index}}">{{$appointment->getanote()}}</textarea>
                 </div>
 

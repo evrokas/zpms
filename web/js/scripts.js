@@ -325,7 +325,19 @@ document.addEventListener("click", function(event) {
 // startDate must be a date string
 function dateAgo(date) {
     var startDate = new Date(date);
-    var diffDate = new Date(new Date() - startDate);
+    var diffMs = new Date() - startDate;
+
+    // A birth date of today (or, from bad input/clock skew, one that's
+    // still in the future) makes this negative or zero -- new Date(diffMs)
+    // below would then wrap to just-before-1970 (diffMs=-1 day lands on
+    // 1969-12-31), rendering as nonsense like "-1y 11m" rather than
+    // anything resembling an age. Show a plain dash instead of a number
+    // that was never a real age to begin with.
+    if (diffMs <= 0) {
+        return '-';
+    }
+
+    var diffDate = new Date(diffMs);
     return ((diffDate.toISOString().slice(0, 4) - 1970) + "y " +
         diffDate.getMonth() + "m ");
 }
@@ -337,8 +349,17 @@ function isDateValid(dateStr) {
 function dobChange(e) {
     target=document.getElementById(e.attributes['agefield'].nodeValue);
 
+    // e.value is flatpickr's altInput, formatted d-m-Y (see this field's
+    // own onReady/onValueUpdate wiring in edit_patient.zetem) -- ymd[1] is
+    // therefore a 1-indexed month string ("10" for October), but the Date
+    // constructor's own month argument is 0-indexed, so it needs "- 1" or
+    // every date lands one month later than what was actually typed (e.g.
+    // a birth date of today sorts as next month, i.e. in the future --
+    // exactly the "today" case the dateAgo() guard above now also covers
+    // independently, but this is the actual root cause: a correctly
+    // entered birth date should never reach that guard at all).
     ymd = e.value.split('-');
-    dobDate = new Date(ymd[2],ymd[1],ymd[0]);
+    dobDate = new Date(ymd[2],ymd[1] - 1,ymd[0]);
 
     if(isDateValid(dobDate)
         && (ymd[2] > 1900)
