@@ -37,11 +37,64 @@ function handleResize() {
 
 document.addEventListener("DOMContentLoaded", adjustSubmenuJustification);
 
-document.addEventListener("resize", handleResize);
+// resize fires on window, never on document -- listening on document meant
+// dropdown edge-flipping only ever ran once, at page load.
+window.addEventListener("resize", handleResize);
 
 if (window.visualViewport) {
     window.visualViewport.addEventListener("resize", handleResize);
 }
+
+// Called by every dropdown checkbox in the main menu (zeusfw core
+// templates/menu/show_menu.zetem: onclick="toggle_dropdown(this)") but was
+// never defined, so each tap threw a ReferenceError. Opening one dropdown
+// closes the others at the same level, which is what the checkboxes'
+// shared role="toggle-dropdown-<level>" is for.
+function toggle_dropdown(el) {
+    if (!el.checked) return;
+    var role = el.getAttribute('role');
+    document.querySelectorAll('input[role="' + role + '"]').forEach(function (other) {
+        if (other !== el) other.checked = false;
+    });
+}
+
+// A dropdown opened by tap/click (its checkbox, rather than hover) closes
+// again on any click outside the menu.
+document.addEventListener('click', function (ev) {
+    if (ev.target.closest && ev.target.closest('.main-navigation')) return;
+    document.querySelectorAll('.main-navigation input[role^="toggle-dropdown-"]:checked').forEach(function (cb) {
+        cb.checked = false;
+    });
+});
+
+// Marks the menu link for the current page (.is-current, aria-current) and
+// every menu <li> above it (.in-trail), for navigation.css's "you are here"
+// styling -- the menu template renders no active state of its own. Longest
+// matching path wins, so /consultation/pending/5/edit highlights
+// "Εκκρεμή Ραντεβού", not just "Ραντεβού".
+function markCurrentNavItem() {
+    var trim = function (p) { return p.replace(/\/+$/, '') || '/'; };
+    var path = trim(window.location.pathname);
+    var best = null, bestLen = -1;
+    document.querySelectorAll('.main-navigation a[href]').forEach(function (a) {
+        var href = a.getAttribute('href');
+        if (!href || href === '#') return;
+        var target = trim(new URL(href, window.location.href).pathname);
+        var match = (target === '/') ? (path === '/') : (path === target || path.indexOf(target + '/') === 0);
+        if (match && target.length > bestLen) {
+            best = a;
+            bestLen = target.length;
+        }
+    });
+    if (!best) return;
+    best.classList.add('is-current');
+    best.setAttribute('aria-current', 'page');
+    for (var li = best.closest('li'); li; li = li.parentElement.closest('li')) {
+        li.classList.add('in-trail');
+    }
+}
+
+document.addEventListener('DOMContentLoaded', markCurrentNavItem);
 
 
 

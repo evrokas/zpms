@@ -1,14 +1,16 @@
 {#
-  htmltext.zetem
-  html text template
+  copyright.zetem
+  footer copyright line
 
   variables:
     $modulename     name of module calling the template
-    $text           text to be displayed
+    $text           text to be displayed (unused here)
+
+  The end year comes from the server clock, so it never needs a manual
+  bump each January.
 #}
 
 <div class="module-copyright">
-    &copy 2013 - 2025 by Evangelos M. Rokas, MD | Neurosurgeon
-    <br>
-    Minimal Invasive Brain & Spine Surgery
+    <span class="copyright-owner">&copy; 2013&ndash;{{date('Y')}} Evangelos M. Rokas, MD &middot; Neurosurgeon</span>
+    <span class="copyright-specialty">Minimal Invasive Brain &amp; Spine Surgery</span>
 </div>

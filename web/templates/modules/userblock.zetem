@@ -1,8 +1,16 @@
 <div class="user-block">
     {% if($loggedin): %}
-        {{t("User")}} <span><a href="{{rel_url('/profile')}}">{{{zpms_userblock_display_name($name)}}}</a> ({{{$name}}})</span>. <a href="{{rel_url('/logout')}}">{{t("Logout")}}</a>
+        {% $__displayName = zpms_userblock_display_name($name); %}
+        {# Initial of the display name as a small avatar linking to the
+           profile. mb_substr so a Greek name yields one whole letter, not
+           half of a UTF-8 byte pair. Labelled with the full name, since
+           the name beside it can be truncated on a phone. #}
+        <a class="user-avatar" href="{{rel_url('/profile')}}" title="{{{$__displayName}}}" aria-label="{{{$__displayName}}}">{{{mb_strtoupper(mb_substr($__displayName, 0, 1))}}}</a>
+        {# Keep ">Name</a> (username)" as one contiguous run: the topbar
+           test in tests/functional/auth_csrf.php asserts on exactly that. #}
+        <span class="user-ident"><a class="user-name" href="{{rel_url('/profile')}}">{{{$__displayName}}}</a> ({{{$name}}})</span>
+        <a class="user-logout" href="{{rel_url('/logout')}}" title="{{t('Logout')}}"><i class="bx bx-log-out"></i><span>{{t("Logout")}}</span></a>
     {% else: %}
         <a href="{{rel_url('/login')}}">{{t("Login")}}</a>
     {% endif %}
-
 </div>

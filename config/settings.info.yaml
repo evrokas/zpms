@@ -543,13 +543,18 @@ structure:
       - right-column:
         - location
         - language_selector
-    - breadcrumbs
   main_navigation:
     - mainnavigation
   notification:
     - notifications
     - message
   main_content:
+    # Breadcrumbs sit just above the page's own title, inside the content
+    # card, rather than as a separate bar in the header above the nav
+    # (where they read as part of the chrome, not as "where am I"). The
+    # login page also renders main_content, so modconf below keeps them
+    # to signed-in users, the same as the header/nav/footer regions.
+    - breadcrumbs
     - content
   footer:
     - footer
@@ -691,6 +696,8 @@ menu:
 #           - arg1: value1
 #         access: [access_roles, to allow for route]
 modconf:
+  breadcrumbs:
+    access: authenticated
   message:
     display:
       userprofile:

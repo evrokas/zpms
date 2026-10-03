@@ -1968,3 +1968,69 @@ and doctor with `users-manage` granted (sees it, page opens; the grant is
 rolled back afterwards). `bin/run_tests.sh` (100/100 static, 48/48
 functional) green. **Files**: `config/settings.info.yaml`,
 `tests/functional/auth_csrf.php`.
+
+## Modernized topbar, navigation, breadcrumbs and footer; footer year now automatic
+
+The page chrome was four separately styled bands stacked on top of each
+other: a teal title block, two floating white pills (user; location +
+language), a white breadcrumb bar, then a second teal bar for the menu.
+
+- **Topbar** (`.region-header`, `styles.css`): one teal bar. Logo and app
+  name on the left; on the right a location chip, the language flags
+  (current one ringed in white) and a user chip: avatar initial, `Name
+  (username)` and a logout icon button. The user block template
+  (`web/templates/modules/userblock.zetem`) was bare text nodes ("User …
+  . Logout") that CSS couldn't shape into anything, so it's restructured,
+  keeping the exact `>Name</a> (username)` run the topbar test asserts on.
+  On narrow screens the chips move to a second row; on phones the header
+  runs edge to edge and a long name truncates with an ellipsis (the avatar
+  carries the full name as its label).
+- **Navigation** (`navigation.css`, rewritten): a light bar attached under
+  the topbar, with the current section underlined (left accent on mobile)
+  and white dropdown panels. The old file had accumulated contradictory
+  and dead rules (red debug colors, a `fontawesome` font that's never
+  loaded, `::after:has()`, duplicated margins and paddings on mobile items).
+  The duplicates were what made the **mobile menu unusable**: opening it
+  filled the screen with a teal panel where the items sat hundreds of
+  pixels apart. It's now a normal list with tap-to-expand sections.
+- **Breadcrumbs** moved out of the header into the top of `main_content`,
+  as a small muted trail just above the page title
+  (`config/settings.info.yaml`, `structure:`), with chevron separators.
+  `modconf: breadcrumbs: access: authenticated` keeps them off the login
+  page, which also renders `main_content`. Placeholder segments link to
+  `/#`, which silently reloaded the home page when clicked; they're shown
+  as plain text now, and any real segment URL would still be clickable.
+- **Footer**: a quiet line under a hairline instead of a full teal block.
+  Copyright on the left, build info (db | branch | commit | build) smaller
+  on the right. **The end year now comes from the server clock**
+  (`{{date('Y')}}` in `web/templates/blocks/copyright.zetem`), so it reads
+  2013–2026 now and won't need a manual bump each January.
+
+**JS fixes found along the way** (`web/js/scripts.js`):
+- `toggle_dropdown()`, called by every menu dropdown checkbox in zeusfw's
+  `show_menu.zetem`, was never defined, so each tap threw a
+  `ReferenceError`. It's defined now, and opening one dropdown closes its
+  siblings, which is what the checkboxes' shared `role="toggle-dropdown-N"`
+  was for. A click outside the menu also closes any tap-opened dropdown.
+- The resize listener behind `adjustSubmenuJustification()` (keeping
+  dropdowns from running off-screen) was attached to `document`, which
+  never fires `resize`. It's on `window` now.
+- New `markCurrentNavItem()`: the menu template renders no active state,
+  so the link for the current page gets `.is-current`/`aria-current` and
+  its ancestors `.in-trail`. The longest matching path wins.
+
+The old `--main-navigation-menu-*` color variables are gone (only the old
+`navigation.css` used them).
+
+**Verified** with Playwright at 1280px and 390px. The topbar meets the nav
+with a 0px gap (it showed a 16px gap until `.region`'s margin was
+overridden). The mobile menu opens, expands "Ραντεβού" and collapses it
+again when "Ασθενείς" is tapped. A click-opened desktop dropdown closes on
+an outside click. The current item is detected (`/patients` → Ασθενείς >
+Λίστα; `/` → Αρχική). Zero page errors throughout. The login page renders
+no breadcrumbs, header, nav or footer. (The flag images load from an
+external CDN this sandbox blocks, so screenshots show their alt text.)
+`bin/run_tests.sh` (100/100 static, 48/48 functional) green.
+**Files**: `config/settings.info.yaml`,
+`web/css/{navigation,breadcrumbs,styles}.css`, `web/js/scripts.js`,
+`web/templates/modules/userblock.zetem`, `web/templates/blocks/copyright.zetem`.

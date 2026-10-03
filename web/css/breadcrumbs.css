@@ -1,58 +1,70 @@
+/* Breadcrumb trail (zeusfw core/templates/modules/breadcrumbs.zetem),
+   rendered at the top of main_content, just above the page title (see
+   config/settings.info.yaml, structure:). A small muted line rather than
+   a white bar of its own.
+
+   The template emits a "::" first item and "/" separator items; the
+   first is hidden and each separator's text is swapped for a chevron
+   (bx-chevron-right, \ea50 in web/css/bx/css/boxicons.min.css). */
 
 .breadcrumbs {
-    /* background-color: white; */
+    margin: 0 0 var(--spacing-sm);
+    padding: 0 0.25rem;
+    font-size: 0.85rem;
+    color: var(--dark-gray);
+}
 
-    background: white;
-    padding: var(--spacing-sm);
-    border-radius: var(--border-radius-sm);
-    box-shadow: var(--shadow-sm);
-    margin: var(--spacing-sm) 0;
+.breadcrumbs ul {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.15rem 0.35rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
 
+.breadcrumbs li.breadcrumb-first {
+    display: none;
+}
+
+.breadcrumbs li.breadcrumb-separator {
+    display: inline-flex;
+    font-size: 0;
+    color: var(--dark-gray);
+    opacity: 0.6;
+}
+
+.breadcrumbs li.breadcrumb-separator::before {
+    content: "\ea50";
+    font-family: boxicons;
+    font-size: 1rem;
+    line-height: 1;
 }
 
 .breadcrumbs a {
+    color: var(--dark-gray);
     text-decoration: none;
-    /* text-decoration: underline; */
-
-    color: var(--primary);
     transition: color var(--transition-fast);
 }
 
 .breadcrumbs a:hover {
-    color: var(--primary-dark);
+    color: var(--primary);
     text-decoration: underline;
 }
 
-
-
-.breadcrumbs ul {
-    display: flex;
-    flex-direction: row;
-    list-style: none;
-
-    align-items: center;
-    gap: var(--spacing-xs);
-
-    /* gap: 12px; */
+/* Segments whose link is the placeholder "#" (resolved to "/#" by
+   rel_url()) don't lead anywhere: clicking one just reloaded the home
+   page. Rendered as plain text until real segment URLs exist. */
+.breadcrumbs a[href="#"],
+.breadcrumbs a[href$="/#"] {
+    pointer-events: none;
+    color: inherit;
 }
 
-.breadcrumbs ul li.breadcrumb-item {
-    padding: 0 4px;
+/* The last segment is the current page. */
+.breadcrumbs li.breadcrumb-item:last-child,
+.breadcrumbs li.breadcrumb-item:last-child a {
+    color: var(--text);
+    font-weight: 500;
 }
-.breadcrumbs ul li.breadcrumb-separator {
-    padding: 0 6px;
-}
-
-.breadcrumbs ul li.breadcrumb-item:hover {
-    color:rgb(118, 118, 247);
-    text-decoration: underline;
-    cursor: pointer;
-}
-
-/* .breadcrumbs ul li::before { */
-    /* content: ' > '; */
-/* } */
-
-/* .breadcrumbs ul li:first-of-type::before { */
-    /* content: ':: '; */
-/* } */

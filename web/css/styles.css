@@ -113,26 +113,6 @@ html {
     }
 }
 
-/* Navigation-menu color variables, sourced from color-palette.css's
-   --primary/--primary-light/--primary-dark rather than a hardcoded hex. */
-:root {
-    --basic-dark-color: var(--primary);
-    --main-navigation-menu-level-0-background-color: var(--primary);
-    --main-navigation-menu-level-0-link-color: #fff;
-    --main-navigation-menu-level-0-hover-background-color: var(--primary-light);
-    --main-navigation-menu-level-0-hover-text-color: #fff;
-
-    --main-navigation-menu-level-1-background-color: var(--primary-dark);
-    --main-navigation-menu-level-1-link-color: #fff;
-    --main-navigation-menu-level-1-hover-background-color: var(--primary-light);
-    --main-navigation-menu-level-1-hover-text-color: #fff;
-
-    --main-navigation-menu-level-2-background-color: var(--primary-dark);
-    --main-navigation-menu-level-2-link-color: #fff;
-    --main-navigation-menu-level-2-hover-background-color: var(--primary-light);
-    --main-menu-level-2-hover-text-color: #fff;
-}
-
 body {
     margin: 0 0.5rem;
     background-color: var(--light-gray);
@@ -147,58 +127,6 @@ body {
     text-align: right;
     display: flex;
     flex-direction: column;
-}
-
-.section-header-grid-2x1 {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-}
-
-/* User info (left column) and location/language/git-hash (right column)
-   used to each stack as their own row -- header-grid-2x1's right-column
-   was itself a flex *column*, so location (which used to be a separate
-   row below the whole grid) and its siblings piled up as three more
-   stacked rows on top of that. Laying the right column out as a single
-   flex row instead is what actually puts them on one line; the location
-   block moved into this column (see config/settings.info.yaml's
-   structure: header-grid-2x1.right-column) is what let it join that row
-   at all, rather than living in its own top-level header: section. */
-.section-right-column {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    flex-wrap: nowrap;
-    gap: var(--spacing);
-}
-
-/* language_selector (zeusfw core/modules/language_selector/css) brings
-   its own margin-top intended for stacking below something -- overridden
-   here, scoped to this app's layout, rather than edited in the shared
-   core file every app on the framework vendors. */
-.section-right-column .language-selector {
-    margin-top: 0;
-}
-
-/* Lives in the footer now (moved out of the header's white
-   right-column), on the same teal gradient background as
-   .region-footer/.module-copyright -- needs a light color to stay
-   readable there, not the dark-gray tuned for a white background. */
-.git-hash {
-    margin-top: 0.4rem;
-    padding: 0.2rem;
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 12px;
-    word-wrap: anywhere;
-}
-
-/* buildnumberModule -- same teal-footer-background treatment as
-   .git-hash right above it, since the two sit next to each other there. */
-.build-number {
-    padding: 0.2rem;
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 12px;
 }
 
 .wrapper {
@@ -220,36 +148,9 @@ body {
     min-height: 100vh;
 }
 
-.header {
-    display: flex;
-    align-items: center;
-    justify-items: center;
-    gap: 1rem;
-    padding: 0.5rem 1rem;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    color: white;
-    justify-content: left;
-    box-shadow: var(--shadow-md);
-}
-
-.header img {
-    padding: 0.3rem 0;
-    height: 2.4rem;
-}
-
-.header h1 {
-    font-size: 1.4rem;
-    line-height: 1.2;
-}
-
 .region {
     margin: 1rem 0;
 }
-
-.region-header {
-    margin: unset;
-}
-
 
 .region-main_content {
     padding: var(--spacing);
@@ -258,17 +159,257 @@ body {
     box-shadow: var(--shadow-sm);
 }
 
-.region-footer {
-    margin: 2rem 0;
-    padding: 1rem 0.5rem;
-    background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 100%);
+/* ---- Topbar (region-header) -------------------------------------------
+   One teal bar: logo + app name on the left; location, language and the
+   signed-in user on the right. It replaces a title band plus two floating
+   white pills underneath it. The navigation bar (navigation.css) attaches
+   directly below with square top corners, so the two read as one header.
+   Breadcrumbs used to sit here too; they now render inside main_content,
+   just above the page title (config/settings.info.yaml, structure:). */
+.region-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--spacing-sm) var(--spacing);
+    margin: var(--spacing) 0 0;
+    padding: 0.6rem 0.75rem 0.6rem 1rem;
+    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
     color: white;
-    text-align: center;
-    border-radius: var(--border-radius);
+    border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
 }
 
-.region-footer i {
+/* .header is the logo + title block (web/templates/blocks/header.zetem). */
+.header {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    min-width: 0;
     color: white;
+}
+
+.header img {
+    height: 2rem;
+    width: auto;
+    flex-shrink: 0;
+}
+
+.header h1 {
+    font-size: 1.15rem;
+    font-weight: 600;
+    line-height: 1.2;
+    letter-spacing: 0.01em;
+}
+
+.section-header-grid-2x1 {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: center;
+    gap: var(--spacing-sm);
+}
+
+/* The user chip comes last on the right, after location/language, even
+   though the structure: config lists its column first. */
+.section-header-grid-2x1 .section-left-column {
+    order: 2;
+}
+
+.section-right-column {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: var(--spacing-sm);
+}
+
+/* Location: a translucent chip on the teal bar. location.css (the
+   module's own file) is written for a white background, so the colors
+   are reset here, scoped to the topbar. */
+.region-header .location-place {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.3rem 0.75rem;
+    font-size: 0.85rem;
+    color: white;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+}
+
+.region-header .location-place .bx {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1rem;
+}
+
+.region-header .location-badge strong {
+    color: white;
+    font-weight: 500;
+}
+
+/* Language flags. The core language_selector.css draws a white floating
+   card with a black ring on the current flag; on the topbar the flags sit
+   bare, the current one ringed in white and the others dimmed. */
+.region-header .language-selector {
+    align-self: center;
+    margin: 0;
+    padding: 0;
+    background: none;
+    box-shadow: none;
+    border-radius: 0;
+}
+
+.region-header .language-selector ul {
+    gap: 0.4rem;
+}
+
+.region-header .language-selector ul li img {
+    display: block;
+    width: 1.35rem;
+    height: 1.35rem;
+    border: 0;
+    border-radius: 50%;
+    object-fit: cover;
+    opacity: 0.6;
+    cursor: pointer;
+    transition: opacity var(--transition-fast), transform var(--transition-fast);
+}
+
+.region-header .language-selector ul li img:hover {
+    opacity: 1;
+    transform: scale(1.08);
+}
+
+.region-header .language-selector ul li img.current {
+    border: 0;
+    opacity: 1;
+    box-shadow: 0 0 0 2px white;
+}
+
+/* Signed-in user: avatar initial, name (username), logout icon button.
+   Markup in web/templates/modules/userblock.zetem. */
+.user-block {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.2rem 0.2rem 0.2rem 0.2rem;
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.72);
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+}
+
+.user-block a {
+    text-decoration: none;
+}
+
+.user-block .user-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.8rem;
+    height: 1.8rem;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: white;
+    color: var(--primary-dark);
+    font-weight: 700;
+    font-size: 0.85rem;
+    line-height: 1;
+}
+
+.user-block .user-ident {
+    white-space: nowrap;
+}
+
+.user-block .user-name {
+    color: white;
+    font-weight: 600;
+}
+
+.user-block .user-name:hover {
+    text-decoration: underline;
+}
+
+.user-block .user-logout {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.8rem;
+    height: 1.8rem;
+    border-radius: 50%;
+    color: white;
+    font-size: 1.1rem;
+    transition: background-color var(--transition-fast);
+}
+
+.user-block .user-logout:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* The "Logout" word stays in the markup for screen readers; sighted users
+   get the icon plus its title tooltip. */
+.user-block .user-logout span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+}
+
+.user-block a:focus-visible {
+    outline: 2px solid white;
+    outline-offset: 2px;
+}
+
+/* ---- Footer ------------------------------------------------------------
+   A quiet bottom line under a hairline, instead of a full teal block that
+   competed with the header for attention. Copyright on the left; build
+   info (git-hash + build-number modules) on the right, smaller. */
+.region-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--spacing-sm) var(--spacing-md);
+    margin: var(--spacing-lg) 0 var(--spacing-md);
+    padding: var(--spacing) 0.25rem 0;
+    color: var(--dark-gray);
+    font-size: 0.85rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.module-copyright {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    line-height: 1.45;
+}
+
+.module-copyright .copyright-owner {
+    color: var(--text);
+    font-weight: 500;
+}
+
+.git-hash,
+.build-number {
+    color: var(--dark-gray);
+    font-size: 0.75rem;
+    font-variant-numeric: tabular-nums;
+    opacity: 0.85;
+    word-wrap: anywhere;
+}
+
+.git-hash {
+    margin-left: auto;
+}
+
+.build-number::before {
+    content: "\00b7";
+    margin-right: 0.5rem;
 }
 
 /* forms */
@@ -1055,8 +1196,22 @@ form .input-div {
         }
     }
 
-    .section-header-grid-2x1 {
-        flex-direction: column-reverse;
+    /* body has no side margin at this width, so the header runs edge to
+       edge: square corners, no side borders on the nav bar. */
+    .region-header {
+        margin-top: 0;
+        border-radius: 0;
+    }
+
+    .main-navigation-area {
+        border-left: 0;
+        border-right: 0;
+        border-radius: 0;
+    }
+
+    .region-footer {
+        padding-left: var(--spacing);
+        padding-right: var(--spacing);
     }
 }
 
@@ -1085,41 +1240,32 @@ form .input-div {
        markup, not a descendant, and flex-direction had no effect
        against .input-header's actual display:grid layout anyway. */
 
-    .section-header-grid-2x1 {
-        flex-direction: column;
-        gap: var(--spacing-sm);
-    }
-    
-    /* Location and the language selector stay on one row even at this
-       width, matching desktop's .section-right-column layout above --
-       this used to switch to a stacked column here, but both of these
-       are compact (an icon + short text badge, and a small row of flag
-       icons), so there's no real need to give up the row on a phone.
-       flex-wrap is kept as a safety net for a viewport too narrow to fit
-       both on one line, rather than forcing an overflow. */
-    .section-right-column {
-        flex-direction: row;
-        flex-wrap: wrap;
-        justify-content: center;
-        align-items: center;
-        gap: var(--spacing-sm);
+    /* Topbar: logo + app name on the first row; location, language and
+       user chips share a second, full-width row. */
+    .region-header .section-header-grid-2x1 {
+        flex-basis: 100%;
+        flex-wrap: nowrap;
+        justify-content: space-between;
     }
 
-    .section-right-column,
-    .section-left-column {
-        text-align: center;
+    .section-header-grid-2x1 .section-left-column {
+        min-width: 0;
     }
 
+    .user-block {
+        max-width: 100%;
+        min-width: 0;
+    }
+
+    .user-block .user-ident {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Footer: copyright, then build info underneath, both left-aligned. */
     .git-hash {
-        text-align: center;
-    }
-
-    .location-place {
-        justify-content: center;
-    }
-
-    .language-selector ul {
-        justify-content: center;
+        margin-left: 0;
     }
 }
 
@@ -2402,30 +2548,6 @@ a.btn-secondary:hover {
     font-weight: 600;
 }
 
-.user-block {
-    margin-top: 0.2rem;
-    padding: var(--spacing-sm);
-    background: white;
-    border-radius: var(--border-radius-sm);
-    box-shadow: var(--shadow-sm);
-}
-
-.user-block span {
-    color: var(--primary);
-    font-weight: 600;
-
-}
-
-.user-block a {
-    color: var(--primary);
-    text-decoration: none;
-    transition: color var(--transition-fast);
-}
-
-.user-block a:hover {
-    color: var(--primary-dark);
-    text-decoration: underline;
-}
 
 
 ul.patient-appointments-list {
@@ -2872,11 +2994,6 @@ ul.select-box li:hover {
     background-color: var(--primary-dark);
 }
 
-.module-copyright {
-    text-align: center;
-    line-height: 1.3em;
-    color: white;
-}
 
 .shortcuts {
     margin: auto;
