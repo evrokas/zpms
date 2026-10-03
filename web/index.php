@@ -1451,16 +1451,18 @@ require_once(__DIR__ . '/zpms_mailer.php');
         // $dbdoctors = formsClass::getForm('doctors');
 
         return Renderer::render('settings.zetem', [
+            // 'view_add' -- each yaml's compact one-button form view, shown
+            // inline under its table (settings.zetem). The full view
+            // (Αποθήκευση/Επαναφορά/Άκυρο) stays the default for the row
+            // edit pages.
             'clinics_table' => formsClass::renderFormResults('clinics'),
-            'clinics' => formsClass::renderForm('clinics'),
+            'clinics' => formsClass::renderForm('clinics', 'view_add'),
 
-            // 'table_short' -- doctors.yaml's named view showing just
-            // Doctor name, proving the multi-view mechanism actually
-            // works; the yaml's own 'table_extended' (both columns) stays
-            // available as that form's `default` for any caller (e.g. the
-            // /webform/viewform/doctors route) that doesn't request a view.
-            'doctors_table' => formsClass::renderFormResults('doctors', [], 'table_short'),
-            'doctors' => formsClass::renderForm('doctors'),
+            // Default view (table_extended): name and specialty. The
+            // name-only 'table_short' view used here before meant a
+            // specialty entered in the add form was never shown anywhere.
+            'doctors_table' => formsClass::renderFormResults('doctors'),
+            'doctors' => formsClass::renderForm('doctors', 'view_add'),
 
             // A settings-manage holder doesn't necessarily also have
             // users-manage (deliberately not granted to doctor or

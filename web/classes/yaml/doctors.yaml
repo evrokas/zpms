@@ -29,11 +29,11 @@ form:
   action: "#"
   inputs:
     - name: doctor_name
-      label: "Doctor name"
+      label: "Όνομα ιατρού"
       type: text
 
     - name: doctor_specialty
-      label: "Doctor specialty"
+      label: "Ειδικότητα"
       type: text
 
 # Named results-table views (core/maker/functions.php's
@@ -54,7 +54,7 @@ table_view:
   table_extended:
     - name: doctor_name
     - name: doctor_specialty
-      label: "Specialty"
+      label: "Ειδικότητα"
 
   # Per-row action buttons (core/maker/functions.php's
   # zeusfw_normalize_table_row_buttons() / core/lib/FormElement.php's
@@ -66,14 +66,14 @@ table_view:
   # `handler:` on any of these yet -- this is the row-button *mechanism*
   # only, not real edit/delete/history wiring; each renders as a real,
   # correctly-styled but disabled button until a handler is added.
-  actions_label: "Actions"
+  actions_label: "Ενέργειες"
   buttons:
     - type: edit
     - type: delete
       handler: doctors_delete_url
     - type: custom
       icon: "bx bx-history"
-      tooltip: "View history"
+      tooltip: "Ιστορικό"
 
 # Named create-form views -- a document-root key, mirroring table_view
 # above but for the form itself rather than its results table. Buttons
@@ -89,14 +89,25 @@ form_view:
   view_full:
     buttons:
       - type: "submit"
-        label: "Submit"
+        label: "Αποθήκευση"
 
       - type: "reset"
-        label: "Reset"
+        label: "Επαναφορά"
 
       - type: "button"
-        label: "Cancel"
+        label: "Άκυρο"
         action: "window.location.href='index.php';"
+
+    fields:
+      - name: doctor_name
+      - name: doctor_specialty
+
+  # Compact "add a doctor" form for the Settings page (see clinics.yaml's
+  # view_add for why it has only the one button).
+  view_add:
+    buttons:
+      - type: "submit"
+        label: "Προσθήκη"
 
     fields:
       - name: doctor_name

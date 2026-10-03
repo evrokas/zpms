@@ -3078,3 +3078,347 @@ form.webform {
     z-index: 1001;
 
 }
+/* ---- Settings page (web/templates/content/settings.zetem) ---------------
+   One bordered card per area (clinics, doctors, email, users) with an icon
+   header, plus jump links at the top. The clinics/doctors tables run edge
+   to edge inside their card, and each "add" form is a light footer row
+   under its table. Those forms are zeusfw webform markup (a flat list of
+   label/input siblings, see core/lib/FormElement.php), styled here rather
+   than restructured; selectors carry .settings-add so they outrank the
+   generic webform.css/form.webform rules, which load after this file. */
+.settings-jump {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+    margin: 0 0 var(--spacing);
+}
+
+.settings-jump a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.8rem;
+    font-size: 0.85rem;
+    color: var(--dark-gray);
+    text-decoration: none;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    transition: color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.settings-jump a:hover {
+    color: var(--primary);
+    border-color: rgba(var(--primary-rgb), 0.45);
+}
+
+.settings-section {
+    margin: 0 0 var(--spacing-md);
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    scroll-margin-top: var(--spacing);
+}
+
+.settings-section-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    padding: 1rem 1.25rem;
+    border-bottom: 1px solid var(--medium-gray);
+}
+
+.settings-section-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 2.25rem;
+    font-size: 1.25rem;
+    color: var(--primary);
+    background: rgba(var(--primary-rgb), 0.1);
+    border-radius: var(--border-radius-md);
+}
+
+.settings-section-header h3 {
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--primary-dark);
+}
+
+.settings-section-header p {
+    margin: 0.15rem 0 0;
+    font-size: 0.88rem;
+    color: var(--dark-gray);
+}
+
+.settings-section-body {
+    padding: 1rem 1.25rem;
+}
+
+/* The section is already the card. */
+.settings-section .settings-table-scroll {
+    margin: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+.settings-notice {
+    margin: 0;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    background: rgba(var(--warning-rgb), 0.12);
+    border: 1px solid rgba(var(--warning-rgb), 0.35);
+    border-radius: var(--border-radius-md);
+}
+
+/* "Add" footer under a table */
+.settings-add {
+    padding: 0.9rem 1.25rem 1rem;
+    background: var(--light-gray);
+    border-top: 1px solid var(--medium-gray);
+}
+
+.settings-add h4 {
+    margin: 0 0 0.5rem;
+    font-family: var(--font-body);
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--dark-gray);
+}
+
+.settings-add form.webform {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.75rem;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    background: none;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+/* Label above its input, one column per field: the flat label/input
+   siblings flow down two rows, then across. */
+.settings-add form.webform .form_elements {
+    flex: 1 1 18rem;
+    display: grid;
+    grid-template-rows: auto auto;
+    /* form.webform's own `auto 1fr` columns would make the first field
+       content-width; every field gets an equal implicit column instead. */
+    grid-template-columns: none;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(0, 1fr);
+    gap: 0.3rem 0.75rem;
+    margin: 0;
+}
+
+/* The hidden row_guid input renders an empty <label> of its own. */
+.settings-add form.webform .form_elements label:empty {
+    display: none;
+}
+
+.settings-add form.webform .form_elements label {
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--dark-gray);
+}
+
+.settings-add form.webform .form_elements input {
+    width: 100%;
+    margin: 0;
+    padding: 0.55rem 0.75rem;
+    font: inherit;
+    font-size: 0.95rem;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+}
+
+.settings-add form.webform .form_elements input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.15);
+}
+
+.settings-add form.webform .form_controls {
+    flex: 0 0 auto;
+    margin: 0;
+}
+
+.settings-add .webform .form_controls button[type="submit"] {
+    flex: 0 0 auto;
+    min-width: 0;
+    padding: 0.55rem 1.1rem;
+    color: white;
+    background: var(--primary);
+    border: 1px solid transparent;
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-primary-sm);
+}
+
+.settings-add .webform .form_controls button[type="submit"]:hover {
+    background: var(--primary-light);
+}
+
+/* SMTP form */
+.settings-form {
+    padding: 1.1rem 1.25rem 1.25rem;
+}
+
+.settings-fields {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.9rem 1rem;
+}
+
+.settings-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    min-width: 0;
+}
+
+.settings-field-wide {
+    grid-column: 1 / -1;
+}
+
+.settings-field label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: var(--dark-gray);
+}
+
+.settings-field input,
+.settings-field select {
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    font: inherit;
+    font-size: 0.95rem;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+}
+
+.settings-field input:focus,
+.settings-field select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.15);
+}
+
+.settings-field small {
+    font-size: 0.78rem;
+    color: var(--dark-gray);
+}
+
+.settings-form-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1.1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--medium-gray);
+}
+
+.settings-form-actions button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0.6rem 1.25rem;
+    font: inherit;
+    font-weight: 600;
+    color: white;
+    background: var(--primary);
+    border: 0;
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-primary-sm);
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+}
+
+.settings-form-actions button:hover {
+    background: var(--primary-light);
+}
+
+/* User & role management links */
+.settings-links {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    gap: 0.75rem;
+    padding: 1rem 1.25rem 1.25rem;
+}
+
+.settings-links a {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 0.9rem;
+    color: var(--text);
+    text-decoration: none;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    transition: border-color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.settings-links a:hover {
+    border-color: rgba(var(--primary-rgb), 0.45);
+    background: rgba(var(--primary-rgb), 0.04);
+}
+
+.settings-links a i {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 2rem;
+    height: 2rem;
+    font-size: 1.2rem;
+    color: var(--primary);
+    background: rgba(var(--primary-rgb), 0.1);
+    border-radius: var(--border-radius);
+}
+
+.settings-links a strong {
+    display: block;
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.settings-links a small {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--dark-gray);
+}
+
+@media screen and (max-width: 560px) {
+    .settings-fields {
+        grid-template-columns: 1fr;
+    }
+
+    .settings-add form.webform {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .settings-add form.webform .form_elements {
+        flex-basis: auto;
+        grid-template-rows: none;
+        grid-template-columns: 1fr;
+        grid-auto-flow: row;
+    }
+
+    .settings-add .webform .form_controls button[type="submit"] {
+        width: 100%;
+        justify-content: center;
+    }
+}

@@ -25,7 +25,7 @@ form:
 
   inputs:
     - name: clinic_name
-      label: "Clinic name"
+      label: "Όνομα κλινικής"
       type: text
 
     # Never shown -- carries an existing row's guid back on submit so
@@ -46,7 +46,7 @@ table_view:
   table_default:
     - name: clinic_name
 
-  actions_label: "Actions"
+  actions_label: "Ενέργειες"
   buttons:
     - type: edit
       handler: clinics_edit_url
@@ -64,14 +64,26 @@ form_view:
   view_full:
     buttons:
       - type: "submit"
-        label: "Submit"
+        label: "Αποθήκευση"
 
       - type: "reset"
-        label: "Reset"
+        label: "Επαναφορά"
 
       - type: "button"
-        label: "Cancel"
+        label: "Άκυρο"
         action: "window.location.href='index.php';"
+
+    fields:
+      - name: clinic_name
+      - name: row_guid
+
+  # Compact "add a clinic" form for the Settings page: one Προσθήκη
+  # button, rendered inline under the clinics table (settings.zetem).
+  # Reset/Cancel there would only clear a single field or leave the page.
+  view_add:
+    buttons:
+      - type: "submit"
+        label: "Προσθήκη"
 
     fields:
       - name: clinic_name

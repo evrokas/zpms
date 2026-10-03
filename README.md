@@ -2034,3 +2034,51 @@ external CDN this sandbox blocks, so screenshots show their alt text.)
 **Files**: `config/settings.info.yaml`,
 `web/css/{navigation,breadcrumbs,styles}.css`, `web/js/scripts.js`,
 `web/templates/modules/userblock.zetem`, `web/templates/blocks/copyright.zetem`.
+
+## Modernized Settings page
+
+`/settings` was a run of centered serif headings and `<hr>` rules: an
+English "Settings" title with the placeholder text "Place here all
+settings", English labels and Submit/Reset/Cancel buttons on the add
+forms in an otherwise Greek UI, each add form floating in its own card
+apart from its table, and plain blue links for user management. The
+template also wrapped headings, tables and forms in `<p>` tags, which is
+invalid HTML (browsers close the `<p>` early).
+
+Now (`web/templates/content/settings.zetem`, rewritten; styles at the end
+of `web/css/styles.css`, "Settings page"):
+- **Ρυθμίσεις** title, with jump links to each section.
+- One bordered card per area, each with an icon header and a one-line
+  description: **Κλινικές**, **Ιατροί**, **Email ειδοποιήσεων (SMTP)**,
+  **Χρήστες & ρόλοι** (the last only for users with `users-manage`, as before).
+- Clinics and doctors: the table runs edge to edge in its card, and the add
+  form is a light footer row under it (label above each field, one
+  **Προσθήκη** button), stacking on phones. The doctors table now shows the
+  specialty too: it used the name-only `table_short` view, so a specialty
+  typed into the add form was never shown anywhere.
+- SMTP: a two-column form (one column on phones) with Greek labels, a hint
+  that a blank password keeps the current one, and a right-aligned
+  Αποθήκευση. Field names and the save handler are unchanged.
+- Users & roles: five link tiles with icons and a short description each.
+
+**Clinic/doctor labels and buttons are now Greek**
+(`web/classes/yaml/{clinics,doctors}.yaml`: Όνομα κλινικής, Όνομα
+ιατρού, Ειδικότητα, Ενέργειες; Αποθήκευση/Επαναφορά/Άκυρο on the row edit
+pages). Each YAML also gets a compact `view_add` form view (just
+Προσθήκη) that the settings page renders; the full view stays the default
+for the row edit pages. **Deploy step:** these definitions are stored in
+the `webforms` DB table, so run `bin/update.sh` and answer **all** at
+"Do you want to update forms?" (or `maker.php form:load
+yaml/clinics.yaml` / `yaml/doctors.yaml` from `web/classes`). `form:load`
+updates the existing rows in place. Until then the page works but shows
+the old English labels and all three buttons.
+
+**Verified** with Playwright at 1280px and 390px, against a test DB with
+both forms loaded: adding a clinic and adding a doctor with a specialty
+both save and appear in their tables; saving the SMTP form persists
+(host and sender name re-read after reload); a clinic's edit page shows
+Αποθήκευση / Επαναφορά / Άκυρο; zero page errors. `bin/run_tests.sh`
+(100/100 static, 48/48 functional) green. **Files**:
+`web/templates/content/settings.zetem`, `web/css/styles.css`,
+`web/index.php` (`settings()` passes the `view_add` views and the doctors
+table's default view), `web/classes/yaml/{clinics,doctors}.yaml`.
