@@ -1,18 +1,26 @@
 /* FILE UPLOAD STYLES - Using Color Palette Variables */
 
+/* The card's footer, separated by a hairline rather than drawn as its
+   own dashed gray box with 1.5rem margins inside the card. Dashed borders
+   now mean "drop zone" only (.file-upload-area below). */
 .file-upload-section {
-    margin: var(--spacing-md) 0;
-    padding: var(--spacing);
-    border: 1px dashed var(--medium-gray);
-    border-radius: var(--border-radius-md);
-    background-color: var(--light-gray);
+    margin: var(--spacing) 0 0;
+    padding: 0.75rem 0 0;
+    border: 0;
+    border-top: 1px solid var(--medium-gray);
+    border-radius: 0;
+    background-color: transparent;
 }
 
 .file-upload-section h5 {
-    margin-top: 0;
-    margin-bottom: var(--spacing);
+    margin: 0;
+    color: var(--dark-gray);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+.file-upload-section h5:hover {
     color: var(--primary);
-    font-size: 1.1rem;
 }
 
 /* Collapsed by default, expanded by clicking the heading (or
@@ -40,10 +48,11 @@
 
 .file-count-badge {
     margin-left: auto;
-    background-color: var(--primary);
-    color: white;
+    background-color: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary-dark);
     border-radius: 999px;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
+    font-weight: 600;
     line-height: 1;
     padding: 0.25rem 0.55rem;
 }
@@ -470,19 +479,26 @@
    `.file-upload-section` init (upload/dropzone/delete wiring) never runs
    against it; the collapse/expand behavior is otherwise identical, wired
    per-card in view_appointment.zetem's own inline <script> instead. */
+/* Same white bordered card as the appointment cards above it, rather
+   than a dashed gray box. */
 .appointment-history-section {
     margin: var(--spacing-md) 0;
-    padding: var(--spacing);
-    border: 1px dashed var(--medium-gray);
-    border-radius: var(--border-radius-md);
-    background-color: var(--light-gray);
+    padding: 0.75rem 1.25rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    background-color: white;
+    box-shadow: var(--shadow-sm);
 }
 
 .appointment-history-section h5 {
-    margin-top: 0;
-    margin-bottom: var(--spacing);
+    margin: 0;
+    color: var(--dark-gray);
+    font-size: 0.95rem;
+    font-weight: 600;
+}
+
+.appointment-history-section h5:hover {
     color: var(--primary);
-    font-size: 1.1rem;
 }
 
 .appointment-history-heading {

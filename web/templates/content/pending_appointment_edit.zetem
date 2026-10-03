@@ -6,7 +6,7 @@
         <h4>Επεξεργασία Εκκρεμούς Ραντεβού</h4>
     </div>
 
-    <p class="muted" style="padding: 0 1rem;">
+    <p class="muted page-back">
         <a href="{{rel_url('/consultation/pending')}}">&larr; Πίσω στα Εκκρεμή Ραντεβού</a>
     </p>
 

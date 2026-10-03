@@ -313,11 +313,40 @@ form .input-div {
         position: relative;
         display: grid;
         grid-template-columns: 1fr;
-        gap: var(--spacing);
+        /* Same row rhythm as the patient form's own <fieldset> (below),
+           for the entry forms that have no fieldset (new_consultation,
+           pending_appointment_edit/_convert). */
+        gap: 0.75rem;
         padding: var(--spacing-md);
         background-color: white;
-        border-radius: var(--border-radius-md);
-        box-shadow: var(--shadow-base);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--shadow-sm);
+    }
+
+    /* Both forms on this page (patient fields, and each appointment card
+       in view_appointment.zetem) wrap their controls in a <fieldset> only
+       so `disabled` can lock every field at once for a read-only role.
+       Left unstyled, the browser draws its default groove border and
+       padding around it, which showed up as a second gray frame inside
+       every card. */
+    fieldset {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        min-width: 0;
+        margin: 0;
+        padding: 0;
+        border: 0;
+    }
+
+    /* The <hr>s between this page's sections drew a gray rule right under
+       the patient card, doubling up on the card's own border. Each section
+       below already has its own card or heading, so keep the spacing and
+       drop the line. */
+    hr {
+        margin: var(--spacing-sm) 0 0;
+        border: 0;
     }
 
     /* The rule above matches ANY <form> under .edit-patient -- it was
@@ -342,13 +371,16 @@ form .input-div {
         box-shadow: none;
     }
 
+    /* Card footer: a hairline divider and compact, right-aligned buttons,
+       rather than two half-width slabs filling the whole row. */
     form .buttons {
         position: relative;
         display: flex;
-        justify-content: space-between;
-        gap: var(--spacing);
-        margin-top: var(--spacing);
-        padding: 0.5rem;
+        justify-content: flex-end;
+        gap: var(--spacing-sm);
+        margin-top: var(--spacing-xs);
+        padding: var(--spacing) 0 0;
+        border-top: 1px solid var(--medium-gray);
     }
 
     /* Same leak as .inline-delete-form above: ".edit-patient form
@@ -362,11 +394,65 @@ form .input-div {
        class in the selector (3 classes) wins it back for this one case
        without touching the rule above, which the main form still needs
        unchanged. */
+    /* And once more for the card's forms themselves: ".edit-patient form"
+       above turns every <form> on this page into a white bordered card,
+       including each appointment card's own form and its file-upload
+       form. That drew a second card inside every appointment card. The
+       .appointment-entry is the card; its forms are just layout. */
+    .appointment-entry form {
+        padding: 0;
+        background-color: transparent;
+        border: 0;
+        border-radius: 0;
+        box-shadow: none;
+    }
+
     .appointment-entry .buttons {
         justify-content: flex-end;
-        gap: var(--spacing-sm);
-        margin-top: 0;
+        gap: var(--spacing);
+        margin-top: var(--spacing-xs);
         padding: 0;
+        border-top: 0;
+    }
+
+    /* The card's autosave spinner (loader.js) is hidden while idle but
+       still took a whole row plus two flex gaps between the date/place
+       row and the notes. Pinned into the top-right corner instead, just
+       left of the #N badge, where it still reports save status but takes
+       no space. Positioned against the card's <form> (position: relative,
+       from ".edit-patient form"), whose top-right is the card's padded
+       content corner. */
+    .appointment-entry form > fieldset > .loader0 {
+        position: absolute;
+        top: 0.15rem;
+        right: 2.75rem;
+        /* loader.css still sets bottom: 0 on this spinner from an older
+           layout. With top also set, Chromium placed the box (inside this
+           flex <fieldset>) about 110px down the card, at neither offset;
+           measured directly: 1571px vs. the expected 1462px. */
+        bottom: auto;
+    }
+
+    /* Same leak again, one level down: ".edit-patient form .buttons
+       input[type=submit]" below (flex: 1, 0.75rem padding, an 8rem
+       min-width) outranks ".appointment-entry .buttons input[type=submit]",
+       which is what made each card's Save/Delete two full-width slabs. One
+       more class wins it back. */
+    .appointment-entry .buttons input[type="submit"] {
+        flex: 0 0 auto;
+        min-width: 0;
+        padding: 0.5rem 1.1rem;
+        font-weight: 600;
+    }
+
+    /* Delete is a text button: pulled left by its own horizontal padding
+       so the label lines up with the fields' left edge, while the hover
+       tint keeps its room. Same specificity as the rule above, so it has
+       to come after it. */
+    .appointment-entry .buttons input[name="delete"] {
+        margin-left: -0.6rem;
+        padding-left: 0.6rem;
+        padding-right: 0.6rem;
     }
 
     /* The save-status spinner (#info-loader, .loader0 -- see loader.css)
@@ -378,17 +464,21 @@ form .input-div {
        regardless of the row's actual height. */
     form .buttons .loader0 {
         position: absolute;
-        top: 50%;
-        right: 0;
+        /* Offset by half the row's padding-top so it centers on the
+           buttons, not on buttons + divider gap. Pinned left now that the
+           buttons themselves sit at the right edge. */
+        top: calc(50% + var(--spacing) / 2);
+        left: 0;
         transform: translateY(-50%);
     }
 
     form .buttons input[type="submit"] {
-        flex: 1;
-        padding: 0.75rem;
-        border: none;
-        border-radius: var(--border-radius);
-        font-weight: bold;
+        flex: 0 0 auto;
+        min-width: 8rem;
+        padding: 0.6rem 1.25rem;
+        border: 1px solid transparent;
+        border-radius: var(--border-radius-md);
+        font-weight: 600;
         cursor: pointer;
         transition: background-color var(--transition-fast);
     }
@@ -412,7 +502,7 @@ form .input-div {
     .buttons input[type="submit"].btn-secondary {
         background-color: white;
         color: var(--dark-gray);
-        border: 1.5px solid var(--medium-gray);
+        border: 1px solid var(--border-color);
     }
 
     .buttons input[type="submit"].btn-secondary:hover {
@@ -434,12 +524,12 @@ form .input-div {
         display: inline-flex;
         align-items: center;
         gap: 0.4rem;
-        padding: 0.6rem 1rem;
-        border: 1.5px solid var(--error);
-        border-radius: var(--border-radius);
+        padding: 0.55rem 1rem;
+        border: 1px solid rgba(var(--error-rgb), 0.35);
+        border-radius: var(--border-radius-md);
         background-color: white;
         color: var(--error);
-        font-weight: bold;
+        font-weight: 600;
         cursor: pointer;
         transition: background-color var(--transition-fast), color var(--transition-fast);
     }
@@ -461,8 +551,9 @@ form .input-div {
        mobile (max-width: 470px, further below). */
     form .input-div {
         display: grid;
-        grid-template-columns: 13rem 1fr;
+        grid-template-columns: 10rem 1fr;
         align-items: center;
+        padding: 0;
     }
 
     form .input-div select,
@@ -472,12 +563,19 @@ form .input-div {
         grid-column: 2;
         grid-row: 1;
         flex-grow: 1;
-        padding: 8px 12px;
-        line-height: 19px;
-        border: 1px solid var(--medium-gray);
-        border-radius: var(--border-radius-sm);
-        transition: all var(--transition-fast);
+        padding: 0.55rem 0.75rem;
+        line-height: 1.25rem;
+        background-color: white;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-md);
+        transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
         /* width: 100%; */
+    }
+
+    form .input-div select:hover,
+    form .input-div input:hover,
+    form .input-div textarea:hover {
+        border-color: #b9c9cc;
     }
 
     form .input-div textarea {
@@ -488,16 +586,17 @@ form .input-div {
     form .input-div input:focus,
     form .input-div textarea:focus {
         border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(3, 99, 121, 0.1);
+        box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.15);
         outline: none;
     }
 
     form .input-div label {
         grid-column: 1;
         grid-row: 1;
-        width: 13rem;
+        width: 10rem;
         text-align: right;
-        font-weight: 600;
+        font-size: 0.9rem;
+        font-weight: 500;
         color: var(--dark-gray);
     }
 
@@ -588,9 +687,10 @@ form .input-div {
             display: none;
         }
 
-        &.valid {
-            border-color: var(--success);
-        }
+        /* A valid value keeps the neutral border and shows only the green
+           check icon below. A permanent green outline on every correctly
+           filled field was the loudest thing on the card, for the one
+           state that needs no attention. Invalid still gets a red border. */
 
         &.valid~.inline-icons i.valid {
             visibility: visible;
@@ -652,16 +752,17 @@ form .input-div {
        breathe inside, rather than relying on margin trimming alone to
        read as "compact". */
     position: relative;
-    padding: var(--spacing-sm);
+    padding: var(--spacing) 1.25rem;
     background-color: white;
-    border-radius: var(--border-radius-md);
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--primary);
+    border-radius: var(--border-radius-lg);
     box-shadow: var(--shadow-sm);
-    border-left: 4px solid var(--primary);
-    transition: box-shadow var(--transition-fast);
+    transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
 }
 
 .appointment-entry:hover {
-    box-shadow: var(--shadow-base);
+    box-shadow: var(--shadow-md);
 }
 
 /* Χειρουργείο gets a visually distinct accent from a plain Ραντεβού (its
@@ -680,8 +781,8 @@ form .input-div {
    cards on the page. */
 .appointment-index-badge {
     position: absolute;
-    top: var(--spacing-xs);
-    right: var(--spacing-xs);
+    top: var(--spacing);
+    right: 1.25rem;
     /* Without this, the badge (z-index:auto) and the card's own <form>
        (also position:relative -- ".edit-patient form", further up this
        file, leaks that onto every form under .edit-patient, appointment
@@ -695,23 +796,22 @@ form .input-div {
        without needing to chase down (or risk disturbing) whatever else
        relies on the form's own position:relative. */
     z-index: 1;
-    font-size: 0.7rem;
-    font-weight: 700;
-    color: white;
-    /* Was var(--dark-gray) text on var(--light-gray) -- both muted
-       enough that the badge all but disappeared against the card's own
-       white background (confirmed via getBoundingClientRect(): correctly
-       positioned, just not visible). White-on-accent instead, and tied
-       to the same color as this card's own type accent (left border/
-       label) just below, rather than a third, unrelated neutral. */
-    background-color: var(--primary);
-    padding: 0.15rem 0.5rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    /* Soft pill in the card's own type color: a tinted fill with dark
+       text. The previous solid white-on-amber version for operations was
+       about 2:1 contrast. */
+    color: var(--primary-dark);
+    background-color: rgba(var(--primary-rgb), 0.1);
+    padding: 0.15rem 0.55rem;
     border-radius: 999px;
     line-height: 1.4;
 }
 
 .appointment-entry.appointment-type-operation .appointment-index-badge {
-    background-color: var(--warning-dark);
+    color: var(--operation-text);
+    background-color: rgba(var(--warning-rgb), 0.2);
 }
 
 .appointment-entry {
@@ -808,7 +908,7 @@ form .input-div {
     }
 
     &.appointment-type-operation .input-div[role="rendezvouz"] label {
-        color: var(--warning-dark);
+        color: var(--operation-text);
     }
 
     /* "Χειρουργείο" cards get bx-plus-medical instead of the default
@@ -829,12 +929,20 @@ form .input-div {
         gap: var(--spacing-sm);
     }
 
+    /* The card's own <fieldset> (see ".edit-patient fieldset") stacks
+       date/place, the loader strip and notes/buttons -- slightly tighter
+       than the patient form's rows. */
+    fieldset {
+        gap: var(--spacing-sm);
+    }
+
     .input-div input,
     .input-div select,
     .input-div textarea {
-        padding: var(--spacing-sm);
-        border: 1px solid var(--medium-gray);
-        border-radius: var(--border-radius);
+        padding: 0.5rem 0.75rem;
+        background-color: white;
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius-md);
         font-size: 0.9rem;
         transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
     }
@@ -842,9 +950,26 @@ form .input-div {
     .input-div input:focus,
     .input-div select:focus,
     .input-div textarea:focus {
-        border-color: var(--primary-light);
-        box-shadow: var(--shadow-primary-sm);
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.15);
         outline: none;
+    }
+
+    /* Notes field and its button row had no gap at all (the Save button
+       sat flush against the textarea's bottom edge). */
+    .edit-appointment {
+        display: flex;
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+
+    /* "Σημειώσεις" sat in bold dark text next to a colored type label and
+       read as a second heading. Quieter field caption instead. */
+    .input-div.input-notes label,
+    .input-div label[role="location"] {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--dark-gray);
     }
 
     .input-div textarea {
@@ -863,12 +988,12 @@ form .input-div {
     }
 
     .buttons input[type="submit"] {
-        padding: var(--spacing-sm) var(--spacing);
-        border: none;
-        border-radius: var(--border-radius);
-        font-weight: 500;
+        padding: 0.45rem 1rem;
+        border: 1px solid transparent;
+        border-radius: var(--border-radius-md);
+        font-weight: 600;
         cursor: pointer;
-        transition: background-color var(--transition-fast), box-shadow var(--transition-fast);
+        transition: background-color var(--transition-fast), box-shadow var(--transition-fast), color var(--transition-fast);
     }
 
     .buttons input[name="submit"] {
@@ -882,13 +1007,22 @@ form .input-div {
         box-shadow: var(--shadow-primary-base);
     }
 
+    /* Delete was a solid dark-gray slab as heavy as Save. Now a quiet red
+       text button at the far left of the row, away from Save, so the
+       destructive action is still clearly marked but no longer competes. */
     .buttons input[name="delete"] {
-        background-color: var(--dark-gray);
-        color: white;
+        order: -1;
+        margin-right: auto;
+        background-color: transparent;
+        color: var(--error);
+        box-shadow: none;
     }
 
     .buttons input[name="delete"]:hover {
-        background-color: var(--text);
+        background-color: rgba(var(--error-rgb), 0.08);
+        color: var(--error-dark);
+        box-shadow: none;
+        transform: none;
     }
 }
 
@@ -934,6 +1068,13 @@ form .input-div {
     
     .edit-patient .buttons {
         flex-direction: column;
+    }
+
+    /* A card's Save/Delete pair is compact enough to stay on one row on
+       a phone; stacking it would also strand Delete's margin-right: auto
+       as a content-width button at the left edge. */
+    .edit-patient .appointment-entry .buttons {
+        flex-direction: row;
     }
 
     /* Appointment card date/place header responsiveness lives in
@@ -1325,7 +1466,7 @@ form .input-div {
     align-items: center;
     justify-content: space-between;
     gap: var(--spacing);
-    margin: 0.5rem 1rem var(--spacing);
+    margin: var(--spacing-xs) 0 var(--spacing);
     flex-wrap: wrap;
 }
 
@@ -1341,8 +1482,8 @@ form .input-div {
     gap: 0.4rem;
     background-color: var(--primary);
     color: white;
-    padding: 0.6rem var(--spacing);
-    border-radius: var(--border-radius);
+    padding: 0.55rem var(--spacing);
+    border-radius: var(--border-radius-md);
     font-weight: 600;
     font-size: 0.95rem;
     box-shadow: var(--shadow-primary-sm);
@@ -1360,17 +1501,22 @@ form .input-div {
     box-shadow: var(--shadow-primary-md);
 }
 
+/* No card of its own any more: the input itself is the white surface.
+   It used to sit inside a white padded box, which nested a field inside a
+   card for no reason and inset it 1rem from the table's own edges. Now
+   the title, search and table share one left edge. position: relative
+   stays, since .select-container's dropdown positions against it. */
 .search {
-    margin: 0 1rem var(--spacing);
-    background: white;
-    padding: 0.75rem var(--spacing);
-    border-radius: var(--border-radius);
-    box-shadow: var(--shadow-sm);
+    position: relative;
+    margin: 0 0 var(--spacing);
 }
 
 .search .input-div {
     position: relative;
     display: block;
+    /* Drops the global "form .input-div" padding, which inset the field a
+       few px from the table's edge. */
+    padding: 0;
 }
 
 .search .search-icon {
@@ -1385,16 +1531,22 @@ form .input-div {
 
 .search .input-div input {
     width: 100%;
-    padding: 0.65rem 0.8rem 0.65rem 2.5rem;
-    border: 1px solid var(--medium-gray);
-    border-radius: var(--border-radius-sm);
-    transition: all var(--transition-fast);
+    padding: 0.7rem 0.8rem 0.7rem 2.5rem;
+    background-color: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-sm);
+    transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
     font-size: 0.95rem;
+}
+
+.search .input-div input:hover {
+    border-color: #b9c9cc;
 }
 
 .search .input-div input:focus {
     border-color: var(--primary);
-    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.1);
+    box-shadow: 0 0 0 3px rgba(var(--primary-rgb), 0.15);
     outline: none;
 }
 
@@ -1416,10 +1568,14 @@ form .input-div {
     font-size: 1rem;
 }
 
+/* The table runs edge to edge inside a bordered card, with no inner
+   padding. The old 1rem padding left a white margin around a full-bleed
+   teal header bar, which read as a box inside a box. */
 .patients-list {
-    padding: 1rem;
+    padding: 0;
     background: white;
-    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
     box-shadow: var(--shadow-sm);
     overflow: hidden;
 }
@@ -1429,15 +1585,23 @@ form .input-div {
     border-collapse: collapse;
 }
 
+/* Quiet column labels (small, uppercase, muted, on a faint fill) instead
+   of a solid teal gradient bar, so the header stops outweighing the rows
+   it labels. */
 .patients-list table thead {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    color: white;
+    background-color: var(--light-gray);
+    color: var(--dark-gray);
 }
 
 .patients-list table thead th {
-    padding: 12px 8px;
+    padding: 0.7rem 1rem;
     text-align: left;
+    font-size: 0.75rem;
     font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border-color);
     position: relative;
 }
 
@@ -1445,23 +1609,31 @@ form .input-div {
     transition: background-color var(--transition-fast);
 }
 
-.patients-list table tr:hover {
-    background-color: rgba(var(--primary-rgb), 0.05);
-}
-
-.patients-list table tr:nth-child(even) {
-    background-color: var(--light-gray);
+/* Hairline row dividers and a hover tint replace zebra striping. The
+   stripes and dividers were doing the same job twice. */
+.patients-list table tbody tr:hover {
+    background-color: rgba(var(--primary-rgb), 0.04);
 }
 
 .patients-list table td {
-    padding: 0.85rem 0.75rem;
+    padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--medium-gray);
 }
 
+.patients-list table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+/* Stays a real table cell (see the same rule on the pending-appointments
+   tables): display: flex on a <td> detached it from the row and broke
+   that row's divider line under this column. */
 .patients-list table td.actions {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.patients-list table td.actions > * + * {
+    margin-left: 0.25rem;
 }
 
 /* Icon-only action buttons (delete, etc.) -- a circular hover target
@@ -1601,10 +1773,14 @@ a.btn-secondary:hover {
     color: var(--primary-dark);
 }
 
+/* Body font with tabular figures keeps the digits aligned in a column,
+   without the typewriter look of a monospace face mid-row. */
 .patients-list table td[data-column="amka"] {
     text-align: center;
     width: 10rem;
-    font-family: monospace;
+    color: var(--dark-gray);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
 }
 
 .patients-list table td[data-column="amka"] i {
@@ -1637,8 +1813,9 @@ a.btn-secondary:hover {
 
 .patients-list thead .sorting-arrows {
     display: inline-block;
-    color: white;
-    margin-left: 8px;
+    color: var(--dark-gray);
+    margin-left: 0.25rem;
+    vertical-align: middle;
 }
 
 .patients-list thead .sorting-arrows i {
@@ -1649,7 +1826,7 @@ a.btn-secondary:hover {
 }
 
 .patients-list thead .sorting-arrows i:hover {
-    color: var(--warning);
+    color: var(--primary);
     opacity: 1;
 }
 
@@ -1671,20 +1848,19 @@ a.btn-secondary:hover {
 }
 
 /* pending_appointments_list.zetem's two tables ("Εκκρεμή Ραντεβού" /
-   "Προηγούμενα Ραντεβού") -- matches .patients-list table's own look
-   (gradient header, row hover, zebra striping, rounded shadowed card)
-   rather than inventing a new one, same reasoning .settings-table-scroll
-   above gives for doing the same thing. One shared rule set for both,
-   rather than duplicating it twice, since the two tables are genuine
-   twins on the same page. */
+   "Προηγούμενα Ραντεβού") -- the same look as .patients-list (bordered
+   card, edge-to-edge table, quiet uppercase header, hairline rows), so
+   every list in the app reads as one system. One shared rule set for
+   both, since the two tables are twins on the same page. */
 .pending-appointments-list,
 .previous-appointments-list {
-    padding: 1rem;
+    padding: 0;
     background: white;
-    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
     box-shadow: var(--shadow-sm);
     overflow: hidden;
-    margin: 0 1rem var(--spacing);
+    margin: 0 0 var(--spacing-lg);
 }
 
 .pending-appointments-list table,
@@ -1695,15 +1871,20 @@ a.btn-secondary:hover {
 
 .pending-appointments-list table thead,
 .previous-appointments-list table thead {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    color: white;
+    background-color: var(--light-gray);
+    color: var(--dark-gray);
 }
 
 .pending-appointments-list table thead th,
 .previous-appointments-list table thead th {
-    padding: 12px 8px;
+    padding: 0.7rem 1rem;
     text-align: left;
+    font-size: 0.75rem;
     font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .pending-appointments-list table tr,
@@ -1711,20 +1892,21 @@ a.btn-secondary:hover {
     transition: background-color var(--transition-fast);
 }
 
-.pending-appointments-list table tr:hover,
-.previous-appointments-list table tr:hover {
-    background-color: rgba(var(--primary-rgb), 0.05);
-}
-
-.pending-appointments-list table tr:nth-child(even),
-.previous-appointments-list table tr:nth-child(even) {
-    background-color: var(--light-gray);
+.pending-appointments-list table tbody tr:hover,
+.previous-appointments-list table tbody tr:hover {
+    background-color: rgba(var(--primary-rgb), 0.04);
 }
 
 .pending-appointments-list table td,
 .previous-appointments-list table td {
-    padding: 0.85rem 0.75rem;
+    padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--medium-gray);
+    vertical-align: middle;
+}
+
+.pending-appointments-list table tbody tr:last-child td,
+.previous-appointments-list table tbody tr:last-child td {
+    border-bottom: 0;
 }
 
 .pending-appointments-list table td[data-column="name"],
@@ -1732,31 +1914,95 @@ a.btn-secondary:hover {
     font-weight: 600;
 }
 
+/* A converted appointment's name links to the patient file it became --
+   was the browser's default blue/underline. */
+.previous-appointments-list table td[data-column="name"] a {
+    color: var(--primary);
+    text-decoration: none;
+}
+
+.previous-appointments-list table td[data-column="name"] a:hover {
+    color: var(--primary-dark);
+    text-decoration: underline;
+}
+
+.pending-appointments-list table td[data-column="phone"],
+.previous-appointments-list table td[data-column="phone"],
+.pending-appointments-list table td[data-column="location"],
+.previous-appointments-list table td[data-column="location"] {
+    color: var(--dark-gray);
+}
+
+.pending-appointments-list table td[data-column="phone"],
+.previous-appointments-list table td[data-column="phone"] {
+    font-variant-numeric: tabular-nums;
+}
+
 .pending-appointments-list table td[data-column="datetime"],
 .previous-appointments-list table td[data-column="datetime"] {
-    color: var(--dark-gray);
+    color: var(--text);
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
 }
 
+/* The "Προηγούμενα" list is history: its dates are muted so the upcoming
+   ones in the table above stay the thing the eye lands on. */
+.previous-appointments-list table td[data-column="datetime"] {
+    color: var(--dark-gray);
+}
+
+/* Calendar sync status as a small tinted dot (green = synced, gray =
+   not) rather than a bare colored glyph. */
 .pending-appointments-list table td[data-column="synced"] {
     text-align: center;
     width: 3rem;
 }
 
+.sync-status {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    height: 1.5rem;
+    border-radius: 50%;
+    font-size: 1rem;
+}
+
+.sync-status.is-synced {
+    color: var(--success-dark);
+    background-color: rgba(var(--secondary-rgb), 0.14);
+}
+
+.sync-status.is-unsynced {
+    color: var(--dark-gray);
+    background-color: var(--light-gray);
+}
+
+/* Actions stay a real table cell. display: flex on a <td> takes it out of
+   table layout, which is what broke the row's divider line and hover
+   tint under this column. The buttons are already inline-flex, so
+   nowrap plus a small left margin lays them out in a row. */
 .pending-appointments-list table td.actions,
 .previous-appointments-list table td.actions {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
+    width: 1%;
+    text-align: right;
+    white-space: nowrap;
+}
+
+.pending-appointments-list table td.actions > * + *,
+.previous-appointments-list table td.actions > * + * {
+    margin-left: 0.25rem;
+}
+
+.pending-appointments-list table thead th:last-child,
+.previous-appointments-list table thead th:last-child {
+    text-align: right;
 }
 
 @media screen and (max-width: 470px) {
     .pending-appointments-list,
     .previous-appointments-list {
-        padding: 0;
-        border-radius: 0;
-        margin: 0 0 var(--spacing);
+        border-radius: var(--border-radius-md);
     }
 
     .pending-appointments-list table,
@@ -1764,29 +2010,107 @@ a.btn-secondary:hover {
         display: block;
         overflow-x: auto;
     }
+
+    .pending-appointments-list table td,
+    .previous-appointments-list table td,
+    .pending-appointments-list table thead th,
+    .previous-appointments-list table thead th {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
 }
 
+/* A plain page title, matching .page-title on the patients list, instead
+   of a solid teal banner. ".header" is also the site header's class (teal
+   gradient, flex, shadow -- see .header near the top of this file), so
+   each of those properties has to be undone here explicitly. */
 .edit-patient .header {
-    text-align: center;
-    margin-bottom: var(--spacing-md);
-    padding: var(--spacing);
-    background-color: var(--primary);
-    color: white;
-    border-radius: var(--border-radius-md);
-    box-shadow: var(--shadow-primary-md);
+    display: block;
+    /* .header's justify-items: center is no longer inert on a block
+       container: browsers implementing justify-self for block layout
+       (Chromium does) shrink the <h4> to fit and center it, even with
+       text-align: left. */
+    justify-items: normal;
+    margin: var(--spacing-xs) 0 var(--spacing);
+    padding: 0;
+    background: none;
+    color: var(--primary-dark);
+    text-align: left;
+    box-shadow: none;
 }
 
 .edit-patient .header h4 {
     margin: 0;
-    font-size: 1.4rem;
+    font-size: 1.6rem;
 }
 
-.patient-appointments {
-    padding: 1rem;
+/* Supporting text between the page title and its card: a back link
+   (pending_appointment_edit), a one-line intro/context (new_consultation,
+   pending_appointment_convert), and a notice. These used to be unstyled
+   paragraphs with an inline 1rem side padding that pushed them out of
+   line with the title and the card. */
+.edit-patient .page-back,
+.edit-patient .page-intro {
+    margin: calc(var(--spacing-sm) * -1) 0 var(--spacing);
+    max-width: 70ch;
+    color: var(--dark-gray);
+    font-size: 0.9rem;
+    line-height: 1.5;
+}
+
+.edit-patient .page-back a {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    color: var(--primary);
+    font-weight: 500;
+    text-decoration: none;
+}
+
+.edit-patient .page-back a:hover {
+    color: var(--primary-dark);
+    text-decoration: underline;
+}
+
+/* A state the user should know about before submitting (e.g. Google
+   Calendar not configured, so nothing will sync) -- a tinted callout,
+   not another line of gray text that's easy to skim past. */
+.edit-patient .page-notice {
     display: flex;
-    justify-content: center;
+    gap: var(--spacing-sm);
+    margin: 0 0 var(--spacing);
+    padding: 0.6rem 0.9rem;
+    color: var(--text);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    background-color: rgba(var(--info-rgb), 0.08);
+    border: 1px solid rgba(var(--info-rgb), 0.25);
+    border-radius: var(--border-radius-md);
+}
+
+.edit-patient .page-notice::before {
+    content: "\eb21"; /* bx-info-circle, confirmed against web/css/bx/css/boxicons.min.css */
+    flex-shrink: 0;
+    font-family: boxicons;
+    font-size: 1.1rem;
+    line-height: 1.35;
+    color: var(--info-dark);
+}
+
+/* Record-level toolbar: the two "new" actions on the left, deleting the
+   patient pushed to the far right, all one button height. */
+.patient-appointments {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
     flex-wrap: wrap;
-    gap: 0.75rem;
+    gap: var(--spacing-sm);
+    margin: var(--spacing-md) 0 var(--spacing);
+    padding: 0;
+}
+
+.patient-appointments .inline-delete-form {
+    margin-left: auto;
 }
 
 .patient-appointments a {
@@ -1797,12 +2121,12 @@ a.btn-secondary:hover {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 0.5rem;
+    gap: 0.4rem;
     width: auto;
-    min-width: 14rem;
-    padding: 0.65rem 1.5rem;
-    border-radius: var(--border-radius);
-    border: 1.5px solid var(--primary);
+    padding: 0.55rem 1rem;
+    border-radius: var(--border-radius-md);
+    border: 1px solid transparent;
+    background-color: rgba(var(--primary-rgb), 0.08);
     color: var(--primary);
     font-weight: 600;
     transition: all var(--transition-fast);
@@ -1827,6 +2151,19 @@ a.btn-secondary:hover {
    apart at a glance. */
 .patient-appointments .new-operation::before {
     content: "\ebc2";
+}
+
+/* Tinted in the operation card's own amber, so the button and the cards
+   it creates share one color. */
+.patient-appointments .new-operation {
+    background-color: rgba(var(--warning-rgb), 0.16);
+    color: var(--operation-text);
+}
+
+.patient-appointments .new-operation:hover {
+    background-color: var(--warning-dark);
+    color: var(--text);
+    box-shadow: none;
 }
 
 
@@ -1958,6 +2295,21 @@ a.btn-secondary:hover {
    doesn't, so this is safe at any viewport width. */
 .settings-table-scroll {
     overflow-x: auto;
+    margin-bottom: var(--spacing);
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+/* admin_list.zetem (zeusfw) nests this inside .patients-list, which is
+   already the bordered card -- a second frame there would be a box in a
+   box. */
+.patients-list .settings-table-scroll {
+    margin-bottom: 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
 }
 
 /* The clinics/doctors tables themselves were a bare, unstyled <table>
@@ -1965,23 +2317,29 @@ a.btn-secondary:hover {
    -- see that fix's commit message -- but zeusfw's own generic renderer
    deliberately emits no styling of its own, same "framework provides
    markup, app provides CSS" split already used for .webform above).
-   Matches .patients-list table's own look rather than inventing a new
-   one. */
+   Same look as .patients-list table: quiet uppercase header, hairline
+   rows, hover tint. Several of these tables (the admin lists, settings)
+   also sit inside a .patients-list wrapper, and this rule's own header
+   and zebra striping used to outrank that one's, leaving a mix of both. */
 .settings-table-scroll table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: var(--spacing);
 }
 
 .settings-table-scroll table thead {
-    background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
-    color: white;
+    background-color: var(--light-gray);
+    color: var(--dark-gray);
 }
 
 .settings-table-scroll table thead th {
-    padding: 12px 8px;
+    padding: 0.7rem 1rem;
     text-align: left;
+    font-size: 0.75rem;
     font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--border-color);
 }
 
 .settings-table-scroll table tbody tr {
@@ -1989,26 +2347,31 @@ a.btn-secondary:hover {
 }
 
 .settings-table-scroll table tbody tr:hover {
-    background-color: rgba(var(--primary-rgb), 0.05);
-}
-
-.settings-table-scroll table tbody tr:nth-child(even) {
-    background-color: var(--light-gray);
+    background-color: rgba(var(--primary-rgb), 0.04);
 }
 
 .settings-table-scroll table td {
-    padding: 0.85rem 0.75rem;
+    padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--medium-gray);
+    vertical-align: middle;
+}
+
+.settings-table-scroll table tbody tr:last-child td {
+    border-bottom: 0;
 }
 
 /* Webform results-table row action buttons (table_view: -> buttons:,
-   zeusfw) -- same layout rule as .patients-list table td.actions above,
-   so a row of 1-3 icon buttons lays out centered with even spacing
-   instead of stacking as block elements. */
+   zeusfw). A real table cell, not display: flex (same fix as
+   .patients-list td.actions), so the row's divider runs unbroken under
+   it. */
 .settings-table-scroll table td.actions {
-    display: flex;
-    justify-content: center;
-    gap: 8px;
+    width: 1%;
+    text-align: center;
+    white-space: nowrap;
+}
+
+.settings-table-scroll table td.actions > * + * {
+    margin-left: 0.25rem;
 }
 
 .notification {
@@ -2362,11 +2725,12 @@ ul.select-box {
     background-color: white;
     width: 100%;
     position: absolute;
-    border: 1px solid var(--medium-gray);
+    border: 1px solid var(--border-color);
     list-style: none;
-    padding: 0.2rem;
+    padding: 0.25rem;
     display: none;
-    border-radius: var(--border-radius-sm);
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-lg);
     max-height: 300px;
     overflow-y: auto;
 

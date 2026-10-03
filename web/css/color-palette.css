@@ -22,6 +22,16 @@
   --dark-gray: #47585c;
   --text: #182427;
 
+  /* Hairline border for cards, table rows and form fields on a white
+     surface. --medium-gray is close enough to white that a 1px line in
+     it nearly disappears, so it only works as a fill. */
+  --border-color: #d6e1e3;
+
+  /* Text/icon color for operation (Χειρουργείο) labels and chips. Plain
+     --warning-dark as text on white is about 2:1 contrast, well under
+     WCAG AA. --warning-dark is still the color for borders/fills. */
+  --operation-text: #8a6100;
+
   /* Typography -- see templates/page/main.zetem for the Google Fonts
      link. Real fallback stacks so a blocked font request still lands on
      a reasonable system face rather than the browser default. */

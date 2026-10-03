@@ -1857,3 +1857,93 @@ full-page screenshot confirms the whole popup, including the "23 : 30"
 time row, renders light. `bin/run_tests.sh` (101/101 static, 47/47
 functional) stayed fully green throughout -- this is CSS-only, nothing
 behavioral changed. **Files**: `web/css/styles.css`.
+
+## Modernized borders, spacing and tables: patients list, patient page, appointment cards, pending appointments
+
+One visual system across the record pages: white cards with a 1px
+hairline border (new `--border-color` token, since `--medium-gray` nearly
+disappears as a line on white) and a 0.75rem radius; tables that run edge
+to edge inside their card, with a quiet uppercase header on a faint fill,
+hairline row dividers and a hover tint instead of a solid teal bar plus
+zebra striping; compact right-aligned buttons instead of full-width slabs.
+
+**Nested frames removed.** Most of the "box inside a box" look came from
+three leaks, not from deliberate design:
+- The patient form and every appointment card wrap their controls in a
+  `<fieldset>` purely so `disabled` can lock them for read-only roles. Left
+  unstyled, the browser drew its default groove border around it: a second
+  gray frame inside every card. Reset (no border/padding/margin).
+- `.edit-patient form` turns every `<form>` on the page into a white
+  shadowed card, including each appointment card's own form. That was the
+  inner card inside each appointment card. Reset for `.appointment-entry form`.
+- The same family of selectors made each card's Save/Delete two
+  full-width slabs (`flex: 1`, an 8rem min-width). Now auto-width, with
+  Delete as a red text button at the far left of the row and Save on the
+  right, plus a gap above the row so Save no longer sits against the notes field.
+
+**Patient page.** Plain left-aligned page title instead of a solid teal
+banner. One catch: the global `.header` rule's `justify-items: center`,
+inert on a block container until browsers started supporting
+`justify-self` in block layout, kept the title centered (shrunk to fit)
+in current Chromium despite `text-align: left`, so `.edit-patient .header`
+resets it. Labels are lighter and 10rem wide (was 13rem bold). A *valid*
+AMKA/phone/email keeps a neutral border and shows only its green check
+icon; a permanent green outline on every correct field was the loudest
+thing on the card. Invalid still gets a red border. Νέο Ραντεβού / Νέο
+Χειρουργείο are tinted buttons in their card types' colors (teal / amber);
+Διαγραφή Ασθενή sits at the far right. Date jump-links are white pills.
+Attachments (Συνημμένα Αρχεία) are a card footer under a hairline instead
+of a dashed gray box with 1.5rem margins, and the history section is a
+normal bordered card.
+
+**Appointment cards.** Each card's autosave spinner (hidden while idle)
+still took a full row plus two gaps between the date row and the notes.
+It's now pinned in the card's top-right corner beside the `#N` badge.
+loader.css's leftover `bottom: 0` had to be reset there: with `top` also
+set, Chromium placed the box about 110px down the card (measured 1571px
+vs. the expected 1462px). The `#N` badge and file-count badge are soft
+tinted pills. Operation labels and badges use a new `--operation-text`
+token, because `--warning-dark` as text on white (and white on it) was
+about 2:1 contrast.
+
+**Patients list.** The search field is its own white surface (its old
+white wrapper card is gone), so title, search and table share one left
+edge. AMKA uses tabular figures in the body font instead of monospace.
+
+**Pending appointments.** Both tables on `/consultation/pending` now match
+the patients list. Converted appointments' names link in the primary color
+instead of browser-default blue. Calendar sync status is a small tinted
+dot (`.sync-status`, replacing inline `style="color:..."` icons). Upcoming
+dates are in full text color and history dates muted. The Actions column
+was a `display: flex` `<td>`, which takes the cell out of table layout and
+broke the row's divider and hover tint under it. It's a real table cell
+again, and the same fix is applied to `.patients-list td.actions` (used by
+the admin lists). Both table wrappers carry `lang="el"`, so the uppercase
+Greek headers drop their tonos the way Greek capitals should (the page
+itself still declares `lang="en"`; see below).
+
+`.settings-table-scroll` (the admin lists, settings, and the patient
+page's read-only summary/financial tables) gets the same table treatment.
+Its gradient header and zebra rules used to outrank `.patients-list`'s,
+leaving the admin lists half one style and half the other.
+
+**Entry forms** (`new_consultation`, `pending_appointment_edit`/`_convert`)
+share the patient page's form styling. Their supporting paragraphs were
+unstyled `class="muted"` with an inline 1rem side padding that pushed them
+out of line. They're now `.page-back` (a primary-colored back link),
+`.page-intro` (muted context line) and `.page-notice` (an info callout for
+"Google Calendar not configured"), all aligned with the title and card.
+
+**Not changed:** `main.zetem` still declares `<html lang="en">` for a
+Greek UI. Fixing it at the page level (from the active language) would be
+the more correct fix, for screen readers and hyphenation too, but it
+touches every page.
+
+**Verified** with Playwright screenshots at 1280px and 390px of the
+patients list, patient page (patient with 3 appointments and 1 operation),
+pending list, new/edit/convert entry forms and `/admin/users`, against
+seeded data; geometry checked via `getBoundingClientRect()` (Delete's label
+aligned with the fields' edge, spinner position, title alignment).
+`bin/run_tests.sh` (101/101 static, 47/47 functional) fully green.
+**Files**: `web/css/{styles,color-palette,file-uploads,appointment-improvements}.css`,
+`web/templates/content/{pending_appointments_list,new_consultation,pending_appointment_edit,pending_appointment_convert}.zetem`.

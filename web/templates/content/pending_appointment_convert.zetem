@@ -5,7 +5,7 @@
         <h4>Δημιουργία Φακέλου Ασθενή</h4>
     </div>
 
-    <p class="muted" style="padding: 0 1rem;">
+    <p class="muted page-intro">
         Ραντεβού: {{$pending->getappointment_datetime() | date('d-m-Y H:i')}}
         {% if($pending->getlocation()): %} &middot; {{{$pending->getlocation()}}}{% endif %}
     </p>

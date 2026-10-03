@@ -7,7 +7,7 @@
     </a>
 </div>
 
-<div class="pending-appointments-list">
+<div class="pending-appointments-list" lang="el">
 {% if(count($pending) == 0): %}
     <div class="patients-empty">
         <i class="bx bx-calendar"></i>
@@ -32,9 +32,9 @@
                 <td data-column="datetime">{{$p->getappointment_datetime() | date('d-m-Y H:i')}}</td>
                 <td data-column="synced">
                     {% if($p->getgoogle_event_id()): %}
-                        <i class="bx bx-check" style="color:#00aa00" title="Συγχρονισμένο"></i>
+                        <span class="sync-status is-synced" title="Συγχρονισμένο"><i class="bx bx-check"></i></span>
                     {% else: %}
-                        <i class="bx bx-x" style="color:#999" title="Μη συγχρονισμένο"></i>
+                        <span class="sync-status is-unsynced" title="Μη συγχρονισμένο"><i class="bx bx-x"></i></span>
                     {% endif %}
                 </td>
                 <td class="actions" data-column="actions">
@@ -60,7 +60,7 @@
     <h2 class="page-title">Προηγούμενα Ραντεβού</h2>
 </div>
 
-<div class="previous-appointments-list">
+<div class="previous-appointments-list" lang="el">
 {% if(count($previous) == 0): %}
     <div class="patients-empty">
         <i class="bx bx-history"></i>

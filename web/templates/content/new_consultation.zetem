@@ -5,14 +5,14 @@
     <div class="header">
         <h4>Νέο Εκκρεμές Ραντεβού (τηλεφωνικά)</h4>
     </div>
-    <p class="muted" style="padding: 0 1rem;">
+    <p class="muted page-intro">
         Δεν δημιουργείται φάκελος ασθενή τώρα -- μόνο όταν ο ασθενής
         προσέλθει, ο ιατρός θα δημιουργήσει τον φάκελο από τη λίστα
         «Εκκρεμή Ραντεβού».
     </p>
 
     {% if(!$calendar_enabled): %}
-    <p class="muted" style="padding: 0 1rem;">
+    <p class="muted page-notice">
         Το Google Calendar δεν είναι ρυθμισμένο -- το ραντεβού θα καταχωρηθεί
         κανονικά στο ΖΠΜΣ, χωρίς συγχρονισμό.
     </p>
