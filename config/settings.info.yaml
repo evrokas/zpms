@@ -663,6 +663,19 @@ menu:
           # item just landed on a 401, which no longer applies now that
           # the gate matches this app's own, narrower permission.
           access: doctor maintenance
+        - admin_users:
+          text:
+            gr: 'Διαχείριση Χρηστών'
+            en: 'User Management'
+          url: /admin/users
+          # Gated on the RBAC permission itself (zeusfw mainnavigation's
+          # `permission:` key), not a hand-kept role list like the item
+          # above: 'users-manage' is ZEUSFW_PERM_MANAGE_USERS, exactly what
+          # every /admin/* handler checks (core/modules/admin/admin_crud.php),
+          # so the link shows for whoever can actually open the page. Today
+          # that's administrator (is_superuser); granting users-manage to
+          # another role (/admin/role_permissions) shows it for them too.
+          permission: users-manage
 
 
 

@@ -522,4 +522,43 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
         $loginRenderedPage = $anonHttp->get('/login');
         assert_not_contains('id="zfw-live-root"', $loginRenderedPage['body'], 'a logged-out visitor saw the live_edit overlay');
     });
+    $runner->add('the User Management nav item follows the users-manage permission, not a role list', function () use ($baseUrl) {
+        // Apps -> User Management (/admin/users) is gated by zeusfw
+        // mainnavigation's `permission: users-manage` key, the same RBAC
+        // permission every /admin/* handler checks (admin_crud.php). So
+        // the link must show exactly for viewers who can open the page:
+        // is_superuser yes, a plain doctor no, and that same doctor yes
+        // once users-manage is granted to the doctor role, with no menu
+        // config change.
+        TestSchema::assertSafeToMutate();
+        $needle = 'href="/admin/users"';
+        // A handler-level rbacClass::require() refusal renders zeusfw's 401
+        // page with HTTP 200, so refusal is detected by its text (same as
+        // admin_crud.php's own refusal tests), not the status code.
+        $refused = '401 - You don';
+
+        $adminHttp = new TestHttpClient($baseUrl);
+        TestFixtures::loginAsAdministrator($adminHttp);
+        assert_contains($needle, $adminHttp->get('/patients')['body'], 'administrator (is_superuser) did not see the User Management nav item');
+        assert_not_contains($refused, $adminHttp->get('/admin/users')['body'], 'administrator saw the User Management link but was refused /admin/users');
+
+        $doctorHttp = new TestHttpClient($baseUrl);
+        TestFixtures::loginAsTestUser($doctorHttp);
+        assert_not_contains($needle, $doctorHttp->get('/patients')['body'], 'a doctor without users-manage saw the User Management nav item');
+        assert_contains($refused, $doctorHttp->get('/admin/users')['body'], 'a doctor without users-manage was not refused /admin/users');
+
+        $doctorRole = rolesClassEx::sgetByName('doctor');
+        $managePerm = permissionsClassEx::sgetByName(ZEUSFW_PERM_MANAGE_USERS);
+        assert_true($doctorRole && $managePerm, 'doctor role or users-manage permission is not seeded');
+        $roleId = (int)$doctorRole->getid();
+        $permId = (int)$managePerm->getid();
+        $db = dbConnection::getConnection();
+        $db->exec("INSERT INTO role_permissions (guid, cuser, role_id, permission_id) VALUES (UUID(), 'test', $roleId, $permId)");
+        try {
+            assert_contains($needle, $doctorHttp->get('/patients')['body'], 'a doctor granted users-manage still did not see the User Management nav item');
+            assert_not_contains($refused, $doctorHttp->get('/admin/users')['body'], 'a doctor granted users-manage saw the link but was refused /admin/users');
+        } finally {
+            $db->exec("DELETE FROM role_permissions WHERE role_id = $roleId AND permission_id = $permId");
+        }
+    });
 }

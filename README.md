@@ -1944,6 +1944,27 @@ patients list, patient page (patient with 3 appointments and 1 operation),
 pending list, new/edit/convert entry forms and `/admin/users`, against
 seeded data; geometry checked via `getBoundingClientRect()` (Delete's label
 aligned with the fields' edge, spinner position, title alignment).
-`bin/run_tests.sh` (101/101 static, 47/47 functional) fully green.
+`bin/run_tests.sh` (100/100 static, 47/47 functional) fully green.
 **Files**: `web/css/{styles,color-palette,file-uploads,appointment-improvements}.css`,
 `web/templates/content/{pending_appointments_list,new_consultation,pending_appointment_edit,pending_appointment_convert}.zetem`.
+
+## Apps → User Management menu item, shown by permission
+
+`Εφαρμογές → Διαχείριση Χρηστών` links to `/admin/users` (the framework's
+users/roles/permissions admin pages). It's gated on the RBAC permission
+`users-manage` itself, via zeusfw mainnavigation's new `permission:` menu
+key, not on a list of role names like the other items' `access:`. That's
+the same permission every `/admin/*` page checks, so the link appears
+exactly for whoever can open the page: today that's `administrator`
+(is_superuser). Granting `users-manage` to any other role at
+`/admin/role_permissions` makes the link appear for that role too, with no
+config change. The page's own permission check is unchanged; hiding the
+link is cosmetic. See zeusfw's CLAUDE.md, "Nav menu items gain an optional
+`permission:` key", for the mechanism.
+
+**Verified**: a new functional test (`tests/functional/auth_csrf.php`)
+covers administrator (sees it, page opens), doctor (hidden, page refused)
+and doctor with `users-manage` granted (sees it, page opens; the grant is
+rolled back afterwards). `bin/run_tests.sh` (100/100 static, 48/48
+functional) green. **Files**: `config/settings.info.yaml`,
+`tests/functional/auth_csrf.php`.
