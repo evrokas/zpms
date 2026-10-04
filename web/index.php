@@ -293,6 +293,59 @@ require_once(__DIR__ . '/zpms_mailer.php');
         exit();
 
     }
+    /**
+     * Identity-header data for the patient record page (edit_patient.zetem,
+     * "patient-identity" card): initials for the avatar, an age label in the
+     * same "58y 5m" shape the date-of-birth field's own client-side badge
+     * uses (web/js/scripts.js dateAgo()), and the appointment/operation
+     * counts plus last/next visit dates shown next to it. Computed from the
+     * already-loaded, non-deleted appointment list, so it costs no extra
+     * query. "Last" and "next" compare calendar dates only (today counts as
+     * "last"), matching how appointments are shown everywhere else.
+     */
+    function zpms_patient_identity(patientsClass $pat, array $appointments): array {
+        $name = trim((string)$pat->getpname());
+        $words = preg_split('/\s+/u', $name, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $initials = '';
+        foreach (array_slice($words, 0, 2) as $w) {
+            $initials .= mb_strtoupper(mb_substr($w, 0, 1));
+        }
+
+        $age = '';
+        $dobRaw = $pat->getpdob();
+        $dob = $dobRaw ? date_create((string)$dobRaw) : false;
+        if ($dob && $dob <= new DateTime('now')) {
+            $diff = $dob->diff(new DateTime('now'));
+            $age = $diff->y . 'y ' . $diff->m . 'm';
+        }
+
+        $visits = 0;
+        $operations = 0;
+        $today = date('Y-m-d');
+        $last = null;
+        $next = null;
+        foreach ($appointments as $ap) {
+            if ($ap->getdeleted() != null) continue;
+            if ($ap->getatype() == 'operation') $operations++; else $visits++;
+            $day = substr((string)$ap->getadate(), 0, 10);
+            if ($day === '') continue;
+            if ($day <= $today) {
+                if ($last === null || $day > $last) $last = $day;
+            } else {
+                if ($next === null || $day < $next) $next = $day;
+            }
+        }
+
+        return [
+            'initials' => $initials,
+            'age' => $age,
+            'visits' => $visits,
+            'operations' => $operations,
+            'last' => $last,
+            'next' => $next,
+        ];
+    }
+
     function patient_edit($params) {
         global $kernel;
 
@@ -371,12 +424,37 @@ require_once(__DIR__ . '/zpms_mailer.php');
         // appointment card (view_appointment.zetem no longer renders one
         // at all -- see that template's own comment).
         $appointmentIdsForHistory = array();
+        // Every attachment across every appointment, newest appointment
+        // first -- feeds the record page's "Έγγραφα" sidebar so a file can be
+        // found without opening each appointment row (see edit_patient.zetem).
+        $allFiles = array();
         foreach($app_list as $ap) {
 
             if($ap->getdeleted() == null) {
                 if ($canEditAppointment || $canViewAppointment) {
+                    $apFiles = appointmentFilesClassEx::getFilesForAppointment($ap->getid());
+                    $apLabel = (($ap->getatype() == 'operation') ? 'Χειρουργείο ' : 'Ραντεβού ') . formatDate($ap->getadate());
+                    foreach($apFiles as $f) {
+                        $allFiles[] = [
+                            'name' => $f->getfile_name(),
+                            'size' => appointment_files_format_size($f->getfile_size()),
+                            'is_image' => str_starts_with((string)$f->getmime_type(), 'image/'),
+                            'url' => rel_url('/appointment/' . $ap->getid() . '/files/' . $f->getid() . '/download'),
+                            'appointment_label' => $apLabel,
+                            'appointment_anchor' => '#app-' . (count($apprender)+1),
+                        ];
+                    }
                     $apprender[] = [
                         'index' => count($apprender),
+                        // Summary shown on the collapsed row; the full,
+                        // editable card below ('markup') opens in place.
+                        'row' => [
+                            'date' => $ap->getadate(),
+                            'is_operation' => ($ap->getatype() == 'operation'),
+                            'place' => $ap->getaplace(),
+                            'note' => mb_strimwidth((string)$ap->getanote(), 0, 220, '…'),
+                            'file_count' => count($apFiles),
+                        ],
                         'markup' => Renderer::render('view_appointment.zetem', [
                                                         'action' => rel_url('/appointment/' . $ap->getid() . '/edit'),
                                                         'index' => count($apprender)+1,
@@ -385,7 +463,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
                                                         'patient' => $pat,
                                                         'appointment' => $ap,
                                                         'locations' => $loc,
-                                                        'files' => appointmentFilesClassEx::getFilesForAppointment($ap->getid()),
+                                                        'files' => $apFiles,
                                                         'can_edit' => $canEditAppointment
                                                     ]),
                         'attributes' => new Attributes()
@@ -407,6 +485,8 @@ require_once(__DIR__ . '/zpms_mailer.php');
             'patient' => $pat,
             'appdates' => $appdates,
             'appointments' => $apprender,
+            'identity' => zpms_patient_identity($pat, $app_list),
+            'all_files' => $allFiles,
             'appointment_summary' => $appointmentSummary,
             'patient_history' => zpms_patient_appointment_history_for_display($appointmentIdsForHistory),
             'financials' => $financials,

@@ -1,11 +1,63 @@
 
 {% attach_library('loader-library'); %}
 {% attach_library('flatpickr-library'); %}
+{% attach_library('patient-record'); %}
 
-<div class="edit-patient">    
+<div class="edit-patient{{($action == 'new') ? '' : ' is-record'}}">    
     <div class="header">
         <h4>{% if($action == 'new'): %}Νέος Ασθενής{% else: %}Επεξεργασία Στοιχείων Ασθενή{% endif %}</h4>
     </div>
+
+    {% if($action != 'new'): %}
+    <!-- Identity header: who this patient is, at a glance, with the
+         editable details one click away instead of always taking the top
+         of the page (the form below starts hidden). Everything here is
+         read-only text rendered from the same patient row as the form;
+         the small script at the bottom of this template keeps the text in
+         step with the form while it is open (fields autosave). -->
+    <section class="patient-identity" aria-label="Στοιχεία ασθενή">
+        <div class="pi-main">
+            <div class="pi-id">
+                <div class="pi-avatar" aria-hidden="true">{{{$identity['initials']}}}</div>
+                <div class="pi-who">
+                    <h3 class="pi-name" id="pi-name">{{{$patient->getpname()}}}</h3>
+                    <div class="pi-sub">
+                        <span id="pi-age" {% if($identity['age'] == ''): %}hidden{% endif %}>{{{$identity['age']}}}</span>
+                        <span id="pi-dob" {% if(!$patient->getpdob()): %}hidden{% endif %}>{% if($patient->getpdob()): %}{{$patient->getpdob() | date('d-m-Y')}}{% endif %}</span>
+                        <span class="pi-amka" id="pi-amka-wrap" {% if(!$patient->getpamka()): %}hidden{% endif %}>ΑΜΚΑ <span id="pi-amka">{{{$patient->getpamka()}}}</span>
+                            <i class="bx bx-copy" id="pi-amka-copy" title="Αντιγραφή ΑΜΚΑ" data-copy-text="{{{$patient->getpamka()}}}"></i></span>
+                    </div>
+                </div>
+            </div>
+
+            <ul class="pi-contact">
+                <li id="pi-tel-wrap" {% if(!$patient->getptel()): %}hidden{% endif %}><i class="bx bx-phone"></i><a id="pi-tel" href="tel:{{{$patient->getptel()}}}">{{{$patient->getptel()}}}</a></li>
+                <li id="pi-email-wrap" {% if(!$patient->getpemail()): %}hidden{% endif %}><i class="bx bx-envelope"></i><a id="pi-email" href="mailto:{{{$patient->getpemail()}}}">{{{$patient->getpemail()}}}</a></li>
+                <li id="pi-addr-wrap" {% if(!$patient->getpaddr()): %}hidden{% endif %}><i class="bx bx-map-pin"></i><span id="pi-addr">{{{$patient->getpaddr()}}}</span></li>
+            </ul>
+
+            <dl class="pi-stats">
+                <div><dt>Ραντεβού</dt><dd>{{$identity['visits']}}</dd></div>
+                <div><dt>Χειρουργεία</dt><dd>{{$identity['operations']}}</dd></div>
+                {% if($identity['last']): %}<div><dt>Τελευταίο</dt><dd>{{$identity['last'] | date('d-m-Y')}}</dd></div>{% endif %}
+                {% if($identity['next']): %}<div><dt>Επόμενο</dt><dd>{{$identity['next'] | date('d-m-Y')}}</dd></div>{% endif %}
+            </dl>
+
+            <button type="button" class="pi-toggle" id="patient-details-toggle" aria-expanded="false" aria-controls="patient-details"
+                data-label-closed="{{($can_edit_patient) ? 'Επεξεργασία στοιχείων' : 'Στοιχεία ασθενή'}}"
+                data-label-open="Κλείσιμο στοιχείων">
+                <i class="bx bx-pencil"></i>
+                <span>{{($can_edit_patient) ? 'Επεξεργασία στοιχείων' : 'Στοιχεία ασθενή'}}</span>
+                <i class="bx bx-chevron-down pi-chevron"></i>
+            </button>
+        </div>
+        <div class="pi-note" id="pi-note-wrap" {% if(!$patient->getpnote()): %}hidden{% endif %}>
+            <i class="bx bx-note"></i><span id="pi-note">{{{$patient->getpnote()}}}</span>
+        </div>
+    </section>
+    {% endif %}
+
+    <div class="patient-details{{($action == 'new') ? ' is-new' : ''}}" id="patient-details" {% if($action != 'new'): %}hidden{% endif %}>
     <form action="{{$action}}" method="post">
         {{ csrf_field() }}
 
@@ -28,6 +80,9 @@
             {% endif %}
             </div>
         #}
+
+        <div class="pd-section pd-basic">
+        <div class="pd-section-title"><i class="bx bx-user"></i> Βασικά Στοιχεία</div>
 
         <div class="input-div">
             <label for="patient-name">Όνομα ασθενή</label>
@@ -125,6 +180,11 @@
             <!-- <img class="not-valid" src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABgAAAAYCAYAAADgdz34AAAB9ElEQVRIS9WUTyhEURTG3yillIWNhQg1RJkFzYZsiIXCCgtly4JmRbEwZoPYaLJgzcasFDbESikpZRZIMmFjYyFKyZ/fGfe93jx33jyjKW7zzZl37jnfd/68xmfk+PhyzG/8HYEPw/DTbVh1HKayKy/de+oA8nzIzkGVIhXyWpJfM4l4FQhBtAguFGENNkRy9NcCVF8IyQ0oBr1AioqBB1DOw7ObSMYOEIhAMAXiBAeEDN8pph5E8E1nLQCRVC3VSxdtkO0rgVbsHpDqpQvpRntcO0BAZjwKdgnssDNwt8NzO4hyJzv6mQAEpWRcA3mDApDE8fFJLsHHDxmRjErepCp8dzqFtB1AsEbCAIgR1K9GYwmo53VsH1glZtCzgK26N5L8JEsnUr5ToBL35VdTRh1f5mtsaWk7gGWbiE6wQsCwGe0UUKLL2CGwSWy3s4tvApA0E3QAXkAFAfcZBEq4T4ACECT+2C6iE5CARjDL5aRurk4fRc3gm5DCyGlJK0BgD5cb4BGUESzWOroRqTEVYW+B2C7ytswkqwOS83CegWowzsWCptKUJTvEx3ieB7JoWfi73NsFzNnLzGX2sgPPB2XZQQLITprIP3QKBHEceWZ0D2xA4CRFQM1yDjsC5L8nm/NE0hLksvDkcf0vykbBmfP/BT4BuO90GdOYVhMAAAAASUVORK5CYII="/> -->
         </div>
 
+        </div>
+
+        <div class="pd-section pd-contact">
+        <div class="pd-section-title"><i class="bx bx-phone"></i> Επικοινωνία</div>
+
         <div class="input-div">
             <label for="patient-telephone">Τηλέφωνο</label>
             <input type="text" name="patient-telephone" loader="info-loader" validator="telephone" value="{{{$patient->getptel()}}}" placeholder="τηλέφωνο ασθενούς">
@@ -155,9 +215,15 @@
             <input type="text" name="patient-address" loader="info-loader" id=""  value="{{{$patient->getpaddr()}}}" placeholder="διεύθυνση ασθενούς">
         </div>
 
+        </div>
+
+        <div class="pd-section pd-notes">
+        <div class="pd-section-title"><i class="bx bx-note"></i> Σημειώσεις</div>
+
         <div class="input-div">
             <label for="patient-note">Σημειώσεις</label>
             <textarea name="patient-note" loader="info-loader" id="" rows="5" placeholder="σημειώσεις">{{{$patient->getpnote()}}}</textarea>
+        </div>
         </div>
         </fieldset>
 
@@ -168,7 +234,9 @@
                 {% if($action == 'new'): %}
                     <input type="submit" name="submitedit" value="Αποθήκευση & Επεξεργασία">
                 {% else: %}
-                    <input type="submit" name="delete" value="Ακύρωση" class="btn-secondary">
+                    <!-- Fields autosave as you type (loader.js), so this was
+                         never a real "undo" -- it now just closes the panel. -->
+                    <button type="button" class="btn-secondary" data-close-details>Κλείσιμο</button>
                 {% endif %}
             {% else: %}
                 <a href="{{rel_url('/patients')}}" class="btn-secondary">&larr; Πίσω στη λίστα</a>
@@ -178,71 +246,70 @@
             <div id="info-loader" class="loader0"></div>
         </div>
     </form>
+    </div>
 
-    {% if($action != 'new' && ($can_edit_appointment || $can_delete_patient)): %}
-        <hr>
-        <div class="patient-appointments">
-            {% if($can_edit_appointment): %}
-            <a href="{{rel_url('/appointment/'.$id.'/newappointment')}}">
-                <div class="new-appointment">
-                    Νέο Ραντεβού
-                </div>
-            </a>
-            <!-- Type is decided entirely by which of these two links was
-                 clicked -- a separate route, not a ?type=operation query
-                 string (the router matches on $_SERVER['QUERY_STRING']
-                 itself, and .htaccess's [QSA] rewrite flag would append a
-                 real query string onto that same value and break route
-                 matching -- see patient_operation_new()'s own comment in
-                 web/index.php). There's no dropdown anywhere in the
-                 appointment/operation flow any more; once created, the
-                 type is permanent. -->
-            <a href="{{rel_url('/appointment/'.$id.'/newoperation')}}">
-                <div class="new-appointment new-operation">
-                    Νέο Χειρουργείο
-                </div>
-            </a>
-            {% endif %}
+    {% if($action != 'new'): %}
+    <div class="patient-cols{{(isset($all_files) && count($all_files) > 0) ? ' has-side' : ''}}">
+        <div class="patient-main">
 
-            <!-- Patient deletion used to live in its own full-width
-                 ".patient-danger-zone" section, well below these two
-                 buttons -- moved in here, right next to them, so every
-                 record-level action on this page lives in one row rather
-                 than being spread across separate blocks. -->
-            {% if($can_delete_patient): %}
-            <form class="inline-delete-form" method="post" action="{{rel_url('/patient/'.$id.'/delete')}}" confirmation>
-                {{ csrf_field() }}
-                <button type="submit" class="btn-danger">
-                    <i class="bx bx-trash"></i> Διαγραφή Ασθενή
-                </button>
-            </form>
-            {% endif %}
-        </div>
-    {% endif %}
+            {% if($can_edit_appointment || (isset($appointments) && count($appointments) > 0)): %}
+            <section class="patient-appts" aria-label="Ραντεβού και χειρουργεία">
+                <div class="patient-appts-head">
+                    <h4>Ραντεβού &amp; Χειρουργεία</h4>
+                    {% if(isset($appointments) && count($appointments) > 0): %}<span class="file-count-badge">{{count($appointments)}}</span>{% endif %}
 
-    {% if(isset($appointments) && (count($appointments)>0)): %}
-
-        <div class="appointment-entries">
-
-            <ul class="appointment-dates">
-                {% foreach($appdates as $ad): %}
-                    <li>
-                        <a href="#app-{{$ad['index']}}">
-                            Date {{$ad['index']}}: {{$ad['date'] | date('d-m-Y')}}
+                    {% if($can_edit_appointment): %}
+                    <div class="patient-appointments">
+                        <a href="{{rel_url('/appointment/'.$id.'/newappointment')}}">
+                            <div class="new-appointment">
+                                Νέο Ραντεβού
+                            </div>
                         </a>
+                        <!-- Type is decided entirely by which of these two links was
+                             clicked -- a separate route, not a ?type=operation query
+                             string (the router matches on $_SERVER['QUERY_STRING']
+                             itself, and .htaccess's [QSA] rewrite flag would append a
+                             real query string onto that same value and break route
+                             matching -- see patient_operation_new()'s own comment in
+                             web/index.php). There's no dropdown anywhere in the
+                             appointment/operation flow any more; once created, the
+                             type is permanent. -->
+                        <a href="{{rel_url('/appointment/'.$id.'/newoperation')}}">
+                            <div class="new-appointment new-operation">
+                                Νέο Χειρουργείο
+                            </div>
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if(isset($appointments) && (count($appointments)>0)): %}
+                <!-- One summary row per appointment/operation, newest first.
+                     The full editable card (view_appointment.zetem) lives in
+                     the row's panel and opens in place, so inline editing,
+                     attachments and delete all work exactly as before; the
+                     newest row starts open. The card keeps its #app-N anchor,
+                     which the script below opens on a click or a URL hash. -->
+                <ul class="patient-appointments-list">
+                    {% foreach($appointments as $ap): %}
+                    <li class="appt-row {{($ap['row']['is_operation']) ? 'is-operation' : 'is-visit'}}{{($ap['index'] == 0) ? ' is-open' : ''}}" data-index="{{$ap['index']}}">
+                        <button type="button" class="appt-row-head" aria-expanded="{{($ap['index'] == 0) ? 'true' : 'false'}}" aria-controls="appt-panel-{{$ap['index']}}">
+                            <span class="ar-date">{{$ap['row']['date'] | date('d-m-Y')}}</span>
+                            <span class="ar-type"><i class="bx {{($ap['row']['is_operation']) ? 'bx-plus-medical' : 'bx-calendar-check'}}"></i> {{($ap['row']['is_operation']) ? 'Χειρουργείο' : 'Ραντεβού'}}</span>
+                            <span class="ar-place">{% if($ap['row']['place']): %}<i class="bx bx-map-pin"></i> {{{$ap['row']['place']}}}{% endif %}</span>
+                            <span class="ar-note">{{{$ap['row']['note']}}}</span>
+                            <span class="ar-meta">{% if($ap['row']['file_count'] > 0): %}<span title="Συνημμένα αρχεία"><i class="bx bx-paperclip"></i> {{$ap['row']['file_count']}}</span>{% endif %}</span>
+                            <i class="bx bx-chevron-right ar-chev"></i>
+                        </button>
+                        <div class="appt-row-panel" id="appt-panel-{{$ap['index']}}" {% if($ap['index'] != 0): %}hidden{% endif %}>{{$ap['markup']}}</div>
                     </li>
-                {% endforeach %}
-            </ul>
+                    {% endforeach %}
+                </ul>
+                {% endif %}
+            </section>
+            {% endif %}
 
-
-
-            <ul class="patient-appointments-list">
-                {% foreach($appointments as $ap): %}
-                    <li data-index="{{$ap['index']}}">{{$ap['markup']}}</li>
-                {% endforeach %}
-            </ul>
-        </div>
-
+            {% if(isset($appointments) && (count($appointments)>0)): %}
         <!-- One combined edit-history log for the whole patient record --
              covers every appointment above, not a separate list per card
              (each appointment card used to carry its own; see
@@ -255,7 +322,8 @@
              web/appointment_history.php's own docblock for the 5-minute
              session design (a session here means "one user's burst of
              saves on one appointment, each no more than 5 minutes after
-             the last", not a login/browser session). -->
+             the last", not a login/browser session). Rendered as a
+             timeline; collapsed until the heading is clicked. -->
         <div class="appointment-history-section" id="patient-history">
             <h5 class="appointment-history-heading" id="patient-history-heading">
                 <i class='bx bx-chevron-right toggle-icon'></i>
@@ -269,39 +337,24 @@
                 {% if(!isset($patient_history) || count($patient_history) == 0): %}
                 <p class="no-files">Δεν υπάρχουν καταγεγραμμένες αλλαγές</p>
                 {% else: %}
-                <ul class="appointment-history-list">
+                <ul class="appointment-history-list history-timeline">
                     {% foreach($patient_history as $h): %}
-                    <li class="appointment-history-item">
-                        <span class="history-appointment">{{{$h['appointment_label']}}}</span>
-                        <span class="history-user">{{{$h['user']}}}</span>
-                        <span class="history-time">
-                            {% if($h['single_moment']): %}{{$h['started_at']}}{% else: %}{{$h['started_at']}} &ndash; {{$h['ended_at']}}{% endif %}
+                    <li class="appointment-history-item{{(strpos($h['appointment_label'], 'Χειρουργείο') === 0) ? ' is-operation' : ''}}">
+                        <span class="history-title"><span class="history-fields">{{implode(', ', $h['fields'])}}</span> &middot; <span class="history-appointment">{{{$h['appointment_label']}}}</span></span>
+                        <span class="history-meta">
+                            <span class="history-user">{{{$h['user']}}}</span> &middot;
+                            <span class="history-time">{% if($h['single_moment']): %}{{$h['started_at']}}{% else: %}{{$h['started_at']}} &ndash; {{$h['ended_at']}}{% endif %}</span> &middot;
+                            <span class="history-count">({{$h['change_count']}} {{($h['change_count'] == 1) ? 'αλλαγή' : 'αλλαγές'}})</span>
                         </span>
-                        <span class="history-fields">{{implode(', ', $h['fields'])}}</span>
-                        <span class="history-count">({{$h['change_count']}} {{($h['change_count'] == 1) ? 'αλλαγή' : 'αλλαγές'}})</span>
                     </li>
                     {% endforeach %}
                 </ul>
                 {% endif %}
             </div>
         </div>
-
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                var historyHeading = document.getElementById('patient-history-heading');
-                var historySection = document.getElementById('patient-history');
-                if (historyHeading && historySection) {
-                    historyHeading.addEventListener('click', function() {
-                        historySection.classList.toggle('is-expanded');
-                    });
-                }
-            });
-        </script>
-
-    {% endif %}
+            {% endif %}
 
     {% if(isset($appointment_summary) && (count($appointment_summary)>0)): %}
-        <hr>
         <!-- Compact read-only view for a viewer without appointment-edit
              (e.g. the secretary role) -- just the date and location of
              each appointment/operation, no notes/save/delete/attachment
@@ -331,8 +384,31 @@
         </div>
     {% endif %}
 
+        </div>
+
+        {% if(isset($all_files) && count($all_files) > 0): %}
+        <aside class="patient-side" aria-label="Έγγραφα ασθενή">
+            <div class="side-card">
+                <div class="side-card-head">
+                    <h4>Έγγραφα</h4><span class="file-count-badge">{{count($all_files)}}</span>
+                </div>
+                <ul class="side-files">
+                    {% foreach($all_files as $f): %}
+                    <li>
+                        <span class="sf-ic{{($f['is_image']) ? ' is-image' : ''}}"><i class="bx {{($f['is_image']) ? 'bx-image' : 'bxs-file-pdf'}}"></i></span>
+                        <span class="sf-txt">
+                            <a class="sf-name" href="{{$f['url']}}" target="_blank" rel="noopener">{{{$f['name']}}}</a>
+                            <a class="sf-sub" href="{{$f['appointment_anchor']}}">{{{$f['appointment_label']}}} &middot; {{{$f['size']}}}</a>
+                        </span>
+                    </li>
+                    {% endforeach %}
+                </ul>
+            </div>
+        </aside>
+        {% endif %}
+    </div>
+
     {% if(isset($has_financials) && $has_financials): %}
-        <hr>
         <!-- Read-only APYweb financial-info block -- see
              web/apyweb_client.php / api_financial.php. No forms, no edit
              controls, no outbound links: APYweb has no per-record
@@ -430,5 +506,130 @@
             </div>
             {% endif %}
         </div>
+    {% endif %}
+
+    {% if($can_delete_patient): %}
+    <!-- Patient deletion sits alone at the bottom, away from the creation
+         buttons next to the appointments, so it is hard to hit by mistake. -->
+    <div class="patient-danger">
+        <form class="inline-delete-form" method="post" action="{{rel_url('/patient/'.$id.'/delete')}}" confirmation>
+            {{ csrf_field() }}
+            <button type="submit" class="btn-danger">
+                <i class="bx bx-trash"></i> Διαγραφή Ασθενή
+            </button>
+        </form>
+    </div>
+    {% endif %}
+    {% endif %}
+
+    {% if($action != 'new'): %}
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            /* ---- personal details panel (open/close) ---- */
+            var toggle = document.getElementById('patient-details-toggle');
+            var panel = document.getElementById('patient-details');
+            function setDetails(open) {
+                if (!toggle || !panel) return;
+                toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+                toggle.querySelector('span').textContent = open ? toggle.dataset.labelOpen : toggle.dataset.labelClosed;
+                panel.hidden = !open;
+            }
+            if (toggle && panel) {
+                toggle.addEventListener('click', function() {
+                    setDetails(toggle.getAttribute('aria-expanded') !== 'true');
+                });
+                panel.querySelectorAll('[data-close-details]').forEach(function(b) {
+                    b.addEventListener('click', function() { setDetails(false); toggle.focus(); });
+                });
+            }
+
+            /* ---- appointment rows: open/close the card in place ---- */
+            function setRow(row, open) {
+                var head = row.querySelector('.appt-row-head');
+                var body = row.querySelector('.appt-row-panel');
+                row.classList.toggle('is-open', open);
+                head.setAttribute('aria-expanded', open ? 'true' : 'false');
+                body.hidden = !open;
+            }
+            document.querySelectorAll('.appt-row').forEach(function(row) {
+                row.querySelector('.appt-row-head').addEventListener('click', function() {
+                    setRow(row, !row.classList.contains('is-open'));
+                });
+            });
+            /* A link to an appointment card (#app-N: the Έγγραφα list, or a
+               URL hash) has to open that row first -- a browser can't
+               scroll to something inside a hidden panel. */
+            function openFromHash(hash) {
+                if (!/^#app-\d+$/.test(hash)) return false;
+                var card = document.getElementById(hash.slice(1));
+                var row = card && card.closest('.appt-row');
+                if (!row) return false;
+                setRow(row, true);
+                card.scrollIntoView({ block: 'start' });
+                return true;
+            }
+            document.addEventListener('click', function(e) {
+                var a = e.target.closest('a[href^="#app-"]');
+                if (a && openFromHash(a.getAttribute('href'))) e.preventDefault();
+            });
+            if (location.hash) openFromHash(location.hash);
+
+            /* ---- identity header follows the form while it is open ---- */
+            function field(name) { return document.querySelector('#patient-details [name="' + name + '"]'); }
+            function show(id, value) {
+                var el = document.getElementById(id);
+                var wrap = document.getElementById(id + '-wrap');
+                if (el) el.textContent = value;
+                if (wrap) wrap.hidden = value.trim() === '';
+                return el;
+            }
+            function initials(name) {
+                return name.trim().split(/\s+/).filter(Boolean).slice(0, 2).map(function(w) {
+                    return w.charAt(0).toLocaleUpperCase('el');
+                }).join('');
+            }
+            [['patient-name', 'pi-name'], ['patient-amka', 'pi-amka'], ['patient-telephone', 'pi-tel'],
+             ['patient-email', 'pi-email'], ['patient-address', 'pi-addr'], ['patient-note', 'pi-note']].forEach(function(m) {
+                var input = field(m[0]);
+                if (!input) return;
+                input.addEventListener('input', function() {
+                    var v = input.value;
+                    var el = show(m[1], v);
+                    if (m[1] === 'pi-name') {
+                        var av = document.querySelector('.pi-avatar');
+                        if (av) av.textContent = initials(v);
+                    }
+                    if (m[1] === 'pi-tel' && el) el.setAttribute('href', 'tel:' + v);
+                    if (m[1] === 'pi-email' && el) el.setAttribute('href', 'mailto:' + v);
+                    if (m[1] === 'pi-amka') {
+                        var c = document.getElementById('pi-amka-copy');
+                        if (c) c.setAttribute('data-copy-text', v);
+                    }
+                });
+            });
+            var dob = document.getElementById('datepicker');
+            if (dob) {
+                dob.addEventListener('change', function() {
+                    setTimeout(function() {
+                        var iso = dob.value.split('-');
+                        var dobEl = document.getElementById('pi-dob');
+                        if (dobEl) { dobEl.textContent = iso.length === 3 ? iso[2] + '-' + iso[1] + '-' + iso[0] : ''; dobEl.hidden = iso.length !== 3; }
+                        var ageSrc = document.getElementById('age_field');
+                        var ageEl = document.getElementById('pi-age');
+                        if (ageSrc && ageEl) { ageEl.textContent = ageSrc.textContent.trim(); ageEl.hidden = ageEl.textContent === ''; }
+                    }, 0);
+                });
+            }
+
+            /* ---- change history: click the heading to expand ---- */
+            var historyHeading = document.getElementById('patient-history-heading');
+            var historySection = document.getElementById('patient-history');
+            if (historyHeading && historySection) {
+                historyHeading.addEventListener('click', function() {
+                    historySection.classList.toggle('is-expanded');
+                });
+            }
+        });
+    </script>
     {% endif %}
 </div>

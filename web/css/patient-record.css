@@ -1,0 +1,809 @@
+/* Patient record page (edit_patient.zetem, existing patients only).
+
+   Attached as the `patient-record` library, which loads after styles.css,
+   so these rules can override the broad ".edit-patient form" /
+   ".appointment-entry" rules there without !important. Everything is
+   scoped under ".edit-patient.is-record" (the class edit_patient.zetem
+   adds for an existing patient); the "new patient" form keeps its
+   original single-column look.
+
+   Pieces: identity header, collapsible details panel, appointment rows,
+   documents sidebar, change-history timeline, delete zone. */
+
+/* The record page uses the room a wide screen has; every other page keeps
+   the 900px column. */
+.wrapper:has(.edit-patient.is-record) {
+    max-width: min(1200px, 100%);
+}
+
+.edit-patient.is-record [hidden] {
+    display: none !important;
+}
+
+/* ---------- identity header ---------- */
+
+.edit-patient.is-record .patient-identity {
+    margin-bottom: var(--spacing);
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+/* Open details panel continues the same card. */
+.edit-patient.is-record .patient-identity:has(+ .patient-details:not([hidden])) {
+    margin-bottom: 0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    border-bottom-color: var(--medium-gray);
+}
+
+.pi-main {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.9rem 1.75rem;
+    padding: 1rem 1.25rem;
+}
+
+.pi-id {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    flex: 2 1 19rem;
+    min-width: 0;
+}
+
+.pi-avatar {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 3.4rem;
+    height: 3.4rem;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--primary-light));
+    color: #fff;
+    font-family: var(--font-heading);
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.pi-who {
+    min-width: 0;
+}
+
+.edit-patient.is-record .pi-name {
+    margin: 0;
+    font-family: var(--font-heading);
+    font-size: 1.3rem;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--text);
+    overflow-wrap: anywhere;
+}
+
+.pi-sub {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.2rem 0.75rem;
+    margin-top: 0.15rem;
+    font-size: 0.85rem;
+    color: var(--dark-gray);
+}
+
+.pi-sub #pi-age {
+    padding: 0.05rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary-dark);
+    font-weight: 600;
+    font-size: 0.78rem;
+}
+
+.pi-amka i {
+    margin-left: 0.2rem;
+    color: var(--primary);
+    cursor: pointer;
+    vertical-align: -0.1em;
+}
+
+.pi-amka i:hover {
+    color: var(--primary-dark);
+}
+
+.pi-contact {
+    flex: 1 1 13rem;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.9rem;
+}
+
+.pi-contact li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.pi-contact i {
+    flex: none;
+    color: var(--primary);
+    font-size: 1.05rem;
+}
+
+.pi-contact a,
+.pi-contact span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pi-stats {
+    display: flex;
+    margin: 0;
+}
+
+.pi-stats > div {
+    display: flex;
+    flex-direction: column;
+    padding: 0 1rem;
+    border-left: 1px solid var(--border-color);
+}
+
+.pi-stats > div:first-child {
+    padding-left: 0;
+    border-left: 0;
+}
+
+.pi-stats dd {
+    order: 1;
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.pi-stats dt {
+    order: 2;
+    font-size: 0.72rem;
+    color: var(--dark-gray);
+}
+
+.edit-patient.is-record .pi-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    margin-left: auto;
+    padding: 0.5rem 0.9rem;
+    background: #fff;
+    color: var(--text);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    font: inherit;
+    font-weight: 500;
+    cursor: pointer;
+    box-shadow: none;
+    transform: none;
+}
+
+.edit-patient.is-record .pi-toggle:hover {
+    background: var(--light-gray);
+    transform: none;
+    box-shadow: none;
+}
+
+.edit-patient.is-record .pi-toggle[aria-expanded="true"] {
+    background: rgba(var(--primary-rgb), 0.1);
+    border-color: rgba(var(--primary-rgb), 0.3);
+    color: var(--primary-dark);
+}
+
+.pi-toggle .pi-chevron {
+    transition: transform var(--transition-fast);
+}
+
+.pi-toggle[aria-expanded="true"] .pi-chevron {
+    transform: rotate(180deg);
+}
+
+.pi-toggle:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: 2px;
+}
+
+.pi-note {
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+    padding: 0 1.25rem 1rem;
+    font-size: 0.88rem;
+    color: var(--dark-gray);
+}
+
+.pi-note i {
+    flex: none;
+    margin-top: 0.1rem;
+    color: var(--primary);
+    font-size: 1.05rem;
+}
+
+.pi-note span {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    overflow: hidden;
+    overflow-wrap: anywhere;
+}
+
+/* ---------- details panel (the patient form) ---------- */
+
+.edit-patient.is-record .patient-details form {
+    display: block;
+    margin-bottom: var(--spacing);
+    padding: 0;
+    border-top: 0;
+    border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
+}
+
+.edit-patient.is-record .patient-details fieldset {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0;
+}
+
+.edit-patient.is-record .pd-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    min-width: 0;
+    padding: 1rem 1.25rem 1.25rem;
+    border-left: 1px solid var(--border-color);
+}
+
+.edit-patient.is-record .pd-section:first-child {
+    border-left: 0;
+}
+
+.pd-section-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.pd-section-title i {
+    display: grid;
+    place-items: center;
+    width: 1.7rem;
+    height: 1.7rem;
+    border-radius: var(--border-radius-md);
+    background: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary);
+    font-size: 1rem;
+}
+
+/* A column is too narrow for the label-beside-field layout the wide form
+   used, so each field stacks its label above it -- the same arrangement
+   the form already uses on a phone (see the max-width: 470px block in
+   styles.css), re-stated here for this panel at every width. */
+.edit-patient.is-record .patient-details .input-div {
+    grid-template-columns: 1fr;
+    gap: 0.25rem;
+    align-items: flex-start;
+}
+
+.edit-patient.is-record .patient-details .input-div label {
+    grid-column: 1;
+    grid-row: 1;
+    width: auto;
+    text-align: left;
+    color: var(--dark-gray);
+    font-size: 0.82rem;
+}
+
+.edit-patient.is-record .patient-details .input-div select,
+.edit-patient.is-record .patient-details .input-div input,
+.edit-patient.is-record .patient-details .input-div textarea {
+    grid-column: 1;
+    grid-row: 2;
+    min-width: 0;
+}
+
+.edit-patient.is-record .patient-details .input-div > .inline-icons {
+    grid-column: 1;
+    grid-row: 2;
+    margin-right: 0.75rem;
+}
+
+.edit-patient.is-record .pd-notes .input-div textarea {
+    min-height: 11rem;
+}
+
+.edit-patient.is-record .patient-details form .buttons {
+    margin: 0;
+    padding: 0.85rem 1.25rem;
+    background: var(--light-gray);
+    border-top: 1px solid var(--border-color);
+    border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
+}
+
+/* ---------- appointments ---------- */
+
+.edit-patient.is-record .patient-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--spacing);
+    align-items: start;
+}
+
+.edit-patient.is-record .patient-cols.has-side {
+    grid-template-columns: minmax(0, 1fr) 20rem;
+}
+
+.edit-patient.is-record .patient-main {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing);
+    min-width: 0;
+}
+
+.patient-appts {
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.patient-appts-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.6rem 0.75rem;
+    padding: 0.9rem 1.25rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.patient-appts-head h4 {
+    margin: 0;
+    font-size: 1.05rem;
+}
+
+/* The two "new" buttons keep their tinted style (styles.css); here they
+   just sit at the right of the section header instead of in a toolbar. */
+.edit-patient.is-record .patient-appts-head .patient-appointments {
+    margin: 0 0 0 auto;
+    padding: 0;
+    border: 0;
+}
+
+.edit-patient.is-record .patient-appointments-list {
+    display: block;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.edit-patient.is-record .appt-row {
+    border-bottom: 1px solid var(--border-color);
+    border-left: 3px solid var(--primary);
+}
+
+.edit-patient.is-record .appt-row.is-operation {
+    border-left-color: var(--warning-dark);
+}
+
+.edit-patient.is-record .appt-row:last-child {
+    border-bottom: 0;
+    border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
+}
+
+.edit-patient.is-record .appt-row-head {
+    display: grid;
+    grid-template-columns: 6.5rem 8.5rem 8rem minmax(0, 1fr) auto 1.25rem;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    padding: 0.8rem 1.1rem;
+    background: transparent;
+    color: var(--text);
+    border: 0;
+    border-radius: 0;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    box-shadow: none;
+    transform: none;
+}
+
+.edit-patient.is-record .appt-row-head:hover {
+    background: var(--light-gray);
+    transform: none;
+    box-shadow: none;
+}
+
+.appt-row-head:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: -2px;
+}
+
+.ar-date {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+}
+
+.ar-type {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    width: max-content;
+    padding: 0.1rem 0.65rem;
+    border-radius: 999px;
+    background: rgba(var(--primary-rgb), 0.1);
+    color: var(--primary-dark);
+    font-size: 0.82rem;
+    font-weight: 500;
+}
+
+.appt-row.is-operation .ar-type {
+    background: rgba(var(--warning-rgb), 0.18);
+    color: var(--operation-text);
+}
+
+.ar-place {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.85rem;
+    color: var(--dark-gray);
+}
+
+.ar-note {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 0.9rem;
+}
+
+.ar-meta {
+    display: flex;
+    gap: 0.6rem;
+    font-size: 0.82rem;
+    color: var(--dark-gray);
+}
+
+.ar-chev {
+    color: var(--dark-gray);
+    transition: transform var(--transition-fast);
+}
+
+.appt-row.is-open .ar-chev {
+    transform: rotate(90deg);
+}
+
+/* The open row's panel holds the existing editable card. The card already
+   draws its own border, accent bar and shadow; inside a row it is just
+   content, so those are flattened. */
+.edit-patient.is-record .appt-row-panel {
+    padding: 0.25rem 1.1rem 1.1rem;
+    background: var(--light-gray);
+    border-top: 1px dashed var(--border-color);
+}
+
+.edit-patient.is-record .appt-row-panel .appointment-entry {
+    margin: 0.75rem 0 0;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    padding: 0;
+}
+
+.edit-patient.is-record .appt-row-panel .appointment-entry::before {
+    display: none;
+}
+
+/* ---------- documents sidebar ---------- */
+
+.patient-side {
+    min-width: 0;
+}
+
+.side-card {
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.side-card-head {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.9rem 1.1rem 0.4rem;
+}
+
+.side-card-head h4 {
+    margin: 0;
+    font-size: 1rem;
+}
+
+.side-files {
+    margin: 0;
+    padding: 0.25rem 0.6rem 0.6rem;
+    list-style: none;
+}
+
+.side-files li {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.5rem;
+    border-radius: var(--border-radius-md);
+}
+
+.side-files li:hover {
+    background: var(--light-gray);
+}
+
+.sf-ic {
+    flex: none;
+    display: grid;
+    place-items: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: var(--border-radius-md);
+    background: rgba(var(--error-rgb), 0.1);
+    color: var(--error-dark);
+    font-size: 1.1rem;
+}
+
+.sf-ic.is-image {
+    background: rgba(var(--info-rgb), 0.12);
+    color: var(--info-dark);
+}
+
+.sf-txt {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.sf-name,
+.sf-sub {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sf-name {
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: var(--text);
+}
+
+.sf-name:hover {
+    color: var(--primary);
+}
+
+.sf-sub {
+    font-size: 0.76rem;
+    color: var(--dark-gray);
+}
+
+/* ---------- change history as a timeline ---------- */
+
+.edit-patient.is-record .appointment-history-section {
+    margin: 0;
+}
+
+.edit-patient.is-record .history-timeline {
+    position: relative;
+    margin: 0;
+    padding: 0.25rem 0 0.25rem 0.5rem;
+    list-style: none;
+}
+
+.edit-patient.is-record .history-timeline::before {
+    content: "";
+    position: absolute;
+    left: 0.95rem;
+    top: 0.6rem;
+    bottom: 1rem;
+    width: 2px;
+    background: var(--medium-gray);
+}
+
+.edit-patient.is-record .history-timeline .appointment-history-item {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    margin: 0;
+    padding: 0 0 0.9rem 1.75rem;
+    border: 0;
+    background: none;
+}
+
+.edit-patient.is-record .history-timeline .appointment-history-item::before {
+    content: "";
+    position: absolute;
+    left: 0.3rem;
+    top: 0.25rem;
+    width: 0.7rem;
+    height: 0.7rem;
+    border: 3px solid var(--primary);
+    border-radius: 50%;
+    background: #fff;
+}
+
+.edit-patient.is-record .history-timeline .appointment-history-item.is-operation::before {
+    border-color: var(--warning-dark);
+}
+
+.history-title {
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.history-meta {
+    font-size: 0.8rem;
+    color: var(--dark-gray);
+}
+
+/* ---------- delete zone ---------- */
+
+.edit-patient.is-record .patient-danger {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: var(--spacing);
+}
+
+/* ---------- narrower screens ---------- */
+
+@media screen and (max-width: 1000px) {
+    .edit-patient.is-record .patient-cols.has-side {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .edit-patient.is-record .patient-details fieldset {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .edit-patient.is-record .pd-notes {
+        grid-column: 1 / -1;
+        border-left: 0;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .edit-patient.is-record .appt-row-head {
+        grid-template-columns: auto auto minmax(0, 1fr) 1.25rem;
+        grid-template-areas:
+            "date type meta chev"
+            "note note note note";
+        gap: 0.35rem 0.75rem;
+    }
+
+    .appt-row-head .ar-date { grid-area: date; }
+    .appt-row-head .ar-type { grid-area: type; }
+    .appt-row-head .ar-meta { grid-area: meta; justify-content: flex-end; }
+    .appt-row-head .ar-chev { grid-area: chev; }
+    .appt-row-head .ar-note { grid-area: note; white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; }
+    .appt-row-head .ar-place { display: none; }
+}
+
+@media screen and (max-width: 640px) {
+    .edit-patient.is-record .patient-details fieldset {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .edit-patient.is-record .pd-section {
+        border-left: 0;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .edit-patient.is-record .pd-section:first-child {
+        border-top: 0;
+    }
+
+    .pi-main {
+        padding: 0.9rem 1rem;
+    }
+
+    .pi-stats,
+    .edit-patient.is-record .pi-toggle {
+        flex: 1 1 100%;
+    }
+
+    .edit-patient.is-record .pi-toggle {
+        justify-content: center;
+    }
+
+    .pi-note {
+        padding: 0 1rem 0.9rem;
+    }
+
+    .patient-appts-head {
+        padding: 0.8rem 1rem;
+    }
+
+    .edit-patient.is-record .patient-appts-head .patient-appointments {
+        margin-left: 0;
+        flex: 1 1 100%;
+    }
+
+    .edit-patient.is-record .patient-details form .buttons {
+        padding: 0.75rem 1rem;
+    }
+}
+
+/* ---------- second pass: details found while checking it in a browser ---------- */
+
+.patient-appts-head h4 {
+    flex: 0 0 auto;
+    width: auto;
+}
+
+.pi-contact a {
+    color: var(--text);
+}
+
+.pi-contact a:hover {
+    color: var(--primary);
+}
+
+.sf-name,
+.sf-sub {
+    line-height: 1.35;
+}
+
+/* Save on the right, Close beside it as a quiet secondary button.
+   ".edit-patient form .buttons button" (styles.css) makes every button in
+   this row solid teal, and ".edit-patient .buttons" stacks the row on
+   narrow screens -- both undone here for this panel. */
+.edit-patient.is-record .patient-details form .buttons {
+    flex-direction: row;
+}
+
+.edit-patient.is-record .patient-details form .buttons .btn-secondary {
+    order: -1;
+    background: #fff;
+    color: var(--text);
+    border: 1px solid var(--border-color);
+}
+
+.edit-patient.is-record .patient-details form .buttons .btn-secondary:hover {
+    background: var(--light-gray);
+    transform: none;
+    box-shadow: none;
+}
+
+.edit-patient.is-record .patient-danger .btn-danger {
+    padding: 0.4rem 0.85rem;
+    font-size: 0.85rem;
+}
+
+/* "New patient" keeps its original flat form: the section wrappers and
+   titles only exist for the three-column details panel of a saved record. */
+.patient-details.is-new .pd-section {
+    display: contents;
+}
+
+.patient-details.is-new .pd-section-title {
+    display: none;
+}

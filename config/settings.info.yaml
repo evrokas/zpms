@@ -69,6 +69,15 @@ libraries:
     css:
       - qrgen:
         src: 'css/qrgenerator.css'
+  # Identity header, collapsible details, appointment rows, documents
+  # sidebar and history timeline on the patient record page -- attached
+  # from edit_patient.zetem. A library (not styles.css) so it loads after
+  # the leaky ".edit-patient form"/appointment rules it has to override.
+  patient-record:
+    css:
+      - patient_record:
+        type: 'text/css'
+        src: 'css/patient-record.css'
   appointment-improvements:
     css:
       - uploads:

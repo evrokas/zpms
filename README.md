@@ -2082,3 +2082,19 @@ both save and appear in their tables; saving the SMTP form persists
 `web/templates/content/settings.zetem`, `web/css/styles.css`,
 `web/index.php` (`settings()` passes the `view_add` views and the doctors
 table's default view), `web/classes/yaml/{clinics,doctors}.yaml`.
+
+## Patient record page: identity header, collapsible details, appointment rows, documents list
+
+The patient page (`/patient/{id}/edit`) used to open with the whole edit form, then a stack of full appointment cards. It now opens with who the patient is, and the rest is one click away. The "new patient" page is unchanged.
+
+- **Identity header** (`.patient-identity`, `edit_patient.zetem`): avatar initials, name, age (`58y 5m`, same shape as the form's badge), birth date, AMKA with a copy icon, phone and email as `tel:`/`mailto:` links, address, the first two lines of the note, appointment/operation counts, and the last and next visit dates. Built by `zpms_patient_identity()` in `web/index.php` from the appointment list `patient_edit()` already loads, so it adds no query.
+- **Personal details** are the same form as before, in a panel that starts closed. The button in the header ("Επεξεργασία στοιχείων", or "Στοιχεία ασθενή" for a view-only account) opens it as three columns (Βασικά, Επικοινωνία, Σημειώσεις); below 1000px it is two columns, below 640px one. Fields still autosave as you type, so the panel's old "Ακύρωση" (which left for the patient list and never undid anything) is now "Κλείσιμο", which just closes the panel. While the panel is open the header follows the fields (name, initials, phone, email, address, AMKA, note, birth date and age).
+- **Appointments & operations** are one summary row each (date, type, place, note, file count), newest first. Clicking a row opens the existing editable card in place, with its inline edit, attachments and delete untouched; the newest row starts open. The "New appointment" and "New operation" buttons moved into this section's header. The "Date N" jump pills are gone. A link to `#app-N` (from the documents list, or a URL hash) opens the row it points into before scrolling.
+- **Έγγραφα** (right column, shown when any appointment has a file): every attachment across all appointments, each linking to the file and back to its appointment.
+- **Ιστορικό Αλλαγών** is restyled as a timeline; the data and its collapsed-by-default behaviour are unchanged.
+- **Οικονομικά** (APYweb tables) keep their own full-width section, and **Διαγραφή Ασθενή** sits alone at the bottom.
+- The page is wider (1200px instead of 900px) for this page only; the topbar, menu and footer widen with it.
+
+Styles are in `web/css/patient-record.css`, registered as the `patient-record` library in `config/settings.info.yaml` so it loads after `styles.css` and can override its broad `.edit-patient form` rules. No database changes.
+
+Tests: `tests/functional/patient_crud.php` (identity header, details starting hidden, rows newest first with one open, documents list) and `tests/functional/auth_csrf.php` (a view-only account gets the "Στοιχεία ασθενή" toggle and no "new appointment" button). `bin/run_tests.sh`: 101/101 static, 49/49 functional.

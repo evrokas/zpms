@@ -94,6 +94,12 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
         assert_contains('Ασθενής Για Δικαιώματα', $editPage['body'], "the patient's name did not render on the read-only page");
         assert_contains('<fieldset disabled', $editPage['body'], 'the patient page did not render with a disabled fieldset for a view-only account');
         assert_not_contains('name="submit" value="Αποθήκευση"', $editPage['body'], 'secretary account saw a save button on the read-only patient page');
+        // The identity header still renders, but its toggle reads "view",
+        // not "edit", and there are no new-appointment/operation buttons.
+        assert_contains('patient-identity', $editPage['body'], 'the identity header is missing on the read-only patient page');
+        assert_contains('data-label-closed="Στοιχεία ασθενή"', $editPage['body'], 'a view-only account was offered an "edit details" toggle');
+        assert_not_contains('Επεξεργασία στοιχείων', $editPage['body'], 'a view-only account saw the edit-details label');
+        assert_not_contains('new-appointment', $editPage['body'], 'secretary account saw a new-appointment button');
 
         // Cannot actually save a change (patients-edit-patient not
         // granted) -- even a crafted POST with a valid token is refused.

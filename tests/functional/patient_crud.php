@@ -137,4 +137,51 @@ function zpms_functional_patient_crud(TestRunner $runner, TestHttpClient $http):
         assert_contains('inline-delete-form', $editPage['body'], "the patient's own record does not render the delete control");
         assert_contains('Διαγραφή Ασθενή', $editPage['body'], "the patient's own record is missing the delete button label");
     });
+
+    $runner->add('the patient record opens with an identity header, closed details, appointment rows and a documents list', function () use ($http) {
+        TestSchema::assertSafeToMutate();
+        $db = dbConnection::getConnection();
+
+        $p = new patientsClass([
+            'guid' => guid(), 'cuser' => 'test-fixture', 'cdate' => getDBtime(),
+            'pname' => 'Ασθενής Κεφαλίδας', 'pdob' => '1980-02-03 00:00:00',
+            'pamka' => '77777777777', 'ptel' => '2105550100', 'paddr' => 'Οδός Κεφαλίδας 5', 'pemail' => 'header@example.invalid',
+            'pnote' => 'σημείωση κεφαλίδας',
+        ]);
+        $p->insert();
+
+        // One visit and one operation, the operation carrying one file --
+        // inserted directly (this test is about how the record page
+        // renders them, not about the create/upload flows covered elsewhere).
+        $ins = $db->prepare('INSERT INTO appointments (guid, cuser, pguid, adate, aplace, anote, atype) VALUES (?,?,?,?,?,?,?)');
+        $ins->execute([guid(), 'test-fixture', $p->getguid(), '2020-03-04 10:00:00', 'Αθήνα', 'παλιό ραντεβού', 'appointment']);
+        $ins->execute([guid(), 'test-fixture', $p->getguid(), '2020-05-06 08:00:00', 'Πειραιάς', 'παλιό χειρουργείο', 'operation']);
+        $opId = (int)$db->query("SELECT id FROM appointments WHERE pguid = '" . $p->getguid() . "' AND atype = 'operation'")->fetchColumn();
+        $db->prepare('INSERT INTO appointment_files (guid, cuser, appointment_id, file_name, file_path, file_size, mime_type, file_hash) VALUES (?,?,?,?,?,?,?,?)')
+            ->execute([guid(), 'test-fixture', $opId, 'εξέταση-κεφαλίδας.pdf', 'x', 2048, 'application/pdf', str_repeat('a', 64)]);
+
+        $page = $http->get('/patient/' . $p->getid() . '/edit');
+        assert_equal(200, $page['status'], 'GET the patient record did not return 200');
+        $body = $page['body'];
+
+        assert_contains('patient-identity', $body, 'the identity header is missing');
+        assert_contains('2105550100', $body, 'the phone number is missing from the identity header');
+        assert_contains('header@example.invalid', $body, 'the email is missing from the identity header');
+        assert_contains('>ΑΚ</div>', $body, 'the avatar initials are missing');
+        assert_contains('Επεξεργασία στοιχείων', $body, 'the details toggle is missing for an editor');
+
+        // The details panel exists (the form is still there) but starts hidden.
+        assert_true(preg_match('/id="patient-details"\s+hidden/', $body) === 1, 'the details panel does not start hidden');
+        assert_contains('name="patient-name"', $body, 'the patient form is missing from the details panel');
+
+        // Two rows, newest first; only the first starts open.
+        assert_equal(2, preg_match_all('/class="appt-row /', $body), 'expected one row per appointment/operation');
+        assert_true(strpos($body, '06-05-2020') < strpos($body, '04-03-2020'), 'appointment rows are not newest first');
+        assert_equal(1, preg_match_all('/aria-expanded="true" aria-controls="appt-panel-/', $body), 'exactly one appointment row should start open');
+
+        // Documents list names the file and points back at its appointment.
+        assert_contains('εξέταση-κεφαλίδας.pdf', $body, 'the documents list is missing the attached file');
+        assert_contains('side-files', $body, 'the documents sidebar is missing');
+        assert_contains('href="#app-', $body, 'a document does not link back to its appointment');
+    });
 }
