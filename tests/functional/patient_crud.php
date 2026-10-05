@@ -83,11 +83,12 @@ function zpms_functional_patient_crud(TestRunner $runner, TestHttpClient $http):
         // control itself lives on the patient's own record now
         // (edit_patient.zetem's "Διαγραφή Ασθενή" danger-zone form), not
         // as a per-row action on /patients (see the next test below).
-        // The token is session-wide, so any already-rendered page's copy
-        // works; /patients renders one regardless.
-        $listPage = $http->get('/patients');
-        $token = TestHttpClient::extractCsrfToken($listPage['body']);
-        assert_not_null($token, 'no csrf_token field found on /patients');
+        // The token is session-wide, so any already-rendered form's copy
+        // works. The list itself no longer carries one (its search box is a
+        // plain GET form), so take it from the patient's own record.
+        $recordPage = $http->get("/patient/$id/edit");
+        $token = TestHttpClient::extractCsrfToken($recordPage['body']);
+        assert_not_null($token, "no csrf_token field found on /patient/$id/edit");
 
         $res = $http->post("/patient/$id/delete", ['csrf_token' => $token]);
         assert_equal(302, $res['status'], "delete-patient POST did not redirect (got {$res['status']})");
@@ -183,5 +184,117 @@ function zpms_functional_patient_crud(TestRunner $runner, TestHttpClient $http):
         assert_contains('εξέταση-κεφαλίδας.pdf', $body, 'the documents list is missing the attached file');
         assert_contains('side-files', $body, 'the documents sidebar is missing');
         assert_contains('href="#app-', $body, 'a document does not link back to its appointment');
+    });
+
+    $runner->add('gender: M, F or not set -- stored as NULL when blank or tampered, untouched when the form omits it', function () use ($http) {
+        TestSchema::assertSafeToMutate();
+        $db = dbConnection::getConnection();
+
+        $form = $http->get('/patient/new');
+        assert_contains('name="patient-gender"', $form['body'], 'the new-patient form has no gender radios');
+        $token = TestHttpClient::extractCsrfToken($form['body']);
+        $base = [
+            'csrf_token' => $token, 'submit' => '1',
+            'patient-name' => 'Ασθενής Φύλου', 'patient-dob' => '1985-05-05', 'patient-amka' => '77700000001',
+            'patient-telephone' => '', 'patient-address' => '', 'patient-email' => '', 'patient-note' => '',
+        ];
+        $res = $http->post('/patient/new', $base + ['patient-gender' => 'M']);
+        assert_equal(302, $res['status'], 'new-patient POST with a gender did not redirect');
+        $row = $db->query("SELECT id, pgender FROM patients WHERE pamka = '77700000001'")->fetch();
+        assert_equal('M', $row['pgender'], 'gender M was not stored on create');
+        $id = (int)$row['id'];
+        $gender = fn() => $db->query("SELECT pgender FROM patients WHERE id = $id")->fetchColumn();
+
+        $page = $http->get("/patient/$id/edit");
+        assert_true(preg_match('/value="M"[^>]*checked/', $page['body']) === 1, 'the M radio is not checked on the record');
+        $token = TestHttpClient::extractCsrfToken($page['body']);
+        $edit = ['csrf_token' => $token, 'submit' => '1'] + $base;
+
+        $http->post("/patient/$id/edit", $edit + ['patient-gender' => 'F']);
+        assert_equal('F', $gender(), 'gender was not changed to F');
+
+        $http->post("/patient/$id/edit", $edit);   // no gender field at all
+        assert_equal('F', $gender(), 'a request without the field must leave the gender alone');
+
+        $http->post("/patient/$id/edit", $edit + ['patient-gender' => 'x']);
+        assert_null($gender(), 'a tampered value must be stored as not set');
+
+        $http->post("/patient/$id/edit", $edit + ['patient-gender' => 'F']);
+        $http->post("/patient/$id/edit", $edit + ['patient-gender' => '']);
+        assert_null($gender(), 'the "not set" radio (empty value) must clear the gender');
+        $page = $http->get("/patient/$id/edit");
+        assert_true(preg_match('/value=""[^>]*checked/', $page['body']) === 1, 'the "not set" radio is not checked for a patient with no gender');
+    });
+
+    $runner->add('patients list: rows per page, paging, "all", sorting, search, area, bad values, and ? in the address', function () use ($http) {
+        TestSchema::assertSafeToMutate();
+        $db = dbConnection::getConnection();
+
+        // 12 patients with a shared name stem, so every check below can be
+        // scoped to them with ?q=. Ζ01..Ζ12; Ζ12 is 'Πειραιάς', the rest 'Αθήνα'.
+        $ins = $db->prepare('INSERT INTO patients (guid, cuser, pname, pdob, pamka, ptel, pemail, cdate) VALUES (?,?,?,?,?,?,?,?)');
+        $app = $db->prepare('INSERT INTO appointments (guid, cuser, pguid, adate, aplace, anote, atype, deleted) VALUES (?,?,?,?,?,?,?,?)');
+        for ($i = 1; $i <= 12; $i++) {
+            $guid = guid();
+            $name = sprintf('Λιστάκης Ζ%02d', $i);
+            $ins->execute([$guid, 'test-fixture', $name, '1980-01-01 00:00:00', sprintf('9990000%04d', $i), '2100000' . sprintf('%03d', $i), '', date('Y-m-d H:i:s')]);
+            $app->execute([guid(), 'test-fixture', $guid, sprintf('2019-01-%02d 10:00:00', $i), ($i === 12) ? 'Πειραιάς' : 'Αθήνα', '', 'appointment', null]);
+            if ($i === 1) {
+                // Newer appointment that was deleted: must not count as the latest.
+                $app->execute([guid(), 'test-fixture', $guid, '2025-06-06 10:00:00', 'Αθήνα', '', 'appointment', '2025-06-07 10:00:00']);
+            }
+        }
+        $rows = fn($body) => preg_match_all('/<tr data-href=/', $body);
+
+        $all = $http->get('/patients?q=' . rawurlencode('Λιστάκης') . '&per_page=all');
+        assert_equal(200, $all['status'], '/patients?per_page=all did not return 200');
+        assert_equal(12, $rows($all['body']), 'per_page=all should list every match');
+        assert_not_contains('class="pt-pages"', $all['body'], '"all" should hide the pager');
+
+        $p1 = $http->get('/patients?q=' . rawurlencode('Λιστάκης') . '&per_page=10');
+        assert_equal(10, $rows($p1['body']), 'per_page=10 page 1 should have 10 rows');
+        assert_contains('Εμφάνιση 1&ndash;10 από 12 ασθενείς', $p1['body'], 'wrong count line on page 1');
+        $p2 = $http->get('/patients?q=' . rawurlencode('Λιστάκης') . '&per_page=10&page=2');
+        assert_equal(2, $rows($p2['body']), 'page 2 of 12 at 10 per page should have 2 rows');
+        assert_contains('Εμφάνιση 11&ndash;12 από 12 ασθενείς', $p2['body'], 'wrong count line on page 2');
+
+        // Sorting by name, both ways, and the default (latest appointment, newest first).
+        $asc = $http->get('/patients?q=' . rawurlencode('Λιστάκης') . '&sort=name&dir=asc&per_page=all');
+        assert_true(strpos($asc['body'], 'Ζ01') < strpos($asc['body'], 'Ζ12'), 'sort=name&dir=asc is not A-Z');
+        $desc = $http->get('/patients?q=' . rawurlencode('Λιστάκης') . '&sort=name&dir=desc&per_page=all');
+        assert_true(strpos($desc['body'], 'Ζ12') < strpos($desc['body'], 'Ζ01'), 'sort=name&dir=desc is not Z-A');
+        $def = $http->get('/patients?q=' . rawurlencode('Λιστάκης') . '&per_page=all');
+        assert_true(strpos($def['body'], 'Ζ12') < strpos($def['body'], 'Ζ02'), 'default order is not latest appointment first');
+        // Ζ01's only live appointment is 2019-01-01; the deleted 2025 one must not make it the newest.
+        assert_true(strpos($def['body'], 'Ζ01') > strpos($def['body'], 'Ζ02'), 'a deleted appointment is being counted as the latest');
+        assert_not_contains('06-06-2025', $def['body'], 'a deleted appointment date is shown');
+
+        // Search: accent-insensitive prefix match, phone, and no match.
+        $accent = $http->get('/patients?q=' . rawurlencode('λιστακης ζ05') . '&per_page=all');
+        assert_equal(1, $rows($accent['body']), 'accent-insensitive search for "λιστακης ζ05" should find exactly one patient');
+        $phone = $http->get('/patients?q=2100000007&per_page=all');
+        assert_equal(1, $rows($phone['body']), 'search by telephone failed');
+        $none = $http->get('/patients?q=' . rawurlencode('Ουδείς Ανύπαρκτος'));
+        assert_contains('Κανένας ασθενής δεν ταιριάζει', $none['body'], 'an empty search result has no message');
+
+        // Area filter = place of the latest appointment.
+        $area = $http->get('/patients?q=' . rawurlencode('Λιστάκης') . '&area=' . rawurlencode('Πειραιάς') . '&per_page=all');
+        assert_equal(1, $rows($area['body']), 'area filter should keep only the patient whose latest appointment is there');
+
+        // Values outside the allowed lists fall back instead of erroring.
+        $bad = $http->get('/patients?q=' . rawurlencode('Λιστάκης') . '&per_page=7&page=999&dir=zzz&sort=pamka');
+        assert_equal(200, $bad['status'], 'bad parameters should not error');
+        assert_contains('Εμφάνιση 1&ndash;12 από 12 ασθενείς', $bad['body'], 'bad per_page should fall back to 25 and page to the last');
+        $sql = $http->get("/patients?q=" . rawurlencode("x' OR 1=1 --") . '&per_page=all');
+        assert_equal(200, $sql['status'], 'a quote in the search term broke the page');
+        assert_contains('Κανένας ασθενής δεν ταιριάζει', $sql['body'], 'a quote in the search term matched something');
+
+        // Old addresses redirect to the query-string ones.
+        $legacy = $http->get('/patients/sort/name/1');
+        assert_equal(302, $legacy['status'], 'the old sort address should redirect');
+        assert_contains('/patients?sort=name&dir=asc', (string)$legacy['location'], 'the old sort address went to the wrong place');
+        $term = $http->get('/patients/search/' . rawurlencode('Smith & Sons'));
+        assert_equal(302, $term['status'], 'the old search address should redirect');
+        assert_contains('q=Smith+%26+Sons', (string)$term['location'], 'a "&" inside a search term was cut off by the router');
     });
 }

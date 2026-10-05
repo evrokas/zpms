@@ -281,6 +281,136 @@ class patientsClassEx extends patientsClass {
         return ($list);
     }
 
+    /**
+     * One page of the patients list (/patients), already filtered, sorted and
+     * cut to size by the database.
+     *
+     * $opts (every key optional, every value checked here -- none of it is
+     * trusted as SQL, the sort column/direction are picked from fixed lists):
+     *   q         free text, matched like search() does: each word is a
+     *             prefix of a word in the name, AMKA or telephone
+     *   area      only patients whose latest appointment is in this place
+     *   sort      'name' or 'last' (latest appointment; a patient with none
+     *             sorts by the date the record was created)
+     *   dir       'asc' or 'desc'
+     *   page      1-based; clamped to the last page
+     *   per_page  rows per page, or 0 for all of them
+     *
+     * "Latest appointment" is the newest non-deleted appointment of any date,
+     * as the list has always shown it -- a future one counts. (The query this
+     * replaces did not skip deleted appointments, so a cancelled booking could
+     * still appear as the last visit.)
+     *
+     * Returns ['rows' => [...], 'total' => matching patients, 'page' => the
+     * page actually served, 'pages' => page count].
+     */
+    static function getPatientList(array $opts): array {
+        $q = trim((string)($opts['q'] ?? ''));
+        $area = trim((string)($opts['area'] ?? ''));
+        $sort = (($opts['sort'] ?? 'last') === 'name') ? 'name' : 'last';
+        $dir = (strtolower((string)($opts['dir'] ?? 'desc')) === 'asc') ? 'ASC' : 'DESC';
+        $perPage = max(0, (int)($opts['per_page'] ?? 25));
+        $page = max(1, (int)($opts['page'] ?? 1));
+
+        $latest = "(SELECT pguid, adate, atype, aplace,
+                           ROW_NUMBER() OVER (PARTITION BY pguid ORDER BY adate DESC, id DESC) AS rn
+                    FROM appointments WHERE deleted IS NULL) la";
+        $from = "FROM patients p LEFT JOIN $latest ON la.pguid = p.guid AND la.rn = 1";
+
+        $where = ['p.deleted IS NULL'];
+        $bind = [];
+        if ($q !== '') {
+            // Same matching rule as search() -- "a% b%" for several words,
+            // or any word of the field starting with the term -- but with
+            // the % and _ the user typed taken literally, and the whole
+            // OR-group parenthesised so it cannot swallow the deleted test.
+            $escaped = addcslashes($q, '\\%_');
+            $terms = preg_split('/\s+/u', $escaped, -1, PREG_SPLIT_NO_EMPTY);
+            $like1 = implode('% ', $terms) . '%';
+            $like2 = '% ' . $like1;
+            $bind[':t1'] = $like1;
+            $bind[':t2'] = $like2;
+            $ors = [];
+            foreach (['p.pname', 'p.pamka', 'p.ptel'] as $col) {
+                $ors[] = "$col LIKE :t1 OR $col LIKE :t2";
+            }
+            $where[] = '(' . implode(' OR ', $ors) . ')';
+        }
+        if ($area !== '') {
+            $where[] = 'la.aplace = :area';
+            $bind[':area'] = $area;
+        }
+        $whereSql = ' WHERE ' . implode(' AND ', $where);
+
+        $db = dbConnection::getConnection();
+
+        $st = $db->prepare("SELECT COUNT(*) $from $whereSql");
+        foreach ($bind as $k => $v) $st->bindValue($k, $v, PDO::PARAM_STR);
+        $st->execute();
+        $total = (int)$st->fetchColumn();
+
+        $pages = $perPage > 0 ? max(1, (int)ceil($total / $perPage)) : 1;
+        $page = min($page, $pages);
+
+        $order = ($sort === 'name')
+            ? "p.pname $dir, p.id ASC"
+            : "COALESCE(la.adate, p.cdate) $dir, p.id DESC";
+        $sql = "SELECT p.id, p.pname, p.pamka, p.ptel, p.pemail, p.pdob, p.pgender, p.cdate,
+                       la.adate AS last_adate, la.atype AS last_atype, la.aplace AS last_aplace
+                $from $whereSql ORDER BY $order";
+        if ($perPage > 0) {
+            $sql .= ' LIMIT :lim OFFSET :off';
+        }
+        $st = $db->prepare($sql);
+        foreach ($bind as $k => $v) $st->bindValue($k, $v, PDO::PARAM_STR);
+        if ($perPage > 0) {
+            $st->bindValue(':lim', $perPage, PDO::PARAM_INT);
+            $st->bindValue(':off', ($page - 1) * $perPage, PDO::PARAM_INT);
+        }
+        $st->execute();
+
+        return [
+            'rows' => $st->fetchAll(),
+            'total' => $total,
+            'page' => $page,
+            'pages' => $pages,
+        ];
+    }
+
+    /** Places that appear on a non-deleted appointment, for the list's area filter. */
+    static function appointmentPlaces(): array {
+        $st = dbConnection::getConnection()->query(
+            "SELECT DISTINCT aplace FROM appointments
+             WHERE deleted IS NULL AND aplace IS NOT NULL AND aplace <> '' ORDER BY aplace");
+        return $st->fetchAll(PDO::FETCH_COLUMN);
+    }
+
+    /**
+     * The three figures on the list's summary line: patients on file, records
+     * created in the last 30 days, and appointments dated today. All count
+     * only non-deleted rows; $today is a 'Y-m-d' date in the app's own
+     * timezone (passed in so the caller and the stored dates agree).
+     */
+    static function listSummary(string $today): array {
+        $db = dbConnection::getConnection();
+        $total = (int)$db->query("SELECT COUNT(*) FROM patients WHERE deleted IS NULL")->fetchColumn();
+
+        $st = $db->prepare("SELECT COUNT(*) FROM patients WHERE deleted IS NULL AND cdate >= :since");
+        $st->bindValue(':since', date('Y-m-d H:i:s', strtotime($today . ' 00:00:00 -30 days')), PDO::PARAM_STR);
+        $st->execute();
+        $new = (int)$st->fetchColumn();
+
+        $st = $db->prepare("SELECT COUNT(*) FROM appointments a
+                            JOIN patients p ON p.guid = a.pguid AND p.deleted IS NULL
+                            WHERE a.deleted IS NULL AND a.adate >= :from AND a.adate < :to");
+        $st->bindValue(':from', $today . ' 00:00:00', PDO::PARAM_STR);
+        $st->bindValue(':to', date('Y-m-d', strtotime($today . ' +1 day')) . ' 00:00:00', PDO::PARAM_STR);
+        $st->execute();
+        $todayCount = (int)$st->fetchColumn();
+
+        return ['total' => $total, 'new' => $new, 'today' => $todayCount];
+    }
+
 }
 
 class appointmentsClassEx extends appointmentsClass {

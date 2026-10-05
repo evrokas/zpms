@@ -2098,3 +2098,36 @@ The patient page (`/patient/{id}/edit`) used to open with the whole edit form, t
 Styles are in `web/css/patient-record.css`, registered as the `patient-record` library in `config/settings.info.yaml` so it loads after `styles.css` and can override its broad `.edit-patient form` rules. No database changes.
 
 Tests: `tests/functional/patient_crud.php` (identity header, details starting hidden, rows newest first with one open, documents list) and `tests/functional/auth_csrf.php` (a view-only account gets the "Στοιχεία ασθενή" toggle and no "new appointment" button). `bin/run_tests.sh`: 101/101 static, 49/49 functional.
+
+## Patients list: paging, rows per page, sortable headers, compact mode; gender field
+
+### Patients list (`/patients`)
+
+Three columns instead of name / AMKA / last appointment: **Patient** (initials avatar, name, age and AMKA with a copy icon), **Contact** (phone as a `tel:` link, email) and **Last appointment** (date, a Ραντεβού/Χειρουργείο chip, area). A date in the future is tagged "Προσεχές" so it is not read as a past visit. Phone and email show to everyone who can see the list; the patient's own page already shows them read-only to the same roles.
+
+- **Address-driven.** Everything is in the query string: `/patients?q=&area=&sort=name|last&dir=asc|desc&page=&per_page=10|25|50|100|all`. Values equal to the default are left out of generated links. Anything outside the allowed lists falls back to its default (a bad `per_page` becomes 25, a `page` past the end becomes the last page), so a hand-edited address never errors. Built by `patients_list()` and `patientsClassEx::getPatientList()`.
+- **Sorting is kept**: click **Patient** or **Last appointment** to sort, click again to reverse; defaults are as before (appointments newest first, names A-Z). A patient with no appointment sorts by the date the record was created.
+- **Paging.** A pager with a **rows-per-page** menu (10, 25, 50, 100, all; default 25). "All" hides the pager. The menu and the new **area** filter submit when changed; the search box submits on Enter and keeps the existing suggestions dropdown.
+- **Compact mode** (two buttons by the search box): one line per patient, dropping the avatar, age, email and area. Remembered in the browser (`localStorage`).
+- **Summary line** under the title: patients on file, records created in the last 30 days, appointments today.
+- Clicking anywhere on a row opens the record; a "new appointment" button (for roles that can create one) shows on hover.
+- **Fixed on the way:** the old "last appointment" query counted deleted appointments, and the old search put its `OR`s ahead of the `deleted IS NULL` test. Both are corrected. The old `/patients/sort/{key}/{order}` and `/patients/search/{term}` addresses (and the search form's POST) redirect to the query-string form, so bookmarks keep working. `getPatientsByName()`/`getPatientsByLastAppointment()` are no longer called by anything.
+- The list no longer renders a CSRF token (its search is a plain GET form); `tests/functional/patient_crud.php` now takes the token from the patient's own page.
+
+Styles: `web/css/patients-list.css` (library `patients-list`). The list no longer uses the old `.patients-list` table rules in `styles.css`.
+
+### Router and `?`
+
+Paging and filters need real query parameters. zeusfw's `RequestClass` now reads them (`getParams()`/`getParam()`, reached via `global $Request;`), accepts a literal `?` in the route, and keeps a `&` or `?` that was percent-encoded inside a path (a search for `Smith & Sons`), and `/?x=1` on the home page works. Details and the before/after table are in zeusfw's `CLAUDE.md` ("`core/router/Request.php` -- query parameters"). **zpms now needs that zeusfw change** (zeusfw `cff53c7`); deploy both. The test server shim `tests/lib/router.php` now appends the real query string the way Apache's `[QSA]` does, so functional tests can exercise query parameters.
+
+### Gender (`patients.pgender`)
+
+`'M'` (male), `'F'` (female) or `NULL` (not set), `char(1)`, nullable, no default. On the patient form it is three radio buttons in the Βασικά Στοιχεία section -- **Άνδρας / Γυναίκα / —** -- so choosing is one click; the third, empty-valued radio is "not set" (a radio group cannot be un-picked otherwise). It autosaves with the rest of the form. The record page's header shows it next to the age. Saving accepts only `M`/`F` (anything else is stored as not set), and a request that omits the field leaves the stored value alone (`zpms_normalize_gender()`).
+
+**Existing installs** need the column: run `bin/update.sh` and accept the `diff:sql` prompt, or by hand:
+
+```sql
+ALTER TABLE patients ADD COLUMN pgender char(1) DEFAULT NULL AFTER pdob;
+```
+
+Tests: `tests/functional/patient_crud.php` (gender create/edit/blank/tampered/omitted; rows per page, paging, "all", sorting, accent-insensitive search, area filter, bad values, deleted appointments ignored, redirects, `&` in a search term). `bin/run_tests.sh`: 102/102 static, 51/51 functional.

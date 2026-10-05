@@ -1,7 +1,26 @@
 {% attach_library('boxicons') %}
+{% attach_library('patients-list') %}
+{#
+  patients_list.zetem -- the patient list (/patients).
+
+  Rows, state and links all come from patients_list() in web/index.php:
+  $rows (one array per patient on this page), $state (q, area, sort, dir,
+  per_page, page), $total/$from/$to/$pages, $page_links/$prev_url/$next_url,
+  $sort_urls, $areas, $summary. The search box, area menu and rows-per-page
+  menu all belong to one plain GET form (#patients-form), so the list works
+  without JavaScript; the script at the bottom only submits it when a menu
+  changes, remembers compact mode, and makes a whole row clickable.
+#}
 
 <div class="patients-header">
-    <h2 class="page-title">{{t("Patients")}}</h2>
+    <div class="patients-title">
+        <h2 class="page-title">{{t("Patients")}}</h2>
+        <ul class="patients-summary" aria-label="Σύνοψη">
+            <li><b>{{$summary['total']}}</b> ασθενείς</li>
+            <li><b>{{$summary['new']}}</b> νέοι τις τελευταίες 30 ημέρες</li>
+            <li><b>{{$summary['today']}}</b> ραντεβού σήμερα</li>
+        </ul>
+    </div>
     {% if($can_create_patient): %}
     <a class="btn-add-patient" href="{{rel_url('/patient/new')}}">
         <i class="bx bx-plus"></i>{{t("Add new patient")}}
@@ -9,80 +28,169 @@
     {% endif %}
 </div>
 
-<div class="search">
-    <form action="{{rel_url('patients/search')}}" method="post">
-        {{ csrf_field() }}
+<form class="patients-toolbar" id="patients-form" method="get" action="{{rel_url('/patients')}}" role="search">
+    <div class="search">
         <div class="input-div">
             <i class="bx bx-search search-icon"></i>
-            <input type="text" class="select2 focus-primary" name="search-term" id="" autocomplete="off" aria-label="{{t('Search')}}" placeholder="Αναζήτηση με όνομα, ΑΜΚΑ ή τηλέφωνο&hellip;" value="{% if(isset($search_term))echo htmlspecialchars($search_term, ENT_QUOTES, 'UTF-8'); %}">
+            <input type="text" class="select2 focus-primary" name="q" id="patients-q" autocomplete="off" aria-label="{{t('Search')}}" placeholder="Αναζήτηση με όνομα, ΑΜΚΑ ή τηλέφωνο&hellip;" value="{{{$state['q']}}}">
         </div>
         <div class="select-container">
-            <ul class="select-box" id="select-box">
-                <!-- <li>Opt 1</li> -->
-                <!-- <li>Opt 2</li> -->
-                <!-- <li>Opt 3</li> -->
-            </ul>
+            <ul class="select-box" id="select-box"></ul>
         </div>
-    </form>
-</div>
-<div class="patients-list">
-    {% if(count($pat_list) == 0): %}
+    </div>
+
+    {% if(count($areas) > 0): %}
+    <label class="pt-select">
+        <select name="area" aria-label="Περιοχή τελευταίου ραντεβού" data-autosubmit>
+            <option value="">Όλες οι περιοχές</option>
+            {% foreach($areas as $area): %}
+            <option value="{{{$area}}}" {{($state['area'] === $area) ? 'selected' : ''}}>{{{$area}}}</option>
+            {% endforeach %}
+        </select>
+    </label>
+    {% endif %}
+
+    <span class="pt-density" role="group" aria-label="Πυκνότητα προβολής">
+        <button type="button" id="density-comfy" aria-pressed="true" title="Άνετη προβολή" aria-label="Άνετη προβολή"><i class="bx bx-list-ul"></i></button>
+        <button type="button" id="density-compact" aria-pressed="false" title="Συμπαγής προβολή" aria-label="Συμπαγής προβολή"><i class="bx bx-menu"></i></button>
+    </span>
+
+    <input type="hidden" name="sort" value="{{{$state['sort']}}}">
+    <input type="hidden" name="dir" value="{{{$state['dir']}}}">
+    <noscript><button type="submit" class="pt-apply">Εφαρμογή</button></noscript>
+</form>
+
+<div class="patient-table" id="patient-table">
+    {% if(count($rows) == 0): %}
         <div class="patients-empty">
             <i class="bx bx-user-plus"></i>
-            <p>{{t("No patients found.")}}</p>
+            <p>{{($searching) ? 'Κανένας ασθενής δεν ταιριάζει με την αναζήτηση.' : t("No patients found.")}}</p>
+            {% if($searching): %}<p><a href="{{rel_url('/patients')}}">Εμφάνιση όλων των ασθενών</a></p>{% endif %}
         </div>
     {% else: %}
+    <div class="pt-scroll">
     <table>
         <thead>
-            <!-- <th>#</th> -->
-            <th>{{t("Name")}}
-                <div class="sorting-arrows">
-                    <i class="bx bx-chevron-down"></i>
-                    <i class="bx bx-chevron-up"></i>
-                </div>
-            </th>
-            <th>{{t("AMKA")}}
-
-            </th>
-            <th>{{t("Last App")}}
-                <div class="sorting-arrows">
-                    <i class="bx bx-chevron-down"></i>
-                    <i class="bx bx-chevron-up"></i>
-                </div>
-
-            </th>
-        </thead>
-        {% $loop=0; %}
-        <tbody>
-            {% foreach($pat_list as $pat): %}
             <tr>
-                {% $loop++ %}
-                <!-- <td>{{$loop}}</td> -->
-                <td data-column="name">
-                    <a href="{{rel_url('/patient/'.$pat['id'].'/edit')}}">{{{$pat['pname']}}}</a>
-                    {% if(strlen($pat['pname'])>0): %}
-                        <i class='bx bx-copy' data-copy-text="{{{$pat['pname']}}}"></i>
-                    {% endif %}
+                <th aria-sort="{{($state['sort'] === 'name') ? (($state['dir'] === 'asc') ? 'ascending' : 'descending') : 'none'}}">
+                    <a class="th-sort{{($state['sort'] === 'name') ? ' is-active ' . $state['dir'] : ''}}" href="{{{$sort_urls['name']}}}">Ασθενής <span class="th-arrows"><i class="bx bx-chevron-up"></i><i class="bx bx-chevron-down"></i></span></a>
+                </th>
+                <th>Επικοινωνία</th>
+                <th aria-sort="{{($state['sort'] === 'last') ? (($state['dir'] === 'asc') ? 'ascending' : 'descending') : 'none'}}">
+                    <a class="th-sort{{($state['sort'] === 'last') ? ' is-active ' . $state['dir'] : ''}}" href="{{{$sort_urls['last']}}}">Τελευταίο ραντεβού <span class="th-arrows"><i class="bx bx-chevron-up"></i><i class="bx bx-chevron-down"></i></span></a>
+                </th>
+                <th class="pt-actions-head" aria-hidden="true"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% foreach($rows as $r): %}
+            <tr data-href="{{$r['url']}}">
+                <td class="pt-patient">
+                    <div class="pt-who">
+                        <span class="pt-avatar tone-{{$r['tone']}}" aria-hidden="true">{{{$r['initials']}}}</span>
+                        <div class="pt-id">
+                            <a class="pt-name" href="{{$r['url']}}">{{{$r['name']}}}</a>
+                            <div class="pt-sub">
+                                {% if($r['age'] !== null): %}<span class="pt-age">{{$r['age']}} ετών</span>{% endif %}
+                                {% if($r['amka'] !== ''): %}<span>ΑΜΚΑ {{{$r['amka']}}} <i class="bx bx-copy" title="Αντιγραφή ΑΜΚΑ" data-copy-text="{{{$r['amka']}}}"></i></span>{% endif %}
+                            </div>
+                        </div>
+                    </div>
                 </td>
-
-                <td data-column="amka">
-                    {{{$pat['pamka']}}}
-                    {% if(strlen($pat['pamka'])>0): %}
-                        <i class='bx bx-copy' data-copy-text="{{{$pat['pamka']}}}"></i>
-                    {% endif %}
+                <td class="pt-contact">
+                    {% if($r['tel'] !== ''): %}<a href="tel:{{{$r['tel']}}}">{{{$r['tel']}}}</a>{% endif %}
+                    {% if($r['email'] !== ''): %}<span class="pt-email">{{{$r['email']}}}</span>{% endif %}
+                    {% if($r['tel'] === '' && $r['email'] === ''): %}<span class="pt-none">&mdash;</span>{% endif %}
                 </td>
-
-                <td data-column="lastapp">
-                    {% if($pat['lastapp']): %}
-                        {% echo explode(' ', $pat['lastapp'])[0]; %}
+                <td class="pt-last">
+                    {% if($r['last']): %}
+                    <span class="pt-date">{{$r['last']['date']}}</span>
+                    <span class="pt-meta">
+                        <span class="pt-chip{{($r['last']['is_operation']) ? ' is-operation' : ''}}">{{($r['last']['is_operation']) ? 'Χειρουργείο' : 'Ραντεβού'}}</span>
+                        {% if($r['last']['upcoming']): %}<span class="pt-chip is-upcoming">Προσεχές</span>{% endif %}
+                        {% if($r['last']['place'] !== ''): %}<span class="pt-place">{{{$r['last']['place']}}}</span>{% endif %}
+                    </span>
                     {% else: %}
-                        -
+                    <span class="pt-none">&mdash;</span>
                     {% endif %}
+                </td>
+                <td class="pt-actions">
+                    {% if($can_edit_appointment): %}
+                    <a class="pt-icon" href="{{rel_url('/appointment/' . $r['id'] . '/newappointment')}}" title="Νέο ραντεβού" aria-label="Νέο ραντεβού για {{{$r['name']}}}"><i class="bx bx-calendar-plus"></i></a>
+                    {% endif %}
+                    <a class="pt-icon" href="{{$r['url']}}" title="Άνοιγμα φακέλου" aria-label="Άνοιγμα φακέλου {{{$r['name']}}}"><i class="bx bx-chevron-right"></i></a>
                 </td>
             </tr>
             {% endforeach %}
         </tbody>
     </table>
+    </div>
     {% endif %}
+
+    <div class="pt-pager">
+        <span class="pt-count">{% if($total > 0): %}Εμφάνιση {{$from}}&ndash;{{$to}} από {{$total}} ασθενείς{% else: %}0 ασθενείς{% endif %}</span>
+        <div class="pt-pager-right">
+            <label class="pt-perpage">Εγγραφές ανά σελίδα
+                <select name="per_page" form="patients-form" aria-label="Εγγραφές ανά σελίδα" data-autosubmit>
+                    {% foreach($per_page_choices as $n): %}
+                    <option value="{{$n}}" {{($state['per_page'] === $n) ? 'selected' : ''}}>{{($n === 'all') ? 'Όλες' : $n}}</option>
+                    {% endforeach %}
+                </select>
+            </label>
+            {% if(count($page_links) > 0): %}
+            <nav class="pt-pages" aria-label="Σελίδες">
+                {% if($prev_url): %}<a href="{{{$prev_url}}}" aria-label="Προηγούμενη σελίδα">&lsaquo;</a>{% else: %}<span class="is-disabled" aria-hidden="true">&lsaquo;</span>{% endif %}
+                {% foreach($page_links as $pl): %}
+                    {% if(isset($pl['gap'])): %}<span class="pt-gap">&hellip;</span>
+                    {% elseif($pl['current']): %}<span class="is-current" aria-current="page">{{$pl['n']}}</span>
+                    {% else: %}<a href="{{{$pl['url']}}}">{{$pl['n']}}</a>{% endif %}
+                {% endforeach %}
+                {% if($next_url): %}<a href="{{{$next_url}}}" aria-label="Επόμενη σελίδα">&rsaquo;</a>{% else: %}<span class="is-disabled" aria-hidden="true">&rsaquo;</span>{% endif %}
+            </nav>
+            {% endif %}
+        </div>
+    </div>
 </div>
 
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var form = document.getElementById('patients-form');
+        var wrap = document.getElementById('patient-table');
+
+        /* Changing a menu applies it straight away (a new filter or page
+           size always starts from page 1 -- the form has no page field). */
+        document.querySelectorAll('[data-autosubmit]').forEach(function(sel) {
+            sel.addEventListener('change', function() { form.requestSubmit(); });
+        });
+
+        /* Leave empty filters out of the address (?q=&area= is just noise). */
+        form.addEventListener('submit', function() {
+            form.querySelectorAll('input[name="q"], select[name="area"]').forEach(function(el) {
+                if (el.value === '') el.disabled = true;
+            });
+        });
+
+        /* Compact mode: one line per patient. Remembered in this browser only. */
+        var comfy = document.getElementById('density-comfy');
+        var compact = document.getElementById('density-compact');
+        function setCompact(on) {
+            wrap.classList.toggle('is-compact', on);
+            compact.setAttribute('aria-pressed', on ? 'true' : 'false');
+            comfy.setAttribute('aria-pressed', on ? 'false' : 'true');
+            try { localStorage.setItem('zpms_patients_compact', on ? '1' : '0'); } catch (e) {}
+        }
+        comfy.addEventListener('click', function() { setCompact(false); });
+        compact.addEventListener('click', function() { setCompact(true); });
+        try { if (localStorage.getItem('zpms_patients_compact') === '1') setCompact(true); } catch (e) {}
+
+        /* Clicking anywhere on a row opens the record, except on a link,
+           button, copy icon or selected text, which keep their own action. */
+        wrap.querySelectorAll('tbody tr[data-href]').forEach(function(row) {
+            row.addEventListener('click', function(e) {
+                if (e.target.closest('a, button, i[data-copy-text]')) return;
+                if (window.getSelection && String(window.getSelection())) return;
+                window.location.href = row.dataset.href;
+            });
+        });
+    });
+</script>

@@ -147,111 +147,189 @@ require_once(__DIR__ . '/zpms_mailer.php');
     }
 
 
+    /**
+     * Rows-per-page choices on the patients list, as strings ('all' is
+     * everything). A function, not a const: this file's top-level statements
+     * after Kernel::boot() never run -- boot() dispatches the request and
+     * exits first -- so only functions are available to handlers.
+     */
+    function zpms_list_per_page_choices(): array {
+        return ['10', '25', '50', '100', 'all'];
+    }
+
+    /**
+     * The patients list address for a given state, e.g.
+     * /patients?sort=name&dir=asc&per_page=50&page=2. Values equal to the
+     * default are left out so ordinary links stay short. $state keys: q,
+     * area, sort, dir, per_page, page.
+     */
+    function zpms_patients_url(array $state): string {
+        $query = [];
+        foreach (['q', 'area'] as $k) {
+            if (($state[$k] ?? '') !== '') $query[$k] = $state[$k];
+        }
+        if (($state['sort'] ?? 'last') !== 'last' || ($state['dir'] ?? 'desc') !== 'desc') {
+            $query['sort'] = $state['sort'];
+            $query['dir'] = $state['dir'];
+        }
+        if ((string)($state['per_page'] ?? 25) !== '25') $query['per_page'] = $state['per_page'];
+        if ((int)($state['page'] ?? 1) > 1) $query['page'] = (int)$state['page'];
+        return rel_url('/patients') . ($query ? '?' . http_build_query($query) : '');
+    }
+
+    /**
+     * /patients -- the patient list. Everything it can be asked is in the
+     * address, read from the real query string (zeusfw's RequestClass::
+     * getParams()): q (search), area, sort=name|last, dir=asc|desc, page,
+     * per_page=10|25|50|100|all. Every value is checked against a fixed list
+     * and quietly falls back to its default, so a hand-edited address never
+     * errors. The older /patients/sort/{key}/{order} address is redirected to
+     * the query form by patients_list_legacy_sort().
+     */
     function patients_list($params) {
-        global $kernel;
+        global $kernel, $Request;
 
         if(($errmsg = rbacClass::require(ZPMS_PERM_PATIENTS_VIEW_LIST)))return $errmsg;
 
-        // echopre(print_r($params,1));
-        // $pc = new patientsClass();
-        // $pat = $pc->getAll();
+        $in = isset($Request) ? $Request->getParams() : $_GET;
+        $str = function ($key, $max) use ($in) {
+            $v = $in[$key] ?? '';
+            return is_string($v) ? mb_substr(trim($v), 0, $max) : '';
+        };
 
-        // $pat = patientsClass::sgetAll();
-        if(array_key_exists("key", $params)) {
-            $sort_key = $params['key'];
+        $state = [
+            'q' => $str('q', 100),
+            'area' => $str('area', 64),
+            'sort' => ($str('sort', 8) === 'name') ? 'name' : 'last',
+            'per_page' => in_array($str('per_page', 4), zpms_list_per_page_choices(), true) ? $str('per_page', 4) : '25',
+            'page' => max(1, (int)$str('page', 6)),
+        ];
+        // Names read A-Z first, appointments newest first -- as the list always did.
+        $dirIn = strtolower($str('dir', 4));
+        $state['dir'] = in_array($dirIn, ['asc', 'desc'], true) ? $dirIn : (($state['sort'] === 'name') ? 'asc' : 'desc');
 
-            if(array_key_exists("order", $params)) {
-                $order_key = $params['order'];
+        $result = patientsClassEx::getPatientList([
+            'q' => $state['q'],
+            'area' => $state['area'],
+            'sort' => $state['sort'],
+            'dir' => $state['dir'],
+            'page' => $state['page'],
+            'per_page' => ($state['per_page'] === 'all') ? 0 : (int)$state['per_page'],
+        ]);
+        $state['page'] = $result['page'];
+
+        $today = date('Y-m-d');
+        $palette = 6;
+        $rows = [];
+        foreach ($result['rows'] as $r) {
+            $name = trim((string)$r['pname']);
+            $words = preg_split('/\s+/u', $name, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+            $initials = '';
+            foreach (array_slice($words, 0, 2) as $w) $initials .= mb_strtoupper(mb_substr($w, 0, 1));
+
+            $age = null;
+            $dob = $r['pdob'] ? date_create((string)$r['pdob']) : false;
+            if ($dob && $dob <= new DateTime('now')) $age = $dob->diff(new DateTime('now'))->y;
+
+            $last = null;
+            if ($r['last_adate']) {
+                $day = substr((string)$r['last_adate'], 0, 10);
+                $last = [
+                    'date' => formatDate($r['last_adate']),
+                    'is_operation' => ($r['last_atype'] === 'operation'),
+                    'place' => (string)$r['last_aplace'],
+                    'upcoming' => ($day > $today),
+                ];
+            }
+
+            $rows[] = [
+                'id' => $r['id'],
+                'name' => $name,
+                'initials' => $initials,
+                'tone' => (mb_ord(mb_substr($name, 0, 1) ?: 'A') + count($words)) % $palette,
+                'age' => $age,
+                'gender' => zpms_normalize_gender($r['pgender']),
+                'amka' => (string)$r['pamka'],
+                'tel' => (string)$r['ptel'],
+                'email' => (string)$r['pemail'],
+                'last' => $last,
+                'url' => rel_url('/patient/' . $r['id'] . '/edit'),
+            ];
+        }
+
+        // Pager: first, last, and a window around the current page.
+        $pages = $result['pages'];
+        $pageLinks = [];
+        if ($state['per_page'] !== 'all' && $pages > 1) {
+            $cur = $state['page'];
+            $show = array_unique(array_filter([1, $cur - 1, $cur, $cur + 1, $pages], fn($n) => $n >= 1 && $n <= $pages));
+            sort($show);
+            $prev = 0;
+            foreach ($show as $n) {
+                if ($prev && $n - $prev > 1) $pageLinks[] = ['gap' => true];
+                $pageLinks[] = ['n' => $n, 'current' => ($n === $cur), 'url' => zpms_patients_url(array_merge($state, ['page' => $n]))];
+                $prev = $n;
             }
         }
 
-        if(isset($sort_key)) {
-            if(!in_array($sort_key, ['name', 'lastapp']))$sort_key = 'lastapp';
-        } else $sort_key = "lastapp";
-        
-        if(isset($order_key)) {
-            if(!in_array($order_key, ['1', '0']))$order_key = "1";
-        } else if($sort_key == "lastapp")$order_key = "0"; else $order_key = '1';
+        $perPage = ($state['per_page'] === 'all') ? 0 : (int)$state['per_page'];
+        $total = $result['total'];
+        $from = $total ? ($perPage ? ($state['page'] - 1) * $perPage + 1 : 1) : 0;
+        $to = $total ? ($perPage ? min($total, $state['page'] * $perPage) : $total) : 0;
 
-        // if(isset($sort_key))echopre("SORT set: " . $sort_key);
-        // if(isset($order_key))echopre("ORDER set: " . $order_key);
-
-
-        switch($sort_key) {
-            case 'name':
-                $pat = patientsClassEx::getPatientsByName($order_key);
-                break;
-            case 'lastapp':
-                $pat = patientsClassEx::getPatientsByLastAppointment($order_key);
-                break;
+        // Header sort links: the active column flips direction, the other
+        // starts from its natural one. Changing the sort goes back to page 1.
+        $sortUrls = [];
+        foreach (['name' => 'asc', 'last' => 'desc'] as $key => $natural) {
+            $dir = ($state['sort'] === $key) ? ($state['dir'] === 'asc' ? 'desc' : 'asc') : $natural;
+            $sortUrls[$key] = zpms_patients_url(['sort' => $key, 'dir' => $dir, 'page' => 1] + $state);
         }
 
-        // echo "<pre>";
-        // print_r( $pat );
-        // echo "</pre>";
-        $pp = array();
-        foreach($pat as $p) {
-            if($p['p']->getdeleted() == null) {
+        return Renderer::render("patients_list.zetem", [
+            'rows' => $rows,
+            'state' => $state,
+            'total' => $total,
+            'from' => $from,
+            'to' => $to,
+            'pages' => $pages,
+            'page_links' => $pageLinks,
+            'prev_url' => ($state['page'] > 1) ? zpms_patients_url(array_merge($state, ['page' => $state['page'] - 1])) : null,
+            'next_url' => ($state['page'] < $pages && $state['per_page'] !== 'all') ? zpms_patients_url(array_merge($state, ['page' => $state['page'] + 1])) : null,
+            'sort_urls' => $sortUrls,
+            'areas' => patientsClassEx::appointmentPlaces(),
+            'summary' => patientsClassEx::listSummary($today),
+            'per_page_choices' => zpms_list_per_page_choices(),
+            'searching' => ($state['q'] !== '' || $state['area'] !== ''),
+            'can_create_patient' => rbacClass::isPermitted(ZPMS_PERM_PATIENTS_NEW_PATIENT),
+            'can_edit_appointment' => rbacClass::isPermitted(ZPMS_PERM_APPOINTMENT_EDIT),
+        ]);
+    }
 
-                if($p['a'])$dt = date_format(new DateTime($p['a']), "d-m-Y H:i");
-                else $dt = null;
+    /** Old /patients/sort/{key}/{order} bookmarks -> the query-string list. */
+    function patients_list_legacy_sort($params) {
+        if(($errmsg = rbacClass::require(ZPMS_PERM_PATIENTS_VIEW_LIST)))return $errmsg;
 
-                $pp[] = ['id' => $p['p']->getid(),
-                        'pname' => $p['p']->getpname(),
-                        'pamka' => $p['p']->getpamka(),
-                        'lastapp' => $dt
-                    ];
-            }
-        }
-
-        return Renderer::render("patients_list.zetem",
-            ['pat_list' => $pp,
-                // 'notice' => $kernel->ifelseStatus('patient_edit', '', true)
-                'can_create_patient' => rbacClass::isPermitted(ZPMS_PERM_PATIENTS_NEW_PATIENT)
-            ]);
+        $sort = (($params['key'] ?? '') === 'name') ? 'name' : 'last';
+        $order = $params['order'] ?? ($sort === 'name' ? '1' : '0');
+        $dir = ($order === '1') ? 'asc' : 'desc';
+        header('location: ' . zpms_patients_url(['sort' => $sort, 'dir' => $dir]));
+        exit();
     }
 
     function patients_search_post($params) {
         if(($errmsg = rbacClass::require(ZPMS_PERM_PATIENTS_VIEW_LIST)))return $errmsg;
 
-        if(strlen($_POST['search-term'])>0) {
-            header('location: '.rel_url('/patients/search/'.urlencode($_POST['search-term'])));
-        } else {
-            header('location: '.rel_url('/patients'));
-        }
-
+        $term = trim((string)($_POST['search-term'] ?? ''));
+        header('location: ' . zpms_patients_url(['q' => $term]));
         exit();
     }
 
+    /** Old /patients/search/{term} links -> /patients?q=term. */
     function patients_list_search($params) {
         if(($errmsg = rbacClass::require(ZPMS_PERM_PATIENTS_VIEW_LIST)))return $errmsg;
 
-        $pat = patientsClassEx::search(urldecode($params['term']));
-
-        
-        // $s = '';
-        // foreach($pat as $p) {
-        //     $s .= "<pre>name: " . $p->getpname() . "</pre>";
-        // }   
-        // return ($s);
-
-        $pp = array();
-        foreach($pat as $p) {
-            $ppp = array();
-            $ppp['id'] = $p->getid();
-            $ppp['pname'] = $p->getpname();
-            $ppp['pamka'] = $p->getpamka();
-            $ppp['tel'] = $p->getptel();
-
-            $pp[] = $ppp;
-        }
-
-        return Renderer::render("patients_list.zetem",
-            [   'search_term' => $params['term'],
-                'pat_list' => $pp,
-                // 'notice' => $kernel->ifelseStatus('patient_edit', '', true)
-                'can_create_patient' => rbacClass::isPermitted(ZPMS_PERM_PATIENTS_NEW_PATIENT)
-            ]);
+        header('location: ' . zpms_patients_url(['q' => trim(urldecode((string)($params['term'] ?? '')))]));
+        exit();
     }
 
     function patients_list_search_ajax($params) {
@@ -293,6 +371,16 @@ require_once(__DIR__ . '/zpms_mailer.php');
         exit();
 
     }
+    /**
+     * The patient form's gender radio ('patient-gender'): "M", "F" or "" for
+     * not set. Anything else a request might send (a tampered value, a
+     * lowercase letter) is treated as not set, never stored as-is -- the
+     * column only ever holds 'M', 'F' or NULL.
+     */
+    function zpms_normalize_gender($value): ?string {
+        return in_array($value, ['M', 'F'], true) ? $value : null;
+    }
+
     /**
      * Identity-header data for the patient record page (edit_patient.zetem,
      * "patient-identity" card): initials for the avatar, an age label in the
@@ -338,6 +426,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
 
         return [
             'initials' => $initials,
+            'gender' => zpms_normalize_gender($pat->getpgender()),
             'age' => $age,
             'visits' => $visits,
             'operations' => $operations,
@@ -541,7 +630,14 @@ require_once(__DIR__ . '/zpms_mailer.php');
             'pemail' => $_POST['patient-email'],
             'pnote' => $_POST['patient-note']
         ]);
-        
+        // loadFields() skips null values, so "not set" has to go through the
+        // setter. Only touched when the form actually sent the radio group,
+        // so a request without it (an older client, a script) leaves the
+        // stored value alone instead of clearing it.
+        if (array_key_exists('patient-gender', $_POST)) {
+            $pat->setpgender(zpms_normalize_gender($_POST['patient-gender']));
+        }
+
         $res = $pat->update();
 
         if(isset($_POST['use_ajax'])) {
@@ -678,6 +774,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
             'paddr' => $_POST['patient-address'],
             'pemail' => $_POST['patient-email'],
             'pnote' => $_POST['patient-note'],
+            'pgender' => zpms_normalize_gender($_POST['patient-gender'] ?? null),
             'guid' => guid()
         ]);
         // print_r( $pc );

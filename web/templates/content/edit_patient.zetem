@@ -22,6 +22,7 @@
                 <div class="pi-who">
                     <h3 class="pi-name" id="pi-name">{{{$patient->getpname()}}}</h3>
                     <div class="pi-sub">
+                        <span id="pi-gender" {% if($identity['gender'] === null): %}hidden{% endif %}>{{($identity['gender'] === 'F') ? 'Γυναίκα' : 'Άνδρας'}}</span>
                         <span id="pi-age" {% if($identity['age'] == ''): %}hidden{% endif %}>{{{$identity['age']}}}</span>
                         <span id="pi-dob" {% if(!$patient->getpdob()): %}hidden{% endif %}>{% if($patient->getpdob()): %}{{$patient->getpdob() | date('d-m-Y')}}{% endif %}</span>
                         <span class="pi-amka" id="pi-amka-wrap" {% if(!$patient->getpamka()): %}hidden{% endif %}>ΑΜΚΑ <span id="pi-amka">{{{$patient->getpamka()}}}</span>
@@ -162,6 +163,20 @@
             <!-- <input type="text" name="patient-dob" id="datepicker" value="{{$patient->getpdob()}}"> -->
         </div>
  #}
+        {# Gender: three radios rather than a menu, so choosing is one click.
+           The last one ("not set", empty value) is a real choice -- a radio
+           can't be un-picked, and the column is NULL until someone answers.
+           Saved like every other field (autosave posts the whole form). #}
+        {% $__g = $patient->getpgender(); %}
+        <div class="input-div gender-field">
+            <label id="patient-gender-label">Φύλο</label>
+            <div class="gender-radios" role="radiogroup" aria-labelledby="patient-gender-label">
+                <label class="gender-opt"><input type="radio" name="patient-gender" value="M" loader="info-loader" {{($__g === 'M') ? 'checked' : ''}}><span>Άνδρας</span></label>
+                <label class="gender-opt"><input type="radio" name="patient-gender" value="F" loader="info-loader" {{($__g === 'F') ? 'checked' : ''}}><span>Γυναίκα</span></label>
+                <label class="gender-opt gender-none"><input type="radio" name="patient-gender" value="" loader="info-loader" {{($__g !== 'M' && $__g !== 'F') ? 'checked' : ''}}><span title="Μη ορισμένο" aria-label="Μη ορισμένο">&mdash;</span></label>
+            </div>
+        </div>
+
         <div class="input-div">
             <label for="patient-amka">ΑΜΚΑ</label>
             {# 
@@ -605,6 +620,14 @@
                         var c = document.getElementById('pi-amka-copy');
                         if (c) c.setAttribute('data-copy-text', v);
                     }
+                });
+            });
+            document.querySelectorAll('#patient-details input[name="patient-gender"]').forEach(function(radio) {
+                radio.addEventListener('change', function() {
+                    var g = document.getElementById('pi-gender');
+                    if (!g || !radio.checked) return;
+                    g.textContent = radio.value === 'F' ? 'Γυναίκα' : 'Άνδρας';
+                    g.hidden = radio.value !== 'M' && radio.value !== 'F';
                 });
             });
             var dob = document.getElementById('datepicker');

@@ -23,7 +23,13 @@ if ($uri !== '/' && is_file($file)) {
 }
 
 chdir(__DIR__ . '/../../web');
-$_SERVER['QUERY_STRING'] = ltrim($uri, '/');
+// [QSA]: a request that also carries a real query string (`/patients?page=2`)
+// reaches index.php as QUERY_STRING = "patients&page=2" -- the path first,
+// then the browser's own query appended with "&". Without the second half
+// this test server hid every query parameter from the app, so nothing here
+// could exercise them.
+$query = (string)parse_url($_SERVER['REQUEST_URI'], PHP_URL_QUERY);
+$_SERVER['QUERY_STRING'] = ltrim($uri, '/') . ($query !== '' ? '&' . $query : '');
 
 // Kernel::rel_url() derives its path prefix from PHP_SELF's directory --
 // on a real deployment (Apache rewriting everything to index.php) that's

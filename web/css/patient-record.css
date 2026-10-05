@@ -807,3 +807,101 @@
 .patient-details.is-new .pd-section-title {
     display: none;
 }
+
+/* ---------- gender radios (patient form) ---------- */
+
+/* Three segmented radios -- Άνδρας / Γυναίκα / "not set" -- one click to
+   choose. The native radio is visually hidden but stays focusable and
+   keyboard-operable (arrow keys move between them); its label text is the
+   visible control. These come last and are more specific than the generic
+   ".input-div input" / ".input-div label" form rules in styles.css and the
+   details-panel rules above, which would otherwise style a radio like a
+   text field. */
+.edit-patient .input-div .gender-radios {
+    grid-column: 2;
+    grid-row: 1;
+    display: inline-flex;
+    justify-self: start;
+}
+
+.edit-patient.is-record .patient-details .input-div .gender-radios {
+    grid-column: 1;
+    grid-row: 2;
+}
+
+.edit-patient .input-div .gender-radios .gender-opt {
+    position: relative;
+    display: inline-flex;
+    grid-column: auto;
+    grid-row: auto;
+    width: auto;
+    margin: 0;
+    text-align: left;
+    cursor: pointer;
+}
+
+.edit-patient .gender-radios .gender-opt input[type="radio"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    opacity: 0;
+    cursor: pointer;
+    border: 0;
+    box-shadow: none;
+    grid-column: auto;
+    grid-row: auto;
+}
+
+.edit-patient .gender-radios .gender-opt span {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    background: #fff;
+    color: var(--dark-gray);
+    border: 1px solid var(--border-color);
+    border-left-width: 0;
+    font-size: 0.9rem;
+    font-weight: 500;
+    line-height: 1.25rem;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.edit-patient .gender-radios .gender-opt:first-child span {
+    border-left-width: 1px;
+    border-radius: var(--border-radius-md) 0 0 var(--border-radius-md);
+}
+
+.edit-patient .gender-radios .gender-opt:last-child span {
+    border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0;
+}
+
+.edit-patient .gender-radios .gender-opt:hover span {
+    background: var(--light-gray);
+}
+
+.edit-patient .gender-radios .gender-opt input:checked + span {
+    background: rgba(var(--primary-rgb), 0.12);
+    color: var(--primary-dark);
+    border-color: rgba(var(--primary-rgb), 0.45);
+    font-weight: 600;
+}
+
+.edit-patient .gender-radios .gender-none input:checked + span {
+    background: var(--medium-gray);
+    color: var(--dark-gray);
+    border-color: var(--border-color);
+}
+
+.edit-patient .gender-radios .gender-opt input:focus-visible + span {
+    outline: 2px solid var(--primary);
+    outline-offset: 1px;
+    position: relative;
+    z-index: 1;
+}
+
+.edit-patient fieldset:disabled .gender-radios .gender-opt {
+    cursor: default;
+    opacity: 0.7;
+}

@@ -73,6 +73,13 @@ libraries:
   # sidebar and history timeline on the patient record page -- attached
   # from edit_patient.zetem. A library (not styles.css) so it loads after
   # the leaky ".edit-patient form"/appointment rules it has to override.
+  # Patients list (patients_list.zetem): columns, avatars, sortable headers,
+  # pager, compact mode.
+  patients-list:
+    css:
+      - patients_list:
+        type: 'text/css'
+        src: 'css/patients-list.css'
   patient-record:
     css:
       - patient_record:
@@ -221,12 +228,20 @@ routes:
     title: 
       gr: "Λίστα ασθενών"
       en: "Patients List"
+    url: "/patients"
+    handler: patients_list
+    access: authenticated
+  # Bookmarks from before the list moved to query-string sorting
+  # (/patients?sort=name&dir=asc) -- redirected, never rendered.
+  patients_list_legacy_sort:
+    title:
+      gr: "Λίστα ασθενών"
+      en: "Patients List"
     url: [
-          "/patients",
           "/patients/sort/{key}",
           "/patients/sort/{key}/{order}"
           ]
-    handler: patients_list
+    handler: patients_list_legacy_sort
     access: authenticated
   patients_search:
     title: "Patients"

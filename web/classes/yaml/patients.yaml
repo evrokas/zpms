@@ -19,6 +19,14 @@ table:
   - name: pdob
     type: datetime
 
+  # 'M' (male), 'F' (female) or NULL (not set). A plain nullable column, no
+  # default: "not set" is a real answer, so it is never filled in for the
+  # user. patient_edit_post()/patient_new_post() (web/index.php) accept only
+  # these values and store anything else as NULL.
+  - name: pgender
+    type: char(1)
+    default: null
+
   - name: pamka
     type: char(11)
 
