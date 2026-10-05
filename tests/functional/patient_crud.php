@@ -165,6 +165,9 @@ function zpms_functional_patient_crud(TestRunner $runner, TestHttpClient $http):
         assert_equal(200, $page['status'], 'GET the patient record did not return 200');
         $body = $page['body'];
 
+        assert_contains('class="page-back page-back-top"', $body, 'the back-to-list link is missing from the record');
+        assert_contains('Πίσω στη λίστα ασθενών', $body, 'the back link is not in the current (Greek) language');
+        assert_true(preg_match('#href="[^"]*/patients"[^>]*>\s*<i class="bx bx-arrow-back"#', $body) === 1, 'the back link does not point at the patient list');
         assert_contains('patient-identity', $body, 'the identity header is missing');
         assert_contains('2105550100', $body, 'the phone number is missing from the identity header');
         assert_contains('header@example.invalid', $body, 'the email is missing from the identity header');

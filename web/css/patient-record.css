@@ -905,3 +905,14 @@
     cursor: default;
     opacity: 0.7;
 }
+
+/* "Back to patient list" above the record's title. .page-back (styles.css) is
+   written for a line that sits between a title and its card, with a negative
+   top margin; here it comes first. */
+.edit-patient.is-record .page-back-top {
+    margin: var(--spacing-xs) 0 0;
+}
+
+.edit-patient.is-record .page-back-top + .header {
+    margin-top: var(--spacing-sm);
+}

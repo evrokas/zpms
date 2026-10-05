@@ -2132,3 +2132,7 @@ ALTER TABLE patients ADD COLUMN pgender char(1) DEFAULT NULL AFTER pdob;
 ```
 
 Tests: `tests/functional/patient_crud.php` (gender create/edit/blank/tampered/omitted; rows per page, paging, "all", sorting, accent-insensitive search, area filter, bad values, deleted appointments ignored, redirects, `&` in a search term). `bin/run_tests.sh`: 102/102 static, 52/52 functional.
+
+### Back link on the patient record
+
+A "← Πίσω στη λίστα ασθενών" / "← Back to patient list" link sits above the title of every saved patient's record (`.page-back-top`, `edit_patient.zetem`), pointing at `/patients`. The text is a language map, `t(['en' => ..., 'gr' => ...])`, so it follows the language switch with no dictionary entry to maintain; another language is added by adding its key (a language not listed falls back to the first one, English). The new-patient form does not have it.

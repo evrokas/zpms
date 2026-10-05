@@ -4,6 +4,14 @@
 {% attach_library('patient-record'); %}
 
 <div class="edit-patient{{($action == 'new') ? '' : ' is-record'}}">    
+    {% if($action != 'new'): %}
+    {# Way back to the list, above the title. t() with a language map: the text
+       for the current language, so it follows the language switch (a language
+       not listed falls back to the first one, English). #}
+    <p class="page-back page-back-top">
+        <a href="{{rel_url('/patients')}}"><i class="bx bx-arrow-back"></i> {{t(['en' => 'Back to patient list', 'gr' => 'Πίσω στη λίστα ασθενών'])}}</a>
+    </p>
+    {% endif %}
     <div class="header">
         <h4>{% if($action == 'new'): %}Νέος Ασθενής{% else: %}Επεξεργασία Στοιχείων Ασθενή{% endif %}</h4>
     </div>
