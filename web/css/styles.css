@@ -3422,3 +3422,18 @@ form.webform {
         justify-content: center;
     }
 }
+
+
+/* Visually hidden, still read by screen readers: a page heading that the
+   breadcrumb already shows (patients list, patient record, new patient). */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    padding: 0;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}

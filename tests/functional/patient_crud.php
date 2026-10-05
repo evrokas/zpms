@@ -5,6 +5,8 @@
  * form), against web/index.php's real route handlers and the real
  * patientsClass entity. */
 
+require_once __DIR__ . '/../../bin/lib/dictionary_import.php';
+
 function zpms_functional_patient_crud(TestRunner $runner, TestHttpClient $http): void {
     $runner->add('create a new patient', function () use ($http) {
         TestSchema::assertSafeToMutate();
@@ -163,7 +165,13 @@ function zpms_functional_patient_crud(TestRunner $runner, TestHttpClient $http):
 
         $page = $http->get('/patient/' . $p->getid() . '/edit');
         assert_equal(200, $page['status'], 'GET the patient record did not return 200');
+        // First use of a t() term adds it to the dictionary untranslated (the
+        // Greek column holds the English text); loading config/dictionary.gr.php
+        // is what makes the Greek interface read Greek, exactly as on a deploy.
+        zpms_import_dictionary_terms(dbConnection::getConnection(), 'gr', require __DIR__ . '/../../config/dictionary.gr.php');
+        $page = $http->get('/patient/' . $p->getid() . '/edit');
         $body = $page['body'];
+        assert_not_contains('Επεξεργασία Στοιχείων Ασθενή', $body, 'the record still has a title repeating the breadcrumb');
 
         assert_contains('class="page-back page-back-top"', $body, 'the back-to-list link is missing from the record');
         assert_contains('Πίσω στη λίστα ασθενών', $body, 'the back link is not in the current (Greek) language');
@@ -250,6 +258,7 @@ function zpms_functional_patient_crud(TestRunner $runner, TestHttpClient $http):
         $rows = fn($body) => preg_match_all('/<tr data-href=/', $body);
 
         $all = $http->get('/patients?q=' . rawurlencode('Λιστάκης') . '&per_page=all');
+        assert_contains('class="page-title sr-only"', $all['body'], 'the list title should be visually hidden (the breadcrumb says the same)');
         assert_equal(200, $all['status'], '/patients?per_page=all did not return 200');
         assert_equal(12, $rows($all['body']), 'per_page=all should list every match');
         assert_not_contains('class="pt-pages"', $all['body'], '"all" should hide the pager');
@@ -337,5 +346,39 @@ function zpms_functional_patient_crud(TestRunner $runner, TestHttpClient $http):
         } finally {
             $db->exec("DELETE FROM locations WHERE machinename = 'zz-athens'");
         }
+    });
+
+    $runner->add('dictionary import: adds new terms, translates untranslated ones, never overwrites an edited translation', function () {
+        TestSchema::assertSafeToMutate();
+        $db = dbConnection::getConnection();
+        $row = fn($en) => $db->query('SELECT en, gr, gr_set FROM dictionary WHERE en = ' . $db->quote($en))->fetch(PDO::FETCH_ASSOC);
+
+        // A term a template has already used once but nobody translated: the
+        // table has it with the English text in the Greek column, gr_set = 0.
+        $db->exec("INSERT INTO dictionary (en, en_set, gr, gr_set) VALUES ('ZZ term untranslated', 1, 'ZZ term untranslated', 0)");
+        // A term someone translated by hand.
+        $db->exec("INSERT INTO dictionary (en, en_set, gr, gr_set) VALUES ('ZZ term edited', 1, 'ΧΕΙΡΟΚΙΝΗΤΗ', 1)");
+
+        $terms = ['ZZ term untranslated' => 'ΑΜΕΤΑΦΡΑΣΤΟ', 'ZZ term edited' => 'ΑΠΟ ΑΡΧΕΙΟ', 'ZZ term new' => 'ΝΕΟ'];
+        $dry = zpms_import_dictionary_terms($db, 'gr', $terms, true);
+        assert_equal(['added' => 1, 'translated' => 1, 'kept' => 1], $dry, 'dry run counted the wrong things');
+        assert_equal(0, (int)$row('ZZ term untranslated')['gr_set'], 'a dry run must not write');
+        assert_equal(false, $row('ZZ term new'), 'a dry run must not insert');
+
+        $res = zpms_import_dictionary_terms($db, 'gr', $terms);
+        assert_equal(['added' => 1, 'translated' => 1, 'kept' => 1], $res, 'import counted the wrong things');
+        assert_equal('ΑΜΕΤΑΦΡΑΣΤΟ', $row('ZZ term untranslated')['gr'], 'an untranslated term was not translated');
+        assert_equal('ΧΕΙΡΟΚΙΝΗΤΗ', $row('ZZ term edited')['gr'], 'a hand-edited translation was overwritten');
+        assert_equal('ΝΕΟ', $row('ZZ term new')['gr'], 'a new term was not added');
+        assert_equal(1, (int)$row('ZZ term new')['gr_set'], 'a new term should be marked translated');
+
+        $again = zpms_import_dictionary_terms($db, 'gr', $terms);
+        assert_equal(['added' => 0, 'translated' => 0, 'kept' => 3], $again, 'running the import twice should change nothing');
+
+        $threw = false;
+        try { zpms_import_dictionary_terms($db, 'xx; DROP TABLE dictionary', $terms); } catch (InvalidArgumentException $e) { $threw = true; }
+        assert_true($threw, 'a language that is not a dictionary column must be refused');
+
+        $db->exec("DELETE FROM dictionary WHERE en LIKE 'ZZ term %'");
     });
 }

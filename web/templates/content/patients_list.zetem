@@ -14,7 +14,9 @@
 
 <div class="patients-header">
     <div class="patients-title">
-        <h2 class="page-title">{{t("Patients")}}</h2>
+        {# Visually hidden: the breadcrumb above already says "Ασθενείς › Λίστα
+           ασθενών"; kept as the page's heading for screen readers. #}
+        <h2 class="page-title sr-only">{{t("Patients")}}</h2>
         <ul class="patients-summary" aria-label="Σύνοψη">
             <li><b>{{$summary['total']}}</b> ασθενείς</li>
             <li><b>{{$summary['new']}}</b> νέοι τις τελευταίες 30 ημέρες</li>

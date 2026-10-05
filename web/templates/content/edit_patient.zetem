@@ -5,16 +5,17 @@
 
 <div class="edit-patient{{($action == 'new') ? '' : ' is-record'}}">    
     {% if($action != 'new'): %}
-    {# Way back to the list, above the title. t() with a language map: the text
-       for the current language, so it follows the language switch (a language
-       not listed falls back to the first one, English). #}
+    {# Way back to the list. Translatable text goes through the dictionary:
+       t('English token'), with the Greek in config/dictionary.gr.php
+       (loaded by bin/import_dictionary.php). #}
     <p class="page-back page-back-top">
-        <a href="{{rel_url('/patients')}}"><i class="bx bx-arrow-back"></i> {{t(['en' => 'Back to patient list', 'gr' => 'Πίσω στη λίστα ασθενών'])}}</a>
+        <a href="{{rel_url('/patients')}}"><i class="bx bx-arrow-back"></i> {{t('Back to patient list')}}</a>
     </p>
+    {% else: %}
+    {# No visible title: the breadcrumb above already reads "Νέος ασθενής".
+       Kept for screen readers so the page still has a heading. #}
+    <h2 class="sr-only">Νέος Ασθενής</h2>
     {% endif %}
-    <div class="header">
-        <h4>{% if($action == 'new'): %}Νέος Ασθενής{% else: %}Επεξεργασία Στοιχείων Ασθενή{% endif %}</h4>
-    </div>
 
     {% if($action != 'new'): %}
     <!-- Identity header: who this patient is, at a glance, with the
@@ -28,7 +29,7 @@
             <div class="pi-id">
                 <div class="pi-avatar" aria-hidden="true">{{{$identity['initials']}}}</div>
                 <div class="pi-who">
-                    <h3 class="pi-name" id="pi-name">{{{$patient->getpname()}}}</h3>
+                    <h2 class="pi-name" id="pi-name">{{{$patient->getpname()}}}</h2>
                     <div class="pi-sub">
                         <span id="pi-gender" {% if($identity['gender'] === null): %}hidden{% endif %}>{{($identity['gender'] === 'F') ? 'Γυναίκα' : 'Άνδρας'}}</span>
                         <span id="pi-age" {% if($identity['age'] == ''): %}hidden{% endif %}>{{{$identity['age']}}}</span>

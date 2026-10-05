@@ -906,13 +906,15 @@
     opacity: 0.7;
 }
 
-/* "Back to patient list" above the record's title. .page-back (styles.css) is
+/* "Back to patient list" above the identity card. .page-back (styles.css) is
    written for a line that sits between a title and its card, with a negative
-   top margin; here it comes first. */
+   top margin; here it comes first, and the card follows directly. */
 .edit-patient.is-record .page-back-top {
-    margin: var(--spacing-xs) 0 0;
+    margin: var(--spacing-xs) 0 var(--spacing-sm);
 }
 
-.edit-patient.is-record .page-back-top + .header {
+/* New patient: with no title above it, the form needs its own gap under the
+   breadcrumb. */
+.edit-patient > .patient-details.is-new {
     margin-top: var(--spacing-sm);
 }
