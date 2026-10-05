@@ -44,7 +44,7 @@
         <select name="area" aria-label="Περιοχή τελευταίου ραντεβού" data-autosubmit>
             <option value="">Όλες οι περιοχές</option>
             {% foreach($areas as $area): %}
-            <option value="{{{$area}}}" {{($state['area'] === $area) ? 'selected' : ''}}>{{{$area}}}</option>
+            <option value="{{{$area['value']}}}" {{($state['area'] === $area['value']) ? 'selected' : ''}}>{{{$area['label']}}}</option>
             {% endforeach %}
         </select>
     </label>

@@ -220,6 +220,10 @@ require_once(__DIR__ . '/zpms_mailer.php');
 
         $today = date('Y-m-d');
         $palette = 6;
+        // A place is stored under the name it had in the language active when
+        // the appointment was saved; show it in the current language.
+        $lang = $kernel->getCurrentLanguage();
+        $placeLabels = patientsClassEx::placeLabels($lang);
         $rows = [];
         foreach ($result['rows'] as $r) {
             $name = trim((string)$r['pname']);
@@ -237,7 +241,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
                 $last = [
                     'date' => formatDate($r['last_adate']),
                     'is_operation' => ($r['last_atype'] === 'operation'),
-                    'place' => (string)$r['last_aplace'],
+                    'place' => $placeLabels[(string)$r['last_aplace']] ?? (string)$r['last_aplace'],
                     'upcoming' => ($day > $today),
                 ];
             }
@@ -296,7 +300,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
             'prev_url' => ($state['page'] > 1) ? zpms_patients_url(array_merge($state, ['page' => $state['page'] - 1])) : null,
             'next_url' => ($state['page'] < $pages && $state['per_page'] !== 'all') ? zpms_patients_url(array_merge($state, ['page' => $state['page'] + 1])) : null,
             'sort_urls' => $sortUrls,
-            'areas' => patientsClassEx::appointmentPlaces(),
+            'areas' => patientsClassEx::appointmentPlaces($lang),
             'summary' => patientsClassEx::listSummary($today),
             'per_page_choices' => zpms_list_per_page_choices(),
             'searching' => ($state['q'] !== '' || $state['area'] !== ''),

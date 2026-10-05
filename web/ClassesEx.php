@@ -337,8 +337,16 @@ class patientsClassEx extends patientsClass {
             $where[] = '(' . implode(' OR ', $ors) . ')';
         }
         if ($area !== '') {
-            $where[] = 'la.aplace = :area';
-            $bind[':area'] = $area;
+            // $area is a location's machine name; appointments store the
+            // *name* it had in the language the user was on when saving, so
+            // one place can sit in the table under its Greek and its English
+            // name. Match all of them.
+            $in = [];
+            foreach (self::areaNames($area) as $i => $name) {
+                $in[] = ":area$i";
+                $bind[":area$i"] = $name;
+            }
+            $where[] = 'la.aplace IN (' . implode(',', $in) . ')';
         }
         $whereSql = ' WHERE ' . implode(' AND ', $where);
 
@@ -377,12 +385,71 @@ class patientsClassEx extends patientsClass {
         ];
     }
 
-    /** Places that appear on a non-deleted appointment, for the list's area filter. */
-    static function appointmentPlaces(): array {
+    /**
+     * Every known place name, from the locations table: ['byName' => each
+     * stored name (any language) => its machine name, 'names' => machine name
+     * => every name it has, 'label' => machine name => [lang => name]].
+     * appointments.aplace holds a *name*, in whichever language was active
+     * when the appointment was saved, so the machine name is what ties
+     * "Αθήνα" and "Athens" together.
+     */
+    private static function locationMaps(): array {
+        $maps = ['byName' => [], 'names' => [], 'label' => []];
+        $st = dbConnection::getConnection()->query("SELECT machinename, lang, name FROM locations ORDER BY id");
+        foreach ($st->fetchAll() as $r) {
+            $mn = (string)$r['machinename'];
+            $name = (string)$r['name'];
+            if ($mn === '' || $name === '') continue;
+            $maps['byName'][$name] ??= $mn;
+            $maps['names'][$mn][$name] = $name;
+            $maps['label'][$mn][(string)$r['lang']] ??= $name;
+        }
+        return $maps;
+    }
+
+    /** The name shown for a place in $lang (falls back to any language, then the value as stored). */
+    private static function placeLabel(array $maps, string $mn, string $lang, string $fallback): string {
+        return $maps['label'][$mn][$lang] ?? (reset($maps['label'][$mn]) ?: $fallback);
+    }
+
+    /** Every stored name a machine name stands for, or [$area] if it is not one (a free-text place). */
+    static function areaNames(string $area): array {
+        $maps = self::locationMaps();
+        return isset($maps['names'][$area]) ? array_values($maps['names'][$area]) : [$area];
+    }
+
+    /**
+     * Places that appear on a non-deleted appointment, for the list's area
+     * filter -- one entry per place, however many languages it was saved in.
+     * Returns [['value' => machine name (or the raw text for a place that is
+     * not in the locations table), 'label' => the name in $lang], ...].
+     */
+    static function appointmentPlaces(string $lang): array {
+        $maps = self::locationMaps();
         $st = dbConnection::getConnection()->query(
             "SELECT DISTINCT aplace FROM appointments
-             WHERE deleted IS NULL AND aplace IS NOT NULL AND aplace <> '' ORDER BY aplace");
-        return $st->fetchAll(PDO::FETCH_COLUMN);
+             WHERE deleted IS NULL AND aplace IS NOT NULL AND aplace <> ''");
+        $options = [];
+        foreach ($st->fetchAll(PDO::FETCH_COLUMN) as $place) {
+            $mn = $maps['byName'][$place] ?? null;
+            $key = $mn ?? $place;
+            $options[$key] = [
+                'value' => $key,
+                'label' => $mn !== null ? self::placeLabel($maps, $mn, $lang, $place) : $place,
+            ];
+        }
+        usort($options, fn($a, $b) => $a['label'] <=> $b['label']);
+        return $options;
+    }
+
+    /** Stored place name => the same place's name in $lang, for every place in the locations table. */
+    static function placeLabels(string $lang): array {
+        $maps = self::locationMaps();
+        $labels = [];
+        foreach ($maps['byName'] as $name => $mn) {
+            $labels[$name] = self::placeLabel($maps, $mn, $lang, $name);
+        }
+        return $labels;
     }
 
     /**

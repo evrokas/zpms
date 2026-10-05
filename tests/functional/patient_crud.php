@@ -297,4 +297,42 @@ function zpms_functional_patient_crud(TestRunner $runner, TestHttpClient $http):
         assert_equal(302, $term['status'], 'the old search address should redirect');
         assert_contains('q=Smith+%26+Sons', (string)$term['location'], 'a "&" inside a search term was cut off by the router');
     });
+
+    $runner->add('patients list: one area entry per place even when appointments were saved in Greek and English', function () use ($http) {
+        TestSchema::assertSafeToMutate();
+        $db = dbConnection::getConnection();
+
+        // One place, two names (locations has a row per language, appointments
+        // store whichever name was active when they were saved), plus a place
+        // that is not in the locations table at all.
+        $loc = $db->prepare('INSERT INTO locations (guid, lang, cuser, name, machinename, address) VALUES (?,?,?,?,?,?)');
+        $loc->execute([guid(), 'gr', 'test-fixture', 'Αθήνα', 'zz-athens', '']);
+        $loc->execute([guid(), 'en', 'test-fixture', 'Athens', 'zz-athens', '']);
+        $ins = $db->prepare('INSERT INTO patients (guid, cuser, pname, pdob, pamka, ptel, pemail, cdate) VALUES (?,?,?,?,?,?,?,?)');
+        $app = $db->prepare('INSERT INTO appointments (guid, cuser, pguid, adate, aplace, anote, atype) VALUES (?,?,?,?,?,?,?)');
+        foreach ([['Χωρίς Τόπου Α', 'Αθήνα'], ['Χωρίς Τόπου Β', 'Athens'], ['Χωρίς Τόπου Γ', 'Κρήτη ΖΖ']] as $i => [$name, $place]) {
+            $g = guid();
+            $ins->execute([$g, 'test-fixture', $name, '1980-01-01 00:00:00', sprintf('5550000%04d', $i), '', '', date('Y-m-d H:i:s')]);
+            $app->execute([guid(), 'test-fixture', $g, '2018-02-0' . ($i + 1) . ' 10:00:00', $place, '', 'appointment']);
+        }
+
+        try {
+            $page = $http->get('/patients?q=' . rawurlencode('Χωρίς Τόπου') . '&per_page=all');
+            assert_equal(1, preg_match_all('/<option value="zz-athens"/', $page['body']), 'Athens/Αθήνα must be a single area option');
+            assert_contains('>Αθήνα</option>', $page['body'], 'the area option should be labelled in the current language');
+            assert_not_contains('>Athens</option>', $page['body'], 'the English name should not be a second option');
+            assert_contains('<option value="Κρήτη ΖΖ"', $page['body'], 'a place missing from the locations table should still be offered');
+
+            // A patient whose appointment was saved as "Athens" shows the Greek name.
+            assert_equal(0, preg_match('/Athens<\/span>/', $page['body']), 'a place saved in English should be shown in the current language');
+
+            // Filtering by the one entry finds the patients saved under either name.
+            $f = $http->get('/patients?q=' . rawurlencode('Χωρίς Τόπου') . '&area=zz-athens&per_page=all');
+            assert_equal(2, preg_match_all('/<tr data-href=/', $f['body']), 'filtering by Athens should find both the Greek-name and the English-name appointments');
+            $other = $http->get('/patients?q=' . rawurlencode('Χωρίς Τόπου') . '&area=' . rawurlencode('Κρήτη ΖΖ') . '&per_page=all');
+            assert_equal(1, preg_match_all('/<tr data-href=/', $other['body']), 'a free-text place should still filter by itself');
+        } finally {
+            $db->exec("DELETE FROM locations WHERE machinename = 'zz-athens'");
+        }
+    });
 }
