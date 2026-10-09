@@ -315,12 +315,16 @@ routes:
     handler: appointment_delete
     method: post
   patient_appointment_new:
-    title: "New patient appointment"
+    title:
+      en: "New patient appointment"
+      gr: "Νέο ραντεβού ασθενή"
     url: "/appointment/{id}/newappointment"
     handler: patient_appointment_new
     method: get
   patient_appointment_new_post:
-    title: "New patient appointment"
+    title:
+      en: "New patient appointment"
+      gr: "Νέο ραντεβού ασθενή"
     url: "/appointment/{id}/newappointment"
     handler: patient_appointment_new_post
     method: post
@@ -337,7 +341,9 @@ routes:
   # back to the plain /newappointment route above regardless of which of
   # these two rendered the page -- see edit_appointment.zetem's $action.
   patient_operation_new:
-    title: "New patient operation"
+    title:
+      en: "New patient operation"
+      gr: "Νέο χειρουργείο ασθενή"
     url: "/appointment/{id}/newoperation"
     handler: patient_operation_new
     method: get

@@ -9,7 +9,7 @@
      appointment at a glance, scanning down a list of several cards,
      without having to read the label text on each one. -->
 <div class="appointment-entry appointment-type-{{($appointment->getatype() == 'operation')?'operation':'visit'}}" id="app-{{$index}}">
-    <span class="appointment-index-badge" title="Ραντεβού/Χειρουργείο #{{$index}} σε σειρά για αυτόν τον ασθενή">#{{$index}}</span>
+    <span class="appointment-index-badge" title="{{{t('Appointment/Operation #@number in sequence for this patient', ['number' => $index])}}}">#{{$index}}</span>
     <form action="{{$action}}" method="post">
         {{ csrf_field() }}
         <fieldset {% if(!$can_edit): %}disabled{% endif %}>
@@ -27,7 +27,7 @@
                      .appointment-type-visit/-operation in styles.css)
                      is purely decorative/type-redundant, so nothing here
                      needs an alt-text equivalent for it. -->
-                <label for="appointment-date-{{$index}}">{{($appointment->getatype() == 'operation')?'Χειρουργείο':'Ραντεβού'}}</label>
+                <label for="appointment-date-{{$index}}">{{($appointment->getatype() == 'operation') ? t('Operation') : t('Appointment')}}</label>
                 <input type="text" loader="app-loader-{{$index}}" name="appointment-date-{{$index}}" id="appointment-date-{{$index}}"
                     role="date-picker" value="{{formatBrowserDate($appointment->getadate())}}">
                 <!-- <label for="patient-dob">Ημ/νια Γεννήσεως</label> -->
@@ -59,7 +59,7 @@
             </script>
 
             <div class="input-div">
-                <label for="appointment-place" role="location"><i class='bx bx-map-pin'></i> Περιοχή</label>
+                <label for="appointment-place" role="location"><i class='bx bx-map-pin'></i> {{{t('Area')}}}</label>
                 <!-- <input type="text" name="appointment-place" id=""  value="{{$appointment->getaplace()}}"> -->
 
                 <!-- {% if(isset($locations)): %} -->
@@ -79,7 +79,7 @@
             <div class="edit-appointment">
 
                 <div class="input-div input-notes">
-                    <label for="appointment-notes">Σημειώσεις</label>
+                    <label for="appointment-notes">{{{t('Notes')}}}</label>
                     <!-- Sizing is pure CSS now (field-sizing: content +
                          min-block-size: 5lh on textarea, see styles.css)
                          -- grows to fit content on its own, with no JS
@@ -92,11 +92,11 @@
 
                 {% if($can_edit): %}
                 <div class="buttons">
-                    <input type="submit" name="submit" value="Αποθήκευση">
-                    <input type="submit" name="delete" value="Διαγραφή">
+                    <input type="submit" name="submit" value="{{{t('Save')}}}">
+                    <input type="submit" name="delete" value="{{{t('Delete')}}}">
                     <!-- <input type="submit" name="cancel" value="cancel"> -->
                     <button hidden type="button" loader="app-loader-{{$index}}"
-                        onclick="field_update(this)">Update</button>
+                        onclick="field_update(this)">{{{t('Update')}}}</button>
                 </div>
                 {% endif %}
             </div>
@@ -131,7 +131,7 @@
     <div class="file-upload-section{{(isset($files) && count($files) > 0) ? ' is-expanded' : ''}}">
         <h5 class="file-upload-section-heading" data-toggle-attachments>
             <i class='bx bx-chevron-right toggle-icon'></i>
-            <span>Συνημμένα Αρχεία</span>
+            <span>{{{t('Attached files')}}}</span>
             {% if(isset($files) && count($files) > 0): %}
             <span class="file-count-badge">{{count($files)}}</span>
             {% endif %}
@@ -145,17 +145,17 @@
                     <input type="file" id="file-upload-{{$index}}" name="appointmentFile" multiple accept="image/*,.pdf" class="file-input">
                     <label for="file-upload-{{$index}}" class="file-upload-label">
                         <i class='bx bx-cloud-upload'></i>
-                        <span>Επιλέξτε ή μεταφέρετε αρχεία εδώ</span>
+                        <span>{{{t('Choose or drop files here')}}}</span>
                     </label>
                 </div>
             </form>
 
             <div class="clipboard-paste-row">
                 <button type="button" class="paste-clipboard-btn" data-paste-clipboard>
-                    <i class='bx bx-clipboard'></i> Επικόλληση εικόνας από το πρόχειρο
+                    <i class='bx bx-clipboard'></i> {{{t('Paste an image from the clipboard')}}}
                 </button>
                 <input type="text" class="paste-description-input" data-paste-description
-                    placeholder="Περιγραφή (προαιρετικό)" maxlength="255">
+                    placeholder="{{{t('Description (optional)')}}}" maxlength="255">
                 <span class="paste-status" data-paste-status></span>
             </div>
             {% endif %}
@@ -167,7 +167,7 @@
             <!-- Existing uploaded files -->
             <div class="existing-files" id="existing-files-{{$index}}">
                 {% if(!isset($files) || count($files) == 0): %}
-                <p class="no-files">Δεν υπάρχουν συνημμένα αρχεία</p>
+                <p class="no-files">{{{t('There are no attached files')}}}</p>
                 {% else: %}
                 {% foreach($files as $f): %}
                 <div class="file-item" data-file-id="{{$f->getid()}}">
@@ -194,10 +194,10 @@
                     </div>
                     <div class="file-actions">
                         <button type="button" class="view-btn"
-                            data-file="{{rel_url('/appointment/' . $appointment->getid() . '/files/' . $f->getid() . '/download')}}">Προβολή</button>
+                            data-file="{{rel_url('/appointment/' . $appointment->getid() . '/files/' . $f->getid() . '/download')}}">{{{t('View')}}}</button>
                         {% if($can_edit): %}
                         <button type="button" class="delete-btn"
-                            data-delete-url="{{rel_url('/appointment/' . $appointment->getid() . '/files/' . $f->getid() . '/delete')}}">Διαγραφή</button>
+                            data-delete-url="{{rel_url('/appointment/' . $appointment->getid() . '/files/' . $f->getid() . '/delete')}}">{{{t('Delete')}}}</button>
                         {% endif %}
                     </div>
                 </div>

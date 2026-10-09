@@ -2,19 +2,16 @@
 {% attach_library('flatpickr-library'); %}
 
 <div class="edit-patient">
-    <div class="header">
-        <h4>Νέο Εκκρεμές Ραντεβού (τηλεφωνικά)</h4>
-    </div>
+    {# Visually hidden: the breadcrumb above already names this page. Kept as the
+       page heading for screen readers. #}
+    <h2 class="sr-only">{{{t('New pending appointment (by phone)')}}}</h2>
     <p class="muted page-intro">
-        Δεν δημιουργείται φάκελος ασθενή τώρα -- μόνο όταν ο ασθενής
-        προσέλθει, ο ιατρός θα δημιουργήσει τον φάκελο από τη λίστα
-        «Εκκρεμή Ραντεβού».
+        {{{t('No patient record is created now -- only when the patient arrives will the doctor create the record from the Pending Appointments list.')}}}
     </p>
 
     {% if(!$calendar_enabled): %}
     <p class="muted page-notice">
-        Το Google Calendar δεν είναι ρυθμισμένο -- το ραντεβού θα καταχωρηθεί
-        κανονικά στο ΖΠΜΣ, χωρίς συγχρονισμό.
+        {{{t('Google Calendar is not configured -- the appointment will be saved in ZPMS as usual, without syncing.')}}}
     </p>
     {% endif %}
 
@@ -22,8 +19,8 @@
         {{ csrf_field() }}
 
         <div class="input-div">
-            <label for="patient-name">Όνομα ασθενή</label>
-            <input type="text" name="patient-name" id="consultation-patient-name" value="" placeholder="όνομα ασθενούς"
+            <label for="patient-name">{{{t('Patient name')}}}</label>
+            <input type="text" name="patient-name" id="consultation-patient-name" value="" placeholder="{{{t('Enter the patient name')}}}"
                 data-check-duplicate="fill" data-check-duplicate-minlen="3"
                 data-fill-target-phone="consultation-patient-telephone"
                 data-fill-target-amka="consultation-patient-amka"
@@ -34,29 +31,29 @@
         <div class="duplicate-warning" id="duplicate-warning" style="display:none;"></div>
 
         <div class="input-div">
-            <label for="patient-telephone">Τηλέφωνο</label>
-            <input type="text" name="patient-telephone" id="consultation-patient-telephone" value="" placeholder="τηλέφωνο ασθενούς" required>
+            <label for="patient-telephone">{{{t('Telephone')}}}</label>
+            <input type="text" name="patient-telephone" id="consultation-patient-telephone" value="" placeholder="{{{t('Enter the patient telephone')}}}" required>
         </div>
 
         <div class="input-div">
-            <label for="patient-amka">ΑΜΚΑ</label>
-            <input type="text" name="patient-amka" id="consultation-patient-amka" value="" placeholder="ΑΜΚΑ ασθενούς">
+            <label for="patient-amka">{{{t('AMKA')}}}</label>
+            <input type="text" name="patient-amka" id="consultation-patient-amka" value="" placeholder="{{{t('Enter the patient AMKA')}}}">
         </div>
 
         <div class="input-div">
-            <label for="patient-email">Email</label>
-            <input type="text" name="patient-email" id="consultation-patient-email" value="" placeholder="email ασθενούς (προαιρετικό)">
+            <label for="patient-email">{{{t('Email')}}}</label>
+            <input type="text" name="patient-email" id="consultation-patient-email" value="" placeholder="{{{t('Enter the patient email (optional)')}}}">
         </div>
 
         <div class="input-div">
-            <label for="appointment-date">Ημ/νία &amp; Ώρα Ραντεβού</label>
+            <label for="appointment-date">{{{t('Appointment date & time')}}}</label>
             <input type="text" name="appointment-date" id="consultation-date" value="" required>
         </div>
 
         <div class="input-div">
-            <label for="appointment-location">Τοποθεσία</label>
+            <label for="appointment-location">{{{t('Location')}}}</label>
             <select name="appointment-location" id="">
-                <option value="">-- Επιλογή τοποθεσίας --</option>
+                <option value="">{{{t('-- Select a location --')}}}</option>
                 {% foreach($locations as $loc): %}
                 <option value="{{{$loc}}}">{{{$loc}}}</option>
                 {% endforeach %}
@@ -64,9 +61,9 @@
         </div>
 
         <div class="input-div">
-            <label for="appointment-user">Ιατρός</label>
+            <label for="appointment-user">{{{t('Doctor')}}}</label>
             <select name="appointment-user" id="" required>
-                <option value="">-- Επιλογή ιατρού --</option>
+                <option value="">{{{t('-- Select a doctor --')}}}</option>
                 {% foreach($doctors as $doctor): %}
                 <option value="{{{$doctor['id']}}}" {{($doctor['id'] == $preselected_doctor_id)?'selected':''}}>{{{$doctor['name']}}}</option>
                 {% endforeach %}
@@ -74,12 +71,12 @@
         </div>
 
         <div class="input-div input-notes">
-            <label for="appointment-notes">Σημειώσεις</label>
+            <label for="appointment-notes">{{{t('Notes')}}}</label>
             <textarea name="appointment-notes" id="" rows="4"></textarea>
         </div>
 
         <div class="buttons">
-            <input type="submit" name="submit" value="Καταχώρηση">
+            <input type="submit" name="submit" value="{{{t('Register')}}}">
         </div>
     </form>
 </div>

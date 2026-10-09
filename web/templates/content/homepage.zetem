@@ -2,7 +2,7 @@
 
 <div class="dashboard">
     <div class="dashboard-welcome">
-        <h2>Καλώς ήρθατε{% if($display_name): %}, {{{$display_name}}}{% endif %}</h2>
+        <h2>{{{t('Welcome')}}}{% if($display_name): %}, {{{$display_name}}}{% endif %}</h2>
         {% if($location): %}
             <p class="dashboard-location"><i class="bx bx-map"></i> {{{$location}}}</p>
         {% endif %}
@@ -12,30 +12,30 @@
         {% if($can_view_patients): %}
         <a class="dashboard-card hover-lift" href="{{rel_url('/patients')}}">
             <i class="bx bx-group"></i>
-            <span class="dashboard-card-title">Ασθενείς</span>
-            <span class="dashboard-card-desc">Λίστα και διαχείριση ασθενών</span>
+            <span class="dashboard-card-title">{{{t('Patients')}}}</span>
+            <span class="dashboard-card-desc">{{{t('List and manage patients')}}}</span>
         </a>
         {% endif %}
 
         {% if($can_create_patients): %}
         <a class="dashboard-card hover-lift" href="{{rel_url('/patient/new')}}">
             <i class="bx bx-user-plus"></i>
-            <span class="dashboard-card-title">Νέος Ασθενής</span>
-            <span class="dashboard-card-desc">Καταχώρηση νέου ασθενή</span>
+            <span class="dashboard-card-title">{{{t('New patient')}}}</span>
+            <span class="dashboard-card-desc">{{{t('Register a new patient')}}}</span>
         </a>
         {% endif %}
 
         <a class="dashboard-card hover-lift" href="{{rel_url('/apps/genqr')}}">
             <i class="bx bx-qr"></i>
-            <span class="dashboard-card-title">Δημιουργία QR</span>
-            <span class="dashboard-card-desc">Δημιουργία κωδικού QR</span>
+            <span class="dashboard-card-title">{{{t('Create QR')}}}</span>
+            <span class="dashboard-card-desc">{{{t('Create a QR code')}}}</span>
         </a>
 
         {% if($can_manage_appointments): %}
         <a class="dashboard-card hover-lift" href="{{rel_url('/consultation/pending')}}">
             <i class="bx bx-calendar"></i>
-            <span class="dashboard-card-title">Ραντεβού</span>
-            <span class="dashboard-card-desc">Εκκρεμή και προηγούμενα ραντεβού</span>
+            <span class="dashboard-card-title">{{{t('Appointments')}}}</span>
+            <span class="dashboard-card-desc">{{{t('Pending and previous appointments')}}}</span>
         </a>
         {% endif %}
     </div>

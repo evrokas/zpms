@@ -2,46 +2,46 @@
 {% attach_library('flatpickr-library'); %}
 
 <div class="edit-patient">
-    <div class="header">
-        <h4>Επεξεργασία Εκκρεμούς Ραντεβού</h4>
-    </div>
+    {# Visually hidden: the breadcrumb above already names this page. Kept as the
+       page heading for screen readers. #}
+    <h2 class="sr-only">{{{t('Edit pending appointment')}}}</h2>
 
     <p class="muted page-back">
-        <a href="{{rel_url('/consultation/pending')}}">&larr; Πίσω στα Εκκρεμή Ραντεβού</a>
+        <a href="{{rel_url('/consultation/pending')}}">&larr; {{{t('Back to Pending Appointments')}}}</a>
     </p>
 
     <form action="{{rel_url('/consultation/pending/'.$pending->getid().'/edit')}}" method="post">
         {{ csrf_field() }}
 
         <div class="input-div">
-            <label for="patient-name">Όνομα ασθενή</label>
+            <label for="patient-name">{{{t('Patient name')}}}</label>
             <input type="text" name="patient-name" id="" value="{{{$pending->getpatient_name()}}}" required>
         </div>
 
         <div class="input-div">
-            <label for="patient-telephone">Τηλέφωνο</label>
+            <label for="patient-telephone">{{{t('Telephone')}}}</label>
             <input type="text" name="patient-telephone" id="" value="{{{$pending->getpatient_phone()}}}">
         </div>
 
         <div class="input-div">
-            <label for="patient-amka">ΑΜΚΑ</label>
+            <label for="patient-amka">{{{t('AMKA')}}}</label>
             <input type="text" name="patient-amka" id="" value="{{{$pending->getpatient_amka()}}}">
         </div>
 
         <div class="input-div">
-            <label for="patient-email">Email</label>
+            <label for="patient-email">{{{t('Email')}}}</label>
             <input type="text" name="patient-email" id="" value="{{{$pending->getpatient_email()}}}">
         </div>
 
         <div class="input-div">
-            <label for="appointment-date">Ημ/νία &amp; Ώρα Ραντεβού</label>
+            <label for="appointment-date">{{{t('Appointment date & time')}}}</label>
             <input type="text" name="appointment-date" id="consultation-date" value="{{$pending->getappointment_datetime() | date('Y-m-d H:i')}}" required>
         </div>
 
         <div class="input-div">
-            <label for="appointment-location">Τοποθεσία</label>
+            <label for="appointment-location">{{{t('Location')}}}</label>
             <select name="appointment-location" id="">
-                <option value="">-- Επιλογή τοποθεσίας --</option>
+                <option value="">{{{t('-- Select a location --')}}}</option>
                 {% foreach($locations as $loc): %}
                 <option value="{{{$loc}}}" {{($loc == $pending->getlocation())?'selected':''}}>{{{$loc}}}</option>
                 {% endforeach %}
@@ -49,9 +49,9 @@
         </div>
 
         <div class="input-div">
-            <label for="appointment-user">Ιατρός</label>
+            <label for="appointment-user">{{{t('Doctor')}}}</label>
             <select name="appointment-user" id="" required>
-                <option value="">-- Επιλογή ιατρού --</option>
+                <option value="">{{{t('-- Select a doctor --')}}}</option>
                 {% foreach($doctors as $doctor): %}
                 <option value="{{{$doctor['id']}}}" {{($doctor['id'] == $pending->getassigned_user_id())?'selected':''}}>{{{$doctor['name']}}}</option>
                 {% endforeach %}
@@ -59,12 +59,12 @@
         </div>
 
         <div class="input-div input-notes">
-            <label for="appointment-notes">Σημειώσεις</label>
+            <label for="appointment-notes">{{{t('Notes')}}}</label>
             <textarea name="appointment-notes" id="" rows="4">{{{$pending->getnotes()}}}</textarea>
         </div>
 
         <div class="buttons">
-            <input type="submit" name="submit" value="Αποθήκευση">
+            <input type="submit" name="submit" value="{{{t('Save')}}}">
         </div>
     </form>
 </div>

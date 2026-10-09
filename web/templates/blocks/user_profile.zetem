@@ -5,20 +5,20 @@
     <div class="user-profile-header">
         <i class="bx bx-user-circle"></i>
         <div>
-            <h2>Ο Λογαριασμός μου</h2>
-            <p class="user-id">Όνομα χρήστη: <strong>{{{$user->getuname()}}}</strong></p>
+            <h2>{{{t('My account')}}}</h2>
+            <p class="user-id">{{{t('Account username')}}}: <strong>{{{$user->getuname()}}}</strong></p>
         </div>
     </div>
 
     <div class="fields location-field">
-        <label for="location-selector">Τοποθεσία</label>
+        <label for="location-selector">{{{t('Location')}}}</label>
         <div>
             <select name="location" id="location-selector" data-ajax-callback="{{rel_url('/updatelocation')}}">
                 {% foreach($location_places as $loc): %}
                 <option value="{{$loc}}" {{ ($loc == $location)?"selected":""}}>{{$loc}}</option>
                 {% endforeach %}
             </select>
-            <span class="field-hint">Αποθηκεύεται αυτόματα μόλις αλλάξει η επιλογή.</span>
+            <span class="field-hint">{{{t('Saved automatically as soon as the choice changes.')}}}</span>
         </div>
     </div>
 
@@ -26,31 +26,31 @@
         {{ csrf_field() }}
         <input type="hidden" name="action" value="update_account">
         <div class="fields checkbox-field">
-            <label for="useractive">Ενεργός λογαριασμός</label>
+            <label for="useractive">{{{t('Active account')}}}</label>
             <input type="checkbox" name="useractive" id="useractive" {{ ($user->getactive()==1)?"checked":"" }} disabled>
         </div>
         <div class="fields checkbox-field">
-            <label for="userexpired">Ληγμένος λογαριασμός</label>
+            <label for="userexpired">{{{t('Expired account')}}}</label>
             <input type="checkbox" name="userexpired" id="userexpired" {{ ($user->getexpired()==1)?"checked":"" }} disabled>
         </div>
         <div class="fields">
-            <label for="user_name">Όνομα</label>
+            <label for="user_name">{{{t('Name')}}}</label>
             <input type="text" name="user_name" id="user_name" value="{{$user->getname()}}" required>
         </div>
         <div class="fields">
-            <label for="user_email">Email</label>
+            <label for="user_email">{{{t('Email')}}}</label>
             <input type="email" name="user_email" id="user_email" value="{{{$user->getemail()}}}" required>
         </div>
         <div class="fields">
-            <label for="new_password">Νέος Κωδικός</label>
-            <input type="password" name="new_password" id="new_password" autocomplete="new-password" placeholder="Αφήστε κενό για να παραμείνει ο τρέχων κωδικός">
+            <label for="new_password">{{{t('New password')}}}</label>
+            <input type="password" name="new_password" id="new_password" autocomplete="new-password" placeholder="{{{t('Leave blank to keep the current password')}}}">
         </div>
         <div class="fields">
-            <label for="confirm_password">Επιβεβαίωση Κωδικού</label>
-            <input type="password" name="confirm_password" id="confirm_password" autocomplete="new-password" placeholder="Επανάληψη νέου κωδικού">
+            <label for="confirm_password">{{{t('Confirm password')}}}</label>
+            <input type="password" name="confirm_password" id="confirm_password" autocomplete="new-password" placeholder="{{{t('Repeat the new password')}}}">
         </div>
         <div class="buttons">
-            <button type="submit" name="submit">Αποθήκευση</button>
+            <button type="submit" name="submit">{{{t('Save')}}}</button>
         </div>
     </form>
 
@@ -58,56 +58,53 @@
     <form action="#" method="post">
         {{ csrf_field() }}
         <div class="totp">
-        <h2>TOTP security</h2>
+        <h2>{{{t('TOTP security')}}}</h2>
         {% if(!$totp_activated): %}
-            <p>Timed OTP password is a feature that enhances the security of
-                the application, by requesting a time-dependent key each time the user requests
-                sensitive data.
+            <p>{{{t('Timed OTP password is a feature that enhances the security of the application, by requesting a time-dependent key each time the user requests sensitive data.')}}}
             </p>
             <p>
-                The user must install Google Authenticator on a mobile device and activate TOTP from the button below.
+                {{{t('The user must install Google Authenticator on a mobile device and activate TOTP from the button below.')}}}
             </p>
         {% else: %}
-            <p>Timed OTP is activated. Use the show QR code buton to display the QR code
-                or the deactivate button to disable TOTP security.
+            <p>{{{t('Timed OTP is activated. Use the Show QR code button to display the QR code or the Deactivate button to disable TOTP security.')}}}
             </p>
-            <p>If TOTP is disabled, all security features will be disabled, but not lost.</p>
+            <p>{{{t('If TOTP is disabled, all security features will be disabled, but not lost.')}}}</p>
         {% endif %}
 
         <div class="actions">
-            <button type="submit" {{ ($totp_activated)?"disabled":"" }} onclick="totp_action('activate')">Activate TOTP</button>
-            <button type="submit" {{ (!$totp_activated)?"disabled":"" }} onclick="totp_action('deactivate')">Deactivate TOTP</button>
+            <button type="submit" {{ ($totp_activated)?"disabled":"" }} onclick="totp_action('activate')">{{{t('Activate TOTP')}}}</button>
+            <button type="submit" {{ (!$totp_activated)?"disabled":"" }} onclick="totp_action('deactivate')">{{{t('Deactivate TOTP')}}}</button>
             <button type="button" {{ (!$totp_activated)?"disabled":"" }} onclick="totp_action('show_qrcode_modal')" class="showqr" >
-                Show QR code
+                {{{t('Show QR code')}}}
                 <!-- <img id="qrimg" class="qrimg" src="" alt="TOTP QR Code"> -->
             </button>
         </div>
 
         <div id="modal-qr" class="modal-qr">
             <div class="modal-qr-inner">
-                <p>Please scan the QR code with Google Authenticator</p>
-                <img id="qrimg" src="" alt="QR Code">
-                <button type="button" onclick="totp_action('close_qrcode_modal')">Close</button>
+                <p>{{{t('Please scan the QR code with Google Authenticator')}}}</p>
+                <img id="qrimg" src="" alt="{{{t('QR code')}}}">
+                <button type="button" onclick="totp_action('close_qrcode_modal')">{{{t('Close')}}}</button>
             </div>
         </div>
     </form>
     {% endif %}
 
     <div class="user-devices">
-        <h2>Οι Συσκευές μου</h2>
-        <p>Συσκευές στις οποίες έχετε ζητήσει να σας θυμάται η εφαρμογή.</p>
+        <h2>{{{t('My devices')}}}</h2>
+        <p>{{{t('Devices on which you asked the application to remember you.')}}}</p>
 
         {% if(count($devices) == 0): %}
-            <p>Δεν υπάρχουν απομνημονευμένες συσκευές.</p>
+            <p>{{{t('There are no remembered devices.')}}}</p>
         {% else: %}
         <table>
             <thead>
             <tr>
-                <th>Συσκευή / Browser</th>
-                <th>Πρώτη Καταχώρηση</th>
-                <th>Τελευταία Χρήση</th>
-                <th>Λήξη</th>
-                <th>Ενέργειες</th>
+                <th>{{{t('Device / Browser')}}}</th>
+                <th>{{{t('First registered')}}}</th>
+                <th>{{{t('Last used')}}}</th>
+                <th>{{{t('Expires')}}}</th>
+                <th>{{{t('Actions')}}}</th>
             </tr>
             </thead>
             <tbody>
@@ -116,18 +113,18 @@
                 <td>
                     {{{substr($device->getuseragent(), 0, 60)}}}
                     {% if($device->getselector() == $current_selector): %}
-                        <span class="badge">Αυτή η συσκευή</span>
+                        <span class="badge">{{{t('This device')}}}</span>
                     {% endif %}
                 </td>
                 <td>{{{$device->getcdate()}}}</td>
-                <td>{{{$device->getlast_used_at() ? $device->getlast_used_at() : 'Ποτέ'}}}</td>
+                <td>{{{$device->getlast_used_at() ? $device->getlast_used_at() : t('Never')}}}</td>
                 <td>{{{$device->getexpiry()}}}</td>
                 <td>
                     <form action="{{rel_url('/profile')}}" method="post">
                         {{ csrf_field() }}
                         <input type="hidden" name="action" value="revoke_device">
                         <input type="hidden" name="token_id" value="{{(int)$device->getid()}}">
-                        <button type="submit">Ανάκληση</button>
+                        <button type="submit">{{{t('Revoke')}}}</button>
                     </form>
                 </td>
             </tr>

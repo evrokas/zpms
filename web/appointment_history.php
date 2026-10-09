@@ -26,9 +26,9 @@ const ZPMS_APPOINTMENT_HISTORY_SESSION_MINUTES = 5;
 // in one place.
 function zpms_appointment_history_field_labels(): array {
     return [
-        'appointment-date' => 'Ημ/νία & Ώρα',
-        'appointment-place' => 'Περιοχή',
-        'appointment-notes' => 'Σημειώσεις',
+        'appointment-date' => t('Date & time'),
+        'appointment-place' => t('Area'),
+        'appointment-notes' => t('Notes'),
     ];
 }
 
@@ -115,7 +115,8 @@ function zpms_patient_appointment_history_for_display(array $appointmentIds): ar
         $end = $row['last_change_at'];
 
         $out[] = [
-            'appointment_label' => (($row['appointment_type'] === 'operation') ? 'Χειρουργείο ' : 'Ραντεβού ') . formatDate($row['appointment_date']),
+            'appointment_label' => (($row['appointment_type'] === 'operation') ? t('Operation') : t('Appointment')) . ' ' . formatDate($row['appointment_date']),
+            'is_operation' => ($row['appointment_type'] === 'operation'),
             'user' => $row['cuser'],
             'started_at' => formatDateTime($start),
             'ended_at' => formatDateTime($end),

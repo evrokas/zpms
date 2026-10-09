@@ -89,6 +89,11 @@ class TestHttpClient {
         $headerSize = $info['header_size'];
         $headers = substr($raw, 0, $headerSize);
         $body = substr($raw, $headerSize);
+        // The page shell appends ?<unix time> to every stylesheet/script URL
+        // (cache busting). Ten digits can contain "401" -- which the auth tests
+        // use as the sign of the 401 page -- so a test failed now and then for
+        // no reason. Nothing under test cares about that suffix.
+        $body = preg_replace('/\?\d{10}(?=["\'&])/', '', $body);
 
         $location = null;
         if (preg_match('/^location:\s*(.+?)\r?$/mi', $headers, $m)) {

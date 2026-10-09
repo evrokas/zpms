@@ -94,7 +94,7 @@ function initAppointmentFileSection(section) {
     if (pasteBtn) {
         if (!navigator.clipboard || !navigator.clipboard.read) {
             pasteBtn.disabled = true;
-            pasteBtn.title = 'Δεν υποστηρίζεται από αυτόν τον browser';
+            pasteBtn.title = zpmsText.pasteUnsupported;
         } else {
             pasteBtn.addEventListener('click', function() {
                 pasteImageFromClipboard(pasteBtn, pasteStatus, pasteDescription, uploadUrl, previews, existingFiles);
@@ -129,9 +129,9 @@ function pasteImageFromClipboard(button, statusEl, descriptionInput, uploadUrl, 
                 return;
             }
         }
-        if (statusEl) statusEl.textContent = 'Δεν βρέθηκε εικόνα στο πρόχειρο';
+        if (statusEl) statusEl.textContent = zpmsText.pasteNoImage;
     }).catch(function() {
-        if (statusEl) statusEl.textContent = 'Δεν ήταν δυνατή η πρόσβαση στο πρόχειρο -- ελέγξτε τα δικαιώματα του browser';
+        if (statusEl) statusEl.textContent = zpmsText.pasteDenied;
     }).finally(function() {
         button.disabled = false;
     });
@@ -182,7 +182,7 @@ function uploadOneFile(file, uploadUrl, previewsContainer, existingFilesContaine
         if (!e.lengthComputable) return;
         const pct = Math.round((e.loaded / e.total) * 100);
         if (progressFill) progressFill.style.width = pct + '%';
-        if (statusEl) statusEl.textContent = 'Μεταφόρτωση... ' + pct + '%';
+        if (statusEl) statusEl.textContent = zpmsText.uploading + ' ' + pct + '%';
     });
 
     xhr.addEventListener('load', function() {
@@ -194,16 +194,16 @@ function uploadOneFile(file, uploadUrl, previewsContainer, existingFilesContaine
             appendExistingFileRow(existingFilesContainer, data.file);
             updateFileCountBadge(existingFilesContainer.closest('.file-upload-section'));
         } else {
-            showPreviewError(previewItem, (data && data.error) || 'Η μεταφόρτωση απέτυχε');
+            showPreviewError(previewItem, (data && data.error) || zpmsText.uploadFailed);
         }
     });
 
     xhr.addEventListener('error', function() {
-        showPreviewError(previewItem, 'Σφάλμα δικτύου κατά τη μεταφόρτωση');
+        showPreviewError(previewItem, zpmsText.uploadNetworkError);
     });
 
     xhr.addEventListener('timeout', function() {
-        showPreviewError(previewItem, 'Η μεταφόρτωση καθυστέρησε πολύ -- ελέγξτε τη σύνδεσή σας και δοκιμάστε ξανά');
+        showPreviewError(previewItem, zpmsText.uploadTimeout);
     });
 
     xhr.send(formData);
@@ -217,7 +217,7 @@ function createLocalPreview(file, container, description) {
     removeBtn.type = 'button';
     removeBtn.className = 'preview-remove';
     removeBtn.innerHTML = '&times;';
-    removeBtn.title = 'Ακύρωση';
+    removeBtn.title = zpmsText.cancel;
     previewItem.appendChild(removeBtn);
 
     if (file.type.startsWith('image/')) {
@@ -282,7 +282,7 @@ function createLocalPreview(file, container, description) {
 
     const status = document.createElement('div');
     status.className = 'preview-status';
-    status.textContent = 'Μεταφόρτωση...';
+    status.textContent = zpmsText.uploading;
     previewItem.appendChild(status);
 
     if (container) container.appendChild(previewItem);
@@ -367,14 +367,14 @@ function appendExistingFileRow(existingFilesContainer, file) {
     viewBtn.type = 'button';
     viewBtn.className = 'view-btn';
     viewBtn.setAttribute('data-file', file.download_url);
-    viewBtn.textContent = 'Προβολή';
+    viewBtn.textContent = zpmsText.view;
     actions.appendChild(viewBtn);
 
     const deleteBtn = document.createElement('button');
     deleteBtn.type = 'button';
     deleteBtn.className = 'delete-btn';
     deleteBtn.setAttribute('data-delete-url', file.delete_url);
-    deleteBtn.textContent = 'Διαγραφή';
+    deleteBtn.textContent = zpmsText.delete;
     actions.appendChild(deleteBtn);
 
     item.appendChild(actions);
@@ -398,7 +398,7 @@ function handleDelegatedClick(e) {
 
     const deleteBtn = e.target.closest('.delete-btn');
     if (deleteBtn) {
-        if (!window.confirm('Η διαγραφή του αρχείου είναι οριστική. Θέλετε σίγουρα να συνεχίσετε;')) return;
+        if (!window.confirm(zpmsText.confirmDeleteFile)) return;
 
         const url = deleteBtn.getAttribute('data-delete-url');
         const fileItem = deleteBtn.closest('.file-item');
@@ -416,18 +416,18 @@ function handleDelegatedClick(e) {
                         if (existingFiles && !existingFiles.querySelector('.file-item') && !existingFiles.querySelector('.no-files')) {
                             const noFiles = document.createElement('p');
                             noFiles.className = 'no-files';
-                            noFiles.textContent = 'Δεν υπάρχουν συνημμένα αρχεία';
+                            noFiles.textContent = zpmsText.noFiles;
                             existingFiles.appendChild(noFiles);
                         }
                     }
                 } else {
                     deleteBtn.disabled = false;
-                    window.alert('Η διαγραφή απέτυχε');
+                    window.alert(zpmsText.deleteFailed);
                 }
             })
             .catch(function() {
                 deleteBtn.disabled = false;
-                window.alert('Σφάλμα δικτύου κατά τη διαγραφή');
+                window.alert(zpmsText.deleteNetworkError);
             });
         return;
     }

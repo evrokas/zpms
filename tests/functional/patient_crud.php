@@ -265,10 +265,10 @@ function zpms_functional_patient_crud(TestRunner $runner, TestHttpClient $http):
 
         $p1 = $http->get('/patients?q=' . rawurlencode('Λιστάκης') . '&per_page=10');
         assert_equal(10, $rows($p1['body']), 'per_page=10 page 1 should have 10 rows');
-        assert_contains('Εμφάνιση 1&ndash;10 από 12 ασθενείς', $p1['body'], 'wrong count line on page 1');
+        assert_contains('Εμφάνιση 1–10 από 12 ασθενείς', $p1['body'], 'wrong count line on page 1');
         $p2 = $http->get('/patients?q=' . rawurlencode('Λιστάκης') . '&per_page=10&page=2');
         assert_equal(2, $rows($p2['body']), 'page 2 of 12 at 10 per page should have 2 rows');
-        assert_contains('Εμφάνιση 11&ndash;12 από 12 ασθενείς', $p2['body'], 'wrong count line on page 2');
+        assert_contains('Εμφάνιση 11–12 από 12 ασθενείς', $p2['body'], 'wrong count line on page 2');
 
         // Sorting by name, both ways, and the default (latest appointment, newest first).
         $asc = $http->get('/patients?q=' . rawurlencode('Λιστάκης') . '&sort=name&dir=asc&per_page=all');
@@ -296,7 +296,7 @@ function zpms_functional_patient_crud(TestRunner $runner, TestHttpClient $http):
         // Values outside the allowed lists fall back instead of erroring.
         $bad = $http->get('/patients?q=' . rawurlencode('Λιστάκης') . '&per_page=7&page=999&dir=zzz&sort=pamka');
         assert_equal(200, $bad['status'], 'bad parameters should not error');
-        assert_contains('Εμφάνιση 1&ndash;12 από 12 ασθενείς', $bad['body'], 'bad per_page should fall back to 25 and page to the last');
+        assert_contains('Εμφάνιση 1–12 από 12 ασθενείς', $bad['body'], 'bad per_page should fall back to 25 and page to the last');
         $sql = $http->get("/patients?q=" . rawurlencode("x' OR 1=1 --") . '&per_page=all');
         assert_equal(200, $sql['status'], 'a quote in the search term broke the page');
         assert_contains('Κανένας ασθενής δεν ταιριάζει', $sql['body'], 'a quote in the search term matched something');

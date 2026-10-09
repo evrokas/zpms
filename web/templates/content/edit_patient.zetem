@@ -14,7 +14,7 @@
     {% else: %}
     {# No visible title: the breadcrumb above already reads "Νέος ασθενής".
        Kept for screen readers so the page still has a heading. #}
-    <h2 class="sr-only">Νέος Ασθενής</h2>
+    <h2 class="sr-only">{{{t('New patient')}}}</h2>
     {% endif %}
 
     {% if($action != 'new'): %}
@@ -24,18 +24,18 @@
          read-only text rendered from the same patient row as the form;
          the small script at the bottom of this template keeps the text in
          step with the form while it is open (fields autosave). -->
-    <section class="patient-identity" aria-label="Στοιχεία ασθενή">
+    <section class="patient-identity" aria-label="{{{t('Patient details')}}}">
         <div class="pi-main">
             <div class="pi-id">
                 <div class="pi-avatar" aria-hidden="true">{{{$identity['initials']}}}</div>
                 <div class="pi-who">
                     <h2 class="pi-name" id="pi-name">{{{$patient->getpname()}}}</h2>
                     <div class="pi-sub">
-                        <span id="pi-gender" {% if($identity['gender'] === null): %}hidden{% endif %}>{{($identity['gender'] === 'F') ? 'Γυναίκα' : 'Άνδρας'}}</span>
+                        <span id="pi-gender" {% if($identity['gender'] === null): %}hidden{% endif %}>{{($identity['gender'] === 'F') ? t('Female') : t('Male')}}</span>
                         <span id="pi-age" {% if($identity['age'] == ''): %}hidden{% endif %}>{{{$identity['age']}}}</span>
                         <span id="pi-dob" {% if(!$patient->getpdob()): %}hidden{% endif %}>{% if($patient->getpdob()): %}{{$patient->getpdob() | date('d-m-Y')}}{% endif %}</span>
-                        <span class="pi-amka" id="pi-amka-wrap" {% if(!$patient->getpamka()): %}hidden{% endif %}>ΑΜΚΑ <span id="pi-amka">{{{$patient->getpamka()}}}</span>
-                            <i class="bx bx-copy" id="pi-amka-copy" title="Αντιγραφή ΑΜΚΑ" data-copy-text="{{{$patient->getpamka()}}}"></i></span>
+                        <span class="pi-amka" id="pi-amka-wrap" {% if(!$patient->getpamka()): %}hidden{% endif %}>{{{t('AMKA')}}} <span id="pi-amka">{{{$patient->getpamka()}}}</span>
+                            <i class="bx bx-copy" id="pi-amka-copy" title="{{{t('Copy AMKA')}}}" data-copy-text="{{{$patient->getpamka()}}}"></i></span>
                     </div>
                 </div>
             </div>
@@ -47,17 +47,17 @@
             </ul>
 
             <dl class="pi-stats">
-                <div><dt>Ραντεβού</dt><dd>{{$identity['visits']}}</dd></div>
-                <div><dt>Χειρουργεία</dt><dd>{{$identity['operations']}}</dd></div>
-                {% if($identity['last']): %}<div><dt>Τελευταίο</dt><dd>{{$identity['last'] | date('d-m-Y')}}</dd></div>{% endif %}
-                {% if($identity['next']): %}<div><dt>Επόμενο</dt><dd>{{$identity['next'] | date('d-m-Y')}}</dd></div>{% endif %}
+                <div><dt>{{{t('Appointments')}}}</dt><dd>{{$identity['visits']}}</dd></div>
+                <div><dt>{{{t('Operations')}}}</dt><dd>{{$identity['operations']}}</dd></div>
+                {% if($identity['last']): %}<div><dt>{{{t('Last')}}}</dt><dd>{{$identity['last'] | date('d-m-Y')}}</dd></div>{% endif %}
+                {% if($identity['next']): %}<div><dt>{{{t('Next')}}}</dt><dd>{{$identity['next'] | date('d-m-Y')}}</dd></div>{% endif %}
             </dl>
 
             <button type="button" class="pi-toggle" id="patient-details-toggle" aria-expanded="false" aria-controls="patient-details"
-                data-label-closed="{{($can_edit_patient) ? 'Επεξεργασία στοιχείων' : 'Στοιχεία ασθενή'}}"
-                data-label-open="Κλείσιμο στοιχείων">
+                data-label-closed="{{{($can_edit_patient) ? t('Edit details') : t('Patient details')}}}"
+                data-label-open="{{{t('Close details')}}}">
                 <i class="bx bx-pencil"></i>
-                <span>{{($can_edit_patient) ? 'Επεξεργασία στοιχείων' : 'Στοιχεία ασθενή'}}</span>
+                <span>{{($can_edit_patient) ? t('Edit details') : t('Patient details')}}</span>
                 <i class="bx bx-chevron-down pi-chevron"></i>
             </button>
         </div>
@@ -92,11 +92,11 @@
         #}
 
         <div class="pd-section pd-basic">
-        <div class="pd-section-title"><i class="bx bx-user"></i> Βασικά Στοιχεία</div>
+        <div class="pd-section-title"><i class="bx bx-user"></i> {{{t('Basic details')}}}</div>
 
         <div class="input-div">
-            <label for="patient-name">Όνομα ασθενή</label>
-            <input type="text" name="patient-name" loader="info-loader" id="" value="{{{$patient->getpname()}}}" placeholder="όνομα ασθενούς"
+            <label for="patient-name">{{{t('Patient name')}}}</label>
+            <input type="text" name="patient-name" loader="info-loader" id="" value="{{{$patient->getpname()}}}" placeholder="{{{t('Enter the patient name')}}}"
                 {% if($action == 'new'): %}data-check-duplicate="1" autocomplete="off"{% endif %}>
 
             <div class="inline-icons">
@@ -118,14 +118,14 @@
         <!-- <div class="dob-field"> -->
 
             <div class="input-div">
-                <label for="patient-dob">Ημ/νια Γεννήσεως</label>
+                <label for="patient-dob">{{{t('Date of birth')}}}</label>
                 <!-- <input type="date" name="patient-dob" id="" value="{{formatDate($patient->getpdob())}}"> -->
                 <input type="text" name="patient-dob" id="datepicker" loader="info-loader" value="{{$patient->getpdob()| date('Y-m-d')}}" agefield="age_field">
                 
                 <div class="inline-icons">
                     <!-- <i class='valid bx bx-check' style='color:#00ff00'  ></i> -->
                     <i class='not-valid bx bx-error' style='color:#ff0000'  ></i>
-                    <span id="age_field" class="age-badge">Ηλικία</span>
+                    <span id="age_field" class="age-badge">{{{t('Age')}}}</span>
                 </div>
 
                 <!-- <input type="text" style="width: 1rem" disabled name="dob-age" id="age_field" value=""> -->
@@ -178,20 +178,20 @@
            Saved like every other field (autosave posts the whole form). #}
         {% $__g = $patient->getpgender(); %}
         <div class="input-div gender-field">
-            <label id="patient-gender-label">Φύλο</label>
+            <label id="patient-gender-label">{{{t('Gender')}}}</label>
             <div class="gender-radios" role="radiogroup" aria-labelledby="patient-gender-label">
-                <label class="gender-opt"><input type="radio" name="patient-gender" value="M" loader="info-loader" {{($__g === 'M') ? 'checked' : ''}}><span>Άνδρας</span></label>
-                <label class="gender-opt"><input type="radio" name="patient-gender" value="F" loader="info-loader" {{($__g === 'F') ? 'checked' : ''}}><span>Γυναίκα</span></label>
-                <label class="gender-opt gender-none"><input type="radio" name="patient-gender" value="" loader="info-loader" {{($__g !== 'M' && $__g !== 'F') ? 'checked' : ''}}><span title="Μη ορισμένο" aria-label="Μη ορισμένο">&mdash;</span></label>
+                <label class="gender-opt"><input type="radio" name="patient-gender" value="M" loader="info-loader" {{($__g === 'M') ? 'checked' : ''}}><span>{{{t('Male')}}}</span></label>
+                <label class="gender-opt"><input type="radio" name="patient-gender" value="F" loader="info-loader" {{($__g === 'F') ? 'checked' : ''}}><span>{{{t('Female')}}}</span></label>
+                <label class="gender-opt gender-none"><input type="radio" name="patient-gender" value="" loader="info-loader" {{($__g !== 'M' && $__g !== 'F') ? 'checked' : ''}}><span title="{{{t('Not set')}}}" aria-label="{{{t('Not set')}}}">&mdash;</span></label>
             </div>
         </div>
 
         <div class="input-div">
-            <label for="patient-amka">ΑΜΚΑ</label>
+            <label for="patient-amka">{{{t('AMKA')}}}</label>
             {# 
                 <input type="text" name="patient-amka" loader="info-loader" validator="amka" value="{{$patient->getpamka()}}" placeholder="ΑΜΚΑ ασθενούς">
             #}
-            <input type="text" name="patient-amka" loader="info-loader" validator="amka" value="{{{$patient->getpamka()}}}" placeholder="ΑΜΚΑ ασθενούς">
+            <input type="text" name="patient-amka" loader="info-loader" validator="amka" value="{{{$patient->getpamka()}}}" placeholder="{{{t('Enter the patient AMKA')}}}">
 
             <div class="inline-icons">
                 <i class='valid bx bx-check' style='color:#00ff00'  ></i>
@@ -207,11 +207,11 @@
         </div>
 
         <div class="pd-section pd-contact">
-        <div class="pd-section-title"><i class="bx bx-phone"></i> Επικοινωνία</div>
+        <div class="pd-section-title"><i class="bx bx-phone"></i> {{{t('Contact')}}}</div>
 
         <div class="input-div">
-            <label for="patient-telephone">Τηλέφωνο</label>
-            <input type="text" name="patient-telephone" loader="info-loader" validator="telephone" value="{{{$patient->getptel()}}}" placeholder="τηλέφωνο ασθενούς">
+            <label for="patient-telephone">{{{t('Telephone')}}}</label>
+            <input type="text" name="patient-telephone" loader="info-loader" validator="telephone" value="{{{$patient->getptel()}}}" placeholder="{{{t('Enter the patient telephone')}}}">
 
             <div class="inline-icons">
                 <i class='valid bx bx-check' style='color:#00ff00'  ></i>
@@ -223,8 +223,8 @@
         </div>
 
         <div class="input-div">
-            <label for="patient-email">Email</label>
-            <input type="text" name="patient-email" loader="info-loader" validator="email" value="{{{$patient->getpemail()}}}" placeholder="email ασθενούς">
+            <label for="patient-email">{{{t('Email')}}}</label>
+            <input type="text" name="patient-email" loader="info-loader" validator="email" value="{{{$patient->getpemail()}}}" placeholder="{{{t('Enter the patient email')}}}">
 
                 <div class="inline-icons">
                     <i class='valid bx bx-check' style='color:#00ff00'  ></i>
@@ -235,38 +235,38 @@
         </div>
 
         <div class="input-div">
-            <label for="patient-address">Διεύθυνση</label>
-            <input type="text" name="patient-address" loader="info-loader" id=""  value="{{{$patient->getpaddr()}}}" placeholder="διεύθυνση ασθενούς">
+            <label for="patient-address">{{{t('Address')}}}</label>
+            <input type="text" name="patient-address" loader="info-loader" id=""  value="{{{$patient->getpaddr()}}}" placeholder="{{{t('Enter the patient address')}}}">
         </div>
 
         </div>
 
         <div class="pd-section pd-notes">
-        <div class="pd-section-title"><i class="bx bx-note"></i> Σημειώσεις</div>
+        <div class="pd-section-title"><i class="bx bx-note"></i> {{{t('Notes')}}}</div>
 
         <div class="input-div">
-            <label for="patient-note">Σημειώσεις</label>
-            <textarea name="patient-note" loader="info-loader" id="" rows="5" placeholder="σημειώσεις">{{{$patient->getpnote()}}}</textarea>
+            <label for="patient-note">{{{t('Notes')}}}</label>
+            <textarea name="patient-note" loader="info-loader" id="" rows="5" placeholder="{{{t('Enter notes')}}}">{{{$patient->getpnote()}}}</textarea>
         </div>
         </div>
         </fieldset>
 
         <div class="buttons">
             {% if($can_edit_patient): %}
-                <input type="submit" name="submit" value="Αποθήκευση">
+                <input type="submit" name="submit" value="{{{t('Save')}}}">
 
                 {% if($action == 'new'): %}
-                    <input type="submit" name="submitedit" value="Αποθήκευση & Επεξεργασία">
+                    <input type="submit" name="submitedit" value="{{{t('Save & edit')}}}">
                 {% else: %}
                     <!-- Fields autosave as you type (loader.js), so this was
                          never a real "undo" -- it now just closes the panel. -->
-                    <button type="button" class="btn-secondary" data-close-details>Κλείσιμο</button>
+                    <button type="button" class="btn-secondary" data-close-details>{{{t('Close')}}}</button>
                 {% endif %}
             {% else: %}
-                <a href="{{rel_url('/patients')}}" class="btn-secondary">&larr; Πίσω στη λίστα</a>
+                <a href="{{rel_url('/patients')}}" class="btn-secondary">&larr; {{{t('Back to list')}}}</a>
             {% endif %}
 
-            <button hidden type="button" loader="info-loader" onclick="field_update(this)">Update</button>
+            <button hidden type="button" loader="info-loader" onclick="field_update(this)">{{{t('Update')}}}</button>
             <div id="info-loader" class="loader0"></div>
         </div>
     </form>
@@ -277,16 +277,16 @@
         <div class="patient-main">
 
             {% if($can_edit_appointment || (isset($appointments) && count($appointments) > 0)): %}
-            <section class="patient-appts" aria-label="Ραντεβού και χειρουργεία">
+            <section class="patient-appts" aria-label="{{{t('Appointments and operations')}}}">
                 <div class="patient-appts-head">
-                    <h4>Ραντεβού &amp; Χειρουργεία</h4>
+                    <h4>{{{t('Appointments & operations')}}}</h4>
                     {% if(isset($appointments) && count($appointments) > 0): %}<span class="file-count-badge">{{count($appointments)}}</span>{% endif %}
 
                     {% if($can_edit_appointment): %}
                     <div class="patient-appointments">
                         <a href="{{rel_url('/appointment/'.$id.'/newappointment')}}">
                             <div class="new-appointment">
-                                Νέο Ραντεβού
+                                {{{t('New appointment')}}}
                             </div>
                         </a>
                         <!-- Type is decided entirely by which of these two links was
@@ -300,7 +300,7 @@
                              type is permanent. -->
                         <a href="{{rel_url('/appointment/'.$id.'/newoperation')}}">
                             <div class="new-appointment new-operation">
-                                Νέο Χειρουργείο
+                                {{{t('New operation')}}}
                             </div>
                         </a>
                     </div>
@@ -319,10 +319,10 @@
                     <li class="appt-row {{($ap['row']['is_operation']) ? 'is-operation' : 'is-visit'}}{{($ap['index'] == 0) ? ' is-open' : ''}}" data-index="{{$ap['index']}}">
                         <button type="button" class="appt-row-head" aria-expanded="{{($ap['index'] == 0) ? 'true' : 'false'}}" aria-controls="appt-panel-{{$ap['index']}}">
                             <span class="ar-date">{{$ap['row']['date'] | date('d-m-Y')}}</span>
-                            <span class="ar-type"><i class="bx {{($ap['row']['is_operation']) ? 'bx-plus-medical' : 'bx-calendar-check'}}"></i> {{($ap['row']['is_operation']) ? 'Χειρουργείο' : 'Ραντεβού'}}</span>
+                            <span class="ar-type"><i class="bx {{($ap['row']['is_operation']) ? 'bx-plus-medical' : 'bx-calendar-check'}}"></i> {{($ap['row']['is_operation']) ? t('Operation') : t('Appointment')}}</span>
                             <span class="ar-place">{% if($ap['row']['place']): %}<i class="bx bx-map-pin"></i> {{{$ap['row']['place']}}}{% endif %}</span>
                             <span class="ar-note">{{{$ap['row']['note']}}}</span>
-                            <span class="ar-meta">{% if($ap['row']['file_count'] > 0): %}<span title="Συνημμένα αρχεία"><i class="bx bx-paperclip"></i> {{$ap['row']['file_count']}}</span>{% endif %}</span>
+                            <span class="ar-meta">{% if($ap['row']['file_count'] > 0): %}<span title="{{{t('Attached files')}}}"><i class="bx bx-paperclip"></i> {{$ap['row']['file_count']}}</span>{% endif %}</span>
                             <i class="bx bx-chevron-right ar-chev"></i>
                         </button>
                         <div class="appt-row-panel" id="appt-panel-{{$ap['index']}}" {% if($ap['index'] != 0): %}hidden{% endif %}>{{$ap['markup']}}</div>
@@ -351,7 +351,7 @@
         <div class="appointment-history-section" id="patient-history">
             <h5 class="appointment-history-heading" id="patient-history-heading">
                 <i class='bx bx-chevron-right toggle-icon'></i>
-                <span>Ιστορικό Αλλαγών</span>
+                <span>{{{t('Change history')}}}</span>
                 {% if(isset($patient_history) && count($patient_history) > 0): %}
                 <span class="file-count-badge">{{count($patient_history)}}</span>
                 {% endif %}
@@ -359,16 +359,16 @@
 
             <div class="appointment-history-body">
                 {% if(!isset($patient_history) || count($patient_history) == 0): %}
-                <p class="no-files">Δεν υπάρχουν καταγεγραμμένες αλλαγές</p>
+                <p class="no-files">{{{t('No recorded changes')}}}</p>
                 {% else: %}
                 <ul class="appointment-history-list history-timeline">
                     {% foreach($patient_history as $h): %}
-                    <li class="appointment-history-item{{(strpos($h['appointment_label'], 'Χειρουργείο') === 0) ? ' is-operation' : ''}}">
+                    <li class="appointment-history-item{{$h['is_operation'] ? ' is-operation' : ''}}">
                         <span class="history-title"><span class="history-fields">{{implode(', ', $h['fields'])}}</span> &middot; <span class="history-appointment">{{{$h['appointment_label']}}}</span></span>
                         <span class="history-meta">
                             <span class="history-user">{{{$h['user']}}}</span> &middot;
                             <span class="history-time">{% if($h['single_moment']): %}{{$h['started_at']}}{% else: %}{{$h['started_at']}} &ndash; {{$h['ended_at']}}{% endif %}</span> &middot;
-                            <span class="history-count">({{$h['change_count']}} {{($h['change_count'] == 1) ? 'αλλαγή' : 'αλλαγές'}})</span>
+                            <span class="history-count">({{$h['change_count']}} {{($h['change_count'] == 1) ? t('change') : t('changes')}})</span>
                         </span>
                     </li>
                     {% endforeach %}
@@ -386,13 +386,13 @@
              this instead of the full editable cards above whenever
              $canEditAppointment is false). -->
         <div class="appointment-summary-readonly">
-            <h4>Ραντεβού</h4>
+            <h4>{{{t('Appointments')}}}</h4>
             <div class="settings-table-scroll">
                 <table>
                     <thead>
                         <tr>
-                            <th>Ημερομηνία</th>
-                            <th>Τοποθεσία</th>
+                            <th>{{{t('Date')}}}</th>
+                            <th>{{{t('Location')}}}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -411,10 +411,10 @@
         </div>
 
         {% if(isset($all_files) && count($all_files) > 0): %}
-        <aside class="patient-side" aria-label="Έγγραφα ασθενή">
+        <aside class="patient-side" aria-label="{{{t('Patient documents')}}}">
             <div class="side-card">
                 <div class="side-card-head">
-                    <h4>Έγγραφα</h4><span class="file-count-badge">{{count($all_files)}}</span>
+                    <h4>{{{t('Documents')}}}</h4><span class="file-count-badge">{{count($all_files)}}</span>
                 </div>
                 <ul class="side-files">
                     {% foreach($all_files as $f): %}
@@ -438,19 +438,19 @@
              controls, no outbound links: APYweb has no per-record
              deep-link URL scheme, this is purely informational. -->
         <div class="financial-info">
-            <h4>Οικονομικά Στοιχεία</h4>
+            <h4>{{{t('Financial information')}}}</h4>
 
             {% if(count($financials['invoices'])>0): %}
-            <h5>Παραστατικά</h5>
+            <h5>{{{t('Invoices')}}}</h5>
             <div class="settings-table-scroll">
                 <table>
                     <thead>
                         <tr>
-                            <th>Ημερομηνία</th>
-                            <th>ΜΑΡΚ</th>
-                            <th>Ποσό</th>
-                            <th>Πληρωτέο</th>
-                            <th>Τρόπος Πληρωμής</th>
+                            <th>{{{t('Date')}}}</th>
+                            <th>{{{t('MARK')}}}</th>
+                            <th>{{{t('Amount')}}}</th>
+                            <th>{{{t('Payable')}}}</th>
+                            <th>{{{t('Payment method')}}}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -469,18 +469,18 @@
             {% endif %}
 
             {% if(count($financials['operations'])>0): %}
-            <h5>Χειρουργεία / Επεμβάσεις</h5>
+            <h5>{{{t('Operations / Procedures')}}}</h5>
             <div class="settings-table-scroll">
                 <table>
                     <thead>
                         <tr>
-                            <th>Ημερομηνία</th>
-                            <th>Επέμβαση</th>
-                            <th>Κλινική</th>
-                            <th>Ποσό</th>
-                            <th>Ασφάλεια</th>
-                            <th>Ασθενής</th>
-                            <th>Κατάσταση</th>
+                            <th>{{{t('Date')}}}</th>
+                            <th>{{{t('Procedure')}}}</th>
+                            <th>{{{t('Clinic')}}}</th>
+                            <th>{{{t('Amount')}}}</th>
+                            <th>{{{t('Insurance')}}}</th>
+                            <th>{{{t('Patient')}}}</th>
+                            <th>{{{t('Status')}}}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -492,7 +492,7 @@
                             <td>{{{number_format((float)$op['amount'], 2, ',', '.')}}} &euro;</td>
                             <td>{{{$op['insurance_amount'] !== null ? number_format((float)$op['insurance_amount'], 2, ',', '.') . ' €' : '—'}}}</td>
                             <td>{{{$op['patient_amount'] !== null ? number_format((float)$op['patient_amount'], 2, ',', '.') . ' €' : '—'}}}</td>
-                            <td>{{$op['paid'] ? 'Πληρώθηκε' : 'Εκκρεμεί'}}</td>
+                            <td>{{$op['paid'] ? t('Paid') : t('Outstanding')}}</td>
                         </tr>
                         {% endforeach %}
                     </tbody>
@@ -501,17 +501,17 @@
             {% endif %}
 
             {% if(count($financials['fee_reports'])>0): %}
-            <h5>Αμοιβές Κλινικής</h5>
+            <h5>{{{t('Clinic fees')}}}</h5>
             <div class="settings-table-scroll">
                 <table>
                     <thead>
                         <tr>
-                            <th>Ημερομηνία</th>
-                            <th>Ιατρός</th>
-                            <th>Σύμβαση</th>
-                            <th>Ασφάλεια</th>
-                            <th>Ασθενής</th>
-                            <th>ΑΠΥ</th>
+                            <th>{{{t('Date')}}}</th>
+                            <th>{{{t('Doctor')}}}</th>
+                            <th>{{{t('Contract')}}}</th>
+                            <th>{{{t('Insurance')}}}</th>
+                            <th>{{{t('Patient')}}}</th>
+                            <th>{{{t('APY receipt')}}}</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -539,7 +539,7 @@
         <form class="inline-delete-form" method="post" action="{{rel_url('/patient/'.$id.'/delete')}}" confirmation>
             {{ csrf_field() }}
             <button type="submit" class="btn-danger">
-                <i class="bx bx-trash"></i> Διαγραφή Ασθενή
+                <i class="bx bx-trash"></i> {{{t('Delete patient')}}}
             </button>
         </form>
     </div>
@@ -635,7 +635,8 @@
                 radio.addEventListener('change', function() {
                     var g = document.getElementById('pi-gender');
                     if (!g || !radio.checked) return;
-                    g.textContent = radio.value === 'F' ? 'Γυναίκα' : 'Άνδρας';
+                    var optLabel = radio.parentNode.querySelector('span');
+                    g.textContent = optLabel ? optLabel.textContent : '';
                     g.hidden = radio.value !== 'M' && radio.value !== 'F';
                 });
             });

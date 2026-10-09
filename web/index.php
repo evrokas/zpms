@@ -386,6 +386,55 @@ require_once(__DIR__ . '/zpms_mailer.php');
     }
 
     /**
+     * The interface text the page scripts (web/js/scripts.js,
+     * web/js/appointment-files.js) show -- status lines, button labels,
+     * confirm() prompts -- looked up in the dictionary like template text and
+     * handed to the browser as one object, window.zpmsText, by
+     * zpms_js_text_script() (rendered once per page in page/main.zetem).
+     * The scripts use zpmsText.<key>; none of them carries wording of its own.
+     */
+    function zpms_js_text(): array {
+        return [
+            'pasteUnsupported' => t('Not supported by this browser'),
+            'pasteNoImage' => t('No image was found in the clipboard'),
+            'pasteDenied' => t('Could not access the clipboard -- check the browser permissions'),
+            'uploading' => t('Uploading...'),
+            'uploadFailed' => t('The upload failed'),
+            'uploadNetworkError' => t('Network error during the upload'),
+            'uploadTimeout' => t('The upload took too long -- check your connection and try again'),
+            'cancel' => t('Cancel'),
+            'view' => t('View'),
+            'delete' => t('Delete'),
+            'confirmDeleteFile' => t('Deleting the file is permanent. Are you sure you want to continue?'),
+            'noFiles' => t('There are no attached files'),
+            'deleteFailed' => t('The deletion failed'),
+            'deleteNetworkError' => t('Network error during the deletion'),
+            'telShort' => t('Tel'),
+            'amka' => t('AMKA'),
+            'dupMany' => t('Patients with this name already exist:'),
+            'dupOne' => t('A patient with this name already exists:'),
+            'useDetails' => t('Use these details'),
+            'loadRecord' => t('Load record'),
+            'filledFrom' => t('The details of @name were filled in from the existing record.'),
+            'confirmLoad' => t('A patient with this name already exists. Do you want to load the existing patient record? The details you entered will not be saved.'),
+        ];
+    }
+
+    function zpms_js_text_script(): string {
+        $json = json_encode(zpms_js_text(), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE);
+        return '<script>window.zpmsText = ' . $json . ';</script>';
+    }
+
+    /**
+     * A name (or other free text) made safe for HTML and wrapped in <b>, for
+     * a t() placeholder in a flash message: the dictionary text itself never
+     * carries markup, so the emphasis travels with the value.
+     */
+    function zpms_bold($text): string {
+        return '<b>' . htmlspecialchars((string)$text, ENT_QUOTES, 'UTF-8') . '</b>';
+    }
+
+    /**
      * Identity-header data for the patient record page (edit_patient.zetem,
      * "patient-identity" card): initials for the avatar, an age label in the
      * same "58y 5m" shape the date-of-birth field's own client-side badge
@@ -465,7 +514,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
         $canViewFinancials = rbacClass::isPermitted(ZPMS_PERM_PATIENT_FINANCIAL_VIEW);
 
         if(!isset($params['id'])) {
-            $kernel->addStatus('error', 'Ο φάκελος του ασθενή δεν βρέθηκε!');
+            $kernel->addStatus('error', t('The patient record was not found!'));
             return ("patients doesn't exist");
         }
 
@@ -526,7 +575,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
             if($ap->getdeleted() == null) {
                 if ($canEditAppointment || $canViewAppointment) {
                     $apFiles = appointmentFilesClassEx::getFilesForAppointment($ap->getid());
-                    $apLabel = (($ap->getatype() == 'operation') ? 'Χειρουργείο ' : 'Ραντεβού ') . formatDate($ap->getadate());
+                    $apLabel = (($ap->getatype() == 'operation') ? t('Operation') : t('Appointment')) . ' ' . formatDate($ap->getadate());
                     foreach($apFiles as $f) {
                         $allFiles[] = [
                             'name' => $f->getfile_name(),
@@ -600,13 +649,13 @@ require_once(__DIR__ . '/zpms_mailer.php');
                 echo "FAILED";
                 exit();
             }
-            $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
+            $kernel->addStatus('error', t('Invalid security token (CSRF). Please try again.'));
             header('location: '.rel_url('/patients'));
             exit();
         }
 
         if(isset($_POST['delete'])) {
-            $kernel->addStatus('warning', 'Η επεξεργασία του φακέλου ακυρώθηκε.');
+            $kernel->addStatus('warning', t('Editing the record was cancelled.'));
             header('location: '.rel_url('/patients'));
             exit();
         }            
@@ -654,9 +703,9 @@ require_once(__DIR__ . '/zpms_mailer.php');
         }
 
         if($res) {
-            $kernel->addStatus('notice', 'Ο φάκελος του ασθενή <b>' . htmlspecialchars($pat->getpname(), ENT_QUOTES, 'UTF-8') . '</b> έχει αποθηκευτεί.');
+            $kernel->addStatus('notice', t('The record of patient @name has been saved.', ['name' => zpms_bold($pat->getpname())]));
         } else {
-            $kernel->addStatus('error', 'Αδυναμία αποθήκευσης φακέλου.');
+            $kernel->addStatus('error', t('The record could not be saved.'));
         }
 
         header('location: '.rel_url('/patient/'.$pat->getid().'/edit'));
@@ -715,7 +764,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
         // real CSRF token, submitted via the small form patients_list.zetem
         // now renders instead of a bare link.
         if(!csrfClass::verifyRequest()) {
-            $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
+            $kernel->addStatus('error', t('Invalid security token (CSRF). Please try again.'));
             header('location: '.rel_url('/patients'));
             exit();
         }
@@ -738,7 +787,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
 
         // $pat->delete();
 
-        $kernel->addStatus('warning', 'Ο φάκελος του ασθενή <b>'.htmlspecialchars($pat->getpname(), ENT_QUOTES, 'UTF-8') . '</b> διαγράφθηκε με επιτυχία.');
+        $kernel->addStatus('warning', t('The record of patient @name was deleted successfully.', ['name' => zpms_bold($pat->getpname())]));
         header('location: '.rel_url('/patients'));
         exit();
     }
@@ -760,7 +809,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
         if(!isset($_POST['submit']) && !isset($_POST['submitedit']))exit();
 
         if(!csrfClass::verifyRequest()) {
-            $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
+            $kernel->addStatus('error', t('Invalid security token (CSRF). Please try again.'));
             header('location: '.rel_url('/patient/new'));
             exit();
         }
@@ -785,7 +834,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
 
         $pc->insert();
 
-        $kernel->addStatus('notice', 'Δημιουργήθηκε νέος φάκελος για τον ασθενή <b>' . htmlspecialchars($pc->getpname(), ENT_QUOTES, 'UTF-8') . '</b>');
+        $kernel->addStatus('notice', t('A new record was created for patient @name', ['name' => zpms_bold($pc->getpname())]));
 
         if(isset($_POST['submitedit']))
             header('location: '.rel_url('/patient/'.$pc->getid().'/edit'));
@@ -858,7 +907,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
                 echo "FAILED";
                 exit();
             }
-            $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
+            $kernel->addStatus('error', t('Invalid security token (CSRF). Please try again.'));
             header('location: '. $_SERVER['HTTP_REFERER']);
             exit();
         }
@@ -968,7 +1017,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
 
         // $app->delete();
 
-        $kernel->addStatus('warning', 'Το ραντεβού διαγράφθηκε με επιτυχία.');
+        $kernel->addStatus('warning', t('The appointment was deleted successfully.'));
 
         // Appointments are always viewed from inside their patient's own
         // record, so that's always the right place to land back on --
@@ -991,7 +1040,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
         // for any logged-in staff member who just loaded it. Now POST-only
         // (see config/settings.info.yaml) with a real CSRF token.
         if(!csrfClass::verifyRequest()) {
-            $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
+            $kernel->addStatus('error', t('Invalid security token (CSRF). Please try again.'));
             header('location: '.rel_url('/patients'));
             exit();
         }
@@ -1079,7 +1128,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
         if(($errmsg = rbacClass::require(ZPMS_PERM_APPOINTMENT_EDIT)))return $errmsg;
 
         if(!csrfClass::verifyRequest()) {
-            $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
+            $kernel->addStatus('error', t('Invalid security token (CSRF). Please try again.'));
             header('location: '.rel_url('/patient/'.$params['id'].'/edit'));
             exit();
         }
@@ -1087,7 +1136,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
         // error_log("<pre>patient_appointment_new_post: ".print_r($params, 1)."</pre>");
         // error_log("\nPatient id: " );
         if(isset($_POST['cancel'])) {
-            $kernel->addStatus('warning', 'Η επεξεργασία του ραντεβού ακυρώθηκε.');
+            $kernel->addStatus('warning', t('Editing the appointment was cancelled.'));
             header('location: '.rel_url('/patient/'.$params['id'].'/edit'));
             exit();
         }            
@@ -1134,7 +1183,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
 
         // error_log('\nREFERER: '. $_SERVER['HTTP_REFERER']."\n");
 
-        $kernel->addStatus('notice', 'Δημιουργήθηκε νέο ραντεβού.');
+        $kernel->addStatus('notice', t('A new appointment was created.'));
         header('location: '.rel_url('/patient/'.$pat->getid().'/edit'));
     }
 
@@ -1288,7 +1337,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
         if(($errmsg = rbacClass::require(ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE)))return $errmsg;
 
         if(!csrfClass::verifyRequest()) {
-            $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
+            $kernel->addStatus('error', t('Invalid security token (CSRF). Please try again.'));
             header('location: '.rel_url('/consultation/new'));
             exit();
         }
@@ -1328,13 +1377,12 @@ require_once(__DIR__ . '/zpms_mailer.php');
         // to reject an otherwise-valid booking.
         $emailSent = $assignedDoctor ? zpms_send_appointment_assignment_email($pending, $assignedDoctor) : false;
 
-        $kernel->addStatus('notice', 'Καταχωρήθηκε εκκρεμές ραντεβού για τον/την <b>'
-            . htmlspecialchars($pending->getpatient_name(), ENT_QUOTES, 'UTF-8') . '</b>'
-            . ($pending->getgoogle_event_id() ? ' (συγχρονίστηκε με το Google Calendar).' : '.'));
+        $kernel->addStatus('notice', ($pending->getgoogle_event_id()
+                ? t('A pending appointment was registered for @name (synced with Google Calendar).', ['name' => zpms_bold($pending->getpatient_name())])
+                : t('A pending appointment was registered for @name.', ['name' => zpms_bold($pending->getpatient_name())])));
 
         if ($assignedDoctor && !$emailSent) {
-            $kernel->addStatus('warning', 'Δεν ήταν δυνατή η αποστολή email ειδοποίησης στον/στην '
-                . htmlspecialchars($assignedDoctor['name'] ?: $assignedDoctor['uname'], ENT_QUOTES, 'UTF-8') . '.');
+            $kernel->addStatus('warning', t('The notification email could not be sent to @name.', ['name' => htmlspecialchars($assignedDoctor['name'] ?: $assignedDoctor['uname'], ENT_QUOTES, 'UTF-8')]));
         }
 
         header('location: '.rel_url('/consultation/pending'));
@@ -1398,7 +1446,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
 
         $pending = pendingAppointmentsClass::sgetById((int)$params['id']);
         if (!$pending || $pending->getconverted_at() !== null || $pending->getcancelled_at() !== null) {
-            $kernel->addStatus('error', 'Η καταχώρηση δεν βρέθηκε ή έχει ήδη επεξεργαστεί.');
+            $kernel->addStatus('error', t('The entry was not found or has already been processed.'));
             header('location: '.rel_url('/consultation/pending'));
             exit();
         }
@@ -1416,14 +1464,14 @@ require_once(__DIR__ . '/zpms_mailer.php');
         if(($errmsg = rbacClass::require(ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE)))return $errmsg;
 
         if(!csrfClass::verifyRequest()) {
-            $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
+            $kernel->addStatus('error', t('Invalid security token (CSRF). Please try again.'));
             header('location: '.rel_url('/consultation/pending'));
             exit();
         }
 
         $pending = pendingAppointmentsClass::sgetById((int)$params['id']);
         if (!$pending || $pending->getconverted_at() !== null || $pending->getcancelled_at() !== null) {
-            $kernel->addStatus('error', 'Η καταχώρηση δεν βρέθηκε ή έχει ήδη επεξεργαστεί.');
+            $kernel->addStatus('error', t('The entry was not found or has already been processed.'));
             header('location: '.rel_url('/consultation/pending'));
             exit();
         }
@@ -1447,7 +1495,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
 
         zpms_pending_appointment_sync_to_calendar($pending);
 
-        $kernel->addStatus('notice', 'Ενημερώθηκε το εκκρεμές ραντεβού.');
+        $kernel->addStatus('notice', t('The pending appointment was updated.'));
         header('location: '.rel_url('/consultation/pending'));
         exit();
     }
@@ -1465,7 +1513,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
         if(($errmsg = rbacClass::require(ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE)))return $errmsg;
 
         if(!csrfClass::verifyRequest()) {
-            $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
+            $kernel->addStatus('error', t('Invalid security token (CSRF). Please try again.'));
             header('location: '.rel_url('/consultation/pending'));
             exit();
         }
@@ -1477,7 +1525,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
             }
             $pending->setcancelled_at(getDBtime());
             $pending->update();
-            $kernel->addStatus('notice', 'Το ραντεβού ακυρώθηκε.');
+            $kernel->addStatus('notice', t('The appointment was cancelled.'));
         }
 
         header('location: '.rel_url('/consultation/pending'));
@@ -1510,7 +1558,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
 
         $pending = pendingAppointmentsClass::sgetById((int)$params['id']);
         if (!$pending || $pending->getconverted_at() !== null || $pending->getcancelled_at() !== null) {
-            $kernel->addStatus('error', 'Η καταχώρηση δεν βρέθηκε ή έχει ήδη επεξεργαστεί.');
+            $kernel->addStatus('error', t('The entry was not found or has already been processed.'));
             header('location: '.rel_url('/consultation/pending'));
             exit();
         }
@@ -1534,14 +1582,14 @@ require_once(__DIR__ . '/zpms_mailer.php');
         if(($errmsg = rbacClass::require(ZPMS_PERM_APPOINTMENT_EDIT)))return $errmsg;
 
         if(!csrfClass::verifyRequest()) {
-            $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
+            $kernel->addStatus('error', t('Invalid security token (CSRF). Please try again.'));
             header('location: '.rel_url('/consultation/pending'));
             exit();
         }
 
         $pending = pendingAppointmentsClass::sgetById((int)$params['id']);
         if (!$pending || $pending->getconverted_at() !== null || $pending->getcancelled_at() !== null) {
-            $kernel->addStatus('error', 'Η καταχώρηση δεν βρέθηκε ή έχει ήδη επεξεργαστεί.');
+            $kernel->addStatus('error', t('The entry was not found or has already been processed.'));
             header('location: '.rel_url('/consultation/pending'));
             exit();
         }
@@ -1555,7 +1603,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
             // existing-patient-id field.
             $pat = patientsClass::sgetById((int)$existingPatientId);
             if (!$pat) {
-                $kernel->addStatus('error', 'Ο επιλεγμένος ασθενής δεν βρέθηκε.');
+                $kernel->addStatus('error', t('The selected patient was not found.'));
                 header('location: '.rel_url('/consultation/pending/'.$pending->getid().'/convert'));
                 exit();
             }
@@ -1609,8 +1657,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
         $pending->setconverted_appointment_id($app->getid());
         $pending->update();
 
-        $kernel->addStatus('notice', 'Δημιουργήθηκε φάκελος και ραντεβού για τον ασθενή <b>'
-            . htmlspecialchars($pat->getpname(), ENT_QUOTES, 'UTF-8') . '</b>.');
+        $kernel->addStatus('notice', t('A record and an appointment were created for patient @name.', ['name' => zpms_bold($pat->getpname())]));
 
         header('location: '.rel_url('/patient/'.$pat->getid().'/edit'));
         exit();
@@ -1675,14 +1722,14 @@ require_once(__DIR__ . '/zpms_mailer.php');
         if(($errmsg = rbacClass::require(ZPMS_PERM_SETTINGS_MANAGE)))return $errmsg;
 
         if(!csrfClass::verifyRequest()) {
-            $kernel->addStatus('error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
+            $kernel->addStatus('error', t('Invalid security token (CSRF). Please try again.'));
             header('location: '.rel_url('/settings'));
             exit();
         }
 
         $settings = zpms_mail_settings();
         if (!$settings) {
-            $kernel->addStatus('error', 'Ο πίνακας ρυθμίσεων email δεν υπάρχει ακόμη -- εκτελέστε το bin/migrate_appointment_email.php.');
+            $kernel->addStatus('error', t('The email settings table does not exist yet -- run bin/migrate_appointment_email.php.'));
             header('location: '.rel_url('/settings'));
             exit();
         }
@@ -1712,7 +1759,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
 
         $settings->update();
 
-        $kernel->addStatus('notice', 'Οι ρυθμίσεις email αποθηκεύτηκαν.');
+        $kernel->addStatus('notice', t('The email settings were saved.'));
         header('location: '.rel_url('/settings'));
         exit();
     }

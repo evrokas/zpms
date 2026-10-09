@@ -1,12 +1,12 @@
 {% attach_library('loader-library'); %}
 
 <div class="edit-patient">
-    <div class="header">
-        <h4>Δημιουργία Φακέλου Ασθενή</h4>
-    </div>
+    {# Visually hidden: the breadcrumb above already names this page. Kept as the
+       page heading for screen readers. #}
+    <h2 class="sr-only">{{{t('Create patient record')}}}</h2>
 
     <p class="muted page-intro">
-        Ραντεβού: {{$pending->getappointment_datetime() | date('d-m-Y H:i')}}
+        {{{t('Appointment')}}}: {{$pending->getappointment_datetime() | date('d-m-Y H:i')}}
         {% if($pending->getlocation()): %} &middot; {{{$pending->getlocation()}}}{% endif %}
     </p>
 
@@ -15,7 +15,7 @@
         <input type="hidden" name="existing-patient-id" id="existing-patient-id" value="{{{$matched_patient ? $matched_patient->getid() : ''}}}">
 
         <div class="input-div">
-            <label for="patient-name">Όνομα ασθενή</label>
+            <label for="patient-name">{{{t('Patient name')}}}</label>
             <input type="text" name="patient-name" id="convert-patient-name"
                 value="{{{$matched_patient ? $matched_patient->getpname() : $pending->getpatient_name()}}}"
                 autocomplete="off" required {% if($matched_patient): %}readonly{% endif %}>
@@ -24,28 +24,28 @@
         <div class="duplicate-warning" id="convert-duplicate-warning" {% if(!$matched_patient): %}style="display:none;"{% endif %}></div>
 
         <div class="input-div">
-            <label for="patient-telephone">Τηλέφωνο</label>
+            <label for="patient-telephone">{{{t('Telephone')}}}</label>
             <input type="text" name="patient-telephone" id="convert-patient-telephone"
                 value="{{{$matched_patient ? $matched_patient->getptel() : $pending->getpatient_phone()}}}"
                 {% if($matched_patient): %}readonly{% endif %}>
         </div>
 
         <div class="input-div">
-            <label for="patient-amka">ΑΜΚΑ</label>
+            <label for="patient-amka">{{{t('AMKA')}}}</label>
             <input type="text" name="patient-amka" id="convert-patient-amka"
                 value="{{{$matched_patient ? $matched_patient->getpamka() : $pending->getpatient_amka()}}}"
                 {% if($matched_patient): %}readonly{% endif %}>
         </div>
 
         <div class="input-div">
-            <label for="patient-email">Email</label>
+            <label for="patient-email">{{{t('Email')}}}</label>
             <input type="text" name="patient-email" id="convert-patient-email"
                 value="{{{$matched_patient ? $matched_patient->getpemail() : $pending->getpatient_email()}}}"
                 {% if($matched_patient): %}readonly{% endif %}>
         </div>
 
         <div class="buttons">
-            <input type="submit" value="Δημιουργία Φακέλου &amp; Ραντεβού">
+            <input type="submit" value="{{{t('Create record & appointment')}}}">
         </div>
     </form>
 </div>
@@ -58,6 +58,8 @@
         var emailInput = document.getElementById('convert-patient-email');
         var warningBox = document.getElementById('convert-duplicate-warning');
         var existingIdInput = document.getElementById('existing-patient-id');
+        /* Interface text comes from the dictionary (rendered here, not typed in the script). */
+        var I18N = {{ json_encode(['found' => t('A patient record with these details already exists -- '), 'addTo' => t('The appointment will be added to the existing record:'), 'clear' => t('Cancel (new patient)'), 'similar' => t('Patients with a similar name were found -- choose if this is the same person:'), 'amka' => t('AMKA'), 'use' => t('Use this one')], JSON_HEX_TAG + JSON_HEX_AMP + JSON_UNESCAPED_UNICODE) }};
         var timeout;
 
         function escapeHtml(str) {
@@ -94,9 +96,9 @@
             setLinkedFieldsReadonly(true);
 
             warningBox.innerHTML = '<p>'
-                + (auto ? 'Βρέθηκε ήδη φάκελος ασθενή με αυτά τα στοιχεία -- ' : '')
-                + 'Το ραντεβού θα προστεθεί στον υπάρχοντα φάκελο: <b>' + escapeHtml(name) + '</b> '
-                + '&mdash; <button type="button" id="clear-existing">Άκυρο (νέος ασθενής)</button></p>';
+                + (auto ? escapeHtml(I18N.found) : '')
+                + escapeHtml(I18N.addTo) + ' <b>' + escapeHtml(name) + '</b> '
+                + '&mdash; <button type="button" id="clear-existing">' + escapeHtml(I18N.clear) + '</button></p>';
             warningBox.style.display = 'block';
             document.getElementById('clear-existing').addEventListener('click', clearExisting);
         }
@@ -111,15 +113,15 @@
                 warningBox.innerHTML = '';
                 return;
             }
-            var html = '<p>Βρέθηκαν ασθενείς με παρόμοιο όνομα -- επιλέξτε αν πρόκειται για τον ίδιο:</p><ul>';
+            var html = '<p>' + escapeHtml(I18N.similar) + '</p><ul>';
             matches.forEach(function(m) {
                 html += '<li>'
                     + '<span class="name">' + escapeHtml(m.name) + '</span>'
-                    + '<span class="amka">ΑΜΚΑ: ' + escapeHtml(m.amka || '—') + '</span>'
+                    + '<span class="amka">' + escapeHtml(I18N.amka) + ': ' + escapeHtml(m.amka || '—') + '</span>'
                     + '<button type="button" class="use-existing" data-id="' + escapeHtml(m.id)
                     + '" data-name="' + escapeHtml(m.name) + '" data-amka="' + escapeHtml(m.amka || '')
                     + '" data-phone="' + escapeHtml(m.phone || '') + '" data-email="' + escapeHtml(m.email || '')
-                    + '">Χρήση αυτού</button>'
+                    + '">' + escapeHtml(I18N.use) + '</button>'
                     + '</li>';
             });
             html += '</ul>';

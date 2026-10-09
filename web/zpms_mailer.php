@@ -55,10 +55,10 @@ function zpms_mail_settings(): ?mailSettingsClass {
 function zpms_build_mailer() {
     $settings = zpms_mail_settings();
     if (!$settings || !$settings->getsmtp_host() || !$settings->getfrom_email()) {
-        return 'Δεν έχουν ρυθμιστεί τα στοιχεία SMTP. Μεταβείτε στις Ρυθμίσεις -> Email.';
+        return t('The SMTP details have not been set up. Go to Settings -> Email.');
     }
     if (!zpms_phpmailer_available()) {
-        return 'Η βιβλιοθήκη PHPMailer δεν είναι εγκατεστημένη (lib/phpmailer) -- δείτε το README.md.';
+        return t('The PHPMailer library is not installed (lib/phpmailer) -- see README.md.');
     }
 
     require_once __APPDIR__ . '/lib/phpmailer/src/Exception.php';

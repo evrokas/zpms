@@ -128,8 +128,8 @@ if(search.length > 0) {
                     list.forEach(el => {
                         box2.innerHTML += "<li onclick=\"selectclick(this)\" data-url=\""+el['link']+"\"data-id=\""+el['id']+"\" data-name=\""+el['name']+"\">"+
                         "<span class=\"name\">"+el['name']+"</span>"+
-                        "<span class=\"tel\">"+"{Τηλ:"+el['tel']+"}"+"</span>"+
-                        "<span class=\"amka\">"+"ΑΜΚΑ: "+el['amka']+"</span>"+
+                        "<span class=\"tel\">"+"{"+zpmsText.telShort+":"+el['tel']+"}"+"</span>"+
+                        "<span class=\"amka\">"+zpmsText.amka+": "+el['amka']+"</span>"+
                         "</li>";
                     })
                 }
@@ -489,17 +489,17 @@ if(duplicateCheckInput && duplicateCheckBox) {
         }
 
         let intro = matches.length > 1
-            ? 'Βρέθηκαν ήδη ασθενείς με αυτό το όνομα:'
-            : 'Υπάρχει ήδη ασθενής με αυτό το όνομα:';
-        let html = '<p>' + intro + '</p><ul>';
+            ? zpmsText.dupMany
+            : zpmsText.dupOne;
+        let html = '<p>' + escapeHtml(intro) + '</p><ul>';
 
         matches.forEach((m, i) => {
             html += '<li>'
                 + '<span class="name">' + escapeHtml(m.name) + '</span>'
-                + '<span class="amka">ΑΜΚΑ: ' + escapeHtml(m.amka || '—') + '</span>'
+                + '<span class="amka">' + escapeHtml(zpmsText.amka) + ': ' + escapeHtml(m.amka || '—') + '</span>'
                 + (duplicateCheckMode === 'fill'
-                    ? '<button type="button" class="use-existing-data" data-index="' + i + '">Χρήση στοιχείων</button>'
-                    : '<a class="load-existing" href="' + escapeHtml(m.link) + '">Φόρτωση φακέλου</a>')
+                    ? '<button type="button" class="use-existing-data" data-index="' + i + '">' + escapeHtml(zpmsText.useDetails) + '</button>'
+                    : '<a class="load-existing" href="' + escapeHtml(m.link) + '">' + escapeHtml(zpmsText.loadRecord) + '</a>')
                 + '</li>';
         });
 
@@ -514,8 +514,8 @@ if(duplicateCheckInput && duplicateCheckBox) {
                     let match = matches[parseInt(btn.dataset.index, 10)];
                     if(!match) return;
                     fillTargets(match);
-                    duplicateCheckBox.innerHTML = '<p>Συμπληρώθηκαν τα στοιχεία του/της <b>'
-                        + escapeHtml(match.name) + '</b> από τον υπάρχοντα φάκελο.</p>';
+                    duplicateCheckBox.innerHTML = '<p>'
+                        + escapeHtml(zpmsText.filledFrom).replace('@name', '<b>' + escapeHtml(match.name) + '</b>') + '</p>';
                 });
             });
         }
@@ -551,7 +551,7 @@ if(duplicateCheckInput && duplicateCheckBox) {
             let link = ev.target.closest('a.load-existing');
             if(!link) return;
 
-            if(!confirm('Υπάρχει ήδη ασθενής με αυτό το όνομα. Θέλετε να φορτώσετε τον υπάρχοντα φάκελο ασθενή; Τα στοιχεία που καταχωρήσατε δεν θα αποθηκευτούν.')) {
+            if(!confirm(zpmsText.confirmLoad)) {
                 ev.preventDefault();
             }
         });

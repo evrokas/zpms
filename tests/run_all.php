@@ -21,6 +21,7 @@ if ($mode !== 'functional') {
     require_once __DIR__ . '/static/js_lint.php';
     require_once __DIR__ . '/static/css_consistency.php';
     require_once __DIR__ . '/static/template_consistency.php';
+    require_once __DIR__ . '/static/dictionary_terms.php';
 
     $phpRunner = new TestRunner('PHP syntax');
     zpms_static_php_lint($phpRunner);
@@ -37,6 +38,10 @@ if ($mode !== 'functional') {
     $templateRunner = new TestRunner('Template consistency');
     zpms_static_template_consistency($templateRunner);
     $ok = $templateRunner->run() && $ok;
+
+    $dictionaryRunner = new TestRunner('Dictionary terms');
+    zpms_static_dictionary_terms($dictionaryRunner);
+    $ok = $dictionaryRunner->run() && $ok;
 }
 
 if ($mode === 'static') {

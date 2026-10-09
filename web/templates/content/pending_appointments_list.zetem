@@ -1,9 +1,11 @@
 {% attach_library('boxicons') %}
 
 <div class="patients-header">
-    <h2 class="page-title">Εκκρεμή Ραντεβού</h2>
+    {# Visually hidden: the breadcrumb above already names this page. Kept as the
+           page heading for screen readers. #}
+        <h2 class="page-title sr-only">{{{t('Pending appointments')}}}</h2>
     <a class="btn-add-patient" href="{{rel_url('/consultation/new')}}">
-        <i class="bx bx-plus"></i>Νέο Ραντεβού
+        <i class="bx bx-plus"></i>{{{t('New appointment')}}}
     </a>
 </div>
 
@@ -11,17 +13,17 @@
 {% if(count($pending) == 0): %}
     <div class="patients-empty">
         <i class="bx bx-calendar"></i>
-        <p>Δεν υπάρχουν εκκρεμή ραντεβού.</p>
+        <p>{{{t('There are no pending appointments.')}}}</p>
     </div>
 {% else: %}
     <table>
         <thead>
-            <th>Όνομα</th>
-            <th>Τηλέφωνο</th>
-            <th>Τοποθεσία</th>
-            <th>Ημ/νία &amp; Ώρα</th>
-            <th>Ημερολόγιο</th>
-            <th>Ενέργειες</th>
+            <th>{{{t('Name')}}}</th>
+            <th>{{{t('Telephone')}}}</th>
+            <th>{{{t('Location')}}}</th>
+            <th>{{{t('Date & time')}}}</th>
+            <th>{{{t('Calendar')}}}</th>
+            <th>{{{t('Actions')}}}</th>
         </thead>
         <tbody>
             {% foreach($pending as $p): %}
@@ -32,21 +34,21 @@
                 <td data-column="datetime">{{$p->getappointment_datetime() | date('d-m-Y H:i')}}</td>
                 <td data-column="synced">
                     {% if($p->getgoogle_event_id()): %}
-                        <span class="sync-status is-synced" title="Συγχρονισμένο"><i class="bx bx-check"></i></span>
+                        <span class="sync-status is-synced" title="{{{t('Synced')}}}"><i class="bx bx-check"></i></span>
                     {% else: %}
-                        <span class="sync-status is-unsynced" title="Μη συγχρονισμένο"><i class="bx bx-x"></i></span>
+                        <span class="sync-status is-unsynced" title="{{{t('Not synced')}}}"><i class="bx bx-x"></i></span>
                     {% endif %}
                 </td>
                 <td class="actions" data-column="actions">
-                    <a class="icon-btn" href="{{rel_url('/consultation/pending/'.$p->getid().'/edit')}}" title="Επεξεργασία"><i class="bx bx-edit"></i></a>
+                    <a class="icon-btn" href="{{rel_url('/consultation/pending/'.$p->getid().'/edit')}}" title="{{{t('Edit')}}}"><i class="bx bx-edit"></i></a>
 
                     {% if($can_convert): %}
-                    <a class="icon-btn" href="{{rel_url('/consultation/pending/'.$p->getid().'/convert')}}" title="Δημιουργία Φακέλου Ασθενή"><i class="bx bx-user-plus"></i></a>
+                    <a class="icon-btn" href="{{rel_url('/consultation/pending/'.$p->getid().'/convert')}}" title="{{{t('Create patient record')}}}"><i class="bx bx-user-plus"></i></a>
                     {% endif %}
 
                     <form class="inline-delete-form" method="post" action="{{rel_url('/consultation/pending/'.$p->getid().'/delete')}}" confirmation>
                         {{ csrf_field() }}
-                        <button type="submit" class="icon-btn icon-btn-danger" title="Ακύρωση"><i class="bx bx-trash"></i></button>
+                        <button type="submit" class="icon-btn icon-btn-danger" title="{{{t('Cancel')}}}"><i class="bx bx-trash"></i></button>
                     </form>
                 </td>
             </tr>
@@ -57,23 +59,23 @@
 </div>
 
 <div class="patients-header">
-    <h2 class="page-title">Προηγούμενα Ραντεβού</h2>
+    <h2 class="page-title">{{{t('Previous appointments')}}}</h2>
 </div>
 
 <div class="previous-appointments-list" lang="el">
 {% if(count($previous) == 0): %}
     <div class="patients-empty">
         <i class="bx bx-history"></i>
-        <p>Δεν υπάρχουν προηγούμενα ραντεβού.</p>
+        <p>{{{t('There are no previous appointments.')}}}</p>
     </div>
 {% else: %}
     <table>
         <thead>
-            <th>Ημ/νία &amp; Ώρα</th>
-            <th>Όνομα</th>
-            <th>Τηλέφωνο</th>
-            <th>Τοποθεσία</th>
-            <th>Ενέργειες</th>
+            <th>{{{t('Date & time')}}}</th>
+            <th>{{{t('Name')}}}</th>
+            <th>{{{t('Telephone')}}}</th>
+            <th>{{{t('Location')}}}</th>
+            <th>{{{t('Actions')}}}</th>
         </thead>
         <tbody>
             {% foreach($previous as $p): %}
@@ -90,7 +92,7 @@
                 <td data-column="location">{{{$p->getlocation() ?: '-'}}}</td>
                 <td class="actions" data-column="actions">
                     {% if(!$p->getconverted_patient_id()): %}
-                    <a class="icon-btn" href="{{rel_url('/consultation/pending/'.$p->getid().'/edit')}}" title="Επαναπρογραμματισμός"><i class="bx bx-calendar-edit"></i></a>
+                    <a class="icon-btn" href="{{rel_url('/consultation/pending/'.$p->getid().'/edit')}}" title="{{{t('Reschedule')}}}"><i class="bx bx-calendar-edit"></i></a>
                     {% endif %}
                 </td>
             </tr>

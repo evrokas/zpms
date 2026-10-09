@@ -11,15 +11,17 @@
 #}
 <div class="settings-page" lang="el">
     <div class="patients-header">
-        <h2 class="page-title">Ρυθμίσεις</h2>
+        {# Visually hidden: the breadcrumb above already names this page. Kept as the
+           page heading for screen readers. #}
+        <h2 class="page-title sr-only">{{{t('Settings')}}}</h2>
     </div>
 
-    <nav class="settings-jump" aria-label="Ενότητες ρυθμίσεων">
-        <a href="#settings-clinics"><i class="bx bx-clinic"></i> Κλινικές</a>
-        <a href="#settings-doctors"><i class="bx bx-plus-medical"></i> Ιατροί</a>
-        <a href="#settings-email"><i class="bx bx-envelope"></i> Email</a>
+    <nav class="settings-jump" aria-label="{{{t('Settings sections')}}}">
+        <a href="#settings-clinics"><i class="bx bx-clinic"></i> {{{t('Clinics')}}}</a>
+        <a href="#settings-doctors"><i class="bx bx-plus-medical"></i> {{{t('Doctors')}}}</a>
+        <a href="#settings-email"><i class="bx bx-envelope"></i> {{{t('Email')}}}</a>
         {% if($show_user_management): %}
-        <a href="#settings-users"><i class="bx bx-group"></i> Χρήστες &amp; ρόλοι</a>
+        <a href="#settings-users"><i class="bx bx-group"></i> {{{t('Users & roles')}}}</a>
         {% endif %}
     </nav>
 
@@ -27,13 +29,13 @@
         <header class="settings-section-header">
             <span class="settings-section-icon"><i class="bx bx-clinic"></i></span>
             <div>
-                <h3>Κλινικές</h3>
-                <p>Οι κλινικές από τις οποίες επιλέγετε στις φόρμες της εφαρμογής.</p>
+                <h3>{{{t('Clinics')}}}</h3>
+                <p>{{{t('The clinics you choose from in the application forms.')}}}</p>
             </div>
         </header>
         <div class="settings-table-scroll">{{$clinics_table}}</div>
         <div class="settings-add">
-            <h4>Νέα κλινική</h4>
+            <h4>{{{t('New clinic')}}}</h4>
             {{$clinics}}
         </div>
     </section>
@@ -42,13 +44,13 @@
         <header class="settings-section-header">
             <span class="settings-section-icon"><i class="bx bx-plus-medical"></i></span>
             <div>
-                <h3>Ιατροί</h3>
-                <p>Λίστα ιατρών με την ειδικότητά τους, για τις επιλογές των φορμών.</p>
+                <h3>{{{t('Doctors')}}}</h3>
+                <p>{{{t('The list of doctors with their specialty, for the form choices.')}}}</p>
             </div>
         </header>
         <div class="settings-table-scroll">{{$doctors_table}}</div>
         <div class="settings-add">
-            <h4>Νέος ιατρός</h4>
+            <h4>{{{t('New doctor')}}}</h4>
             {{$doctors}}
         </div>
     </section>
@@ -57,16 +59,15 @@
         <header class="settings-section-header">
             <span class="settings-section-icon"><i class="bx bx-envelope"></i></span>
             <div>
-                <h3>Email ειδοποιήσεων (SMTP)</h3>
-                <p>Ο λογαριασμός από τον οποίο στέλνεται το email όταν ένα ραντεβού ανατίθεται σε ιατρό.</p>
+                <h3>{{{t('Notification email (SMTP)')}}}</h3>
+                <p>{{{t('The account the email is sent from when an appointment is assigned to a doctor.')}}}</p>
             </div>
         </header>
 
         {% if(!$mail_settings): %}
         <div class="settings-section-body">
             <p class="settings-notice">
-                Οι ρυθμίσεις email δεν έχουν ενεργοποιηθεί ακόμη. Εκτελέστε
-                <code>php bin/migrate_appointment_email.php --yes</code> στον διακομιστή.
+                {{t('The email settings have not been enabled yet. Run @command on the server.', ['command' => '<code>php bin/migrate_appointment_email.php --yes</code>'])}}
             </p>
         </div>
         {% else: %}
@@ -75,49 +76,49 @@
 
             <div class="settings-fields">
                 <div class="settings-field settings-field-wide">
-                    <label for="smtp_host">Διακομιστής SMTP</label>
-                    <input type="text" name="smtp_host" id="smtp_host" value="{{{$mail_settings->getsmtp_host()}}}" placeholder="π.χ. smtp.example.gr">
+                    <label for="smtp_host">{{{t('SMTP server')}}}</label>
+                    <input type="text" name="smtp_host" id="smtp_host" value="{{{$mail_settings->getsmtp_host()}}}" placeholder="{{{t('e.g. smtp.example.com')}}}">
                 </div>
 
                 <div class="settings-field">
-                    <label for="smtp_port">Θύρα</label>
+                    <label for="smtp_port">{{{t('Port')}}}</label>
                     <input type="text" name="smtp_port" id="smtp_port" inputmode="numeric" value="{{{$mail_settings->getsmtp_port()}}}" placeholder="587">
                 </div>
 
                 <div class="settings-field">
-                    <label for="smtp_encryption">Κρυπτογράφηση</label>
+                    <label for="smtp_encryption">{{{t('Encryption')}}}</label>
                     <select name="smtp_encryption" id="smtp_encryption">
                         {% $enc = $mail_settings->getsmtp_encryption() ?: 'tls'; %}
                         <option value="tls" {{($enc == 'tls')?'selected':''}}>TLS (STARTTLS)</option>
                         <option value="ssl" {{($enc == 'ssl')?'selected':''}}>SSL</option>
-                        <option value="none" {{($enc == 'none')?'selected':''}}>Καμία</option>
+                        <option value="none" {{($enc == 'none')?'selected':''}}>{{{t('None')}}}</option>
                     </select>
                 </div>
 
                 <div class="settings-field">
-                    <label for="smtp_username">Όνομα χρήστη</label>
+                    <label for="smtp_username">{{{t('SMTP username')}}}</label>
                     <input type="text" name="smtp_username" id="smtp_username" value="{{{$mail_settings->getsmtp_username()}}}" autocomplete="off">
                 </div>
 
                 <div class="settings-field">
-                    <label for="smtp_password">Κωδικός</label>
-                    <input type="password" name="smtp_password" id="smtp_password" value="" placeholder="{{($mail_settings->getsmtp_password())?'(αμετάβλητος)':''}}" autocomplete="new-password">
-                    <small>Αφήστε το κενό για να παραμείνει ο τρέχων κωδικός.</small>
+                    <label for="smtp_password">{{{t('SMTP password')}}}</label>
+                    <input type="password" name="smtp_password" id="smtp_password" value="" placeholder="{{{($mail_settings->getsmtp_password()) ? t('(unchanged)') : ''}}}" autocomplete="new-password">
+                    <small>{{{t('Leave blank to keep the current password.')}}}</small>
                 </div>
 
                 <div class="settings-field">
-                    <label for="from_email">Email αποστολέα</label>
-                    <input type="text" name="from_email" id="from_email" value="{{{$mail_settings->getfrom_email()}}}" placeholder="π.χ. pms@example.gr">
+                    <label for="from_email">{{{t('Sender email')}}}</label>
+                    <input type="text" name="from_email" id="from_email" value="{{{$mail_settings->getfrom_email()}}}" placeholder="{{{t('e.g. pms@example.com')}}}">
                 </div>
 
                 <div class="settings-field">
-                    <label for="from_name">Όνομα αποστολέα</label>
+                    <label for="from_name">{{{t('Sender name')}}}</label>
                     <input type="text" name="from_name" id="from_name" value="{{{$mail_settings->getfrom_name()}}}">
                 </div>
             </div>
 
             <div class="settings-form-actions">
-                <button type="submit"><i class="bx bx-save"></i> Αποθήκευση</button>
+                <button type="submit"><i class="bx bx-save"></i> {{{t('Save')}}}</button>
             </div>
         </form>
         {% endif %}
@@ -128,30 +129,30 @@
         <header class="settings-section-header">
             <span class="settings-section-icon"><i class="bx bx-group"></i></span>
             <div>
-                <h3>Χρήστες &amp; ρόλοι</h3>
-                <p>Λογαριασμοί, ρόλοι και τι επιτρέπεται σε κάθε ρόλο.</p>
+                <h3>{{{t('Users & roles')}}}</h3>
+                <p>{{{t('Accounts, roles and what each role is allowed to do.')}}}</p>
             </div>
         </header>
         <div class="settings-links">
             <a href="{{rel_url('/admin/users')}}">
                 <i class="bx bx-user"></i>
-                <span><strong>Χρήστες</strong><small>Λογαριασμοί και οι ρόλοι τους</small></span>
+                <span><strong>{{{t('Users')}}}</strong><small>{{{t('Accounts and their roles')}}}</small></span>
             </a>
             <a href="{{rel_url('/admin/roles')}}">
                 <i class="bx bx-id-card"></i>
-                <span><strong>Ρόλοι</strong><small>Ιατρός, Γραμματεία, …</small></span>
+                <span><strong>{{{t('Roles')}}}</strong><small>{{{t('Doctor, Secretary, ...')}}}</small></span>
             </a>
             <a href="{{rel_url('/admin/permissions')}}">
                 <i class="bx bx-key"></i>
-                <span><strong>Δικαιώματα</strong><small>Οι ενέργειες που μπορούν να επιτραπούν</small></span>
+                <span><strong>{{{t('Permissions')}}}</strong><small>{{{t('The actions that can be allowed')}}}</small></span>
             </a>
             <a href="{{rel_url('/admin/role_permissions')}}">
                 <i class="bx bx-shield-quarter"></i>
-                <span><strong>Δικαιώματα ρόλων</strong><small>Ποιος ρόλος μπορεί να κάνει τι</small></span>
+                <span><strong>{{{t('Role permissions')}}}</strong><small>{{{t('Which role can do what')}}}</small></span>
             </a>
             <a href="{{rel_url('/admin/user_roles')}}">
                 <i class="bx bx-user-check"></i>
-                <span><strong>Ρόλοι χρηστών</strong><small>Ανάθεση ρόλων ανά χρήστη</small></span>
+                <span><strong>{{{t('User roles')}}}</strong><small>{{{t('Assign roles per user')}}}</small></span>
             </a>
         </div>
     </section>

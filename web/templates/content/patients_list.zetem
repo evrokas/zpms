@@ -17,10 +17,10 @@
         {# Visually hidden: the breadcrumb above already says "Ασθενείς › Λίστα
            ασθενών"; kept as the page's heading for screen readers. #}
         <h2 class="page-title sr-only">{{t("Patients")}}</h2>
-        <ul class="patients-summary" aria-label="Σύνοψη">
-            <li><b>{{$summary['total']}}</b> ασθενείς</li>
-            <li><b>{{$summary['new']}}</b> νέοι τις τελευταίες 30 ημέρες</li>
-            <li><b>{{$summary['today']}}</b> ραντεβού σήμερα</li>
+        <ul class="patients-summary" aria-label="{{{t('Summary')}}}">
+            <li>{{t('@count patients', ['count' => '<b>' . (int)$summary['total'] . '</b>'])}}</li>
+            <li>{{t('@count new in the last 30 days', ['count' => '<b>' . (int)$summary['new'] . '</b>'])}}</li>
+            <li>{{t('@count appointments today', ['count' => '<b>' . (int)$summary['today'] . '</b>'])}}</li>
         </ul>
     </div>
     {% if($can_create_patient): %}
@@ -34,7 +34,7 @@
     <div class="search">
         <div class="input-div">
             <i class="bx bx-search search-icon"></i>
-            <input type="text" class="select2 focus-primary" name="q" id="patients-q" autocomplete="off" aria-label="{{t('Search')}}" placeholder="Αναζήτηση με όνομα, ΑΜΚΑ ή τηλέφωνο&hellip;" value="{{{$state['q']}}}">
+            <input type="text" class="select2 focus-primary" name="q" id="patients-q" autocomplete="off" aria-label="{{t('Search')}}" placeholder="{{{t('Search by name, AMKA or telephone...')}}}" value="{{{$state['q']}}}">
         </div>
         <div class="select-container">
             <ul class="select-box" id="select-box"></ul>
@@ -43,8 +43,8 @@
 
     {% if(count($areas) > 0): %}
     <label class="pt-select">
-        <select name="area" aria-label="Περιοχή τελευταίου ραντεβού" data-autosubmit>
-            <option value="">Όλες οι περιοχές</option>
+        <select name="area" aria-label="{{{t('Area of the last appointment')}}}" data-autosubmit>
+            <option value="">{{{t('All areas')}}}</option>
             {% foreach($areas as $area): %}
             <option value="{{{$area['value']}}}" {{($state['area'] === $area['value']) ? 'selected' : ''}}>{{{$area['label']}}}</option>
             {% endforeach %}
@@ -52,22 +52,22 @@
     </label>
     {% endif %}
 
-    <span class="pt-density" role="group" aria-label="Πυκνότητα προβολής">
-        <button type="button" id="density-comfy" aria-pressed="true" title="Άνετη προβολή" aria-label="Άνετη προβολή"><i class="bx bx-list-ul"></i></button>
-        <button type="button" id="density-compact" aria-pressed="false" title="Συμπαγής προβολή" aria-label="Συμπαγής προβολή"><i class="bx bx-menu"></i></button>
+    <span class="pt-density" role="group" aria-label="{{{t('Display density')}}}">
+        <button type="button" id="density-comfy" aria-pressed="true" title="{{{t('Comfortable view')}}}" aria-label="{{{t('Comfortable view')}}}"><i class="bx bx-list-ul"></i></button>
+        <button type="button" id="density-compact" aria-pressed="false" title="{{{t('Compact view')}}}" aria-label="{{{t('Compact view')}}}"><i class="bx bx-menu"></i></button>
     </span>
 
     <input type="hidden" name="sort" value="{{{$state['sort']}}}">
     <input type="hidden" name="dir" value="{{{$state['dir']}}}">
-    <noscript><button type="submit" class="pt-apply">Εφαρμογή</button></noscript>
+    <noscript><button type="submit" class="pt-apply">{{{t('Apply')}}}</button></noscript>
 </form>
 
 <div class="patient-table" id="patient-table">
     {% if(count($rows) == 0): %}
         <div class="patients-empty">
             <i class="bx bx-user-plus"></i>
-            <p>{{($searching) ? 'Κανένας ασθενής δεν ταιριάζει με την αναζήτηση.' : t("No patients found.")}}</p>
-            {% if($searching): %}<p><a href="{{rel_url('/patients')}}">Εμφάνιση όλων των ασθενών</a></p>{% endif %}
+            <p>{{($searching) ? t('No patient matches your search.') : t("No patients found.")}}</p>
+            {% if($searching): %}<p><a href="{{rel_url('/patients')}}">{{{t('Show all patients')}}}</a></p>{% endif %}
         </div>
     {% else: %}
     <div class="pt-scroll">
@@ -75,11 +75,11 @@
         <thead>
             <tr>
                 <th aria-sort="{{($state['sort'] === 'name') ? (($state['dir'] === 'asc') ? 'ascending' : 'descending') : 'none'}}">
-                    <a class="th-sort{{($state['sort'] === 'name') ? ' is-active ' . $state['dir'] : ''}}" href="{{{$sort_urls['name']}}}">Ασθενής <span class="th-arrows"><i class="bx bx-chevron-up"></i><i class="bx bx-chevron-down"></i></span></a>
+                    <a class="th-sort{{($state['sort'] === 'name') ? ' is-active ' . $state['dir'] : ''}}" href="{{{$sort_urls['name']}}}">{{{t('Patient')}}} <span class="th-arrows"><i class="bx bx-chevron-up"></i><i class="bx bx-chevron-down"></i></span></a>
                 </th>
-                <th>Επικοινωνία</th>
+                <th>{{{t('Contact')}}}</th>
                 <th aria-sort="{{($state['sort'] === 'last') ? (($state['dir'] === 'asc') ? 'ascending' : 'descending') : 'none'}}">
-                    <a class="th-sort{{($state['sort'] === 'last') ? ' is-active ' . $state['dir'] : ''}}" href="{{{$sort_urls['last']}}}">Τελευταίο ραντεβού <span class="th-arrows"><i class="bx bx-chevron-up"></i><i class="bx bx-chevron-down"></i></span></a>
+                    <a class="th-sort{{($state['sort'] === 'last') ? ' is-active ' . $state['dir'] : ''}}" href="{{{$sort_urls['last']}}}">{{{t('Last appointment')}}} <span class="th-arrows"><i class="bx bx-chevron-up"></i><i class="bx bx-chevron-down"></i></span></a>
                 </th>
                 <th class="pt-actions-head" aria-hidden="true"></th>
             </tr>
@@ -93,8 +93,8 @@
                         <div class="pt-id">
                             <a class="pt-name" href="{{$r['url']}}">{{{$r['name']}}}</a>
                             <div class="pt-sub">
-                                {% if($r['age'] !== null): %}<span class="pt-age">{{$r['age']}} ετών</span>{% endif %}
-                                {% if($r['amka'] !== ''): %}<span>ΑΜΚΑ {{{$r['amka']}}} <i class="bx bx-copy" title="Αντιγραφή ΑΜΚΑ" data-copy-text="{{{$r['amka']}}}"></i></span>{% endif %}
+                                {% if($r['age'] !== null): %}<span class="pt-age">{{t('@age years old', ['age' => (int)$r['age']])}}</span>{% endif %}
+                                {% if($r['amka'] !== ''): %}<span>{{{t('AMKA')}}} {{{$r['amka']}}} <i class="bx bx-copy" title="{{{t('Copy AMKA')}}}" data-copy-text="{{{$r['amka']}}}"></i></span>{% endif %}
                             </div>
                         </div>
                     </div>
@@ -108,8 +108,8 @@
                     {% if($r['last']): %}
                     <span class="pt-date">{{$r['last']['date']}}</span>
                     <span class="pt-meta">
-                        <span class="pt-chip{{($r['last']['is_operation']) ? ' is-operation' : ''}}">{{($r['last']['is_operation']) ? 'Χειρουργείο' : 'Ραντεβού'}}</span>
-                        {% if($r['last']['upcoming']): %}<span class="pt-chip is-upcoming">Προσεχές</span>{% endif %}
+                        <span class="pt-chip{{($r['last']['is_operation']) ? ' is-operation' : ''}}">{{($r['last']['is_operation']) ? t('Operation') : t('Appointment')}}</span>
+                        {% if($r['last']['upcoming']): %}<span class="pt-chip is-upcoming">{{{t('Upcoming')}}}</span>{% endif %}
                         {% if($r['last']['place'] !== ''): %}<span class="pt-place">{{{$r['last']['place']}}}</span>{% endif %}
                     </span>
                     {% else: %}
@@ -118,9 +118,9 @@
                 </td>
                 <td class="pt-actions">
                     {% if($can_edit_appointment): %}
-                    <a class="pt-icon" href="{{rel_url('/appointment/' . $r['id'] . '/newappointment')}}" title="Νέο ραντεβού" aria-label="Νέο ραντεβού για {{{$r['name']}}}"><i class="bx bx-calendar-plus"></i></a>
+                    <a class="pt-icon" href="{{rel_url('/appointment/' . $r['id'] . '/newappointment')}}" title="{{{t('New appointment')}}}" aria-label="{{{t('New appointment for @name', ['name' => $r['name']])}}}"><i class="bx bx-calendar-plus"></i></a>
                     {% endif %}
-                    <a class="pt-icon" href="{{$r['url']}}" title="Άνοιγμα φακέλου" aria-label="Άνοιγμα φακέλου {{{$r['name']}}}"><i class="bx bx-chevron-right"></i></a>
+                    <a class="pt-icon" href="{{$r['url']}}" title="{{{t('Open record')}}}" aria-label="{{{t('Open record of @name', ['name' => $r['name']])}}}"><i class="bx bx-chevron-right"></i></a>
                 </td>
             </tr>
             {% endforeach %}
@@ -130,24 +130,24 @@
     {% endif %}
 
     <div class="pt-pager">
-        <span class="pt-count">{% if($total > 0): %}Εμφάνιση {{$from}}&ndash;{{$to}} από {{$total}} ασθενείς{% else: %}0 ασθενείς{% endif %}</span>
+        <span class="pt-count">{{{($total > 0) ? t('Showing @start-@end of @total patients', ['start' => $from, 'end' => $to, 'total' => $total]) : t('@count patients', ['count' => 0])}}}</span>
         <div class="pt-pager-right">
-            <label class="pt-perpage">Εγγραφές ανά σελίδα
-                <select name="per_page" form="patients-form" aria-label="Εγγραφές ανά σελίδα" data-autosubmit>
+            <label class="pt-perpage">{{{t('Rows per page')}}}
+                <select name="per_page" form="patients-form" aria-label="{{{t('Rows per page')}}}" data-autosubmit>
                     {% foreach($per_page_choices as $n): %}
-                    <option value="{{$n}}" {{($state['per_page'] === $n) ? 'selected' : ''}}>{{($n === 'all') ? 'Όλες' : $n}}</option>
+                    <option value="{{$n}}" {{($state['per_page'] === $n) ? 'selected' : ''}}>{{($n === 'all') ? t('All') : $n}}</option>
                     {% endforeach %}
                 </select>
             </label>
             {% if(count($page_links) > 0): %}
-            <nav class="pt-pages" aria-label="Σελίδες">
-                {% if($prev_url): %}<a href="{{{$prev_url}}}" aria-label="Προηγούμενη σελίδα">&lsaquo;</a>{% else: %}<span class="is-disabled" aria-hidden="true">&lsaquo;</span>{% endif %}
+            <nav class="pt-pages" aria-label="{{{t('Pages')}}}">
+                {% if($prev_url): %}<a href="{{{$prev_url}}}" aria-label="{{{t('Previous page')}}}">&lsaquo;</a>{% else: %}<span class="is-disabled" aria-hidden="true">&lsaquo;</span>{% endif %}
                 {% foreach($page_links as $pl): %}
                     {% if(isset($pl['gap'])): %}<span class="pt-gap">&hellip;</span>
                     {% elseif($pl['current']): %}<span class="is-current" aria-current="page">{{$pl['n']}}</span>
                     {% else: %}<a href="{{{$pl['url']}}}">{{$pl['n']}}</a>{% endif %}
                 {% endforeach %}
-                {% if($next_url): %}<a href="{{{$next_url}}}" aria-label="Επόμενη σελίδα">&rsaquo;</a>{% else: %}<span class="is-disabled" aria-hidden="true">&rsaquo;</span>{% endif %}
+                {% if($next_url): %}<a href="{{{$next_url}}}" aria-label="{{{t('Next page')}}}">&rsaquo;</a>{% else: %}<span class="is-disabled" aria-hidden="true">&rsaquo;</span>{% endif %}
             </nav>
             {% endif %}
         </div>

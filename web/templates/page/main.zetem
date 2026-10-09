@@ -50,6 +50,9 @@
 
     {% include page.zetem %}
 
+    {# Interface text for the page scripts (see zpms_js_text() in index.php). #}
+    {{ zpms_js_text_script() }}
+
     {% if(isset($foot_links))foreach($foot_links as $link): %}
         <script foot_links {{$link->getAttributes()}}></script>
     {% endforeach; %}

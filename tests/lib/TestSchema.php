@@ -86,6 +86,13 @@ class TestSchema {
         self::loadSchemaSql(__FWDIR__ . '/classes/sql', 'framework');
         self::loadSchemaSql(ZPMS_TEST_APPDIR . '/web/classes/sql', 'application');
 
+        // The interface reads Greek because config/dictionary.gr.php has been
+        // loaded into the dictionary table (`php bin/import_dictionary.php` on a
+        // real install) -- do the same here so the pages under test match.
+        require_once __DIR__ . '/../../bin/lib/dictionary_import.php';
+        $terms = require __DIR__ . '/../../config/dictionary.gr.php';
+        zpms_import_dictionary_terms(dbConnection::getConnection(), 'gr', $terms);
+
         dbConnection::getConnection()->exec(
             'CREATE TABLE _test_suite_marker (created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP)'
         );

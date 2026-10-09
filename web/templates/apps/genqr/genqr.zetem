@@ -1,22 +1,19 @@
 {% attach_library('qrgenerator-library') %}
 
 
-<center>
-    <h1>
-        QR Generator Application
-    </h1>
-</center>
-<hr>
+{# Visually hidden: the breadcrumb above already names this page. Kept as the
+   page heading for screen readers. #}
+<h1 class="sr-only">{{{t('QR Generator Application')}}}</h1>
 
 <div class="genqr">
     <form action="/apps/genqr" method="post">
         {{ csrf_field() }}
         <!-- <label for="qrtext">Text</label> -->
-        <input type="text" name="qrtext" id="qrtext" placeholder="Enter the text to be encoded">
+        <input type="text" name="qrtext" id="qrtext" placeholder="{{{t('Enter the text to be encoded')}}}">
         <div class="options">
-            <span>Options</span>
+            <span>{{{t('Options')}}}</span>
             <div class="inputraw">
-                <label for="imagetype">Type</label>
+                <label for="imagetype">{{{t('Type')}}}</label>
                 <select name="imagetype" id="imagetype">
                     <option value="png" selected>PNG</option>
                     <option value="svg">SVG</option>
@@ -24,7 +21,7 @@
             </div>
 
             <div class="inputraw">
-                <label for="imagedpi">DPI</label>
+                <label for="imagedpi">{{{t('DPI')}}}</label>
                 <select name="imagedpi" id="imagedpi">
                     <option value="75">75</option>
                     <option value="100">100</option>
@@ -36,7 +33,7 @@
             </div>
             
             <div class="inputraw">
-                <label for="margins">Margin (px)</label>
+                <label for="margins">{{{t('Margin (px)')}}}</label>
                 <select name="margins" id="margins">
                     <option value="1">1</option>
                     <option value="2">2</option>
@@ -48,12 +45,12 @@
             </div>
 
             <div class="inputraw">
-                <label for="errorcorrection">Error correction</label>
+                <label for="errorcorrection">{{{t('Error correction')}}}</label>
                 <select name="errorcorrection" id="errorcorrection">
-                    <option value="L">Low (L)</option>
-                    <option value="M">Medium (M)</option>
-                    <option value="Q" selected>High (Q)</option>
-                    <option value="H">Highest (H)</option>
+                    <option value="L">{{{t('Low (L)')}}}</option>
+                    <option value="M">{{{t('Medium (M)')}}}</option>
+                    <option value="Q" selected>{{{t('High (Q)')}}}</option>
+                    <option value="H">{{{t('Highest (H)')}}}</option>
                 </select>
             </div>
 
@@ -61,7 +58,7 @@
 
 
 
-        <button type="submit">Generate</button>
+        <button type="submit">{{{t('Generate')}}}</button>
 
     
     </form>
@@ -69,10 +66,10 @@
     <div class="output">
         {% if(isset($qrimage)): %}
             <div class="text">
-                Text: <span>{{{$qrtext}}}</span>
+                {{{t('Text')}}}: <span>{{{$qrtext}}}</span>
             </div>
             <div class="qrimage">
-                <img src="{{$qrimage|cache_asset}}" id="qrimage" alt="Generated QR image">
+                <img src="{{$qrimage|cache_asset}}" id="qrimage" alt="{{{t('Generated QR image')}}}">
             </div>
         {% endif %}
     </div>
