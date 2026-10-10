@@ -61,6 +61,7 @@ require_once __DIR__ . '/functional/appointment_crud.php';
 require_once __DIR__ . '/functional/auth_csrf.php';
 require_once __DIR__ . '/functional/file_upload.php';
 require_once __DIR__ . '/functional/admin_crud.php';
+require_once __DIR__ . '/functional/zpmscli.php';
 
 // Fresh database + a login-capable test account, every run -- see
 // TestSchema::reset()'s own docblock for why this matters.
@@ -112,6 +113,11 @@ try {
     $adminCrudRunner = new TestRunner('Admin CRUD (users/roles/permissions)');
     zpms_functional_admin_crud($adminCrudRunner, $server->baseUrl());
     $ok = $adminCrudRunner->run() && $ok;
+
+    // zpmscli (bin/zpmscli.php) -- straight against the test database, no HTTP.
+    $cliRunner = new TestRunner('zpmscli (housekeeping commands)');
+    zpmscli_functional_tests($cliRunner);
+    $ok = $cliRunner->run() && $ok;
 } finally {
     $server->stop();
 }

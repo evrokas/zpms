@@ -2166,3 +2166,26 @@ The breadcrumb already names the page, so the heading underneath it said the sam
 ## TOTP removed
 
 The two-factor (TOTP) feature was never finished -- the profile page section was already hidden (`totp_ui_enabled` was `false`) and `totp_handler()` only encoded a fixed test string into a QR code, never a per-user secret. It is gone: the `/totp/{action}` route and `totp_handler()` (`web/index.php`, `config/settings.info.yaml`), the profile page section and its two template variables (`user_profile.zetem`, `UserProfileModule`), `totp_action()` / `call_totp_action()` (`web/js/scripts.js`), the `.totp` / modal-QR styles (`userprofile.css`) and the ten dictionary terms only it used. Nothing in the database referenced it, so there is nothing to migrate. The QR generator under Apps is a separate feature and is unchanged.
+
+## `bin/zpmscli.php` -- housekeeping commands
+
+A command-line tool in the style of zeusfw's `maker.php` (`area:action` commands, `--flag=value` options anywhere on the line) for jobs that have no screen in the app. It acts on the ZPMS database and on `web/files/appointment_files` only. Run `php bin/zpmscli.php help` for the list.
+
+**Nothing is written unless `--yes` is given.** Without it every command is a dry run: it prints what it would change and exits. Destructive commands must be told what to act on (ids, `--from`, `--older-than`); there is no accidental "everything". `ZPMS_DB_CONFIG=config/db.test.php` points it at another database, like the other `bin/` scripts. Every `--yes` run appends one line of counts (never names) to `web/files/logs/zpmscli.log`. **Take a database and `web/files` backup before any purge.**
+
+| Command | What it does |
+|---|---|
+| `users:list` | Usernames that can own records. |
+| `patients:list [--q=] [--user=] [--deleted] [--limit=50]` | Find patient ids. |
+| `appointments:list <patient id\|guid>` | A patient's appointments. |
+| `patients:reassign --to=<user> [--from=<user>] [--patient=<id,...>] [--only=patients,appointments,files,history,operations] [--force]` | Make records look as if `--to` created them (dates unchanged). With `--patient`, the rows on those patients (only `--from`'s if given, so other people's additions stay theirs); with only `--from`, everything that user created. `--to` must be an existing user unless `--force`. |
+| `patients:delete <id\|guid ...>` | Soft delete, exactly what the web interface does (one shared time for the patient and its appointments; recoverable; already-deleted rows keep their time). |
+| `patients:purge <id\|guid ...>` | Hard delete: the patient, appointments, attachment rows, files and thumbnails on disk (and the folders left empty), edit history, legacy `operations` rows; clears the "converted to" links on pending appointments. |
+| `appointments:delete` / `appointments:purge <id\|guid ...>` | The same, for single appointments (the patient stays). |
+| `cleanup:deleted --older-than=<days> \| --all` | Purge everything already soft-deleted (patients with their appointments, and appointments deleted on their own). |
+| `cleanup:orphans` | Remove attachment and history rows whose appointment no longer exists. Appointments without a patient and files on disk that no row points at are only reported. |
+| `cache:clean` | Delete `web/cache/*.php` (compiled templates; rebuilt on the next request). Needs no database. |
+
+Details worth knowing: each database change runs in one transaction (the schema has no foreign keys, so the cascades are written out by hand), and files are removed only after it commits. A file path is deleted only if it resolves inside the attachment folder, so a damaged row cannot point a purge at another file. Timestamps use the app's configured time zone (`tz` in `settings.info.yaml`). The logic is in `bin/lib/zpms_cli.php`, shared with the tests.
+
+Tests: `tests/functional/zpmscli.php` (reassign scopes and refusals, soft delete, purge with files and the path-escape case, cleanup by age, orphans, cache, log, and the command line's exit codes). `bin/run_tests.sh`: 133/133 static, 65/65 functional.
