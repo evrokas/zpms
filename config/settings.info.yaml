@@ -512,10 +512,6 @@ routes:
     url: "/clinics/{guid}/edit"
     handler: clinics_row_edit
     method: get
-  totp_management:
-    title: "Activate TOTP"
-    url: "/totp/{action}"
-    handler: totp_handler
 
 
 regions:

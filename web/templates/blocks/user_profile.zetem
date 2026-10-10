@@ -54,42 +54,6 @@
         </div>
     </form>
 
-    {% if($totp_ui_enabled): %}
-    <form action="#" method="post">
-        {{ csrf_field() }}
-        <div class="totp">
-        <h2>{{{t('TOTP security')}}}</h2>
-        {% if(!$totp_activated): %}
-            <p>{{{t('Timed OTP password is a feature that enhances the security of the application, by requesting a time-dependent key each time the user requests sensitive data.')}}}
-            </p>
-            <p>
-                {{{t('The user must install Google Authenticator on a mobile device and activate TOTP from the button below.')}}}
-            </p>
-        {% else: %}
-            <p>{{{t('Timed OTP is activated. Use the Show QR code button to display the QR code or the Deactivate button to disable TOTP security.')}}}
-            </p>
-            <p>{{{t('If TOTP is disabled, all security features will be disabled, but not lost.')}}}</p>
-        {% endif %}
-
-        <div class="actions">
-            <button type="submit" {{ ($totp_activated)?"disabled":"" }} onclick="totp_action('activate')">{{{t('Activate TOTP')}}}</button>
-            <button type="submit" {{ (!$totp_activated)?"disabled":"" }} onclick="totp_action('deactivate')">{{{t('Deactivate TOTP')}}}</button>
-            <button type="button" {{ (!$totp_activated)?"disabled":"" }} onclick="totp_action('show_qrcode_modal')" class="showqr" >
-                {{{t('Show QR code')}}}
-                <!-- <img id="qrimg" class="qrimg" src="" alt="TOTP QR Code"> -->
-            </button>
-        </div>
-
-        <div id="modal-qr" class="modal-qr">
-            <div class="modal-qr-inner">
-                <p>{{{t('Please scan the QR code with Google Authenticator')}}}</p>
-                <img id="qrimg" src="" alt="{{{t('QR code')}}}">
-                <button type="button" onclick="totp_action('close_qrcode_modal')">{{{t('Close')}}}</button>
-            </div>
-        </div>
-    </form>
-    {% endif %}
-
     <div class="user-devices">
         <h2>{{{t('My devices')}}}</h2>
         <p>{{{t('Devices on which you asked the application to remember you.')}}}</p>
