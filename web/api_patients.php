@@ -71,6 +71,9 @@ function docarc_patients_search_api($params) {
         . ' match(es), term_len=' . mb_strlen($term)
         . ', from=' . ($_SERVER['REMOTE_ADDR'] ?? 'unknown'));
 
+    // Who asked and how many matched -- never the search term or the names.
+    zpms_audit('patient_search_api', ['actor' => 'docarc', 'actor_type' => 'api', 'detail' => 'matches=' . count($matches)]);
+
     echo json_encode(['matches' => $matches]);
     exit();
 }

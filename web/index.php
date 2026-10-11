@@ -22,6 +22,7 @@ require_once(__FWDIR__ . '/bootstrap.php');
 require_once(__DIR__ . '/api_patients.php');
 require_once(__DIR__ . '/appointment_files.php');
 require_once(__DIR__ . '/appointment_history.php');
+require_once(__DIR__ . '/audit.php');
 require_once(__DIR__ . '/apyweb_client.php');
 require_once(__DIR__ . '/google_calendar_client.php');
 require_once(__DIR__ . '/rbac.php');
@@ -522,6 +523,9 @@ require_once(__DIR__ . '/zpms_mailer.php');
         // $pat = $pc->getById($params['id']);
         // error_log("\n$params: " .print_r($params, 1)."\n");
         $pat = patientsClass::sgetById( $params['id'] );
+        if ($pat) {
+            zpms_audit('patient_viewed', ['patient' => $pat]);
+        }
 
         // Read-only financial-info block (APYweb integration) -- silent
         // no-op (null) when unconfigured/unreachable/no match, see
@@ -669,9 +673,13 @@ require_once(__DIR__ . '/zpms_mailer.php');
         $pat = patientsClass::sgetById($params['id']);
         // error_log("Patient: " . print_r($pat, 1)."\n");
 
-        // if(isset($_POST['submit'])) {
-        
-        
+        // Which fields this save actually changes (names only) -- for the
+        // audit log. Autosave posts the whole form on every keystroke
+        // pause, so a save that changes nothing is not logged at all.
+        $auditFields = ['pname', 'pdob', 'pamka', 'ptel', 'paddr', 'pemail', 'pnote', 'pgender'];
+        $before = [];
+        foreach ($auditFields as $f) { $before[$f] = (string)$pat->{'get' . $f}(); }
+
         $pat->loadFields([
             'cuser' => $kernel->getUserName(),
             'cdate' => getDBtime(),
@@ -692,6 +700,14 @@ require_once(__DIR__ . '/zpms_mailer.php');
         }
 
         $res = $pat->update();
+
+        $changed = [];
+        foreach ($auditFields as $f) {
+            if ((string)$pat->{'get' . $f}() !== $before[$f]) $changed[] = $f;
+        }
+        if ($res && $changed) {
+            zpms_audit('patient_updated', ['patient' => $pat, 'detail' => zpms_audit_fields($changed)]);
+        }
 
         if(isset($_POST['use_ajax'])) {
             if($res) {
@@ -784,6 +800,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
 
         $pat->setdeleted( $dtime );
         $pat->update();
+        zpms_audit('patient_deleted', ['patient' => $pat, 'detail' => 'appointments=' . count($app_list)]);
 
         // $pat->delete();
 
@@ -833,6 +850,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
         // print_r( $pc );
 
         $pc->insert();
+        zpms_audit('patient_created', ['patient' => $pc]);
 
         $kernel->addStatus('notice', t('A new record was created for patient @name', ['name' => zpms_bold($pc->getpname())]));
 
@@ -989,6 +1007,9 @@ require_once(__DIR__ . '/zpms_mailer.php');
         $ap->update();
 
         zpms_record_appointment_change((int)$ap->getid(), $kernel->getUserName(), $changedFields);
+        if ($changedFields) {
+            zpms_audit_appointment('appointment_updated', $ap, zpms_audit_fields($changedFields));
+        }
 
         // error_log('patient appointment saved');
         if(key_exists('use_ajax', $_POST)) {
@@ -1014,6 +1035,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
         $app = $ap->getById($id);
         $app->setdeleted( getDBtime() );
         $app->update();
+        zpms_audit_appointment('appointment_deleted', $app);
 
         // $app->delete();
 
@@ -1180,6 +1202,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
         // print_r( $pc );
 
         $app->insert();
+        zpms_audit('appointment_created', ['patient' => $pat, 'appointment_id' => $app->getid(), 'detail' => 'type=' . $app->getatype()]);
 
         // error_log('\nREFERER: '. $_SERVER['HTTP_REFERER']."\n");
 
@@ -1366,6 +1389,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
             'notes' => $_POST['appointment-notes'] ?? '',
         ]);
         $pending->insert();
+        zpms_audit('pending_created', ['detail' => 'pending_id=' . (int)$pending->getid()]);
 
         zpms_pending_appointment_sync_to_calendar($pending);
 
@@ -1492,6 +1516,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
         $pending->setassigned_user_id($assignedDoctor['id'] ?? null);
         $pending->setnotes($_POST['appointment-notes'] ?? '');
         $pending->update();
+        zpms_audit('pending_updated', ['detail' => 'pending_id=' . (int)$pending->getid()]);
 
         zpms_pending_appointment_sync_to_calendar($pending);
 
@@ -1525,6 +1550,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
             }
             $pending->setcancelled_at(getDBtime());
             $pending->update();
+            zpms_audit('pending_cancelled', ['detail' => 'pending_id=' . (int)$pending->getid()]);
             $kernel->addStatus('notice', t('The appointment was cancelled.'));
         }
 
@@ -1635,6 +1661,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
                 'guid' => guid(),
             ]);
             $pat->insert();
+            zpms_audit('patient_created', ['patient' => $pat, 'detail' => 'from_pending_id=' . (int)$pending->getid()]);
         }
 
         $app = new appointmentsClass([
@@ -1656,6 +1683,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
         $pending->setconverted_patient_id($pat->getid());
         $pending->setconverted_appointment_id($app->getid());
         $pending->update();
+        zpms_audit('pending_converted', ['patient' => $pat, 'appointment_id' => $app->getid(), 'detail' => 'pending_id=' . (int)$pending->getid()]);
 
         $kernel->addStatus('notice', t('A record and an appointment were created for patient @name.', ['name' => zpms_bold($pat->getpname())]));
 
@@ -1739,6 +1767,12 @@ require_once(__DIR__ . '/zpms_mailer.php');
             $encryption = 'tls';
         }
 
+        // Which settings this save changes (names only, never the values,
+        // and never the password itself) -- for the audit log.
+        $mailAuditFields = ['smtp_host', 'smtp_port', 'smtp_encryption', 'smtp_username', 'from_email', 'from_name'];
+        $mailBefore = [];
+        foreach ($mailAuditFields as $f) { $mailBefore[$f] = (string)$settings->{'get' . $f}(); }
+
         $settings->setsmtp_host(trim($_POST['smtp_host'] ?? '') ?: null);
         $settings->setsmtp_port(trim($_POST['smtp_port'] ?? '') !== '' ? (int)$_POST['smtp_port'] : null);
         $settings->setsmtp_encryption($encryption);
@@ -1758,6 +1792,13 @@ require_once(__DIR__ . '/zpms_mailer.php');
         }
 
         $settings->update();
+
+        $mailChanged = [];
+        foreach ($mailAuditFields as $f) {
+            if ((string)$settings->{'get' . $f}() !== $mailBefore[$f]) $mailChanged[] = $f;
+        }
+        if (trim($_POST['smtp_password'] ?? '') !== '') $mailChanged[] = 'smtp_password';
+        zpms_audit('mail_settings_updated', ['detail' => zpms_audit_fields($mailChanged)]);
 
         $kernel->addStatus('notice', t('The email settings were saved.'));
         header('location: '.rel_url('/settings'));

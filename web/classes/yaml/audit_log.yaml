@@ -1,0 +1,67 @@
+# GDPR accountability trail (Art. 5(2), Art. 32): who did what to patient
+# data, and when. Written by zpms_audit() / zpms_audit_write() in
+# web/audit.php -- see that file's docblock for the rules (no names or other
+# free text ever goes in here) -- and read by the admin-only /audit page.
+#
+# Rows are never updated or deleted, by anything (zpmscli's purge commands
+# included). patient_id / patient_guid / appointment_id are plain snapshots,
+# not foreign keys, so a row stays readable after the record it describes is
+# deleted -- and since it never holds the patient's name, erasing the patient
+# leaves nothing identifying behind in the log.
+table:
+  name: audit_log
+  class: auditLogClass
+
+  fields:
+  - name: guid
+    type: '@guid'
+
+  # When it happened, in the app's own time zone (written explicitly, like
+  # every other timestamp in this app -- not the database server's clock).
+  - name: cdate
+    type: '@cdate'
+
+  # Who did it: the signed-in user, the system user running zpmscli, or "-"
+  # when nobody is signed in (e.g. a failed sign-in).
+  - name: cuser
+    type: '@cuser'
+
+  # One of the keys of ZPMS_AUDIT_EVENT_LABELS (web/audit.php).
+  - name: event_type
+    type: varchar(48)
+    required: true
+
+  # staff (signed-in user), anonymous (nobody signed in), api (another
+  # application), cli (bin/zpmscli.php).
+  - name: actor_type
+    type: varchar(16)
+    required: true
+
+  - name: ip
+    type: varchar(45)
+
+  - name: patient_id
+    type: int
+    default: null
+
+  - name: patient_guid
+    type: char(36)
+    default: null
+
+  - name: appointment_id
+    type: int
+    default: null
+
+  # The account an account-related event is about (a failed sign-in's typed
+  # username, a user edited on /admin/users).
+  - name: target_user
+    type: varchar(64)
+    default: null
+
+  # Non-identifying detail only: field names (never values), ids, counts,
+  # a sign-in method or reason.
+  - name: detail
+    type: varchar(255)
+    default: null
+
+...

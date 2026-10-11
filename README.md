@@ -2171,16 +2171,16 @@ The two-factor (TOTP) feature was never finished -- the profile page section was
 
 A command-line tool in the style of zeusfw's `maker.php` (`area:action` commands, `--flag=value` options anywhere on the line) for jobs that have no screen in the app. It acts on the ZPMS database and on `web/files/appointment_files` only. Run `php bin/zpmscli.php help` for the list.
 
-**Nothing is written unless `--yes` is given.** Without it every command is a dry run: it prints what it would change and exits. Destructive commands must be told what to act on (ids, `--from`, `--older-than`); there is no accidental "everything". `ZPMS_DB_CONFIG=config/db.test.php` points it at another database, like the other `bin/` scripts. Every `--yes` run appends one line of counts (never names) to `web/files/logs/zpmscli.log`. **Take a database and `web/files` backup before any purge.**
+**Nothing is written unless `--yes` is given.** Without it every command is a dry run: it prints what it would change and exits. Destructive commands must be told what to act on (ids, `--from`, `--older-than`); there is no accidental "everything". `ZPMS_DB_CONFIG=config/db.test.php` points it at another database, like the other `bin/` scripts. Every `--yes` run is recorded in the GDPR audit log (see below) as a command-line action: one row per patient or appointment deleted or purged, and a summary row for reassign and cleanup. **Take a database and `web/files` backup before any purge.**
 
 | Command | What it does |
 |---|---|
 | `users:list` | Usernames that can own records. |
 | `patients:list [--q=] [--user=] [--deleted] [--limit=50]` | Find patient ids. |
 | `appointments:list <patient id\|guid>` | A patient's appointments. |
-| `patients:reassign --to=<user> [--from=<user>] [--patient=<id,...>] [--only=patients,appointments,files,history,operations] [--force]` | Make records look as if `--to` created them (dates unchanged). With `--patient`, the rows on those patients (only `--from`'s if given, so other people's additions stay theirs); with only `--from`, everything that user created. `--to` must be an existing user unless `--force`. |
+| `patients:reassign --to=<user> [--from=<user>] [--patient=<id,...>] [--only=patients,appointments,files,history] [--force]` | Make records look as if `--to` created them (dates unchanged). With `--patient`, the rows on those patients (only `--from`'s if given, so other people's additions stay theirs); with only `--from`, everything that user created. `--to` must be an existing user unless `--force`. |
 | `patients:delete <id\|guid ...>` | Soft delete, exactly what the web interface does (one shared time for the patient and its appointments; recoverable; already-deleted rows keep their time). |
-| `patients:purge <id\|guid ...>` | Hard delete: the patient, appointments, attachment rows, files and thumbnails on disk (and the folders left empty), edit history, legacy `operations` rows; clears the "converted to" links on pending appointments. |
+| `patients:purge <id\|guid ...>` | Hard delete: the patient, appointments, attachment rows, files and thumbnails on disk (and the folders left empty), edit history; clears the "converted to" links on pending appointments. |
 | `appointments:delete` / `appointments:purge <id\|guid ...>` | The same, for single appointments (the patient stays). |
 | `cleanup:deleted --older-than=<days> \| --all` | Purge everything already soft-deleted (patients with their appointments, and appointments deleted on their own). |
 | `cleanup:orphans` | Remove attachment and history rows whose appointment no longer exists. Appointments without a patient and files on disk that no row points at are only reported. |
@@ -2189,3 +2189,58 @@ A command-line tool in the style of zeusfw's `maker.php` (`area:action` commands
 Details worth knowing: each database change runs in one transaction (the schema has no foreign keys, so the cascades are written out by hand), and files are removed only after it commits. A file path is deleted only if it resolves inside the attachment folder, so a damaged row cannot point a purge at another file. Timestamps use the app's configured time zone (`tz` in `settings.info.yaml`). The logic is in `bin/lib/zpms_cli.php`, shared with the tests.
 
 Tests: `tests/functional/zpmscli.php` (reassign scopes and refusals, soft delete, purge with files and the path-escape case, cleanup by age, orphans, cache, log, and the command line's exit codes). `bin/run_tests.sh`: 133/133 static, 65/65 functional.
+
+## GDPR audit log; five unused tables removed
+
+### Audit log (`web/audit.php`, `/audit`)
+
+An accountability trail (GDPR Art. 5(2) / Art. 32) of who did what to patient data and when, built the way DocArc's is.
+
+**Recorded:** sign-ins (successful, failed, refused, the lockout itself, a remembered-device restore) and sign-outs; viewing, creating, changing and deleting a patient record; creating, changing and deleting appointments; uploading, opening and deleting attached files; the pending-appointment workflow (created, changed, cancelled, turned into a patient); DocArc's patient search; email-settings changes; changes to your own account and removed devices; user/role changes on `/admin/*`; and every change made with `bin/zpmscli.php`. Reads are recorded, not just writes.
+
+**Never recorded:** patient names, notes, phone numbers, addresses, file names, search terms, field values. Rows are never deleted, so a name written there would outlive the erasure of the patient's record. A row holds the actor, the event, the time, the IP, the patient id and guid, the appointment id, the account an account event is about, and a short detail of non-identifying facts: the *names* of the fields that changed (`fields=ptel`), ids, counts, a sign-in method. A save that changes nothing (autosave re-sending the same form) is not recorded. Patient ids and guids are snapshots, not foreign keys, so a row stays readable after the patient is purged.
+
+**Two copies:** the `audit_log` table (the source of truth) and `logs/audit.log` at the project root, outside the web root, one line per event, for `tail`/`grep`. Control characters are stripped from everything request-influenced before it is written, so a crafted username can't forge extra lines. A failure to record never breaks the action itself; it goes to the PHP error log. `deploy/zpms-logrotate` has a reference rotation block for the file.
+
+**Reading it:** Apps → Αρχείο Καταγραφής (GDPR), `/audit`, newest first, 50 per page, filtered by event, user, patient number and date range. It needs the new permission `audit-log-view`, which no role holds by default; an administrator (is_superuser) always has it. Grant it to another role on `/admin/role_permissions`.
+
+**Sign-ins and `/admin` changes** happen in zeusfw core, which now reports them through a generic hook, `zeusfw_app_audit_event()` (see zeusfw's CLAUDE.md). ZPMS's implementation is in `web/audit.php`.
+
+**Not recorded:** Clinics/Doctors list changes on Settings (they go through zeusfw's generic webform handler and contain no patient data), thumbnail previews (every image on a record page would add a row), and the Google Calendar sync script.
+
+**Fixed while instrumenting the profile page:** saving your own profile read the read-only Active/Expired checkboxes from the form. A disabled checkbox is never submitted, so every save switched your own account to inactive, which, among other things, dropped a doctor from the pending-appointment doctor list. Those two fields are no longer touched from the profile page; only an administrator changes them, on `/admin/users`.
+
+### Five unused tables removed
+
+`billing`, `invoicestatus`, `operations`, `pdflib_files` and `procedure_info` had no code reading or writing them. Their yaml definitions are gone, along with `operations_list.zetem` and the two `webform--operations*.zetem` templates that only rendered the `operations` table. (`invoices_list.zetem`, `paymentinvoices_list.zetem` and the invoice webform templates are also unused, but belong to no table in this app; they were left alone.)
+
+### Deploying to an existing install
+
+Back up the database first, then:
+
+```sql
+-- the new audit table (what bin/update.sh's spill:sql generates)
+CREATE TABLE IF NOT EXISTS `audit_log` (
+  `id` INTEGER NOT NULL AUTO_INCREMENT UNIQUE,
+  `guid` CHAR(36) NOT NULL,
+  `cdate` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `cuser` CHAR(32) NOT NULL,
+  `event_type` varchar(48) NOT NULL,
+  `actor_type` varchar(16) NOT NULL,
+  `ip` varchar(45) DEFAULT NULL,
+  `patient_id` int DEFAULT NULL,
+  `patient_guid` char(36) DEFAULT NULL,
+  `appointment_id` int DEFAULT NULL,
+  `target_user` varchar(64) DEFAULT NULL,
+  `detail` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- the five unused tables
+DROP TABLE IF EXISTS billing, invoicestatus, operations, pdflib_files, procedure_info;
+DELETE FROM webforms WHERE form_name = 'operations';
+```
+
+Then run `bin/update.sh` (regenerates `web/classes/` without the removed classes), `php bin/migrate_roles.php --yes` (adds the `audit-log-view` permission), `php bin/import_dictionary.php` (the page and event labels), and create `logs/` at the project root, writable by the web server user (`mkdir -m 2770 logs && chown www-data:www-data logs`). Without the table the app keeps working: events go only to `logs/audit.log`, and `/audit` says the table is missing.
+
+Tests: `tests/functional/audit_log.php` (sign-in/out and a forged-line attempt; patient create/view/change/delete by id with no name, note or phone anywhere in the rows or the file; appointment and file events without the file name; `/audit` access, menu and filter; `/admin` changes with field names only; the profile fix; a zpmscli purge as a command-line action) and the audit writer test in `tests/functional/zpmscli.php`. `bin/run_tests.sh`: 138/138 static, 72/72 functional.

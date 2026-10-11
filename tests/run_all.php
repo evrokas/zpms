@@ -62,6 +62,7 @@ require_once __DIR__ . '/functional/auth_csrf.php';
 require_once __DIR__ . '/functional/file_upload.php';
 require_once __DIR__ . '/functional/admin_crud.php';
 require_once __DIR__ . '/functional/zpmscli.php';
+require_once __DIR__ . '/functional/audit_log.php';
 
 // Fresh database + a login-capable test account, every run -- see
 // TestSchema::reset()'s own docblock for why this matters.
@@ -118,6 +119,15 @@ try {
     $cliRunner = new TestRunner('zpmscli (housekeeping commands)');
     zpmscli_functional_tests($cliRunner);
     $ok = $cliRunner->run() && $ok;
+
+    // The GDPR audit log (web/audit.php) -- its own fresh server, same
+    // reason as the admin suite above.
+    $server->stop();
+    $server = new TestServer();
+    $server->start();
+    $auditRunner = new TestRunner('Audit log (GDPR)');
+    zpms_functional_audit_log($auditRunner, $server->baseUrl());
+    $ok = $auditRunner->run() && $ok;
 } finally {
     $server->stop();
 }

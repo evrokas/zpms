@@ -15,3 +15,19 @@
     notifempty
     create 0660 www-data www-data
 }
+
+# GDPR audit log, plain-text copy (web/audit.php writes one line per event;
+# the audit_log table is the source of truth). Adjust the path to where this
+# checkout lives. Each write opens, appends and closes the file, so the
+# rename-and-create rotation below is safe. Never delete old copies sooner
+# than your retention policy for the audit trail requires -- 0660 so a
+# bin/zpmscli.php run by an operator in the www-data group can append too.
+/var/www/zpms/logs/audit.log {
+    monthly
+    rotate 60
+    compress
+    delaycompress
+    missingok
+    notifempty
+    create 0660 www-data www-data
+}

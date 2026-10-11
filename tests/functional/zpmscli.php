@@ -81,7 +81,7 @@ function zpmscli_functional_tests(TestRunner $runner): void {
         assert_equal(1, zpms_cli_test_count("SELECT COUNT(*) FROM patients WHERE id = {$mine['id']} AND cuser = 'cli_from'"), 'a dry run changed a row');
 
         $done = zpmscli_reassign($db, 'cli_from', 'cli_to', [(string)$mine['id']], [], true);
-        assert_equal(['patients' => 1, 'appointments' => 1, 'files' => 1, 'history' => 1, 'operations' => $done['operations']], $done, 'wrong counts');
+        assert_equal(['patients' => 1, 'appointments' => 1, 'files' => 1, 'history' => 1], $done, 'wrong counts');
         assert_equal(1, zpms_cli_test_count("SELECT COUNT(*) FROM patients WHERE id = {$mine['id']} AND cuser = 'cli_to'"), 'patient not reassigned');
         assert_equal(1, zpms_cli_test_count("SELECT COUNT(*) FROM appointment_files WHERE id = {$mine['file']} AND cuser = 'cli_to'"), 'attachment not reassigned');
         assert_equal(1, zpms_cli_test_count("SELECT COUNT(*) FROM appointments WHERE pguid = '{$mine['guid']}' AND cuser = 'cli_other'"), "another user's appointment was reassigned");
@@ -279,12 +279,22 @@ function zpmscli_functional_tests(TestRunner $runner): void {
         assert_true(is_file("$dir/sub/c.php"), 'a file in a sub-folder was deleted');
     });
 
-    $runner->add('run log: one line of counts, no names', function () {
-        $log = sys_get_temp_dir() . '/zpmscli_log_' . getmypid() . '_' . bin2hex(random_bytes(3)) . '/zpmscli.log';
-        zpmscli_log_run($log, 'patients:purge', ['patients' => 2, 'files' => 3, 'note' => 'Παπαδόπουλος']);
-        $line = (string)file_get_contents($log);
-        assert_contains('command=patients:purge patients=2 files=3', $line, 'counts not logged');
-        assert_not_contains('Παπαδόπουλος', $line, 'a non-count value was logged');
+    $runner->add('audit writer: one row and one log line, control characters stripped, over-long values cut', function () {
+        TestSchema::assertSafeToMutate();
+        require_once ZPMS_TEST_APPDIR . '/web/audit.php';
+        $db = zpms_cli_test_db();
+        $log = sys_get_temp_dir() . '/zpms_audit_' . getmypid() . '_' . bin2hex(random_bytes(3)) . '/audit.log';
+        $before = (int)$db->query('SELECT COALESCE(MAX(id), 0) FROM audit_log')->fetchColumn();
+        zpms_audit_write($db, 'patient_purged', ['actor' => "ops\nevent=forged", 'actor_type' => 'cli', 'patient_id' => 7,
+            'detail' => str_repeat('x', 400)], $log);
+        $row = $db->query("SELECT * FROM audit_log WHERE id > $before")->fetch(PDO::FETCH_ASSOC);
+        assert_not_null($row, 'no audit row written');
+        assert_equal('cli', $row['actor_type'], 'actor type not stored');
+        assert_true(!str_contains($row['cuser'], "\n"), 'a newline reached the actor column');
+        assert_equal(255, mb_strlen($row['detail']), 'detail not cut to the column size');
+        $lines = file($log, FILE_IGNORE_NEW_LINES);
+        assert_equal(1, count($lines), 'a crafted actor produced more than one log line');
+        assert_contains('event=patient_purged', $lines[0], 'log line has no event');
     });
 
     $runner->add('command line: unknown command and missing arguments fail, a dry run prints DRY RUN and exit 0', function () {

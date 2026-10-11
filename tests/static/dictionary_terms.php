@@ -28,11 +28,13 @@ function zpms_static_dictionary_terms(TestRunner $runner): void {
         'web/templates/content/view_appointment.zetem',
         'web/templates/blocks/user_profile.zetem',
         'web/templates/apps/genqr/genqr.zetem',
+        'web/templates/content/audit_log.zetem',
     ];
     $phpFiles = [
         'web/index.php',
         'web/appointment_history.php',
         'web/zpms_mailer.php',
+        'web/audit.php',
     ];
 
     foreach (array_merge($templates, $phpFiles) as $rel) {
@@ -56,6 +58,12 @@ function zpms_static_dictionary_terms(TestRunner $runner): void {
             assert_equal([], array_keys($missing), "$rel uses t() terms missing from config/dictionary.gr.php");
         });
     }
+
+    $runner->add('every audit-log event label has a Greek entry', function () use ($root, $dictionary) {
+        require_once $root . '/web/audit.php';
+        $missing = array_values(array_diff(array_values(ZPMS_AUDIT_EVENT_LABELS), array_keys($dictionary)));
+        assert_equal([], $missing, 'ZPMS_AUDIT_EVENT_LABELS (web/audit.php) has labels missing from config/dictionary.gr.php');
+    });
 
     foreach ($templates as $rel) {
         $runner->add("no Greek typed into the template: $rel", function () use ($root, $rel) {

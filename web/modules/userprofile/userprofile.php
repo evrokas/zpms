@@ -75,6 +75,7 @@ class UserProfileModule extends moduleClass {
             $id = (int)($_POST['token_id'] ?? 0);
             if($u && $id) {
                 userTokensClassEx::delete_by_id_for_uname($id, $u);
+                zpms_audit('device_revoked', ['target_user' => $u, 'detail' => 'token_id=' . $id]);
             }
             header('location: ' . rel_url('/profile'));
             exit();
@@ -118,12 +119,18 @@ class UserProfileModule extends moduleClass {
                 exit();
             }
 
+            // active/expired are shown read-only (disabled checkboxes, which
+            // a browser never submits) -- they used to be read from the POST
+            // here anyway, so saving your own profile switched your account
+            // to inactive. They are left as they are; only an administrator
+            // changes them, on /admin/users.
             $fields = [
-                'active' => isset($_POST['useractive']) ? 1 : 0,
-                'expired' => isset($_POST['userexpired']) ? 1 : 0,
                 'name' => $newName,
                 'email' => $newEmail,
             ];
+            $changed = [];
+            if((string)$user->getname() !== $newName) $changed[] = 'name';
+            if((string)$user->getemail() !== $newEmail) $changed[] = 'email';
 
             if($newPassword !== '') {
                 if(mb_strlen($newPassword) < 8) {
@@ -137,10 +144,14 @@ class UserProfileModule extends moduleClass {
                     exit();
                 }
                 $fields['upass'] = password_hash($newPassword, PASSWORD_DEFAULT);
+                $changed[] = 'password';
             }
 
             $user->loadFields($fields);
             $user->update();
+            if($changed) {
+                zpms_audit('profile_updated', ['target_user' => $u, 'detail' => zpms_audit_fields($changed)]);
+            }
 
             $kernel->addStatus('notice', 'Οι αλλαγές αποθηκεύτηκαν.');
             header('location: ' . rel_url('/profile'));

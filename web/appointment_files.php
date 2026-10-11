@@ -610,6 +610,9 @@ function appointment_file_upload($params) {
         }
     }
 
+    // File id and type only -- never the file name (staff name scans after the patient).
+    zpms_audit_appointment('file_uploaded', $ap, 'file_id=' . (int)$entry->getid() . ' type=' . $mimeType);
+
     appointment_files_json([
         'success' => true,
         'file' => [
@@ -657,6 +660,7 @@ function appointment_file_delete($params) {
     // correctness problem (same ordering rationale used elsewhere in
     // this codebase for hard deletes).
     $file->delete();
+    zpms_audit_file('file_deleted', (int)$params['id'], (int)$params['fileid']);
 
     if(is_file($absolutePath)) {
         unlink($absolutePath);
@@ -706,6 +710,8 @@ function appointment_file_download($params) {
     if(!is_file($absolutePath)) {
         appointment_files_abort(404);
     }
+
+    zpms_audit_file('file_downloaded', (int)$params['id'], (int)$params['fileid']);
 
     appointment_files_discard_buffer();
     header('Content-Type: ' . $file->getmime_type());

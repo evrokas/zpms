@@ -111,6 +111,7 @@ function zpms_permission_label_seed(): array {
         ZPMS_PERM_SETTINGS_MANAGE => 'Manage clinics/doctors reference data',
         ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE => 'View/create/edit/delete pending (not-yet-a-patient) appointments',
         ZPMS_PERM_PATIENT_FINANCIAL_VIEW => 'View a patient\'s APYweb financial info (invoices/operations/fee reports)',
+        ZPMS_PERM_AUDIT_VIEW => 'Read the GDPR audit log (who did what to patient data)',
         ZEUSFW_PERM_MANAGE_USERS => 'Manage user accounts and roles/permissions',
         // zeusfw core's own default permission for core/modules/live_edit/
         // (a dev-tooling overlay showing which .zetem template a page's

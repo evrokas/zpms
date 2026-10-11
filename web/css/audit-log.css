@@ -1,0 +1,201 @@
+/* GDPR audit log page (audit_log.zetem). Attached as the `audit-log`
+   library, so it loads after styles.css. Same card/table look as the
+   patients list (patients-list.css). */
+
+.audit-intro,
+.audit-notice {
+    margin: 0 0 var(--spacing-sm);
+    font-size: 0.9rem;
+    color: var(--dark-gray);
+}
+
+.audit-notice {
+    padding: 0.8rem 1rem;
+    background: var(--light-gray);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+}
+
+/* ---------- filters ---------- */
+
+.audit-filters {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.6rem 0.9rem;
+    margin: 0 0 var(--spacing);
+}
+
+.audit-filters label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--dark-gray);
+}
+
+.audit-filters select,
+.audit-filters input {
+    padding: 0.5rem 0.65rem;
+    font: inherit;
+    font-size: 0.9rem;
+    text-transform: none;
+    letter-spacing: normal;
+    font-weight: 400;
+    color: var(--text);
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+}
+
+.audit-filters select {
+    max-width: 17rem;
+}
+
+.audit-table td:nth-child(2) {
+    min-width: 11rem;
+}
+
+.audit-filters input[name="patient"] {
+    width: 6rem;
+}
+
+.audit-filters input[name="date_from"] + input,
+.audit-filters input[name="date_to"] + input {
+    width: 8.5rem;
+}
+
+.audit-filter-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+}
+
+.audit-filter-actions button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.55rem 1rem;
+    background: var(--primary);
+    color: #fff;
+    border: 0;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+}
+
+/* ---------- table ---------- */
+
+.audit-table {
+    background: #fff;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-lg);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.audit-scroll {
+    overflow-x: auto;
+}
+
+.audit-table table {
+    width: 100%;
+    min-width: 56rem;
+    border-collapse: collapse;
+    font-size: 0.86rem;
+}
+
+.audit-table thead th {
+    padding: 0.6rem 0.8rem;
+    text-align: left;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    color: var(--dark-gray);
+    background: var(--light-gray);
+    border-bottom: 1px solid var(--border-color);
+}
+
+.audit-table tbody td {
+    padding: 0.5rem 0.8rem;
+    vertical-align: top;
+    border-bottom: 1px solid var(--medium-gray);
+}
+
+.audit-table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.audit-when,
+.audit-ip {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.audit-ip,
+.audit-detail {
+    color: var(--dark-gray);
+}
+
+.audit-detail {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.78rem;
+    overflow-wrap: anywhere;
+}
+
+.audit-actor-type {
+    display: block;
+    font-size: 0.74rem;
+    color: var(--dark-gray);
+}
+
+.audit-none {
+    color: var(--dark-gray);
+}
+
+/* Failed or refused sign-ins stand out in a long list. */
+.audit-login_failed td:nth-child(2),
+.audit-login_refused td:nth-child(2),
+.audit-account_locked td:nth-child(2) {
+    color: #a3202c;
+    font-weight: 600;
+}
+
+.audit-empty {
+    margin: 0;
+    padding: 1.2rem 1rem;
+    color: var(--dark-gray);
+}
+
+.audit-pager {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.6rem 1rem;
+    padding: 0.7rem 1rem;
+    border-top: 1px solid var(--border-color);
+    font-size: 0.85rem;
+    color: var(--dark-gray);
+}
+
+.audit-pager nav {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+.audit-pager a {
+    display: inline-grid;
+    place-items: center;
+    min-width: 1.9rem;
+    height: 1.9rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    color: var(--text);
+    text-decoration: none;
+}

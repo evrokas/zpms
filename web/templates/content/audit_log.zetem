@@ -1,0 +1,108 @@
+{% attach_library('boxicons') %}
+{% attach_library('flatpickr-library') %}
+{% attach_library('audit-log') %}
+{#
+  audit_log.zetem -- the GDPR audit log (/audit), rendered by audit_log_view()
+  in web/audit.php. Read-only. Rows never contain patient names: a patient is
+  shown by id (a link while the record still exists), an appointment by id.
+#}
+
+{# Visually hidden: the breadcrumb above already names this page. Kept as the
+   page heading for screen readers. #}
+<h2 class="sr-only">{{{t('Audit Log (GDPR)')}}}</h2>
+
+{% if($missing_table): %}
+<p class="audit-notice">{{{t('The audit_log table does not exist yet. Create it as described in the README, then reload this page.')}}}</p>
+{% else: %}
+
+<p class="audit-intro">{{{t('Who did what to patient data, and when. Entries are never changed or deleted, and never contain patient names.')}}}</p>
+
+<form class="audit-filters" method="get" action="{{rel_url('/audit')}}">
+    <label>{{{t('Event')}}}
+        <select name="event">
+            <option value="">{{{t('All events')}}}</option>
+            {% foreach($events as $key => $label): %}
+            <option value="{{{$key}}}" {{($filters['event'] === $key) ? 'selected' : ''}}>{{{$label}}}</option>
+            {% endforeach %}
+        </select>
+    </label>
+    <label>{{{t('User')}}}
+        <select name="actor">
+            <option value="">{{{t('All users')}}}</option>
+            {% foreach($actors as $actor): %}
+            <option value="{{{$actor}}}" {{($filters['actor'] === (string)$actor) ? 'selected' : ''}}>{{{$actor}}}</option>
+            {% endforeach %}
+        </select>
+    </label>
+    <label>{{{t('Patient no.')}}}
+        <input type="text" name="patient" inputmode="numeric" value="{{{$filters['patient']}}}" size="6">
+    </label>
+    <label>{{{t('From')}}}
+        <input type="text" name="date_from" id="audit-from" value="{{{$filters['date_from']}}}" autocomplete="off">
+    </label>
+    <label>{{{t('To')}}}
+        <input type="text" name="date_to" id="audit-to" value="{{{$filters['date_to']}}}" autocomplete="off">
+    </label>
+    <div class="audit-filter-actions">
+        <button type="submit"><i class="bx bx-filter-alt"></i> {{{t('Apply')}}}</button>
+        {% if($filtered): %}<a href="{{rel_url('/audit')}}">{{{t('Clear')}}}</a>{% endif %}
+    </div>
+</form>
+
+<div class="audit-table">
+    {% if(count($rows) == 0): %}
+        <p class="audit-empty">{{{t('No entries.')}}}</p>
+    {% else: %}
+    <div class="audit-scroll">
+    <table>
+        <thead>
+            <tr>
+                <th>{{{t('When')}}}</th>
+                <th>{{{t('Event')}}}</th>
+                <th>{{{t('User')}}}</th>
+                <th>{{{t('Patient no.')}}}</th>
+                <th>{{{t('Appointment no.')}}}</th>
+                <th>{{{t('Account')}}}</th>
+                <th>{{{t('Details')}}}</th>
+                <th>{{{t('IP address')}}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% foreach($rows as $r): %}
+            <tr class="audit-{{{$r['event_type']}}}">
+                <td class="audit-when">{{$r['when']}}</td>
+                <td>{{{$r['event']}}}</td>
+                <td>{{{$r['actor']}}}<span class="audit-actor-type">{{{$r['actor_type']}}}</span></td>
+                <td>{% if($r['patient_url']): %}<a href="{{$r['patient_url']}}">#{{$r['patient_id']}}</a>{% elseif($r['patient_id']): %}#{{$r['patient_id']}}{% else: %}<span class="audit-none">&mdash;</span>{% endif %}</td>
+                <td>{% if($r['appointment_id']): %}#{{$r['appointment_id']}}{% else: %}<span class="audit-none">&mdash;</span>{% endif %}</td>
+                <td>{{{$r['target_user']}}}</td>
+                <td class="audit-detail">{{{$r['detail']}}}</td>
+                <td class="audit-ip">{{{$r['ip']}}}</td>
+            </tr>
+            {% endforeach %}
+        </tbody>
+    </table>
+    </div>
+    {% endif %}
+
+    <div class="audit-pager">
+        <span>{{{t('@count entries', ['count' => $total])}}}</span>
+        {% if($pages > 1): %}
+        <nav aria-label="{{{t('Pages')}}}">
+            {% if($prev_url): %}<a href="{{{$prev_url}}}" aria-label="{{{t('Previous page')}}}">&lsaquo;</a>{% endif %}
+            <span>{{{t('Page @current of @last', ['current' => $page, 'last' => $pages])}}}</span>
+            {% if($next_url): %}<a href="{{{$next_url}}}" aria-label="{{{t('Next page')}}}">&rsaquo;</a>{% endif %}
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof flatpickr !== 'function') return;
+        ['#audit-from', '#audit-to'].forEach(function(sel) {
+            flatpickr(sel, { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd-m-Y', allowInput: true });
+        });
+    });
+</script>
+{% endif %}

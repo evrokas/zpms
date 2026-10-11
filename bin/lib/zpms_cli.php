@@ -15,10 +15,10 @@
  * given.
  *
  * Reports are plain arrays of counts (never patient names or other free
- * text) so they are safe to write to the run log.
+ * text); bin/zpmscli.php turns them into GDPR audit-log rows.
  */
 
-const ZPMSCLI_REASSIGN_SCOPES = ['patients', 'appointments', 'files', 'history', 'operations'];
+const ZPMSCLI_REASSIGN_SCOPES = ['patients', 'appointments', 'files', 'history'];
 
 /** Splits argv into [command, positional arguments, options] -- options may sit anywhere. */
 function zpmscli_parse_argv(array $argv): array {
@@ -185,7 +185,7 @@ function zpmscli_user_exists(PDO $db, string $uname): bool {
  * other people added stays theirs. With only $from, everything $from created,
  * anywhere. $scopes narrows it to some of ZPMSCLI_REASSIGN_SCOPES.
  *
- * @return array{patients:int, appointments:int, files:int, history:int, operations:int}
+ * @return array{patients:int, appointments:int, files:int, history:int}
  * @throws InvalidArgumentException for a request that makes no sense
  */
 function zpmscli_reassign(PDO $db, ?string $from, string $to, array $patientSelectors, array $scopes, bool $apply, bool $force = false): array {
@@ -204,8 +204,7 @@ function zpmscli_reassign(PDO $db, ?string $from, string $to, array $patientSele
         throw new InvalidArgumentException("No user '$to' (see users:list). Use --force to write it anyway.");
     }
 
-    $report = ['patients' => 0, 'appointments' => 0, 'files' => 0, 'history' => 0, 'operations' => 0];
-    $hasOperations = zpmscli_table_exists($db, 'operations');
+    $report = ['patients' => 0, 'appointments' => 0, 'files' => 0, 'history' => 0];
 
     // [report key, table, column that links the row to the chosen patients]
     $tables = [
@@ -214,7 +213,6 @@ function zpmscli_reassign(PDO $db, ?string $from, string $to, array $patientSele
         ['files', 'appointment_files', 'appointment_id'],
         ['history', 'appointment_history', 'appointment_id'],
     ];
-    if ($hasOperations) $tables[] = ['operations', 'operations', 'pguid'];
 
     // With patients named: every row on those patients (narrowed to $from's
     // when given). With only --from: everything $from created, anywhere.
@@ -366,27 +364,26 @@ function zpmscli_remove_files(array $fileRows, string $baseDir, bool $apply): ar
 
 /**
  * Deletes patients for good: their appointments, attachment rows and files,
- * edit history, and legacy operation rows; clears the "converted to" links
- * on pending appointments that pointed at them.
+ * and edit history; clears the "converted to" links on pending appointments
+ * that pointed at them.
  *
- * @return array{patients:int, appointments:int, attachments:int, history:int, operations:int, pending_unlinked:int, files:int, missing:int, bytes:int}
+ * @return array{patients:int, appointments:int, attachments:int, history:int, pending_unlinked:int, files:int, missing:int, bytes:int}
  */
 function zpmscli_purge_patients(PDO $db, array $patients, string $filesDir, bool $apply): array {
     $guids = array_column($patients, 'guid');
     $patientIds = array_column($patients, 'id');
     $appointments = zpmscli_appointments_of($db, $guids);
-    return zpmscli_purge($db, $patientIds, $guids, $appointments, $filesDir, $apply);
+    return zpmscli_purge($db, $patientIds, $appointments, $filesDir, $apply);
 }
 
 /** Deletes single appointments for good (the patient stays). */
 function zpmscli_purge_appointments(PDO $db, array $appointments, string $filesDir, bool $apply): array {
-    return zpmscli_purge($db, [], [], $appointments, $filesDir, $apply);
+    return zpmscli_purge($db, [], $appointments, $filesDir, $apply);
 }
 
-function zpmscli_purge(PDO $db, array $patientIds, array $patientGuids, array $appointments, string $filesDir, bool $apply): array {
+function zpmscli_purge(PDO $db, array $patientIds, array $appointments, string $filesDir, bool $apply): array {
     $apIds = array_column($appointments, 'id');
     $fileRows = zpmscli_files_of($db, $apIds);
-    $hasOperations = $patientGuids && zpmscli_table_exists($db, 'operations');
 
     $count = function (string $sql, array $params) use ($db): int {
         if (!$params) return 0;
@@ -400,7 +397,6 @@ function zpmscli_purge(PDO $db, array $patientIds, array $patientGuids, array $a
         'appointments' => count($apIds),
         'attachments' => count($fileRows),
         'history' => $count("SELECT COUNT(*) FROM appointment_history WHERE appointment_id IN ($apIn)", $apIds),
-        'operations' => $hasOperations ? $count('SELECT COUNT(*) FROM operations WHERE pguid IN (' . zpmscli_in($patientGuids) . ')', $patientGuids) : 0,
         'pending_unlinked' => 0,
     ];
     if ($patientIds) {
@@ -421,9 +417,6 @@ function zpmscli_purge(PDO $db, array $patientIds, array $patientGuids, array $a
             }
             if ($patientIds) {
                 $db->prepare('UPDATE pending_appointments SET converted_patient_id = NULL WHERE converted_patient_id IN (' . zpmscli_in($patientIds) . ')')->execute($patientIds);
-                if ($hasOperations) {
-                    $db->prepare('DELETE FROM operations WHERE pguid IN (' . zpmscli_in($patientGuids) . ')')->execute($patientGuids);
-                }
                 $db->prepare('DELETE FROM patients WHERE id IN (' . zpmscli_in($patientIds) . ')')->execute($patientIds);
             }
             $db->commit();
@@ -447,7 +440,7 @@ function zpmscli_purge(PDO $db, array $patientIds, array $patientGuids, array $a
  * appointments) and appointments deleted on their own. $olderThanDays = null
  * means regardless of age.
  */
-function zpmscli_cleanup_deleted(PDO $db, ?int $olderThanDays, string $now, string $filesDir, bool $apply): array {
+function zpmscli_cleanup_deleted(PDO $db, ?int $olderThanDays, string $now, string $filesDir, bool $apply, ?array &$purged = null): array {
     $cutoff = $olderThanDays !== null ? date('Y-m-d H:i:s', strtotime($now) - $olderThanDays * 86400) : null;
     $ageSql = $cutoff !== null ? ' AND deleted <= ?' : '';
     $ageParams = $cutoff !== null ? [$cutoff] : [];
@@ -460,6 +453,12 @@ function zpmscli_cleanup_deleted(PDO $db, ?int $olderThanDays, string $now, stri
     $st = $db->prepare("SELECT id, guid, pguid, cuser, adate, atype, deleted FROM appointments WHERE deleted IS NOT NULL$ageSql ORDER BY id");
     $st->execute($ageParams);
     $alone = array_values(array_filter($st->fetchAll(PDO::FETCH_ASSOC), fn($a) => !in_array($a['pguid'], $patientGuids, true)));
+
+    // Which records this removes (ids only), for the caller's audit log.
+    $purged = [
+        'patients' => array_map(fn($p) => ['id' => (int)$p['id'], 'guid' => $p['guid']], $patients),
+        'appointments' => array_map(fn($a) => ['id' => (int)$a['id'], 'pguid' => $a['pguid']], $alone),
+    ];
 
     $report = zpmscli_purge_patients($db, $patients, $filesDir, $apply);
     $second = zpmscli_purge_appointments($db, $alone, $filesDir, $apply);
@@ -549,23 +548,4 @@ function zpmscli_clean_cache(string $cacheDir, bool $apply): array {
         if ($apply) @unlink($file);
     }
     return $report;
-}
-
-// --------------------------------------------------------------------------
-// run log
-// --------------------------------------------------------------------------
-
-/**
- * One line per run that changed something: when, who ran it, which command,
- * and the counts -- never names or any other patient data.
- */
-function zpmscli_log_run(string $logFile, string $command, array $report): void {
-    $dir = dirname($logFile);
-    if (!is_dir($dir) && !@mkdir($dir, 0775, true)) return;
-    $who = function_exists('posix_getpwuid') ? (posix_getpwuid(posix_geteuid())['name'] ?? 'unknown') : get_current_user();
-    $counts = [];
-    foreach ($report as $key => $value) {
-        if (is_int($value)) $counts[] = "$key=$value";
-    }
-    @file_put_contents($logFile, date('c') . " user=$who command=$command " . implode(' ', $counts) . "\n", FILE_APPEND | LOCK_EX);
 }

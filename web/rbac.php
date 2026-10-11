@@ -96,6 +96,10 @@ const ZPMS_PERM_PATIENT_FINANCIAL_VIEW = 'patient-financial-view';
 // create/edit real patient records, which stays a doctor-only action --
 // see web/rbac_seed.php's 'secretary' role for exactly this split).
 const ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE = 'pending-appointments-manage';
+// Read the GDPR audit log (/audit, see web/audit.php). Granted to no role by
+// default -- an administrator (is_superuser) has it anyway; give it to
+// another role on /admin/role_permissions if someone else needs to review it.
+const ZPMS_PERM_AUDIT_VIEW = 'audit-log-view';
 
 // Every permission slug above, plus the framework's own
 // ZEUSFW_PERM_MANAGE_USERS (core/lib/Rbac.php -- gates zeusfw core's
@@ -133,6 +137,7 @@ function zpms_all_permission_slugs(): array {
         ZPMS_PERM_SETTINGS_MANAGE,
         ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE,
         ZPMS_PERM_PATIENT_FINANCIAL_VIEW,
+        ZPMS_PERM_AUDIT_VIEW,
         ZEUSFW_PERM_MANAGE_USERS,
         ZEUSFW_PERM_LIVE_EDIT,
     ];

@@ -17,6 +17,11 @@
  * files under web/files/appointment_files only -- never on zeusfw.
  *
  * The work is done by bin/lib/zpms_cli.php (shared with the test suite).
+ *
+ * Every change made with --yes goes into the GDPR audit log (the audit_log
+ * table and logs/audit.log, see web/audit.php) as actor type "cli", with the
+ * system user who ran it as the actor -- one row per patient or appointment
+ * deleted or purged, plus a summary row for reassign and cleanup.
  */
 
 if (PHP_SAPI !== 'cli') {
@@ -26,12 +31,13 @@ if (PHP_SAPI !== 'cli') {
 
 define('__APPDIR__', dirname(__DIR__));
 require_once __DIR__ . '/lib/zpms_cli.php';
+require_once __APPDIR__ . '/web/audit.php';
 
 const ZPMSCLI_COMMANDS = [
     'users:list'              => '                                list the user names that can own records',
     'patients:list'           => '[--q=] [--user=] [--deleted] [--limit=50]   find patient ids',
     'appointments:list'       => '<patient id|guid>               list one patient\'s appointments',
-    'patients:reassign'       => '--to=<user> [--from=<user>] [--patient=<id,...>] [--only=patients,appointments,files,history,operations] [--force] [--yes]',
+    'patients:reassign'       => '--to=<user> [--from=<user>] [--patient=<id,...>] [--only=patients,appointments,files,history] [--force] [--yes]',
     'patients:delete'         => '<id|guid ...> [--yes]           soft delete (same as the web interface; recoverable)',
     'patients:purge'          => '<id|guid ...> [--yes]           hard delete: appointments, attachments, files on disk, history',
     'appointments:delete'     => '<id|guid ...> [--yes]           soft delete appointments',
@@ -82,6 +88,21 @@ function zpmscli_connect(): PDO {
     }
 }
 
+/** One audit-log row for a change made from the command line (see web/audit.php). */
+function zpmscli_audit(PDO $db, string $event, array $row): void {
+    $who = function_exists('posix_getpwuid') ? (posix_getpwuid(posix_geteuid())['name'] ?? null) : get_current_user();
+    zpms_audit_write($db, $event, $row + ['actor' => $who ?: 'cli', 'actor_type' => 'cli'], zpms_audit_log_file(__APPDIR__));
+}
+
+/** "patients=2 files=3" from a report's counts (for an audit row's detail). */
+function zpmscli_counts(array $report): string {
+    $parts = [];
+    foreach ($report as $key => $value) {
+        if (is_int($value) && $value > 0) $parts[] = "$key=$value";
+    }
+    return implode(' ', $parts);
+}
+
 function zpmscli_print_report(array $report): void {
     foreach ($report as $key => $value) {
         zpmscli_say(sprintf('  %-30s %s', str_replace('_', ' ', $key), $key === 'bytes' || str_ends_with($key, '_bytes') ? zpmscli_size((int)$value) : $value));
@@ -120,15 +141,14 @@ if (!array_key_exists($command, ZPMSCLI_COMMANDS)) {
 date_default_timezone_set(zpmscli_timezone(__APPDIR__));
 $now = date('Y-m-d H:i:s');
 $filesDir = zpmscli_files_dir(__APPDIR__);
-$logFile = dirname($filesDir) . '/logs/zpmscli.log';
+$auditRows = [];   // [event, row] pairs, written once the command has succeeded
 
 // ---- commands that need no database --------------------------------------
 if ($command === 'cache:clean') {
     zpmscli_say($apply ? '=== Cleaning web/cache ===' : '=== DRY RUN -- nothing will be written ===');
     $report = zpmscli_clean_cache(__APPDIR__ . '/web/cache', $apply);
     zpmscli_print_report($report);
-    if ($apply) zpmscli_log_run($logFile, $command, $report);
-    else zpmscli_say('Add --yes to delete them.');
+    if (!$apply) zpmscli_say('Add --yes to delete them.');
     exit(0);
 }
 
@@ -168,6 +188,11 @@ try {
             $selectors = array_merge(zpmscli_split_list($options['patient'] ?? null), $args);
             zpmscli_say($apply ? '=== Reassigning records ===' : '=== DRY RUN -- nothing will be written ===');
             $report = zpmscli_reassign($db, $from, $to, $selectors, zpmscli_split_list($options['only'] ?? null), $apply, isset($options['force']));
+            $summary = 'zpmscli patients:reassign' . ($from !== null ? " from=$from" : '') . ' ' . zpmscli_counts($report);
+            $auditRows[] = ['patients_reassigned', ['target_user' => $to, 'detail' => $summary]];
+            foreach ($selectors ? zpmscli_find_patients($db, $selectors) : [] as $p) {
+                $auditRows[] = ['patients_reassigned', ['target_user' => $to, 'patient_id' => $p['id'], 'patient_guid' => $p['guid'], 'detail' => 'zpmscli patients:reassign' . ($from !== null ? " from=$from" : '')]];
+            }
             zpmscli_say("Rows that " . ($apply ? 'now show' : 'would show') . " '$to' as their creator:");
             zpmscli_print_report($report);
             break;
@@ -179,6 +204,11 @@ try {
             if (!$patients) zpmscli_fail('No such patient.');
             zpmscli_say($apply ? '=== ' . ($command === 'patients:purge' ? 'Purging' : 'Deleting') . ' patients ===' : '=== DRY RUN -- nothing will be written ===');
             zpmscli_print_patients($patients);
+            foreach ($patients as $p) {
+                if ($command === 'patients:delete' && $p['deleted'] !== null) continue;   // already deleted, untouched
+                $auditRows[] = [$command === 'patients:delete' ? 'patient_deleted' : 'patient_purged',
+                    ['patient_id' => $p['id'], 'patient_guid' => $p['guid'], 'detail' => "zpmscli $command"]];
+            }
             if ($command === 'patients:delete') {
                 $report = zpmscli_soft_delete_patients($db, $patients, $now, $apply);
             } else {
@@ -194,6 +224,11 @@ try {
             $appointments = zpmscli_find_appointments($db, $args);
             if (!$appointments) zpmscli_fail('No such appointment.');
             zpmscli_say($apply ? '=== ' . ($command === 'appointments:purge' ? 'Purging' : 'Deleting') . ' appointments ===' : '=== DRY RUN -- nothing will be written ===');
+            foreach ($appointments as $a) {
+                if ($command === 'appointments:delete' && $a['deleted'] !== null) continue;
+                $auditRows[] = [$command === 'appointments:delete' ? 'appointment_deleted' : 'appointment_purged',
+                    ['appointment_id' => $a['id'], 'patient_guid' => $a['pguid'], 'detail' => "zpmscli $command"]];
+            }
             if ($command === 'appointments:delete') {
                 $report = zpmscli_soft_delete_appointments($db, $appointments, $now, $apply);
             } else {
@@ -209,7 +244,15 @@ try {
                 zpmscli_fail('Usage: cleanup:deleted --older-than=<days> | --all [--yes]   (--all purges every soft-deleted record, however recent)');
             }
             zpmscli_say($apply ? '=== Purging deleted records ===' : '=== DRY RUN -- nothing will be written ===');
-            $report = zpmscli_cleanup_deleted($db, isset($options['all']) ? null : (int)$older, $now, $filesDir, $apply);
+            $purged = [];
+            $report = zpmscli_cleanup_deleted($db, isset($options['all']) ? null : (int)$older, $now, $filesDir, $apply, $purged);
+            $auditRows[] = ['cleanup_deleted', ['detail' => 'zpmscli cleanup:deleted ' . (isset($options['all']) ? 'all' : "older_than=$older") . ' ' . zpmscli_counts($report)]];
+            foreach ($purged['patients'] ?? [] as $p) {
+                $auditRows[] = ['patient_purged', ['patient_id' => $p['id'], 'patient_guid' => $p['guid'], 'detail' => 'zpmscli cleanup:deleted']];
+            }
+            foreach ($purged['appointments'] ?? [] as $a) {
+                $auditRows[] = ['appointment_purged', ['appointment_id' => $a['id'], 'patient_guid' => $a['pguid'], 'detail' => 'zpmscli cleanup:deleted']];
+            }
             zpmscli_say('Purging cannot be undone -- have you backed up the database and web/files?');
             zpmscli_print_report($report);
             break;
@@ -217,6 +260,7 @@ try {
         case 'cleanup:orphans':
             zpmscli_say($apply ? '=== Removing orphaned rows ===' : '=== DRY RUN -- nothing will be written ===');
             $report = zpmscli_cleanup_orphans($db, $filesDir, $apply);
+            $auditRows[] = ['cleanup_orphans', ['detail' => 'zpmscli cleanup:orphans ' . zpmscli_counts($report)]];
             zpmscli_print_report($report);
             zpmscli_say('Appointments without a patient and files no row points at are only reported -- look at them by hand.');
             break;
@@ -228,7 +272,9 @@ try {
 }
 
 if ($apply) {
-    zpmscli_log_run($logFile, $command, $report);
+    foreach ($auditRows as [$event, $row]) {
+        zpmscli_audit($db, $event, $row);
+    }
     zpmscli_say('Done.');
 } else {
     zpmscli_say('Dry run only. Add --yes to apply.');

@@ -85,6 +85,12 @@ libraries:
       - patient_record:
         type: 'text/css'
         src: 'css/patient-record.css'
+  # GDPR audit log page (audit_log.zetem).
+  audit-log:
+    css:
+      - audit_log:
+        type: 'text/css'
+        src: 'css/audit-log.css'
   appointment-improvements:
     css:
       - uploads:
@@ -207,6 +213,13 @@ routes:
       en: "Settings"
     url: "/settings"
     handler: settings
+  audit_log:
+    title:
+      gr: "Αρχείο Καταγραφής (GDPR)"
+      en: "Audit Log (GDPR)"
+    url: /audit
+    handler: audit_log_view
+    method: get
   settings_mail_save:
     title: "Save email settings"
     url: "/settings/mail"
@@ -707,6 +720,13 @@ menu:
           # that's administrator (is_superuser); granting users-manage to
           # another role (/admin/role_permissions) shows it for them too.
           permission: users-manage
+        - audit_log:
+          text:
+            gr: 'Αρχείο Καταγραφής (GDPR)'
+            en: 'Audit Log (GDPR)'
+          url: /audit
+          # Same permission audit_log_view() checks (ZPMS_PERM_AUDIT_VIEW).
+          permission: audit-log-view
 
 
 
