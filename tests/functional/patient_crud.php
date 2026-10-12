@@ -197,6 +197,25 @@ function zpms_functional_patient_crud(TestRunner $runner, TestHttpClient $http):
         assert_contains('href="#app-', $body, 'a document does not link back to its appointment');
     });
 
+    $runner->add('the header shows only the first line of the notes; the Notes field keeps all of them', function () use ($http) {
+        TestSchema::assertSafeToMutate();
+        $p = new patientsClass(['guid' => guid(), 'cuser' => 'test-fixture', 'cdate' => getDBtime(), 'pname' => 'Σημειώσεις Πολλαπλές',
+            'pdob' => '1990-01-01 00:00:00', 'pamka' => '', 'ptel' => '', 'paddr' => '', 'pemail' => '',
+            'pnote' => "Πρώτη γραμμή σημείωσης\r\nΔεύτερη γραμμή\nΤρίτη γραμμή"]);
+        $p->insert();
+        $body = $http->get('/patient/' . $p->getid() . '/edit')['body'];
+        assert_contains('<span id="pi-note">Πρώτη γραμμή σημείωσης</span>', $body, 'the header does not show exactly the first line of the notes');
+        assert_contains('Δεύτερη γραμμή', $body, 'the Notes field lost the later lines');
+        assert_equal(1, substr_count($body, 'Δεύτερη γραμμή'), 'a later line of the notes also appears in the header');
+
+        // A note that starts with a line break has an empty first line: no header line at all.
+        $q = new patientsClass(['guid' => guid(), 'cuser' => 'test-fixture', 'cdate' => getDBtime(), 'pname' => 'Σημειώσεις Κενή Αρχή',
+            'pdob' => '1990-01-01 00:00:00', 'pamka' => '', 'ptel' => '', 'paddr' => '', 'pemail' => '', 'pnote' => "\nμόνο δεύτερη"]);
+        $q->insert();
+        $body = $http->get('/patient/' . $q->getid() . '/edit')['body'];
+        assert_contains('id="pi-note-wrap" hidden', $body, 'an empty first line still shows a header note');
+    });
+
     $runner->add('gender: M, F or not set -- stored as NULL when blank or tampered, untouched when the form omits it', function () use ($http) {
         TestSchema::assertSafeToMutate();
         $db = dbConnection::getConnection();

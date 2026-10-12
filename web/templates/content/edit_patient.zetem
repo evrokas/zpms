@@ -61,8 +61,11 @@
                 <i class="bx bx-chevron-down pi-chevron"></i>
             </button>
         </div>
-        <div class="pi-note" id="pi-note-wrap" {% if(!$patient->getpnote()): %}hidden{% endif %}>
-            <i class="bx bx-note"></i><span id="pi-note">{{{$patient->getpnote()}}}</span>
+        {# Only the first line of the notes (up to the first line break); the
+           full text is in the Notes field of the details panel. #}
+        {% $__noteLine = trim(preg_split('/\r\n|\r|\n/', (string)$patient->getpnote(), 2)[0]); %}
+        <div class="pi-note" id="pi-note-wrap" {% if($__noteLine === ''): %}hidden{% endif %}>
+            <i class="bx bx-note"></i><span id="pi-note">{{{$__noteLine}}}</span>
         </div>
     </section>
     {% endif %}
@@ -618,6 +621,8 @@
                 if (!input) return;
                 input.addEventListener('input', function() {
                     var v = input.value;
+                    // The header shows only the first line of the notes.
+                    if (m[1] === 'pi-note') v = v.split(/\r\n|\r|\n/)[0].trim();
                     var el = show(m[1], v);
                     if (m[1] === 'pi-name') {
                         var av = document.querySelector('.pi-avatar');
