@@ -100,6 +100,15 @@ const ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE = 'pending-appointments-manage';
 // default -- an administrator (is_superuser) has it anyway; give it to
 // another role on /admin/role_permissions if someone else needs to review it.
 const ZPMS_PERM_AUDIT_VIEW = 'audit-log-view';
+// View and edit the appointment schedule (web/schedule.php): the weekly
+// pattern and single-date changes of each location's calendar, the travel
+// times, and booking slots on it. Doctor and secretary.
+const ZPMS_PERM_SCHEDULE_MANAGE = 'schedule-manage';
+// Book a slot inside a surgery shadow (the doctor is operating, or travelling
+// to/from an operation, at another location) on purpose. Doctor only; no
+// location is exempt from the shadow, this only lets the doctor knowingly
+// accept it -- see zpms_sched_reserve().
+const ZPMS_PERM_SCHEDULE_OVERRIDE = 'schedule-override-shadow';
 
 // Every permission slug above, plus the framework's own
 // ZEUSFW_PERM_MANAGE_USERS (core/lib/Rbac.php -- gates zeusfw core's
@@ -138,6 +147,8 @@ function zpms_all_permission_slugs(): array {
         ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE,
         ZPMS_PERM_PATIENT_FINANCIAL_VIEW,
         ZPMS_PERM_AUDIT_VIEW,
+        ZPMS_PERM_SCHEDULE_MANAGE,
+        ZPMS_PERM_SCHEDULE_OVERRIDE,
         ZEUSFW_PERM_MANAGE_USERS,
         ZEUSFW_PERM_LIVE_EDIT,
     ];

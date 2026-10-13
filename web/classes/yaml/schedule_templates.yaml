@@ -1,0 +1,45 @@
+# The repeating weekly pattern of one location's calendar (web/schedule.php).
+# One row = one interval on one weekday: 'available' (appointments can be
+# booked), 'surgery' (the doctor is operating -- shades every OTHER
+# location's calendar, widened by the travel time) or 'hold' (reserved, not
+# bookable; the note says why). Individual dates are changed with
+# schedule_overrides, never by editing this pattern.
+#
+# Times are plain 'HH:MM' strings on a 15-minute grid. `location` is a
+# locations.machinename, or 'online' for the online pseudo-location.
+table:
+  name: schedule_templates
+  class: scheduleTemplatesClass
+  fields:
+  - name: guid
+    type: '@guid'
+  - name: cdate
+    type: '@cdate'
+  - name: cuser
+    type: '@cuser'
+  - name: location
+    type: varchar(64)
+  # 1 = Monday ... 7 = Sunday (ISO-8601, date('N')).
+  - name: weekday
+    type: int
+  - name: start_time
+    type: char(5)
+  - name: end_time
+    type: char(5)
+  # available | surgery | hold
+  - name: kind
+    type: varchar(16)
+  # Default length of an appointment booked in this interval; every booking
+  # can still be adjusted by hand (15-minute steps).
+  - name: slot_minutes
+    type: int
+    default: 30
+  # Why the interval exists / is reserved -- shown on the calendar.
+  - name: note
+    type: varchar(255)
+    default: null
+  # The pattern applies from this date on (Y-m-d); earlier dates ignore the row.
+  - name: valid_from
+    type: date
+    default: null
+...

@@ -63,6 +63,7 @@ require_once __DIR__ . '/functional/file_upload.php';
 require_once __DIR__ . '/functional/admin_crud.php';
 require_once __DIR__ . '/functional/zpmscli.php';
 require_once __DIR__ . '/functional/audit_log.php';
+require_once __DIR__ . '/functional/schedule.php';
 
 // Fresh database + a login-capable test account, every run -- see
 // TestSchema::reset()'s own docblock for why this matters.
@@ -128,6 +129,12 @@ try {
     $auditRunner = new TestRunner('Audit log (GDPR)');
     zpms_functional_audit_log($auditRunner, $server->baseUrl());
     $ok = $auditRunner->run() && $ok;
+
+    // The scheduling engine (web/schedule.php) -- rules on built data plus the
+    // database-backed booking functions; no HTTP.
+    $scheduleRunner = new TestRunner('Schedule engine (slots, travel, surgery shadow)');
+    zpms_schedule_functional_tests($scheduleRunner);
+    $ok = $scheduleRunner->run() && $ok;
 } finally {
     $server->stop();
 }

@@ -1,0 +1,21 @@
+# Minutes the doctor needs to get from one location to another
+# (web/schedule.php). Locations are locations.machinename values, plus
+# 'online' (0 minutes to everywhere unless edited). A pair with no row falls
+# back to ZPMS_SCHED_DEFAULT_TRAVEL_MINUTES; the same location needs none.
+table:
+  name: location_travel_times
+  class: locationTravelTimesClass
+  fields:
+  - name: guid
+    type: '@guid'
+  - name: cdate
+    type: '@cdate'
+  - name: cuser
+    type: '@cuser'
+  - name: from_location
+    type: varchar(64)
+  - name: to_location
+    type: varchar(64)
+  - name: minutes
+    type: int
+...

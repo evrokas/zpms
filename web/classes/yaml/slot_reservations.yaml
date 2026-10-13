@@ -1,0 +1,41 @@
+# A booked time on one location's calendar (web/schedule.php). Reservations
+# never overlap, at any location, and different locations keep the travel
+# time between them -- both enforced in zpms_sched_reserve() inside a
+# transaction. `ref_guid` names the appointment or pending appointment the
+# slot belongs to (a plain value, not a foreign key); `kind` is 'appointment'
+# or 'surgery' (an operation appointment, which also shades the other
+# locations' calendars). `note` is the appointment's note, shown on the
+# calendar so staff can see why the slot is taken.
+table:
+  name: slot_reservations
+  class: slotReservationsClass
+  fields:
+  - name: guid
+    type: '@guid'
+  - name: cdate
+    type: '@cdate'
+  - name: cuser
+    type: '@cuser'
+  - name: location
+    type: varchar(64)
+  - name: rdate
+    type: date
+  - name: start_time
+    type: char(5)
+  - name: end_time
+    type: char(5)
+  # appointment | surgery
+  - name: kind
+    type: varchar(16)
+  - name: ref_guid
+    type: char(36)
+    default: null
+  - name: note
+    type: varchar(255)
+    default: null
+  # Set when a doctor booked inside a surgery shadow on purpose -- see
+  # ZPMS_PERM_SCHEDULE_OVERRIDE. 0 = a normal booking.
+  - name: shadow_override
+    type: int
+    default: 0
+...

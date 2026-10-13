@@ -1,0 +1,31 @@
+# A change to ONE date of a location's calendar, on top of its weekly
+# pattern (web/schedule.php). 'available' opens an interval that the pattern
+# does not offer; 'surgery' and 'hold' take an interval out of availability
+# (surgery also shades the other locations). An override always wins over
+# the pattern for the interval it covers. `note` is the reason and is shown
+# on the calendar; it is required for 'surgery' and 'hold'.
+table:
+  name: schedule_overrides
+  class: scheduleOverridesClass
+  fields:
+  - name: guid
+    type: '@guid'
+  - name: cdate
+    type: '@cdate'
+  - name: cuser
+    type: '@cuser'
+  - name: location
+    type: varchar(64)
+  - name: odate
+    type: date
+  - name: start_time
+    type: char(5)
+  - name: end_time
+    type: char(5)
+  # available | surgery | hold
+  - name: kind
+    type: varchar(16)
+  - name: note
+    type: varchar(255)
+    default: null
+...
