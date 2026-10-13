@@ -1,5 +1,6 @@
 {% attach_library('loader-library'); %}
 {% attach_library('flatpickr-library'); %}
+{% attach_library('booking-picker'); %}
 
 <div class="edit-patient">
     {# Visually hidden: the breadcrumb above already names this page. Kept as the
@@ -45,20 +46,9 @@
             <input type="text" name="patient-email" id="consultation-patient-email" value="" placeholder="{{{t('Enter the patient email (optional)')}}}">
         </div>
 
-        <div class="input-div">
-            <label for="appointment-date">{{{t('Appointment date & time')}}}</label>
-            <input type="text" name="appointment-date" id="consultation-date" value="" required>
-        </div>
-
-        <div class="input-div">
-            <label for="appointment-location">{{{t('Location')}}}</label>
-            <select name="appointment-location" id="">
-                <option value="">{{{t('-- Select a location --')}}}</option>
-                {% foreach($locations as $loc): %}
-                <option value="{{{$loc}}}">{{{$loc}}}</option>
-                {% endforeach %}
-            </select>
-        </div>
+        {# Location, date, the calendar to drag on and (for phone / online) the
+           platform fields -- built by zpms_booking_picker() in web/schedule_pages.php. #}
+        {{ $booking_picker }}
 
         <div class="input-div">
             <label for="appointment-user">{{{t('Doctor')}}}</label>
@@ -72,7 +62,7 @@
 
         <div class="input-div input-notes">
             <label for="appointment-notes">{{{t('Notes')}}}</label>
-            <textarea name="appointment-notes" id="" rows="4"></textarea>
+            <textarea name="appointment-notes" id="" rows="4">{{{$prefill_note}}}</textarea>
         </div>
 
         <div class="buttons">
@@ -80,17 +70,3 @@
         </div>
     </form>
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        flatpickr('#consultation-date', {
-            enableTime: true,
-            time_24hr: true,
-            dateFormat: 'Y-m-d H:i',
-            altInput: true,
-            altFormat: 'd-m-Y H:i',
-            allowInput: true,
-            minDate: 'today'
-        });
-    });
-</script>

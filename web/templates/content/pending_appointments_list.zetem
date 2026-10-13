@@ -1,3 +1,4 @@
+{% attach_library('schedule-badge') %}
 {% attach_library('boxicons') %}
 
 <div class="patients-header">
@@ -30,7 +31,7 @@
             <tr>
                 <td data-column="name">{{{$p->getpatient_name()}}}</td>
                 <td data-column="phone">{{{$p->getpatient_phone() ?: '-'}}}</td>
-                <td data-column="location">{{{$p->getlocation() ?: '-'}}}</td>
+                <td data-column="location">{{{$p->getlocation() ?: '-'}}}{% if($p->getremote_platform()): %} <span class="sched-badge" title="{{{$p->getremote_contact()}}}">{{{zpms_remote_label($p->getremote_platform())}}}</span>{% endif %}</td>
                 <td data-column="datetime">{{$p->getappointment_datetime() | date('d-m-Y H:i')}}</td>
                 <td data-column="synced">
                     {% if($p->getgoogle_event_id()): %}
@@ -89,7 +90,7 @@
                     {% endif %}
                 </td>
                 <td data-column="phone">{{{$p->getpatient_phone() ?: '-'}}}</td>
-                <td data-column="location">{{{$p->getlocation() ?: '-'}}}</td>
+                <td data-column="location">{{{$p->getlocation() ?: '-'}}}{% if($p->getremote_platform()): %} <span class="sched-badge" title="{{{$p->getremote_contact()}}}">{{{zpms_remote_label($p->getremote_platform())}}}</span>{% endif %}</td>
                 <td class="actions" data-column="actions">
                     {% if(!$p->getconverted_patient_id()): %}
                     <a class="icon-btn" href="{{rel_url('/consultation/pending/'.$p->getid().'/edit')}}" title="{{{t('Reschedule')}}}"><i class="bx bx-calendar-edit"></i></a>

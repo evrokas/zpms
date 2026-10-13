@@ -64,6 +64,7 @@ require_once __DIR__ . '/functional/admin_crud.php';
 require_once __DIR__ . '/functional/zpmscli.php';
 require_once __DIR__ . '/functional/audit_log.php';
 require_once __DIR__ . '/functional/schedule.php';
+require_once __DIR__ . '/functional/booking.php';
 
 // Fresh database + a login-capable test account, every run -- see
 // TestSchema::reset()'s own docblock for why this matters.
@@ -143,6 +144,14 @@ try {
     $scheduleHttpRunner = new TestRunner('Schedule pages (calendar, pattern, travel, reasons)');
     zpms_schedule_http_tests($scheduleHttpRunner, $server->baseUrl());
     $ok = $scheduleHttpRunner->run() && $ok;
+
+    // Booking through the forms (pending appointments, appointments, operations, rescheduling).
+    $server->stop();
+    $server = new TestServer();
+    $server->start();
+    $bookingRunner = new TestRunner('Booking through the forms');
+    zpms_booking_functional_tests($bookingRunner, $server->baseUrl());
+    $ok = $bookingRunner->run() && $ok;
 } finally {
     $server->stop();
 }

@@ -418,7 +418,15 @@ require_once(__DIR__ . '/zpms_mailer.php');
             'useDetails' => t('Use these details'),
             'loadRecord' => t('Load record'),
             'filledFrom' => t('The details of @name were filled in from the existing record.'),
-            // Appointment schedule (web/js/schedule.js)
+            // Appointment schedule (web/js/schedule.js, schedule-picker.js)
+            'schedRemoteLink' => t('Meeting link'),
+            'schedRemoteNumber' => t('Patient\'s number (to call or message)'),
+            'schedThisAppointment' => t('This appointment'),
+            'schedOverrideNeeded' => t('Tick the override to book inside the surgery shade.'),
+            'schedPickHint' => t('Choose a location and a date, then drag on the calendar to choose the time.'),
+            'schedChooseTime' => t('Choose the time by dragging on the calendar.'),
+            'schedNoFree' => t('There is no free time on this day. Try another date or location.'),
+            'schedMinutes' => t('minutes'),
             'schedAvailable' => t('free'),
             'schedReserved' => t('Reserved'),
             'schedSurgery' => t('Surgery'),
@@ -654,6 +662,8 @@ require_once(__DIR__ . '/zpms_mailer.php');
                             'appointment_anchor' => '#app-' . (count($apprender)+1),
                         ];
                     }
+                    $apSlot = zpms_sched_slot_for_ref(dbConnection::getConnection(), $ap->getguid());
+                    $apRemote = zpms_remote_label($ap->getremote_platform());
                     $apprender[] = [
                         'index' => count($apprender),
                         // Summary shown on the collapsed row; the full,
@@ -661,7 +671,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
                         'row' => [
                             'date' => $ap->getadate(),
                             'is_operation' => ($ap->getatype() == 'operation'),
-                            'place' => $ap->getaplace(),
+                            'place' => $ap->getaplace() . ($apRemote !== '' ? ' · ' . $apRemote : ''),
                             'note' => mb_strimwidth((string)$ap->getanote(), 0, 220, '…'),
                             'file_count' => count($apFiles),
                         ],
@@ -674,7 +684,14 @@ require_once(__DIR__ . '/zpms_mailer.php');
                                                         'appointment' => $ap,
                                                         'locations' => $loc,
                                                         'files' => $apFiles,
-                                                        'can_edit' => $canEditAppointment
+                                                        'can_edit' => $canEditAppointment,
+                                                        // An appointment that holds a slot on the schedule is moved
+                                                        // on its own page, so the date and place here are shown, not edited.
+                                                        'scheduled' => $apSlot !== null,
+                                                        'slot_text' => $apSlot ? date('d/m/Y', strtotime($apSlot['rdate'])) . ' ' . $apSlot['start_time'] . '–' . $apSlot['end_time'] : '',
+                                                        'remote_label' => $apRemote,
+                                                        'remote_contact' => (string)$ap->getremote_contact(),
+                                                        'reschedule_url' => ($canEditAppointment && rbacClass::isPermitted(ZPMS_PERM_SCHEDULE_MANAGE)) ? rel_url('/appointment/' . $ap->getid() . '/reschedule') : '',
                                                     ]),
                         'attributes' => new Attributes()
                     ];
@@ -1031,8 +1048,12 @@ require_once(__DIR__ . '/zpms_mailer.php');
         // locations table, or one deleted between page load and submit) used to
         // be an uncaught fatal error (getname() on null) instead of just saving
         // an empty place, a real crash on a plain edit-and-save.
-        $loc = locationsClassEx::getbyMachineName($_POST['appointment-place'], $kernel->getCurrentLanguage());
-        $newPlace = $loc ? $loc->getname() : '';
+        // An appointment that holds a slot on the schedule is moved on its own
+        // page (/appointment/{id}/reschedule): the date and place posted by
+        // this card (an older page, or a crafted request) are ignored.
+        $heldSlot = zpms_sched_slot_for_ref(dbConnection::getConnection(), $ap->getguid());
+        $loc = locationsClassEx::getbyMachineName($_POST['appointment-place'] ?? '', $kernel->getCurrentLanguage());
+        $newPlace = $heldSlot || !isset($_POST['appointment-place']) ? $oldPlace : ($loc ? $loc->getname() : '');
         if ($newPlace !== $oldPlace) {
             $changedFields[] = 'appointment-place';
         }
@@ -1047,7 +1068,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
         // is named 'appointment-date'
         $newDate = $oldDate;
         foreach($_POST as $postkey => $postval) {
-            if(strstr($postkey, "appointment-date")) {
+            if(!$heldSlot && strstr($postkey, "appointment-date")) {
                 // error_log($postkey . ' ==> ' . print_r($postkey, 1));
                 $newDate = getDBformattime($postval);    //$_POST['appointment-date']));
                 $ap->setadate($newDate);
@@ -1069,6 +1090,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
         // for it at all, so there's nothing in $_POST to trust or ignore.
 
         $ap->update();
+        zpms_sched_set_note_for_ref(dbConnection::getConnection(), $ap->getguid(), (string)$newNote);
 
         zpms_record_appointment_change((int)$ap->getid(), $kernel->getUserName(), $changedFields);
         if ($changedFields) {
@@ -1099,6 +1121,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
         $app = $ap->getById($id);
         $app->setdeleted( getDBtime() );
         $app->update();
+        zpms_sched_release_slot($app->getguid(), 'appointment_id=' . (int)$app->getid());
         zpms_audit_appointment('appointment_deleted', $app);
 
         // $app->delete();
@@ -1186,11 +1209,24 @@ require_once(__DIR__ . '/zpms_mailer.php');
         ]);
         // $kernel->setS
         // $pat = $pc->getById($params['id']);
+        // The calendar page (/schedule) sends the chosen place and time along.
+        global $Request;
+        $get = isset($Request) ? $Request->getParams() : $_GET;
+        $prefillTime = fn($v) => preg_match('/^\d{2}:\d{2}$/', (string)$v) ? (string)$v : '';
+        $ap->setanote(mb_substr((string)($get['note'] ?? ''), 0, 255));
+
         return (Renderer::render("edit_appointment.zetem", [
             'action' => rel_url('/appointment/' . $params['id'] . '/newappointment'),
             'id' => null,
             'appointment' => $ap,
             'patient' => $p,
+            'booking_picker' => zpms_booking_picker([
+                'loc' => (string)($get['loc'] ?? ''),
+                'date' => zpms_sched_valid_date($get['date'] ?? null) ? $get['date'] : '',
+                'start' => $prefillTime($get['start'] ?? ''),
+                'end' => $prefillTime($get['end'] ?? ''),
+                'kind' => $atype === 'operation' ? 'surgery' : 'appointment',
+            ]),
             'locations' => $loc
         ]));
     }
@@ -1237,13 +1273,24 @@ require_once(__DIR__ . '/zpms_mailer.php');
             exit();
         }
 
-        $loc = locationsClassEx::getbyMachineName($_POST['appointment-place'], $kernel->getCurrentLanguage());
-
         // Carried through as a hidden field from patient_appointment_new()
         // above (which is what actually decided it, from which "Add ..."
         // button was clicked) -- not user-editable on this form, no
         // dropdown, and never touched again after this insert.
         $atype = ($_POST['appointment-type'] ?? '') === 'operation' ? 'operation' : 'appointment';
+
+        // Books the slot first; nothing is saved when it is not allowed. An
+        // operation is booked as surgery, which also shades the other
+        // locations. A form without the booking block (an older client)
+        // keeps the plain place + date fields and books nothing.
+        $appGuid = guid();
+        $booking = zpms_booking_from_post($appGuid, $atype === 'operation' ? 'surgery' : 'appointment', (string)($_POST['appointment-notes'] ?? ''));
+        if ($booking['mode'] === 'error') {
+            $kernel->addStatus('error', htmlspecialchars($booking['message'], ENT_QUOTES, 'UTF-8'));
+            header('location: '.rel_url('/appointment/' . $params['id'] . ($atype === 'operation' ? '/newoperation' : '/newappointment')));
+            exit();
+        }
+        $loc = $booking['mode'] === 'ok' ? null : locationsClassEx::getbyMachineName($_POST['appointment-place'] ?? '', $kernel->getCurrentLanguage());
 
         // echo "this is the post version<br/>";
         $app = new appointmentsClass([
@@ -1256,16 +1303,25 @@ require_once(__DIR__ . '/zpms_mailer.php');
             // appointment_files.php's upload) already uses this.
             'cuser' => $kernel->getUserName(),
             'cdate' => getDBtime(),
-            'adate' => getDBformattime($_POST['appointment-date']),
-            'aplace' => ($loc)?$loc->getname():'',   //$_POST['appointment-place'],
+            'adate' => $booking['mode'] === 'ok' ? $booking['datetime'] : getDBformattime($_POST['appointment-date']),
+            'aplace' => $booking['mode'] === 'ok' ? $booking['name'] : (($loc)?$loc->getname():''),
+            'duration_minutes' => $booking['mode'] === 'ok' ? $booking['duration'] : null,
             'anote' => $_POST['appointment-notes'],
             'atype' => $atype,
-            'guid' => guid(),
+            'guid' => $appGuid,
             'pguid' => $pat->getguid()
         ]);
+        if ($booking['mode'] === 'ok') {
+            zpms_booking_apply_remote($app, $booking['remote']);
+        }
         // print_r( $pc );
 
-        $app->insert();
+        try {
+            $app->insert();
+        } catch (Throwable $e) {
+            zpms_sched_release_ref(dbConnection::getConnection(), $appGuid);
+            throw $e;
+        }
         zpms_audit('appointment_created', ['patient' => $pat, 'appointment_id' => $app->getid(), 'detail' => 'type=' . $app->getatype()]);
 
         // error_log('\nREFERER: '. $_SERVER['HTTP_REFERER']."\n");
@@ -1367,17 +1423,27 @@ require_once(__DIR__ . '/zpms_mailer.php');
             return;
         }
 
+        // The booked length (15-minute steps) and, for a remote appointment,
+        // how to reach the patient -- so the Calendar event says it too.
+        $duration = (int)$pending->getduration_minutes() ?: ZPMS_CONSULTATION_DEFAULT_DURATION_MINUTES;
+        $notes = (string)($pending->getnotes() ?? '');
+        if ($pending->getremote_platform()) {
+            $remoteLine = zpms_remote_label($pending->getremote_platform()) . ': ' . $pending->getremote_contact()
+                . ($pending->getremote_code() ? ' (' . $pending->getremote_code() . ')' : '');
+            $notes = trim($remoteLine . "\n" . $notes);
+        }
+
         if ($pending->getgoogle_event_id() === null) {
             $eventId = googleCalendarClass::createEvent(
                 $pending->getid(),
                 $pending->getpatient_name(),
                 $pending->getappointment_datetime(),
-                ZPMS_CONSULTATION_DEFAULT_DURATION_MINUTES,
+                $duration,
                 $pending->getpatient_phone() ?? '',
                 $pending->getpatient_amka() ?? '',
                 $pending->getpatient_email() ?? '',
                 $pending->getlocation() ?? '',
-                $pending->getnotes() ?? ''
+                $notes
             );
             if ($eventId === null) {
                 return;
@@ -1388,12 +1454,12 @@ require_once(__DIR__ . '/zpms_mailer.php');
                 $pending->getgoogle_event_id(),
                 $pending->getpatient_name(),
                 $pending->getappointment_datetime(),
-                ZPMS_CONSULTATION_DEFAULT_DURATION_MINUTES,
+                $duration,
                 $pending->getpatient_phone() ?? '',
                 $pending->getpatient_amka() ?? '',
                 $pending->getpatient_email() ?? '',
                 $pending->getlocation() ?? '',
-                $pending->getnotes() ?? ''
+                $notes
             );
         }
         $pending->setgoogle_synced_at(getDBtime());
@@ -1407,9 +1473,21 @@ require_once(__DIR__ . '/zpms_mailer.php');
 
         $doctors = zpms_pending_appointment_doctor_options();
 
+        // The calendar page (/schedule) sends the chosen place and time along.
+        global $Request;
+        $get = isset($Request) ? $Request->getParams() : $_GET;
+        $prefillTime = fn($v) => preg_match('/^\d{2}:\d{2}$/', (string)$v) ? (string)$v : '';
+
         return (Renderer::render("new_consultation.zetem", [
             'calendar_enabled' => googleCalendarClass::isEnabled(),
-            'locations' => zpms_pending_appointment_location_options(),
+            'booking_picker' => zpms_booking_picker([
+                'loc' => (string)($get['loc'] ?? ''),
+                'date' => zpms_sched_valid_date($get['date'] ?? null) ? $get['date'] : '',
+                'start' => $prefillTime($get['start'] ?? ''),
+                'end' => $prefillTime($get['end'] ?? ''),
+                'kind' => 'appointment',
+            ]),
+            'prefill_note' => mb_substr((string)($get['note'] ?? ''), 0, 255),
             'doctors' => $doctors,
             // Preselected (not just the sole <option> left available) --
             // a practice with one doctor account shouldn't make staff
@@ -1438,21 +1516,42 @@ require_once(__DIR__ . '/zpms_mailer.php');
         // own docblock for why this table exists at all: a patient record
         // is only ever created once the patient actually shows up and the
         // doctor asks for one (pending_appointment_convert_post() below).
+        $pendingGuid = guid();
+
+        // Books the slot first (nothing is saved if it is not allowed). A form
+        // without the booking block (an older client) keeps the plain
+        // date + location fields and books nothing.
+        $booking = zpms_booking_from_post($pendingGuid, 'appointment', (string)($_POST['appointment-notes'] ?? ''));
+        if ($booking['mode'] === 'error') {
+            $kernel->addStatus('error', htmlspecialchars($booking['message'], ENT_QUOTES, 'UTF-8'));
+            header('location: '.rel_url('/consultation/new'));
+            exit();
+        }
+
         $pending = new pendingAppointmentsClass([
             'id' => null,
             'cuser' => $kernel->getUserName(),
             'cdate' => getDBtime(),
-            'guid' => guid(),
+            'guid' => $pendingGuid,
             'patient_name' => $_POST['patient-name'],
             'patient_phone' => $_POST['patient-telephone'] ?? '',
             'patient_amka' => $_POST['patient-amka'] ?? '',
             'patient_email' => $_POST['patient-email'] ?? '',
-            'appointment_datetime' => getDBformattime($_POST['appointment-date']),
-            'location' => $_POST['appointment-location'] ?? '',
+            'appointment_datetime' => $booking['mode'] === 'ok' ? $booking['datetime'] : getDBformattime($_POST['appointment-date']),
+            'location' => $booking['mode'] === 'ok' ? $booking['name'] : ($_POST['appointment-location'] ?? ''),
+            'duration_minutes' => $booking['mode'] === 'ok' ? $booking['duration'] : null,
             'assigned_user_id' => $assignedDoctor['id'] ?? null,
             'notes' => $_POST['appointment-notes'] ?? '',
         ]);
-        $pending->insert();
+        if ($booking['mode'] === 'ok') {
+            zpms_booking_apply_remote($pending, $booking['remote']);
+        }
+        try {
+            $pending->insert();
+        } catch (Throwable $e) {
+            zpms_sched_release_ref(dbConnection::getConnection(), $pendingGuid);
+            throw $e;
+        }
         zpms_audit('pending_created', ['detail' => 'pending_id=' . (int)$pending->getid()]);
 
         zpms_pending_appointment_sync_to_calendar($pending);
@@ -1541,7 +1640,10 @@ require_once(__DIR__ . '/zpms_mailer.php');
 
         return (Renderer::render("pending_appointment_edit.zetem", [
             'pending' => $pending,
-            'locations' => zpms_pending_appointment_location_options(),
+            'booking_picker' => zpms_booking_picker_for_record($pending->getguid(), $pending->getappointment_datetime(), (int)$pending->getduration_minutes(),
+                (string)$pending->getlocation(), 'appointment', [
+                    'platform' => $pending->getremote_platform() ?: 'zoom', 'contact' => $pending->getremote_contact(), 'code' => $pending->getremote_code(),
+                ]),
             'doctors' => zpms_pending_appointment_doctor_options(),
         ]));
     }
@@ -1571,15 +1673,33 @@ require_once(__DIR__ . '/zpms_mailer.php');
         // does (see that handler's own comment).
         $assignedDoctor = zpms_resolve_assigned_doctor($_POST['appointment-user'] ?? null);
 
+        // Moving or re-booking the slot (see zpms_booking_from_post()); a form
+        // without the booking block keeps the plain date + location fields.
+        $booking = zpms_booking_from_post($pending->getguid(), 'appointment', (string)($_POST['appointment-notes'] ?? ''));
+        if ($booking['mode'] === 'error') {
+            $kernel->addStatus('error', htmlspecialchars($booking['message'], ENT_QUOTES, 'UTF-8'));
+            header('location: '.rel_url('/consultation/pending/'.$pending->getid().'/edit'));
+            exit();
+        }
+
         $pending->setpatient_name($_POST['patient-name']);
         $pending->setpatient_phone($_POST['patient-telephone'] ?? '');
         $pending->setpatient_amka($_POST['patient-amka'] ?? '');
         $pending->setpatient_email($_POST['patient-email'] ?? '');
-        $pending->setappointment_datetime(getDBformattime($_POST['appointment-date']));
-        $pending->setlocation($_POST['appointment-location'] ?? '');
+        if ($booking['mode'] === 'ok') {
+            $pending->setappointment_datetime($booking['datetime']);
+            $pending->setlocation($booking['name']);
+            $pending->setduration_minutes($booking['duration']);
+            zpms_booking_apply_remote($pending, $booking['remote']);
+        } else {
+            $pending->setappointment_datetime(getDBformattime($_POST['appointment-date']));
+            $pending->setlocation($_POST['appointment-location'] ?? '');
+        }
         $pending->setassigned_user_id($assignedDoctor['id'] ?? null);
         $pending->setnotes($_POST['appointment-notes'] ?? '');
         $pending->update();
+        // The note on the calendar follows the appointment's note, also when only the note changed.
+        zpms_sched_set_note_for_ref(dbConnection::getConnection(), $pending->getguid(), (string)($_POST['appointment-notes'] ?? ''));
         zpms_audit('pending_updated', ['detail' => 'pending_id=' . (int)$pending->getid()]);
 
         zpms_pending_appointment_sync_to_calendar($pending);
@@ -1614,6 +1734,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
             }
             $pending->setcancelled_at(getDBtime());
             $pending->update();
+            zpms_sched_release_slot($pending->getguid(), 'pending_id=' . (int)$pending->getid());
             zpms_audit('pending_cancelled', ['detail' => 'pending_id=' . (int)$pending->getid()]);
             $kernel->addStatus('notice', t('The appointment was cancelled.'));
         }
@@ -1738,10 +1859,16 @@ require_once(__DIR__ . '/zpms_mailer.php');
             'atype' => 'appointment',
             'guid' => guid(),
             'pguid' => $pat->getguid(),
+            'duration_minutes' => $pending->getduration_minutes(),
+            'remote_platform' => $pending->getremote_platform(),
+            'remote_contact' => $pending->getremote_contact(),
+            'remote_code' => $pending->getremote_code(),
             'google_event_id' => $pending->getgoogle_event_id(),
             'google_synced_at' => $pending->getgoogle_event_id() !== null ? getDBtime() : null,
         ]);
         $app->insert();
+        // The booked slot now belongs to the appointment made from the pending one.
+        zpms_sched_reassign_ref(dbConnection::getConnection(), $pending->getguid(), $app->getguid());
 
         $pending->setconverted_at(getDBtime());
         $pending->setconverted_patient_id($pat->getid());

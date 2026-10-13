@@ -475,6 +475,9 @@ function zpms_sched_load_context(PDO $db, string $date): array {
  * then accepted and recorded on the row (shadow_override = 1). Hard problems
  * are never accepted.
  *
+ * Passing the guid of an appointment that already has a slot ($refGuid) moves
+ * it; the old slot never counts as a collision for the new one.
+ *
  * @return array ['ok' => bool, 'guid' => ?string, 'problems' => array[]]
  */
 function zpms_sched_reserve(PDO $db, string $location, string $date, int $start, int $end, string $kind, ?string $refGuid, string $note, string $cuser, bool $allowShadowOverride = false): array {
@@ -496,6 +499,11 @@ function zpms_sched_reserve(PDO $db, string $location, string $date, int $start,
         }
 
         $guid = guid();
+        if ($refGuid !== null) {
+            // Booking again for the same appointment moves it: the earlier
+            // slot (on this or any other date) is freed in the same transaction.
+            $db->prepare('DELETE FROM slot_reservations WHERE ref_guid = ?')->execute([$refGuid]);
+        }
         $db->prepare('INSERT INTO slot_reservations (guid, cdate, cuser, location, rdate, start_time, end_time, kind, ref_guid, note, shadow_override) VALUES (?,?,?,?,?,?,?,?,?,?,?)')
             ->execute([$guid, getDBtime(), $cuser, $location, $date, zpms_sched_min_to_time($start), zpms_sched_min_to_time($end), $kind, $refGuid, $note !== '' ? $note : null, $shadow ? 1 : 0]);
         if ($own) { $db->commit(); }
@@ -870,4 +878,31 @@ function zpms_sched_travel_replace(PDO $db, array $rows, bool $symmetric, string
         throw $e;
     }
     return [true, []];
+}
+
+
+// ------------------------------------------- slots of appointments
+
+/** The slot an appointment (or pending appointment) holds, or null. */
+function zpms_sched_slot_for_ref(PDO $db, string $refGuid): ?array {
+    $st = $db->prepare('SELECT * FROM slot_reservations WHERE ref_guid = ? LIMIT 1');
+    $st->execute([$refGuid]);
+    $row = $st->fetch(PDO::FETCH_ASSOC);
+    return $row ?: null;
+}
+
+/** Frees whatever slot an appointment holds (cancelled, deleted, purged). */
+function zpms_sched_release_ref(PDO $db, string $refGuid): void {
+    $db->prepare('DELETE FROM slot_reservations WHERE ref_guid = ?')->execute([$refGuid]);
+}
+
+/** The slot of a pending appointment now belongs to the appointment made from it. */
+function zpms_sched_reassign_ref(PDO $db, string $fromGuid, string $toGuid): void {
+    $db->prepare('UPDATE slot_reservations SET ref_guid = ? WHERE ref_guid = ?')->execute([$toGuid, $fromGuid]);
+}
+
+/** Keeps the note shown on the calendar equal to the appointment's note. */
+function zpms_sched_set_note_for_ref(PDO $db, string $refGuid, string $note): void {
+    $note = mb_substr(trim($note), 0, 255);
+    $db->prepare('UPDATE slot_reservations SET note = ? WHERE ref_guid = ?')->execute([$note !== '' ? $note : null, $refGuid]);
 }

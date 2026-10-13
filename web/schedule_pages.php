@@ -212,7 +212,11 @@ function schedule_check($params) {
     $problems = [];
     $suggestions = [];
     if ($mode === 'book') {
-        $problems = zpms_sched_check($ctx, $loc, $date, $start, $end);
+        // `ref`: the appointment being moved, whose own slot must not count as
+        // a collision; `kind`: surgery bookings may also sit in surgery time.
+        $ref = (string)($_POST['ref'] ?? '');
+        $bookKind = ($_POST['kind'] ?? '') === 'surgery' ? 'surgery' : 'appointment';
+        $problems = zpms_sched_check($ctx, $loc, $date, $start, $end, $bookKind, $ref !== '' ? zpms_sched_ref_reservation($ctx, $ref) : null);
         if (zpms_sched_problems_of_level($problems, 'warn')) {
             foreach (zpms_sched_suggest($ctx, $loc, $date, $end - $start, 3) as $s) {
                 $suggestions[] = ['start' => zpms_sched_min_to_time($s['start']), 'end' => zpms_sched_min_to_time($s['start'] + $end - $start), 'reason' => $s['reason']];
@@ -337,4 +341,321 @@ function schedule_travel_save($params) {
     }
     zpms_audit('schedule_travel_changed', ['detail' => 'rows=' . count($rows)]);
     zpms_sched_json(['ok' => true]);
+}
+
+
+// ------------------------------------------------ booking in the forms
+
+/** Remote (phone / online) services an appointment can use: code => label. */
+function zpms_remote_platforms(): array {
+    return [
+        'zoom' => 'Zoom', 'webex' => 'Webex', 'teams' => 'Microsoft Teams', 'meet' => 'Google Meet',
+        'viber' => 'Viber', 'whatsapp' => 'WhatsApp', 'phone' => t('Phone call'), 'other' => t('Other'),
+    ];
+}
+
+/** What the contact field of a platform holds: 'link' or 'number'. */
+function zpms_remote_contact_kind(string $platform): string {
+    return in_array($platform, ['zoom', 'webex', 'teams', 'meet'], true) ? 'link' : 'number';
+}
+
+/** "Zoom" for a remote appointment, '' for one in person. */
+function zpms_remote_label(?string $platform): string {
+    $all = zpms_remote_platforms();
+    return ($platform !== null && $platform !== '' && isset($all[$platform])) ? $all[$platform] : '';
+}
+
+/** A schedule problem as one sentence (the same wording schedule.js shows). */
+function zpms_sched_problem_message(array $p, array $names): string {
+    $text = zpms_js_text();
+    if ($p['code'] === 'gap') {
+        $key = $p['side'] === 'before' ? 'schedP_gap_before' : 'schedP_gap_after';
+        return strtr($text[$key], ['@minutes' => (string)$p['minutes']]);
+    }
+    $template = $text['schedP_' . $p['code']] ?? $text['schedFailed'];
+    return trim(strtr($template, [
+        '@location' => $names[$p['location'] ?? ''] ?? ($p['location'] ?? ''), '@start' => $p['start'] ?? '', '@end' => $p['end'] ?? '',
+        '@minutes' => (string)($p['minutes'] ?? ''), '@time' => $p['at'] ?? '', '@note' => $p['note'] ?? '', '@date' => $p['date'] ?? '',
+    ]));
+}
+
+/**
+ * The booking block of a form: location, date, a one-day calendar to drag on,
+ * and (for the phone / online location) the platform and contact fields.
+ * Everything is posted as sched-* / remote-* fields and read back with
+ * zpms_booking_from_post(). $o: loc, date, start, end (HH:MM), ref (guid of
+ * the appointment being moved), kind ('appointment' | 'surgery'), remote
+ * (platform, contact, code), note (shown only as the calendar's own text).
+ */
+function zpms_booking_picker(array $o): string {
+    $db = dbConnection::getConnection();
+    $names = zpms_sched_location_names($db);
+    $h = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
+    $remote = $o['remote'] ?? [];
+    $date = (string)($o['date'] ?? '');
+    $attrs = [
+        'data-booking-picker' => '1',
+        'data-day-url' => rel_url('/schedule/day'),
+        'data-check-url' => rel_url('/schedule/check'),
+        'data-phone' => ZPMS_SCHED_ONLINE,
+        'data-ref' => (string)($o['ref'] ?? ''),
+        'data-kind' => ($o['kind'] ?? 'appointment') === 'surgery' ? 'surgery' : 'appointment',
+        'data-start' => (string)($o['start'] ?? ''),
+        'data-end' => (string)($o['end'] ?? ''),
+        'data-can-override' => rbacClass::isPermitted(ZPMS_PERM_SCHEDULE_OVERRIDE) ? '1' : '0',
+        'data-names' => json_encode($names, JSON_UNESCAPED_UNICODE),
+    ];
+    $attrHtml = '';
+    foreach ($attrs as $k => $v) {
+        $attrHtml .= ' ' . $k . '="' . $h($v) . '"';
+    }
+
+    $locOptions = '<option value="">' . $h(t('-- Select a location --')) . '</option>';
+    foreach ($names as $code => $name) {
+        $locOptions .= '<option value="' . $h($code) . '"' . ($code === ($o['loc'] ?? '') ? ' selected' : '') . '>' . $h($name) . '</option>';
+    }
+    $platformOptions = '';
+    foreach (zpms_remote_platforms() as $code => $label) {
+        $platformOptions .= '<option value="' . $h($code) . '"' . ($code === ($remote['platform'] ?? 'zoom') ? ' selected' : '') . '>' . $h($label) . '</option>';
+    }
+
+    return '<div class="booking-picker"' . $attrHtml . '>'
+        . '<div class="input-div"><label for="sched-loc">' . $h(t('Location')) . '</label><select name="sched-loc" id="sched-loc" required>' . $locOptions . '</select></div>'
+        . '<div class="input-div"><label for="sched-date">' . $h(t('Date')) . '</label>'
+        . '<input type="text" name="sched-date" id="sched-date" value="' . $h($date) . '" autocomplete="off" required></div>'
+        . '<div class="booking-remote" data-remote hidden>'
+        . '<div class="input-div"><label for="remote-platform">' . $h(t('Platform')) . '</label><select name="remote-platform" id="remote-platform">' . $platformOptions . '</select></div>'
+        . '<div class="input-div"><label for="remote-contact" data-remote-contact-label>' . $h(t('Meeting link or number')) . '</label>'
+        . '<input type="text" name="remote-contact" id="remote-contact" maxlength="255" value="' . $h($remote['contact'] ?? '') . '"></div>'
+        . '<div class="input-div"><label for="remote-code">' . $h(t('Meeting code (optional)')) . '</label>'
+        . '<input type="text" name="remote-code" id="remote-code" maxlength="64" value="' . $h($remote['code'] ?? '') . '"></div>'
+        . '</div>'
+        . '<div class="input-div"><label>' . $h(t('Time: drag on the calendar')) . '</label>'
+        . '<div class="sched-cal booking-cal"><div class="sched-grid dayone" data-booking-grid></div></div>'
+        . '<div class="sched-panel booking-panel" data-booking-panel></div></div>'
+        . '<input type="hidden" name="sched-start" value="' . $h($o['start'] ?? '') . '" data-sched-start>'
+        . '<input type="hidden" name="sched-end" value="' . $h($o['end'] ?? '') . '" data-sched-end>'
+        . '<input type="hidden" name="sched-override" value="0" data-sched-override>'
+        . '</div>';
+}
+
+/**
+ * Reads the booking block of a submitted form and books the slot.
+ *
+ * Returns ['mode' => 'none'] when the form carries no sched-* time at all (an
+ * older client or a script: callers then keep their previous behaviour and
+ * book nothing); ['mode' => 'error', 'message' => ...] when the booking is
+ * not allowed (nothing is written, say why); or ['mode' => 'ok', 'datetime',
+ * 'duration', 'code', 'name', 'remote' => [platform, contact, code]].
+ *
+ * $refGuid is the appointment or pending appointment the slot belongs to;
+ * booking again for the same guid moves its slot. Booking inside a surgery
+ * shade is only accepted for a holder of ZPMS_PERM_SCHEDULE_OVERRIDE who
+ * ticked the override.
+ */
+function zpms_booking_from_post(string $refGuid, string $kind, string $note): array {
+    global $kernel;
+    if (!isset($_POST['sched-start']) || $_POST['sched-start'] === '') {
+        return ['mode' => 'none'];
+    }
+    $db = dbConnection::getConnection();
+    $names = zpms_sched_location_names($db);
+    $text = zpms_js_text();
+    $error = fn(string $msg) => ['mode' => 'error', 'message' => $msg];
+
+    $code = (string)($_POST['sched-loc'] ?? '');
+    $date = (string)($_POST['sched-date'] ?? '');
+    $start = zpms_sched_time_to_min((string)($_POST['sched-start'] ?? ''));
+    $end = ($_POST['sched-end'] ?? '') === '24:00' ? 1440 : zpms_sched_time_to_min((string)($_POST['sched-end'] ?? ''));
+    if (!isset($names[$code])) {
+        return $error(t('Select a location.'));
+    }
+    if (!zpms_sched_valid_date($date) || $start === null || $end === null || !zpms_sched_valid_interval($start, $end)) {
+        return $error($text['schedP_invalid_interval']);
+    }
+
+    $remote = ['platform' => null, 'contact' => null, 'code' => null];
+    if ($code === ZPMS_SCHED_ONLINE) {
+        $platform = (string)($_POST['remote-platform'] ?? '');
+        $contact = trim((string)($_POST['remote-contact'] ?? ''));
+        if (!isset(zpms_remote_platforms()[$platform])) {
+            return $error(t('Select the platform of the remote appointment.'));
+        }
+        if ($contact === '') {
+            return $error(zpms_remote_contact_kind($platform) === 'link' ? t('Enter the meeting link.') : t('Enter the number to call or message the patient on.'));
+        }
+        $remote = ['platform' => $platform, 'contact' => mb_substr($contact, 0, 255), 'code' => mb_substr(trim((string)($_POST['remote-code'] ?? '')), 0, 64) ?: null];
+    }
+
+    $override = !empty($_POST['sched-override']) && rbacClass::isPermitted(ZPMS_PERM_SCHEDULE_OVERRIDE);
+    $res = zpms_sched_reserve($db, $code, $date, $start, $end, $kind, $refGuid, mb_substr(trim($note), 0, 255), $kernel->getUserName(), $override);
+    if (!$res['ok']) {
+        $hard = zpms_sched_problems_of_level($res['problems'], 'hard');
+        $shadow = zpms_sched_problems_of_level($res['problems'], 'shadow');
+        $first = $hard[0] ?? $shadow[0] ?? null;
+        $msg = $first ? zpms_sched_problem_message($first, $names) : $text['schedFailed'];
+        if (!$hard && $shadow && !rbacClass::isPermitted(ZPMS_PERM_SCHEDULE_OVERRIDE)) {
+            $msg .= ' ' . $text['schedOnlyDoctor'];
+        } elseif (!$hard && $shadow) {
+            $msg .= ' ' . t('Tick the override to book it anyway.');
+        }
+        return $error($msg);
+    }
+    zpms_audit('slot_reserved', ['detail' => 'loc=' . $code . ' date=' . $date . ' ' . zpms_sched_min_to_time($start) . '-' . zpms_sched_min_to_time($end) . ' kind=' . $kind . ($res['problems'] && zpms_sched_problems_of_level($res['problems'], 'shadow') ? ' shadow_override=1' : '')]);
+    return ['mode' => 'ok', 'datetime' => $date . ' ' . zpms_sched_min_to_time($start) . ':00', 'duration' => $end - $start,
+        'code' => $code, 'name' => $names[$code], 'remote' => $remote];
+}
+
+/** Applies a booking result's remote fields to a pending appointment or appointment object. */
+function zpms_booking_apply_remote($record, array $remote): void {
+    $record->setremote_platform($remote['platform']);
+    $record->setremote_contact($remote['contact']);
+    $record->setremote_code($remote['code']);
+}
+
+/**
+ * POST /schedule/day: one location's day for the booking picker -- the blocks
+ * of /schedule, except that the slot belonging to `ref` (the appointment
+ * being moved) is shown as free for it ('own').
+ */
+function schedule_day($params) {
+    zpms_sched_api_guard();
+    $db = dbConnection::getConnection();
+    $loc = (string)($_POST['loc'] ?? '');
+    $date = (string)($_POST['date'] ?? '');
+    $ref = (string)($_POST['ref'] ?? '');
+    if (!in_array($loc, zpms_sched_locations($db), true) || !zpms_sched_valid_date($date)) {
+        zpms_sched_json(['ok' => false, 'error' => 'bad request'], 400);
+    }
+    $ctx = zpms_sched_context_for_date(zpms_sched_load_context_range($db, $date, $date), $date);
+    $blocks = zpms_sched_day_blocks($ctx, $loc, $date);
+    $refs = zpms_sched_resolve_refs($db, [['blocks' => $blocks]]);
+    foreach ($blocks as &$b) {
+        if ($b['type'] === 'resv') {
+            $b['own'] = $ref !== '' && $b['ref'] === $ref;
+            $b['info'] = $refs[$b['ref']] ?? [];
+        }
+    }
+    unset($b);
+    zpms_sched_json(['ok' => true, 'blocks' => $blocks, 'past' => $date < date('Y-m-d')]);
+}
+
+
+/** The location code of a stored place name (appointments.aplace / pending_appointments.location), or ''. */
+function zpms_sched_code_for_name(PDO $db, string $name): string {
+    if ($name === '') {
+        return '';
+    }
+    $st = $db->prepare('SELECT machinename FROM locations WHERE name = ? LIMIT 1');
+    $st->execute([$name]);
+    return (string)($st->fetchColumn() ?: '');
+}
+
+/**
+ * The booking block pre-filled from an existing appointment or pending
+ * appointment: the slot it holds if it has one, otherwise its stored date,
+ * time and place name (30 minutes when no length was ever recorded).
+ */
+function zpms_booking_picker_for_record(string $refGuid, ?string $datetime, int $duration, string $placeName, string $kind, array $remote): string {
+    $db = dbConnection::getConnection();
+    $slot = zpms_sched_slot_for_ref($db, $refGuid);
+    if ($slot) {
+        $o = ['loc' => $slot['location'], 'date' => $slot['rdate'], 'start' => $slot['start_time'], 'end' => $slot['end_time']];
+    } else {
+        $ts = $datetime ? strtotime($datetime) : false;
+        $start = $ts ? date('H:i', $ts) : '';
+        $o = [
+            'loc' => zpms_sched_code_for_name($db, $placeName),
+            'date' => $ts ? date('Y-m-d', $ts) : '',
+            'start' => $start,
+            'end' => $ts ? zpms_sched_min_to_time(min(1440, zpms_sched_time_to_min($start) + ($duration ?: ZPMS_CONSULTATION_DEFAULT_DURATION_MINUTES))) : '',
+        ];
+    }
+    return zpms_booking_picker($o + ['ref' => $refGuid, 'kind' => $kind, 'remote' => $remote]);
+}
+
+/** Frees the slot of an appointment or pending appointment (cancelled, deleted) and audits it if there was one. */
+function zpms_sched_release_slot(string $refGuid, string $detail = ''): void {
+    $db = dbConnection::getConnection();
+    $slot = zpms_sched_slot_for_ref($db, $refGuid);
+    if (!$slot) {
+        return;
+    }
+    zpms_sched_release_ref($db, $refGuid);
+    zpms_audit('slot_released', ['detail' => 'loc=' . $slot['location'] . ' date=' . $slot['rdate'] . ' ' . $slot['start_time'] . '-' . $slot['end_time'] . ($detail !== '' ? ' ' . $detail : '')]);
+}
+
+
+/**
+ * /appointment/{id}/reschedule -- move an appointment to another place, date
+ * or time on the schedule, picking the time by dragging on the calendar.
+ * Also how an older appointment (made before the schedule existed) first
+ * gets a slot.
+ */
+function appointment_reschedule($params) {
+    global $kernel;
+    if (($errmsg = rbacClass::require(ZPMS_PERM_APPOINTMENT_EDIT))) return $errmsg;
+    if (($errmsg = rbacClass::require(ZPMS_PERM_SCHEDULE_MANAGE))) return $errmsg;
+
+    $ap = appointmentsClass::sgetById((int)$params['id']);
+    $pat = $ap && $ap->getdeleted() === null ? patientsClassEx::sgetByGuid($ap->getpguid()) : null;
+    if (!$ap || !$pat) {
+        $kernel->addStatus('error', t('The appointment was not found.'));
+        header('location: '.rel_url('/patients'));
+        exit();
+    }
+    return Renderer::render('reschedule_appointment.zetem', [
+        'action' => rel_url('/appointment/' . $ap->getid() . '/reschedule'),
+        'patient_name' => $pat->getpname(),
+        'booking_picker' => zpms_booking_picker_for_record($ap->getguid(), $ap->getadate(), (int)$ap->getduration_minutes(), (string)$ap->getaplace(),
+            $ap->getatype() === 'operation' ? 'surgery' : 'appointment',
+            ['platform' => $ap->getremote_platform() ?: 'zoom', 'contact' => $ap->getremote_contact(), 'code' => $ap->getremote_code()]),
+    ]);
+}
+
+function appointment_reschedule_post($params) {
+    global $kernel;
+    if (($errmsg = rbacClass::require(ZPMS_PERM_APPOINTMENT_EDIT))) return $errmsg;
+    if (($errmsg = rbacClass::require(ZPMS_PERM_SCHEDULE_MANAGE))) return $errmsg;
+
+    $ap = appointmentsClass::sgetById((int)$params['id']);
+    $pat = $ap && $ap->getdeleted() === null ? patientsClassEx::sgetByGuid($ap->getpguid()) : null;
+    if (!$ap || !$pat) {
+        $kernel->addStatus('error', t('The appointment was not found.'));
+        header('location: '.rel_url('/patients'));
+        exit();
+    }
+    $back = rel_url('/patient/' . $pat->getid() . '/edit');
+    if (!csrfClass::verifyRequest()) {
+        $kernel->addStatus('error', t('Invalid security token (CSRF). Please try again.'));
+        header('location: ' . $back);
+        exit();
+    }
+    if (isset($_POST['cancel'])) {
+        header('location: ' . $back);
+        exit();
+    }
+
+    $booking = zpms_booking_from_post($ap->getguid(), $ap->getatype() === 'operation' ? 'surgery' : 'appointment', (string)$ap->getanote());
+    if ($booking['mode'] !== 'ok') {
+        $msg = $booking['mode'] === 'error' ? $booking['message'] : t('Choose the time by dragging on the calendar.');
+        $kernel->addStatus('error', htmlspecialchars($msg, ENT_QUOTES, 'UTF-8'));
+        header('location: ' . rel_url('/appointment/' . $ap->getid() . '/reschedule'));
+        exit();
+    }
+
+    $changed = [];
+    if ($ap->getadate() !== $booking['datetime']) { $changed[] = 'appointment-date'; }
+    if ($ap->getaplace() !== $booking['name']) { $changed[] = 'appointment-place'; }
+    $ap->setadate($booking['datetime']);
+    $ap->setaplace($booking['name']);
+    $ap->setduration_minutes($booking['duration']);
+    zpms_booking_apply_remote($ap, $booking['remote']);
+    $ap->update();
+
+    zpms_record_appointment_change((int)$ap->getid(), $kernel->getUserName(), $changed);
+    zpms_audit_appointment('appointment_updated', $ap, zpms_audit_fields($changed ?: ['appointment-date']));
+    $kernel->addStatus('notice', t('The appointment was rescheduled.'));
+    header('location: ' . $back);
+    exit();
 }

@@ -409,6 +409,10 @@ function zpmscli_purge(PDO $db, array $patientIds, array $appointments, string $
     if ($apply) {
         $db->beginTransaction();
         try {
+            if ($apIds && $db->query("SHOW TABLES LIKE 'slot_reservations'")->fetchColumn()) {
+                // Their booked slots on the schedule go with them.
+                $db->prepare("DELETE FROM slot_reservations WHERE ref_guid IN (SELECT guid FROM appointments WHERE id IN ($apIn))")->execute($apIds);
+            }
             if ($apIds) {
                 $db->prepare("DELETE FROM appointment_files WHERE appointment_id IN ($apIn)")->execute($apIds);
                 $db->prepare("DELETE FROM appointment_history WHERE appointment_id IN ($apIn)")->execute($apIds);

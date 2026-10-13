@@ -1,4 +1,5 @@
 {% attach_library('appointment-improvements') %}
+{% attach_library('schedule-badge') %}
 {% attach_library('loader-library') %}
 {% attach_library('flatpickr-library') %}
 
@@ -14,6 +15,15 @@
         {{ csrf_field() }}
         <fieldset {% if(!$can_edit): %}disabled{% endif %}>
         <div class="input-header">
+            {% if($scheduled): %}
+            <div class="input-div" role="rendezvouz">
+                <label>{{($appointment->getatype() == 'operation') ? t('Operation') : t('Appointment')}}</label>
+                <div class="appointment-slot">
+                    <strong>{{{$slot_text}}}</strong>
+                    {% if($reschedule_url): %}<a href="{{{$reschedule_url}}}" class="appointment-reschedule"><i class='bx bx-calendar-edit'></i> {{{t('Reschedule')}}}</a>{% endif %}
+                </div>
+            </div>
+            {% else: %}
             <div class="input-div" role="rendezvouz">
                 <!-- <label for="patient-date">Ημ/νια & Ώρα ραντεβού</label> -->
                 <!-- <input type="datetime-local" loader="app-loader-{{$index}}" name="appointment-date" id="" value="{{$appointment->getadate()}}"> -->
@@ -57,7 +67,17 @@
                     });
                 });
             </script>
+            {% endif %}
 
+            {% if($scheduled): %}
+            <div class="input-div">
+                <label role="location"><i class='bx bx-map-pin'></i> {{{t('Area')}}}</label>
+                <div class="appointment-slot">
+                    <strong>{{{$appointment->getaplace()}}}</strong>
+                    {% if($remote_label): %}<span class="sched-badge">{{{t('Online')}}} &middot; {{{$remote_label}}}</span> <span class="muted">{{{$remote_contact}}}</span>{% endif %}
+                </div>
+            </div>
+            {% else: %}
             <div class="input-div">
                 <label for="appointment-place" role="location"><i class='bx bx-map-pin'></i> {{{t('Area')}}}</label>
                 <!-- <input type="text" name="appointment-place" id=""  value="{{$appointment->getaplace()}}"> -->
@@ -72,6 +92,7 @@
                 </select>
                 <!-- {% endif %} -->
             </div>
+            {% endif %}
         </div>
         <div id="app-loader-{{$index}}" class="loader0"></div>
 

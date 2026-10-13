@@ -1,5 +1,6 @@
 {% attach_library('loader-library'); %}
 {% attach_library('flatpickr-library'); %}
+{% attach_library('booking-picker'); %}
 
 <div class="edit-patient">
     {# Visually hidden: the breadcrumb above already names this page. Kept as the
@@ -33,20 +34,7 @@
             <input type="text" name="patient-email" id="" value="{{{$pending->getpatient_email()}}}">
         </div>
 
-        <div class="input-div">
-            <label for="appointment-date">{{{t('Appointment date & time')}}}</label>
-            <input type="text" name="appointment-date" id="consultation-date" value="{{$pending->getappointment_datetime() | date('Y-m-d H:i')}}" required>
-        </div>
-
-        <div class="input-div">
-            <label for="appointment-location">{{{t('Location')}}}</label>
-            <select name="appointment-location" id="">
-                <option value="">{{{t('-- Select a location --')}}}</option>
-                {% foreach($locations as $loc): %}
-                <option value="{{{$loc}}}" {{($loc == $pending->getlocation())?'selected':''}}>{{{$loc}}}</option>
-                {% endforeach %}
-            </select>
-        </div>
+        {{ $booking_picker }}
 
         <div class="input-div">
             <label for="appointment-user">{{{t('Doctor')}}}</label>
@@ -68,16 +56,3 @@
         </div>
     </form>
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        flatpickr('#consultation-date', {
-            enableTime: true,
-            time_24hr: true,
-            dateFormat: 'Y-m-d H:i',
-            altInput: true,
-            altFormat: 'd-m-Y H:i',
-            allowInput: true
-        });
-    });
-</script>

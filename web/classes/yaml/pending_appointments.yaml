@@ -68,6 +68,26 @@ table:
     type: int(11)
     default: null
 
+  # Length of the booked time in minutes (15-minute steps, see web/schedule.php).
+  # NULL = booked before the schedule existed / without picking a time on it.
+  - name: duration_minutes
+    type: int
+    default: null
+
+  # Remote (phone / online) appointments: which service (zoom, webex, teams,
+  # meet, viber, whatsapp, phone, other -- web/schedule_pages.php), the link or
+  # number to reach the patient on, and an optional meeting code. All NULL for
+  # an appointment in person.
+  - name: remote_platform
+    type: varchar(16)
+    default: null
+  - name: remote_contact
+    type: varchar(255)
+    default: null
+  - name: remote_code
+    type: varchar(64)
+    default: null
+
   - name: notes
     type: text
     default: null

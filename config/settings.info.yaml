@@ -96,6 +96,25 @@ libraries:
         type: 'text/javascript'
         src: 'js/schedule.js'
         defer:
+  # Only the schedule styles (the "Online · Zoom" badge on appointment cards
+  # and the pending list).
+  schedule-badge:
+    css:
+      - schedule:
+        type: 'text/css'
+        src: 'css/schedule.css'
+  # The booking block inside the appointment forms (zpms_booking_picker()):
+  # location + date + a one-day calendar to drag on.
+  booking-picker:
+    css:
+      - schedule:
+        type: 'text/css'
+        src: 'css/schedule.css'
+    foot_script:
+      - schedule_picker:
+        type: 'text/javascript'
+        src: 'js/schedule-picker.js'
+        defer:
   # GDPR audit log page (audit_log.zetem).
   audit-log:
     css:
@@ -240,10 +259,29 @@ routes:
     url: /schedule
     handler: schedule_view
     method: get
+  appointment_reschedule:
+    title:
+      gr: "Αλλαγή ώρας ραντεβού"
+      en: "Reschedule the appointment"
+    url: "/appointment/{id}/reschedule"
+    handler: appointment_reschedule
+    method: get
+  appointment_reschedule_post:
+    title:
+      gr: "Αλλαγή ώρας ραντεβού"
+      en: "Reschedule the appointment"
+    url: "/appointment/{id}/reschedule"
+    handler: appointment_reschedule_post
+    method: post
   schedule_check:
     title: "Check a schedule change"
     url: /schedule/check
     handler: schedule_check
+    method: post
+  schedule_day:
+    title: "One day of a location's schedule"
+    url: /schedule/day
+    handler: schedule_day
     method: post
   schedule_override_save:
     title: "Change one date of the schedule"
