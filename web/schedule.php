@@ -10,8 +10,10 @@
  *     reason), all on a 15-minute grid;
  *   - a single date can be changed on top of that (schedule_overrides), which
  *     always wins over the pattern for the interval it covers;
- *   - 'online' is a location like any other, with its own calendar and 0
- *     minutes of travel to everywhere;
+ *   - 'phone' (phone / online appointments: Zoom, Webex, Viber, WhatsApp, ...)
+ *     is a location like any other -- a locations row fed from
+ *     web/content/locations/phone.yml -- with its own calendar and 0 minutes
+ *     of travel to everywhere;
  *   - bookings (slot_reservations) never overlap, at ANY location, and two
  *     bookings at different locations keep the travel time between them;
  *   - surgery at one location shades every other location's calendar, widened
@@ -35,7 +37,8 @@
 
 const ZPMS_SCHED_STEP = 15;
 const ZPMS_SCHED_DEFAULT_TRAVEL_MINUTES = 30;
-const ZPMS_SCHED_ONLINE = 'online';
+/** locations.machinename of the phone / online location. */
+const ZPMS_SCHED_ONLINE = 'phone';
 const ZPMS_SCHED_KINDS = ['available', 'hold', 'surgery'];
 /** Later kinds win where intervals of one source overlap. */
 const ZPMS_SCHED_KIND_PRIORITY = ['available' => 0, 'hold' => 1, 'surgery' => 2];
@@ -86,7 +89,7 @@ function zpms_sched_row_end(array $row): int {
 /**
  * Travel minutes between two locations. The same location needs none; a
  * stored row wins (looked up in either direction); otherwise 0 for anything
- * involving 'online' and ZPMS_SCHED_DEFAULT_TRAVEL_MINUTES for the rest.
+ * involving the phone location and ZPMS_SCHED_DEFAULT_TRAVEL_MINUTES for the rest.
  *
  * @param array $travel [from][to] => minutes
  */
@@ -420,11 +423,17 @@ function zpms_sched_check_block(array $ctx, string $location, string $date, int 
 
 // ------------------------------------------------------------ database
 
-/** Every location code the schedule knows: locations.machinename values plus 'online'. */
+/**
+ * Every location code the schedule knows: the locations.machinename values
+ * (the phone location included, once web/content/locations/phone.yml has been
+ * fed with feed:load). The phone code is appended when that has not been done
+ * yet, so the schedule never silently loses the location.
+ */
 function zpms_sched_locations(PDO $db): array {
     $codes = $db->query("SELECT DISTINCT machinename FROM locations WHERE machinename IS NOT NULL AND machinename <> '' ORDER BY machinename")->fetchAll(PDO::FETCH_COLUMN);
-    $codes = array_values(array_filter($codes, fn($c) => $c !== ZPMS_SCHED_ONLINE));
-    $codes[] = ZPMS_SCHED_ONLINE;
+    if (!in_array(ZPMS_SCHED_ONLINE, $codes, true)) {
+        $codes[] = ZPMS_SCHED_ONLINE;
+    }
     return $codes;
 }
 

@@ -5,8 +5,8 @@
  * 2026-12-15):
  *   Peristeri (p)    Mon 10:00-14:00 available
  *   Metropolitan (m) Tue 08:00-13:00 surgery; Mon 16:00-19:00 available
- *   Online (online)  Mon 14:00-16:00 available
- * Travel: m<->p 30, m<->a 45, p<->a 50; online 0 to everywhere. */
+ *   Phone (phone)  Mon 14:00-16:00 available
+ * Travel: m<->p 30, m<->a 45, p<->a 50; phone 0 to everywhere. */
 
 require_once __DIR__ . '/../../web/schedule.php';
 
@@ -24,13 +24,13 @@ function zpms_sched_ctx(array $reservations = [], array $overrides = []): array 
             zpms_sched_t('p', 1, '10:00', '14:00', 'available'),
             zpms_sched_t('m', 2, '08:00', '13:00', 'surgery', 'Επέμβαση'),
             zpms_sched_t('m', 1, '16:00', '19:00', 'available'),
-            zpms_sched_t('online', 1, '14:00', '16:00', 'available'),
+            zpms_sched_t('phone', 1, '14:00', '16:00', 'available'),
             zpms_sched_t('p', 2, '15:00', '19:00', 'available'),
         ],
         'overrides' => $overrides,
         'reservations' => $reservations,
         'travel' => ['m' => ['p' => 30, 'a' => 45], 'p' => ['a' => 50]],
-        'locations' => ['a', 'm', 'online', 'p'],
+        'locations' => ['a', 'm', 'phone', 'p'],
     ];
 }
 
@@ -97,7 +97,7 @@ function zpms_schedule_functional_tests(TestRunner $runner): void {
         assert_equal(0, zpms_sched_travel_minutes($t, 'm', 'm'));
         assert_equal(30, zpms_sched_travel_minutes($t, 'm', 'p'));
         assert_equal(30, zpms_sched_travel_minutes($t, 'p', 'm'));
-        assert_equal(0, zpms_sched_travel_minutes($t, 'p', 'online'));
+        assert_equal(0, zpms_sched_travel_minutes($t, 'p', 'phone'));
         assert_equal(ZPMS_SCHED_DEFAULT_TRAVEL_MINUTES, zpms_sched_travel_minutes($t, 'p', 'a'));
         assert_equal(60, zpms_sched_round_margin(50), '50 minutes round out to 60 on the 15-minute grid');
     });
@@ -122,7 +122,7 @@ function zpms_schedule_functional_tests(TestRunner $runner): void {
         assert_equal([], zpms_sched_codes(zpms_sched_check($ctx, 'p', $MON, $m('11:30'), $m('12:00')), 'hard'), 'back to back at the same location is fine');
         // Online overlapping an in-person booking is still an overlap (one doctor).
         $ctx2 = zpms_sched_ctx([zpms_sched_r('r1', 'p', $MON, '14:00', '14:30')]);
-        assert_equal(['overlap'], zpms_sched_codes(zpms_sched_check($ctx2, 'online', $MON, $m('14:00'), $m('14:30')), 'hard'));
+        assert_equal(['overlap'], zpms_sched_codes(zpms_sched_check($ctx2, 'phone', $MON, $m('14:00'), $m('14:30')), 'hard'));
         // Moving a booking must not collide with itself.
         assert_equal([], zpms_sched_codes(zpms_sched_check($ctx, 'p', $MON, $m('11:00'), $m('11:30'), 'appointment', 'r1'), 'hard'));
     });
@@ -141,7 +141,7 @@ function zpms_schedule_functional_tests(TestRunner $runner): void {
         assert_equal(['travel_conflict'], zpms_sched_codes(zpms_sched_check($before, 'p', $MON, $m('10:00'), $m('10:30')), 'hard'));
         // Online: 0 minutes of travel, so right after an in-person booking is fine ...
         $online = zpms_sched_ctx([zpms_sched_r('r1', 'p', $MON, '13:30', '14:00')]);
-        assert_equal([], zpms_sched_codes(zpms_sched_check($online, 'online', $MON, $m('14:00'), $m('14:30')), 'hard'), 'online needs no travel time');
+        assert_equal([], zpms_sched_codes(zpms_sched_check($online, 'phone', $MON, $m('14:00'), $m('14:30')), 'hard'), 'online needs no travel time');
         // ... and 2 hours between Peristeri and Metropolitan is plenty.
         $far = zpms_sched_ctx([zpms_sched_r('r1', 'm', $MON, '16:00', '16:30')]);
         assert_equal([], zpms_sched_codes(zpms_sched_check($far, 'p', $MON, $m('13:30'), $m('14:00')), 'hard'));
@@ -161,10 +161,10 @@ function zpms_schedule_functional_tests(TestRunner $runner): void {
         assert_equal(['surgery_shadow'], zpms_sched_codes(zpms_sched_check($ctx, 'p', $TUE, $m('13:00'), $m('13:30')), 'shadow'), 'inside the 30 minutes of travel after it');
         assert_equal([], zpms_sched_codes(zpms_sched_check($ctx, 'p', $TUE, $m('13:30'), $m('14:00')), 'shadow'), 'travel time over');
         // Online has no travel but is shaded during the surgery itself.
-        $ovOnline = [['location' => 'online', 'odate' => $TUE, 'start_time' => '12:00', 'end_time' => '15:00', 'kind' => 'available', 'note' => '']];
+        $ovOnline = [['location' => 'phone', 'odate' => $TUE, 'start_time' => '12:00', 'end_time' => '15:00', 'kind' => 'available', 'note' => '']];
         $ctx = zpms_sched_ctx([], $ovOnline);
-        assert_equal(['surgery_shadow'], zpms_sched_codes(zpms_sched_check($ctx, 'online', $TUE, $m('12:45'), $m('13:15')), 'shadow'));
-        assert_equal([], zpms_sched_codes(zpms_sched_check($ctx, 'online', $TUE, $m('13:00'), $m('13:30')), 'shadow'), 'online right after surgery: 0 minutes of travel');
+        assert_equal(['surgery_shadow'], zpms_sched_codes(zpms_sched_check($ctx, 'phone', $TUE, $m('12:45'), $m('13:15')), 'shadow'));
+        assert_equal([], zpms_sched_codes(zpms_sched_check($ctx, 'phone', $TUE, $m('13:00'), $m('13:30')), 'shadow'), 'online right after surgery: 0 minutes of travel');
         // The reason of the surgery travels with the problem.
         $ctx = zpms_sched_ctx([], $ov);
         $problem = zpms_sched_check($ctx, 'p', $TUE, $m('12:30'), $m('13:00'))[0];
@@ -173,7 +173,7 @@ function zpms_schedule_functional_tests(TestRunner $runner): void {
         // A surgery BOOKING shades other locations too, and nobody is exempt.
         $booked = zpms_sched_ctx([zpms_sched_r('s1', 'm', '2026-12-14', '17:00', '18:00', 'surgery', 'Επέμβαση ασθενή')]);
         $booked['templates'][] = zpms_sched_t('a', 1, '16:00', '19:00', 'available');
-        foreach (['a', 'p', 'online'] as $loc) {
+        foreach (['a', 'p', 'phone'] as $loc) {
             $booked['templates'][] = zpms_sched_t($loc, 1, '16:00', '19:00', 'available');
             assert_equal(['surgery_shadow'], zpms_sched_codes(zpms_sched_check($booked, $loc, '2026-12-14', $m('17:00'), $m('17:30')), 'shadow'), "$loc is not exempt from the shadow");
         }

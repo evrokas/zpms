@@ -1,0 +1,27 @@
+---
+cmd: ../../fw/maker/maker.php --name locations.feeder.yaml --dir ../classes/yaml feed:gen:yaml
+createdate: 13-10-2026 10:00:00
+schema: ../classes/yaml/locations.yaml
+key:
+  name: lang
+  value:
+  - en
+  - gr
+data:
+  en:
+    guid: 3f059ada-aee4-4b72-9598-6d699fc619dd
+    lang: en
+    cdate: "2026-10-13 10:00:00"
+    cuser: guest
+    name: Phone / online
+    machinename: phone
+    address: Remote appointment (phone, Zoom, Webex, Viber, WhatsApp, ...)
+  gr:
+    guid: 73bcc333-808c-4f83-b3b0-1ab148e8ea0a
+    lang: gr
+    cdate: "2026-10-13 10:00:00"
+    cuser: guest
+    name: Τηλεφωνικά / online
+    machinename: phone
+    address: Εξ αποστάσεως ραντεβού (τηλέφωνο, Zoom, Webex, Viber, WhatsApp, ...)
+...
