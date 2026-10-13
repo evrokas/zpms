@@ -85,6 +85,17 @@ libraries:
       - patient_record:
         type: 'text/css'
         src: 'css/patient-record.css'
+  # Appointment schedule (schedule.zetem): calendar + drag selection.
+  schedule:
+    css:
+      - schedule:
+        type: 'text/css'
+        src: 'css/schedule.css'
+    foot_script:
+      - schedule:
+        type: 'text/javascript'
+        src: 'js/schedule.js'
+        defer:
   # GDPR audit log page (audit_log.zetem).
   audit-log:
     css:
@@ -220,6 +231,35 @@ routes:
     url: /audit
     handler: audit_log_view
     method: get
+  # Appointment schedule (web/schedule_pages.php, schedule.zetem): the
+  # per-location calendar and the JSON endpoints its script calls.
+  schedule:
+    title:
+      gr: "Πρόγραμμα Ραντεβού"
+      en: "Appointment schedule"
+    url: /schedule
+    handler: schedule_view
+    method: get
+  schedule_check:
+    title: "Check a schedule change"
+    url: /schedule/check
+    handler: schedule_check
+    method: post
+  schedule_override_save:
+    title: "Change one date of the schedule"
+    url: /schedule/override
+    handler: schedule_override_save
+    method: post
+  schedule_pattern_save:
+    title: "Save the weekly pattern"
+    url: /schedule/pattern
+    handler: schedule_pattern_save
+    method: post
+  schedule_travel_save:
+    title: "Save travel times"
+    url: /schedule/travel
+    handler: schedule_travel_save
+    method: post
   settings_mail_save:
     title: "Save email settings"
     url: "/settings/mail"
@@ -644,6 +684,12 @@ menu:
             gr: 'Νέο (τηλεφωνικά)'
             en: 'New (phone)'
           url: /consultation/new
+        - schedule:
+          text:
+            gr: 'Πρόγραμμα Ραντεβού'
+            en: 'Appointment schedule'
+          url: /schedule
+          permission: schedule-manage
         - pending_appointments_list:
           text:
             gr: 'Εκκρεμή Ραντεβού'

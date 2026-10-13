@@ -531,11 +531,17 @@ function zpms_sched_release(PDO $db, string $guid): bool {
  * future bookings only" is kept honest: past bookings are never looked at.
  *
  * @param array $templates the schedule_templates rows as they WOULD be after the change
+ * @param string|null $onlyDate look at that one date only (a single-date override changed)
  * @return array[] reservation rows
  */
-function zpms_sched_stranded_reservations(PDO $db, array $templates, string $today): array {
-    $st = $db->prepare('SELECT * FROM slot_reservations WHERE rdate >= ? ORDER BY rdate, start_time');
-    $st->execute([$today]);
+function zpms_sched_stranded_reservations(PDO $db, array $templates, string $today, ?string $onlyDate = null): array {
+    if ($onlyDate !== null) {
+        $st = $db->prepare('SELECT * FROM slot_reservations WHERE rdate = ? ORDER BY start_time');
+        $st->execute([$onlyDate]);
+    } else {
+        $st = $db->prepare('SELECT * FROM slot_reservations WHERE rdate >= ? ORDER BY rdate, start_time');
+        $st->execute([$today]);
+    }
     $stranded = [];
     $overridesByDate = [];
     foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) {
@@ -556,4 +562,312 @@ function zpms_sched_stranded_reservations(PDO $db, array $templates, string $tod
         }
     }
     return $stranded;
+}
+
+
+// ------------------------------------------------------------ week view
+
+/** Same as zpms_sched_load_context() for a date range (inclusive): overrides and bookings of every day in it. */
+function zpms_sched_load_context_range(PDO $db, string $from, string $to): array {
+    $st = $db->prepare('SELECT * FROM schedule_overrides WHERE odate BETWEEN ? AND ?');
+    $st->execute([$from, $to]);
+    $overrides = $st->fetchAll(PDO::FETCH_ASSOC);
+    $st = $db->prepare('SELECT * FROM slot_reservations WHERE rdate BETWEEN ? AND ? ORDER BY start_time');
+    $st->execute([$from, $to]);
+    $reservations = $st->fetchAll(PDO::FETCH_ASSOC);
+    return [
+        'templates' => $db->query('SELECT * FROM schedule_templates')->fetchAll(PDO::FETCH_ASSOC),
+        'overrides' => $overrides,
+        'reservations' => $reservations,
+        'travel' => zpms_sched_load_travel($db),
+        'locations' => zpms_sched_locations($db),
+    ];
+}
+
+/** The range context narrowed to one date, in the shape the rule functions expect. */
+function zpms_sched_context_for_date(array $ctx, string $date): array {
+    $ctx['overrides'] = array_values(array_filter($ctx['overrides'], fn($o) => $o['odate'] === $date));
+    $ctx['reservations'] = array_values(array_filter($ctx['reservations'], fn($r) => $r['rdate'] === $date));
+    return $ctx;
+}
+
+/**
+ * What to draw for one day of one location: a list of blocks
+ * ['start','end' (minutes), 'type', 'label', 'note', 'ref'].
+ * Types: 'avail', 'hold', 'surgery' (this location's own layout), 'shadow'
+ * (the doctor is elsewhere -- surgery or a booking at another location,
+ * widened by the travel time; 'label' is the location code and 'ref' is
+ * 'surgery' or 'booking') and 'resv' (a booking here, 'ref' = the appointment
+ * or pending-appointment guid, 'label' its kind). Priority when they overlap:
+ * a booking here, then a shadow, then the layout.
+ */
+function zpms_sched_day_blocks(array $ctx, string $location, string $date): array {
+    $cells = array_fill(0, 96, null);
+    foreach (zpms_sched_day_cells($ctx['templates'], $ctx['overrides'], $location, $date) as $i => $c) {
+        if ($c !== null) {
+            $cells[$i] = ['type' => $c['kind'] === 'available' ? 'avail' : $c['kind'], 'label' => '', 'note' => $c['note'], 'ref' => '', 'guid' => ''];
+        }
+    }
+    $mark = function (int $a, int $b, array $cell) use (&$cells) {
+        for ($m = max(0, $a); $m < min(1440, $b); $m += ZPMS_SCHED_STEP) {
+            $cells[intdiv($m, ZPMS_SCHED_STEP)] = $cell;
+        }
+    };
+    foreach ($ctx['locations'] as $other) {
+        if ($other === $location) {
+            continue;
+        }
+        $gap = zpms_sched_round_margin(zpms_sched_travel_minutes($ctx['travel'], $location, $other));
+        foreach (zpms_sched_surgery_intervals($ctx, $other, $date) as $i) {
+            $mark($i['start'] - $gap, $i['end'] + $gap, ['type' => 'shadow', 'label' => $other, 'note' => $i['note'], 'ref' => 'surgery', 'guid' => '']);
+        }
+    }
+    foreach ($ctx['reservations'] as $r) {
+        if ($r['rdate'] !== $date || $r['location'] === $location) {
+            continue;
+        }
+        $gap = zpms_sched_round_margin(zpms_sched_travel_minutes($ctx['travel'], $location, $r['location']));
+        $isSurgery = ($r['kind'] ?? '') === 'surgery';
+        $mark(zpms_sched_row_start($r) - $gap, zpms_sched_row_end($r) + $gap, ['type' => 'shadow', 'label' => $r['location'], 'note' => '', 'ref' => $isSurgery ? 'surgery' : 'booking', 'guid' => '']);
+    }
+    foreach ($ctx['reservations'] as $r) {
+        if ($r['rdate'] === $date && $r['location'] === $location) {
+            $mark(zpms_sched_row_start($r), zpms_sched_row_end($r), ['type' => 'resv', 'label' => (string)($r['kind'] ?? 'appointment'), 'note' => (string)($r['note'] ?? ''), 'ref' => (string)($r['ref_guid'] ?? ''), 'guid' => $r['guid']]);
+        }
+    }
+
+    $blocks = [];
+    foreach ($cells as $i => $c) {
+        if ($c === null) {
+            continue;
+        }
+        $start = $i * ZPMS_SCHED_STEP;
+        $n = count($blocks) - 1;
+        // Neighbouring cells merge when every field matches; two back-to-back
+        // bookings differ in 'guid' and so stay two blocks.
+        if ($n >= 0 && $blocks[$n]['end'] === $start && array_diff_assoc($blocks[$n], ['start' => $blocks[$n]['start'], 'end' => $blocks[$n]['end']]) === $c) {
+            $blocks[$n]['end'] = $start + ZPMS_SCHED_STEP;
+        } else {
+            $blocks[] = ['start' => $start, 'end' => $start + ZPMS_SCHED_STEP] + $c;
+        }
+    }
+    return $blocks;
+}
+
+/** The Monday of the week containing $date (Y-m-d). */
+function zpms_sched_monday(string $date): string {
+    $d = DateTime::createFromFormat('Y-m-d', $date);
+    $d->modify('-' . ((int)$d->format('N') - 1) . ' days');
+    return $d->format('Y-m-d');
+}
+
+/**
+ * The week model the calendar page draws: for each of $days days from the
+ * Monday, its blocks. Reservations carry only a reference, never names.
+ *
+ * @return array[] each ['date' => Y-m-d, 'blocks' => array[]]
+ */
+function zpms_sched_week_model(PDO $db, string $location, string $monday, int $days = 6): array {
+    $last = (new DateTime($monday))->modify('+' . ($days - 1) . ' days')->format('Y-m-d');
+    $ctx = zpms_sched_load_context_range($db, $monday, $last);
+    $out = [];
+    for ($i = 0; $i < $days; $i++) {
+        $date = (new DateTime($monday))->modify("+$i days")->format('Y-m-d');
+        $out[] = ['date' => $date, 'blocks' => zpms_sched_day_blocks(zpms_sched_context_for_date($ctx, $date), $location, $date)];
+    }
+    return $out;
+}
+
+// ------------------------------------------------- editing the schedule
+
+/**
+ * Sets (kind = available|hold|surgery) or clears (kind = null: back to the
+ * weekly pattern) one location's single-date change over [$start,$end).
+ * Existing overrides overlapping the interval are cut around it, so what is
+ * left of them stays. Runs in a transaction and rolls back, returning the
+ * stranded bookings, if the result would leave a booking outside an
+ * available time. Returns ['ok' => bool, 'stranded' => array[]].
+ */
+function zpms_sched_override_apply(PDO $db, string $location, string $date, int $start, int $end, ?string $kind, string $note, string $cuser): array {
+    $own = !$db->inTransaction();
+    if ($own) {
+        $db->beginTransaction();
+    }
+    try {
+        $st = $db->prepare('SELECT * FROM schedule_overrides WHERE location = ? AND odate = ? FOR UPDATE');
+        $st->execute([$location, $date]);
+        $insert = $db->prepare('INSERT INTO schedule_overrides (guid, cdate, cuser, location, odate, start_time, end_time, kind, note) VALUES (?,?,?,?,?,?,?,?,?)');
+        $delete = $db->prepare('DELETE FROM schedule_overrides WHERE guid = ?');
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $o) {
+            $os = zpms_sched_row_start($o);
+            $oe = zpms_sched_row_end($o);
+            if (!zpms_sched_overlaps($start, $end, $os, $oe)) {
+                continue;
+            }
+            $delete->execute([$o['guid']]);
+            if ($os < $start) {
+                $insert->execute([guid(), getDBtime(), $cuser, $location, $date, $o['start_time'], zpms_sched_min_to_time($start), $o['kind'], $o['note']]);
+            }
+            if ($oe > $end) {
+                $insert->execute([guid(), getDBtime(), $cuser, $location, $date, zpms_sched_min_to_time($end), $o['end_time'], $o['kind'], $o['note']]);
+            }
+        }
+        if ($kind !== null) {
+            $insert->execute([guid(), getDBtime(), $cuser, $location, $date, zpms_sched_min_to_time($start), zpms_sched_min_to_time($end), $kind, $note !== '' ? $note : null]);
+        }
+        $templates = $db->query('SELECT * FROM schedule_templates')->fetchAll(PDO::FETCH_ASSOC);
+        $stranded = zpms_sched_stranded_reservations($db, $templates, $date, $date);
+        if ($stranded) {
+            if ($own) { $db->rollBack(); }
+            return ['ok' => false, 'stranded' => $stranded];
+        }
+        if ($own) { $db->commit(); }
+        return ['ok' => true, 'stranded' => []];
+    } catch (Throwable $e) {
+        if ($own && $db->inTransaction()) { $db->rollBack(); }
+        throw $e;
+    }
+}
+
+/**
+ * Validates pattern rows from the pattern dialog: weekday 1-7, 15-minute
+ * times, a known kind, a slot length (15-240, multiples of 15), no overlap
+ * between two rows of the same weekday, a note for surgery and hold rows.
+ *
+ * @return array [clean rows, errors] -- errors are ['row' => index, 'code' => ...]
+ */
+function zpms_sched_validate_pattern_rows(array $rows): array {
+    $clean = [];
+    $errors = [];
+    foreach (array_values($rows) as $i => $r) {
+        $weekday = (int)($r['weekday'] ?? 0);
+        $start = zpms_sched_time_to_min($r['start_time'] ?? null);
+        $end = zpms_sched_time_to_min($r['end_time'] ?? null);
+        if ($end === null && ($r['end_time'] ?? null) === '24:00') {
+            $end = 1440;
+        }
+        $kind = (string)($r['kind'] ?? '');
+        $slot = (int)($r['slot_minutes'] ?? 30);
+        $note = trim((string)($r['note'] ?? ''));
+        if ($weekday < 1 || $weekday > 7) { $errors[] = ['row' => $i, 'code' => 'weekday']; continue; }
+        if ($start === null || $end === null || !zpms_sched_valid_interval($start, $end)) { $errors[] = ['row' => $i, 'code' => 'times']; continue; }
+        if (!in_array($kind, ZPMS_SCHED_KINDS, true)) { $errors[] = ['row' => $i, 'code' => 'kind']; continue; }
+        if ($slot < 15 || $slot > 240 || $slot % 15 !== 0) { $errors[] = ['row' => $i, 'code' => 'slot']; continue; }
+        if (($kind === 'surgery' || $kind === 'hold') && $note === '') { $errors[] = ['row' => $i, 'code' => 'note']; continue; }
+        if (mb_strlen($note) > 255) { $errors[] = ['row' => $i, 'code' => 'note_long']; continue; }
+        $clean[] = ['weekday' => $weekday, 'start' => $start, 'end' => $end, 'kind' => $kind, 'slot_minutes' => $slot, 'note' => $note];
+    }
+    foreach ($clean as $a => $x) {
+        foreach ($clean as $b => $y) {
+            if ($b > $a && $x['weekday'] === $y['weekday'] && zpms_sched_overlaps($x['start'], $x['end'], $y['start'], $y['end'])) {
+                $errors[] = ['row' => $b, 'code' => 'overlap'];
+            }
+        }
+    }
+    return [$clean, $errors];
+}
+
+/**
+ * Replaces one location's weekly pattern. Refused (nothing written) while a
+ * future booking would end up outside an available time, or while a surgery
+ * row would collide with a future booking elsewhere; the offending bookings
+ * come back so the user can move them first. Past bookings are never looked
+ * at. $rows must already be cleaned by zpms_sched_validate_pattern_rows().
+ *
+ * @return array ['ok' => bool, 'stranded' => array[], 'conflicts' => array[]]
+ */
+function zpms_sched_pattern_replace(PDO $db, string $location, array $rows, ?string $validFrom, string $cuser, string $today): array {
+    $newRows = [];
+    foreach ($rows as $r) {
+        $newRows[] = ['guid' => guid(), 'location' => $location, 'weekday' => $r['weekday'],
+            'start_time' => zpms_sched_min_to_time($r['start']), 'end_time' => zpms_sched_min_to_time($r['end']),
+            'kind' => $r['kind'], 'slot_minutes' => $r['slot_minutes'], 'note' => $r['note'], 'valid_from' => $validFrom];
+    }
+    $others = array_values(array_filter($db->query('SELECT * FROM schedule_templates')->fetchAll(PDO::FETCH_ASSOC), fn($t) => $t['location'] !== $location));
+    $templates = array_merge($others, $newRows);
+
+    $stranded = zpms_sched_stranded_reservations($db, $templates, $today);
+
+    $conflicts = [];
+    $st = $db->prepare('SELECT DISTINCT rdate FROM slot_reservations WHERE rdate >= ?');
+    $st->execute([$today]);
+    foreach ($st->fetchAll(PDO::FETCH_COLUMN) as $date) {
+        $ctx = zpms_sched_load_context($db, $date);
+        $ctx['templates'] = $templates;
+        foreach ($newRows as $t) {
+            if ($t['kind'] === 'surgery' && (int)$t['weekday'] === zpms_sched_weekday($date) && ($validFrom === null || $validFrom <= $date)) {
+                foreach (zpms_sched_check_block($ctx, $location, $date, zpms_sched_row_start($t), zpms_sched_row_end($t), 'surgery') as $p) {
+                    $conflicts[] = $p + ['date' => $date];
+                }
+            }
+        }
+    }
+    if ($stranded || $conflicts) {
+        return ['ok' => false, 'stranded' => $stranded, 'conflicts' => $conflicts];
+    }
+
+    $own = !$db->inTransaction();
+    if ($own) { $db->beginTransaction(); }
+    try {
+        $db->prepare('DELETE FROM schedule_templates WHERE location = ?')->execute([$location]);
+        $ins = $db->prepare('INSERT INTO schedule_templates (guid, cdate, cuser, location, weekday, start_time, end_time, kind, slot_minutes, note, valid_from) VALUES (?,?,?,?,?,?,?,?,?,?,?)');
+        foreach ($newRows as $t) {
+            $ins->execute([$t['guid'], getDBtime(), $cuser, $location, $t['weekday'], $t['start_time'], $t['end_time'], $t['kind'], $t['slot_minutes'], $t['note'] !== '' ? $t['note'] : null, $validFrom]);
+        }
+        if ($own) { $db->commit(); }
+    } catch (Throwable $e) {
+        if ($own && $db->inTransaction()) { $db->rollBack(); }
+        throw $e;
+    }
+    return ['ok' => true, 'stranded' => [], 'conflicts' => []];
+}
+
+/**
+ * Replaces the travel-time table. $rows: ['from' =>, 'to' =>, 'minutes' =>].
+ * Unknown locations, the same location twice and minutes outside 0-600 are
+ * errors. With $symmetric a row also sets the opposite direction (unless that
+ * direction is given explicitly in the same submission).
+ *
+ * @return array [bool ok, string[] errors]
+ */
+function zpms_sched_travel_replace(PDO $db, array $rows, bool $symmetric, string $cuser): array {
+    $known = array_flip(zpms_sched_locations($db));
+    $set = [];
+    $errors = [];
+    foreach ($rows as $r) {
+        $from = (string)($r['from'] ?? '');
+        $to = (string)($r['to'] ?? '');
+        $min = $r['minutes'] ?? null;
+        if (!isset($known[$from]) || !isset($known[$to]) || $from === $to) { $errors[] = 'location'; continue; }
+        if (!is_numeric($min) || (int)$min < 0 || (int)$min > 600 || (string)(int)$min !== (string)(int)$min) { $errors[] = 'minutes'; continue; }
+        $set[$from][$to] = (int)$min;
+    }
+    if ($errors) {
+        return [false, $errors];
+    }
+    if ($symmetric) {
+        foreach ($set as $from => $tos) {
+            foreach ($tos as $to => $min) {
+                if (!isset($set[$to][$from])) {
+                    $set[$to][$from] = $min;
+                }
+            }
+        }
+    }
+    $own = !$db->inTransaction();
+    if ($own) { $db->beginTransaction(); }
+    try {
+        $db->exec('DELETE FROM location_travel_times');
+        $ins = $db->prepare('INSERT INTO location_travel_times (guid, cdate, cuser, from_location, to_location, minutes) VALUES (?,?,?,?,?,?)');
+        foreach ($set as $from => $tos) {
+            foreach ($tos as $to => $min) {
+                $ins->execute([guid(), getDBtime(), $cuser, $from, $to, $min]);
+            }
+        }
+        if ($own) { $db->commit(); }
+    } catch (Throwable $e) {
+        if ($own && $db->inTransaction()) { $db->rollBack(); }
+        throw $e;
+    }
+    return [true, []];
 }

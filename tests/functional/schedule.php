@@ -297,3 +297,259 @@ function zpms_schedule_functional_tests(TestRunner $runner): void {
         assert_equal(0, (int)$db->query('SELECT COUNT(*) FROM slot_reservations')->fetchColumn());
     });
 }
+
+
+// ------------------------------------------------------------------ HTTP
+
+/** The CSRF token the page puts in <meta name="csrf-token">. */
+function zpms_sched_meta_token(string $html): string {
+    assert_true((bool)preg_match('/<meta name="csrf-token" content="([^"]+)"/', $html, $m), 'the page has no csrf-token meta tag');
+    return html_entity_decode($m[1], ENT_QUOTES);
+}
+
+/** POST to a schedule endpoint the way the script does; returns [status, decoded JSON]. */
+function zpms_sched_api(TestHttpClient $http, string $token, string $path, array $fields): array {
+    $res = $http->postWithHeaders($path, $fields, ['X-CSRF-Token' => $token]);
+    // The test server prints a harmless "config/db.php missing" warning ahead of
+    // every response (the tests use their own database); skip to the JSON.
+    $start = strpos($res['body'], '{"');
+    $json = $start === false ? null : json_decode(substr($res['body'], $start), true);
+    assert_true(is_array($json), "$path did not answer JSON (HTTP {$res['status']}): " . substr(strip_tags($res['body']), 0, 300));
+    return [$res['status'], $json];
+}
+
+function zpms_sched_audit_rows(int $afterId): array {
+    return zpms_sched_db()->query('SELECT * FROM audit_log WHERE id > ' . $afterId . " AND event_type LIKE 'schedule_%' ORDER BY id")->fetchAll(PDO::FETCH_ASSOC);
+}
+
+function zpms_schedule_http_tests(TestRunner $runner, string $baseUrl): void {
+    $monday = date('Y-m-d', strtotime('monday next week +7 days'));
+    $tuesday = date('Y-m-d', strtotime($monday . ' +1 day'));
+    $m = fn(string $t) => zpms_sched_time_to_min($t);
+
+    $runner->add('set up two locations, a pattern, a travel time and the secretary account', function () {
+        $db = zpms_sched_db();
+        foreach (['slot_reservations', 'schedule_templates', 'schedule_overrides', 'location_travel_times'] as $t) {
+            $db->exec("DELETE FROM $t");
+        }
+        $db->exec("DELETE FROM locations WHERE machinename IN ('sched_p','sched_m','phone')");
+        foreach ([['sched_p', 'Περιστέρι'], ['sched_m', 'Metropolitan'], ['phone', 'Τηλεφωνικά']] as [$code, $name]) {
+            $db->prepare('INSERT INTO locations (guid, lang, cdate, cuser, name, machinename, address) VALUES (?,?,?,?,?,?,?)')
+                ->execute([guid(), 'gr', getDBtime(), 'test', $name, $code, '']);
+        }
+        $ins = $db->prepare('INSERT INTO schedule_templates (guid, cdate, cuser, location, weekday, start_time, end_time, kind, slot_minutes, note) VALUES (?,?,?,?,?,?,?,?,?,?)');
+        $ins->execute([guid(), getDBtime(), 'test', 'sched_p', 1, '10:00', '14:00', 'available', 30, '']);
+        $ins->execute([guid(), getDBtime(), 'test', 'sched_m', 2, '08:00', '13:00', 'surgery', 30, 'Επέμβαση']);
+        $ins->execute([guid(), getDBtime(), 'test', 'sched_p', 2, '09:00', '16:00', 'available', 30, '']);
+        $db->prepare('INSERT INTO location_travel_times (guid, cdate, cuser, from_location, to_location, minutes) VALUES (?,?,?,?,?,?)')
+            ->execute([guid(), getDBtime(), 'test', 'sched_m', 'sched_p', 30]);
+        if (!(int)$db->query("SELECT COUNT(*) FROM users WHERE uname = '" . TestFixtures::SECRETARY_USERNAME . "'")->fetchColumn()) {
+            TestFixtures::createSecretaryUser();
+        }
+    });
+
+    $runner->add('/schedule: refused when logged out; doctor and secretary can open it and see the week', function () use ($baseUrl, $monday) {
+        $anon = new TestHttpClient($baseUrl);
+        $res = $anon->get('/schedule');
+        assert_not_contains('id="schedule-data"', $res['body'], 'a logged-out request must not get the schedule');
+
+        foreach (['doctor' => fn($h) => TestFixtures::loginAsTestUser($h), 'secretary' => fn($h) => TestFixtures::loginAsSecretary($h)] as $who => $login) {
+            $http = new TestHttpClient($baseUrl);
+            $login($http);
+            $page = $http->get('/schedule?loc=sched_p&date=' . $monday);
+            assert_equal(200, $page['status'], "$who: GET /schedule");
+            assert_contains('id="schedule-data"', $page['body'], "$who: the page carries its data");
+            assert_contains('sched_p', $page['body']);
+            assert_contains('Περιστέρι', $page['body'], "$who: the location tab is shown by name");
+            assert_contains('Πρόγραμμα Ραντεβού', $page['body'], "$who: Greek title from the dictionary");
+            $data = zpms_sched_page_model($page['body']);
+            assert_equal('sched_p', $data['location']);
+            assert_equal($monday, $data['days'][0]['date']);
+            $blocks = $data['days'][0]['blocks'];
+            assert_equal('avail', $blocks[0]['type'], "$who: Monday 10:00-14:00 is available");
+            assert_equal(600, $blocks[0]['start']);
+            assert_equal(840, $blocks[0]['end']);
+            assert_equal($who === 'doctor', $data['canOverride'], "$who: only the doctor may override the shadow");
+        }
+    });
+
+    $runner->add('the endpoints refuse a request without the CSRF token and a logged-out one', function () use ($baseUrl, $monday) {
+        $http = new TestHttpClient($baseUrl);
+        TestFixtures::loginAsTestUser($http);
+        $res = $http->post('/schedule/check', ['loc' => 'sched_p', 'date' => $monday, 'start' => '10:00', 'end' => '10:30', 'mode' => 'book']);
+        assert_equal(403, $res['status'], 'no token');
+        $res = (new TestHttpClient($baseUrl))->post('/schedule/check', ['loc' => 'sched_p']);
+        assert_true(in_array($res['status'], [302, 401, 403], true), 'logged out, got ' . $res['status']);
+    });
+
+    $runner->add('check: free time is fine, a hold and a surgery shadow are reported; only the doctor may override', function () use ($baseUrl, $monday, $tuesday) {
+        $doctor = new TestHttpClient($baseUrl);
+        TestFixtures::loginAsTestUser($doctor);
+        $token = zpms_sched_meta_token($doctor->get('/schedule')['body']);
+
+        [$st, $r] = zpms_sched_api($doctor, $token, '/schedule/check', ['loc' => 'sched_p', 'date' => $monday, 'start' => '10:00', 'end' => '10:30', 'mode' => 'book']);
+        assert_equal(200, $st);
+        assert_equal([], zpms_sched_codes($r['problems'], 'hard'));
+        assert_true($r['can_override'], 'doctor');
+
+        [, $r] = zpms_sched_api($doctor, $token, '/schedule/check', ['loc' => 'sched_p', 'date' => $monday, 'start' => '09:00', 'end' => '09:30', 'mode' => 'book']);
+        assert_equal(['not_available'], zpms_sched_codes($r['problems'], 'hard'));
+
+        // Tuesday 12:30 at sched_p is inside the Metropolitan surgery shade.
+        [, $r] = zpms_sched_api($doctor, $token, '/schedule/check', ['loc' => 'sched_p', 'date' => $tuesday, 'start' => '12:30', 'end' => '13:00', 'mode' => 'book']);
+        assert_equal(['surgery_shadow'], zpms_sched_codes($r['problems'], 'shadow'));
+
+        [, $r] = zpms_sched_api($doctor, $token, '/schedule/check', ['loc' => 'sched_p', 'date' => $monday, 'start' => '11:00', 'end' => '11:20', 'mode' => 'book']);
+        assert_equal(['invalid_interval'], zpms_sched_codes($r['problems']), 'off the 15-minute grid');
+
+        $secretary = new TestHttpClient($baseUrl);
+        TestFixtures::loginAsSecretary($secretary);
+        $stoken = zpms_sched_meta_token($secretary->get('/schedule')['body']);
+        [, $r] = zpms_sched_api($secretary, $stoken, '/schedule/check', ['loc' => 'sched_p', 'date' => $tuesday, 'start' => '12:30', 'end' => '13:00', 'mode' => 'book']);
+        assert_false($r['can_override'], 'the secretary cannot override the shadow');
+    });
+
+    $runner->add('a date can be reserved with a reason, shows on the calendar, and goes back to the pattern', function () use ($baseUrl, $monday) {
+        $http = new TestHttpClient($baseUrl);
+        TestFixtures::loginAsTestUser($http);
+        $token = zpms_sched_meta_token($http->get('/schedule')['body']);
+        $audit = (int)zpms_sched_db()->query('SELECT COALESCE(MAX(id),0) FROM audit_log')->fetchColumn();
+        $base = ['loc' => 'sched_p', 'date' => $monday, 'start' => '12:00', 'end' => '13:00'];
+
+        [$st, $r] = zpms_sched_api($http, $token, '/schedule/override', $base + ['kind' => 'hold', 'note' => '']);
+        assert_equal(422, $st, 'a reserved time needs a reason');
+        assert_equal('note_required', $r['error']);
+
+        [$st] = zpms_sched_api($http, $token, '/schedule/override', $base + ['kind' => 'hold', 'note' => 'Σύσκεψη διοίκησης ΑΒΓ']);
+        assert_equal(200, $st);
+        $data = zpms_sched_page_model($http->get('/schedule?loc=sched_p&date=' . $monday)['body']);
+        $types = array_map(fn($b) => $b['type'] . ':' . $b['start'], $data['days'][0]['blocks']);
+        assert_equal(['avail:600', 'hold:720', 'avail:780'], $types, 'the hold splits the available time');
+        assert_equal('Σύσκεψη διοίκησης ΑΒΓ', $data['days'][0]['blocks'][1]['note'], 'the reason is shown on the calendar');
+
+        [, $r] = zpms_sched_api($http, $token, '/schedule/check', ['loc' => 'sched_p', 'date' => $monday, 'start' => '12:00', 'end' => '12:30', 'mode' => 'book']);
+        assert_equal(['held'], zpms_sched_codes($r['problems'], 'hard'));
+
+        [$st] = zpms_sched_api($http, $token, '/schedule/override', $base + ['kind' => 'clear']);
+        assert_equal(200, $st);
+        $data = zpms_sched_page_model($http->get('/schedule?loc=sched_p&date=' . $monday)['body']);
+        assert_equal(1, count($data['days'][0]['blocks']), 'back to the plain pattern');
+
+        $rows = zpms_sched_audit_rows($audit);
+        assert_equal(['schedule_override_set', 'schedule_override_cleared'], array_column($rows, 'event_type'));
+        foreach ($rows as $row) {
+            foreach ($row as $value) {
+                assert_true($value === null || !str_contains((string)$value, 'ΑΒΓ'), 'the reason must never reach the audit log');
+            }
+        }
+
+        [$st, $r] = zpms_sched_api($http, $token, '/schedule/override', ['loc' => 'sched_p', 'date' => '2020-01-06', 'start' => '10:00', 'end' => '11:00', 'kind' => 'hold', 'note' => 'x']);
+        assert_equal(422, $st, 'past dates cannot be changed');
+    });
+
+    $runner->add('surgery on a date shades the other location, with the reason; a booking in the way refuses it', function () use ($baseUrl, $monday, $m) {
+        $http = new TestHttpClient($baseUrl);
+        TestFixtures::loginAsTestUser($http);
+        $token = zpms_sched_meta_token($http->get('/schedule')['body']);
+
+        [$st] = zpms_sched_api($http, $token, '/schedule/override', ['loc' => 'sched_m', 'date' => $monday, 'start' => '16:00', 'end' => '17:00', 'kind' => 'surgery', 'note' => 'Επέμβαση Χ']);
+        assert_equal(200, $st);
+        // Metropolitan 16:00-17:00 + 30' travel shades Peristeri 15:30-17:30; Peristeri is open until 14:00, so open it by override and look.
+        zpms_sched_api($http, $token, '/schedule/override', ['loc' => 'sched_p', 'date' => $monday, 'start' => '14:00', 'end' => '18:00', 'kind' => 'available', 'note' => '']);
+        $blocks = zpms_sched_page_model($http->get('/schedule?loc=sched_p&date=' . $monday)['body'])['days'][0]['blocks'];
+        $shadow = array_values(array_filter($blocks, fn($b) => $b['type'] === 'shadow'));
+        assert_equal(1, count($shadow));
+        assert_equal(930, $shadow[0]['start'], 'surgery starts 16:00, minus 30 minutes of travel');
+        assert_equal(1050, $shadow[0]['end']);
+        assert_equal('sched_m', $shadow[0]['label']);
+        assert_equal('Επέμβαση Χ', $shadow[0]['note'], 'the surgery reason travels to the shaded calendar');
+
+        // Put a booking at Peristeri 13:30-14:00 and try surgery at Metropolitan 14:15 (needs 30' of travel): refused.
+        $r = zpms_sched_reserve(zpms_sched_db(), 'sched_p', $monday, $m('13:30'), $m('14:00'), 'appointment', null, 'x', 'test');
+        assert_true($r['ok'], 'setup booking: ' . json_encode($r['problems']));
+        [$st, $res] = zpms_sched_api($http, $token, '/schedule/override', ['loc' => 'sched_m', 'date' => $monday, 'start' => '14:15', 'end' => '15:00', 'kind' => 'surgery', 'note' => 'Y']);
+        assert_equal(409, $st);
+        assert_equal(['has_reservation'], zpms_sched_codes($res['problems']));
+        // Clearing the Peristeri override that opened 14:00-18:00 is fine; clearing 13:30-14:00 (not an override) changes nothing and is fine too,
+        // but turning the booked time into a hold is refused (the booking would be stranded or in the way).
+        [$st, $res] = zpms_sched_api($http, $token, '/schedule/override', ['loc' => 'sched_p', 'date' => $monday, 'start' => '13:30', 'end' => '14:00', 'kind' => 'hold', 'note' => 'Z']);
+        assert_equal(409, $st);
+        zpms_sched_db()->exec('DELETE FROM slot_reservations');
+        zpms_sched_db()->exec('DELETE FROM schedule_overrides');
+    });
+
+    $runner->add('weekly pattern: validated, saved, and refused while it would strand a future booking', function () use ($baseUrl, $monday, $m) {
+        $http = new TestHttpClient($baseUrl);
+        TestFixtures::loginAsTestUser($http);
+        $token = zpms_sched_meta_token($http->get('/schedule')['body']);
+        $audit = (int)zpms_sched_db()->query('SELECT COALESCE(MAX(id),0) FROM audit_log')->fetchColumn();
+        $good = [['weekday' => 3, 'start_time' => '16:00', 'end_time' => '19:00', 'kind' => 'available', 'slot_minutes' => 30, 'note' => '']];
+
+        [$st, $r] = zpms_sched_api($http, $token, '/schedule/pattern', ['loc' => 'sched_m', 'valid_from' => '', 'rows' => json_encode([['weekday' => 3, 'start_time' => '16:10', 'end_time' => '19:00', 'kind' => 'available', 'slot_minutes' => 30, 'note' => '']])]);
+        assert_equal(422, $st);
+        assert_equal('times', $r['errors'][0]['code']);
+        [$st, $r] = zpms_sched_api($http, $token, '/schedule/pattern', ['loc' => 'sched_m', 'valid_from' => '', 'rows' => json_encode([['weekday' => 3, 'start_time' => '16:00', 'end_time' => '19:00', 'kind' => 'surgery', 'slot_minutes' => 30, 'note' => '']])]);
+        assert_equal('note', $r['errors'][0]['code'], 'surgery needs a reason');
+        $two = [$good[0], ['weekday' => 3, 'start_time' => '18:00', 'end_time' => '20:00', 'kind' => 'available', 'slot_minutes' => 30, 'note' => '']];
+        [, $r] = zpms_sched_api($http, $token, '/schedule/pattern', ['loc' => 'sched_m', 'valid_from' => '', 'rows' => json_encode($two)]);
+        assert_equal('overlap', $r['errors'][0]['code']);
+
+        [$st] = zpms_sched_api($http, $token, '/schedule/pattern', ['loc' => 'sched_m', 'valid_from' => '', 'rows' => json_encode($good)]);
+        assert_equal(200, $st);
+        $rows = zpms_sched_db()->query("SELECT * FROM schedule_templates WHERE location = 'sched_m'")->fetchAll(PDO::FETCH_ASSOC);
+        assert_equal(1, count($rows), 'the old surgery row was replaced');
+        assert_equal('16:00', $rows[0]['start_time']);
+
+        // A future booking at Peristeri on Monday 10:00; replacing Peristeri's pattern without Monday must be refused.
+        $b = zpms_sched_reserve(zpms_sched_db(), 'sched_p', $monday, $m('10:00'), $m('10:30'), 'appointment', null, '', 'test');
+        assert_true($b['ok']);
+        [$st, $r] = zpms_sched_api($http, $token, '/schedule/pattern', ['loc' => 'sched_p', 'valid_from' => '', 'rows' => json_encode([['weekday' => 2, 'start_time' => '09:00', 'end_time' => '16:00', 'kind' => 'available', 'slot_minutes' => 30, 'note' => ''], ['weekday' => 3, 'start_time' => '09:00', 'end_time' => '10:00', 'kind' => 'available', 'slot_minutes' => 30, 'note' => '']])]);
+        assert_equal(409, $st);
+        assert_equal('blocked', $r['error']);
+        assert_equal(1, count($r['stranded']));
+        assert_equal($monday, $r['stranded'][0]['date']);
+        assert_true(!isset($r['stranded'][0]['note']) && !isset($r['stranded'][0]['ref_guid']), 'the list says where and when, never who');
+        $count = (int)zpms_sched_db()->query("SELECT COUNT(*) FROM schedule_templates WHERE location = 'sched_p' AND weekday = 1")->fetchColumn();
+        assert_equal(1, $count, 'a refused pattern writes nothing');
+        zpms_sched_release(zpms_sched_db(), $b['guid']);
+
+        $events = array_column(zpms_sched_audit_rows($audit), 'event_type');
+        assert_equal(['schedule_pattern_changed'], $events, 'one audit row, for the saved pattern only');
+    });
+
+    $runner->add('travel times: saved in both directions, validated, audited', function () use ($baseUrl) {
+        $http = new TestHttpClient($baseUrl);
+        TestFixtures::loginAsTestUser($http);
+        $token = zpms_sched_meta_token($http->get('/schedule')['body']);
+        $audit = (int)zpms_sched_db()->query('SELECT COALESCE(MAX(id),0) FROM audit_log')->fetchColumn();
+
+        [$st, $r] = zpms_sched_api($http, $token, '/schedule/travel', ['symmetric' => '1', 'rows' => json_encode([['from' => 'sched_p', 'to' => 'sched_m', 'minutes' => 'abc']])]);
+        assert_equal(422, $st);
+        [$st] = zpms_sched_api($http, $token, '/schedule/travel', ['symmetric' => '1', 'rows' => json_encode([['from' => 'sched_p', 'to' => 'nowhere', 'minutes' => 10]])]);
+        assert_equal(422, $st, 'an unknown location');
+
+        [$st] = zpms_sched_api($http, $token, '/schedule/travel', ['symmetric' => '1', 'rows' => json_encode([['from' => 'sched_p', 'to' => 'sched_m', 'minutes' => 45]])]);
+        assert_equal(200, $st);
+        $t = zpms_sched_load_travel(zpms_sched_db());
+        assert_equal(45, $t['sched_p']['sched_m']);
+        assert_equal(45, $t['sched_m']['sched_p'], 'the opposite direction was set too');
+        assert_equal(['schedule_travel_changed'], array_column(zpms_sched_audit_rows($audit), 'event_type'));
+    });
+
+    $runner->add('cleanup: schedule test rows removed', function () {
+        $db = zpms_sched_db();
+        foreach (['slot_reservations', 'schedule_templates', 'schedule_overrides', 'location_travel_times'] as $t) {
+            $db->exec("DELETE FROM $t");
+        }
+        $db->exec("DELETE FROM locations WHERE machinename IN ('sched_p','sched_m','phone')");
+        assert_equal(0, (int)$db->query('SELECT COUNT(*) FROM schedule_templates')->fetchColumn());
+    });
+}
+
+/** The model the page hands to schedule.js. */
+function zpms_sched_page_model(string $html): array {
+    assert_true((bool)preg_match('#<script type="application/json" id="schedule-data">(.*?)</script>#s', $html, $m), 'schedule-data script not found');
+    $data = json_decode($m[1], true);
+    assert_true(is_array($data), 'schedule-data is not valid JSON');
+    return $data;
+}

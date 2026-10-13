@@ -135,6 +135,14 @@ try {
     $scheduleRunner = new TestRunner('Schedule engine (slots, travel, surgery shadow)');
     zpms_schedule_functional_tests($scheduleRunner);
     $ok = $scheduleRunner->run() && $ok;
+
+    // The schedule page and its JSON endpoints, over HTTP (fresh server).
+    $server->stop();
+    $server = new TestServer();
+    $server->start();
+    $scheduleHttpRunner = new TestRunner('Schedule pages (calendar, pattern, travel, reasons)');
+    zpms_schedule_http_tests($scheduleHttpRunner, $server->baseUrl());
+    $ok = $scheduleHttpRunner->run() && $ok;
 } finally {
     $server->stop();
 }
