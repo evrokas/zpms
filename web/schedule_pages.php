@@ -154,7 +154,7 @@ function schedule_view($params) {
     $cancelled = [];
     if ($showCancelled && $db->query("SHOW COLUMNS FROM slot_reservations LIKE 'released_at'")->fetchColumn()) {
         $weekEnd = $shift($days - 1);
-        $cq = $db->prepare("SELECT rdate, start_time, end_time, release_reason FROM slot_reservations WHERE location = ? AND rdate BETWEEN ? AND ? AND released_at IS NOT NULL AND (release_reason IS NULL OR release_reason <> 'moved')");
+        $cq = $db->prepare("SELECT rdate, start_time, end_time, release_reason FROM slot_reservations WHERE location = ? AND rdate BETWEEN ? AND ? AND released_at IS NOT NULL AND (release_reason IS NULL OR release_reason NOT IN ('moved', 'edited'))");
         $cq->execute([$loc, $monday, $weekEnd]);
         foreach ($cq->fetchAll(PDO::FETCH_ASSOC) as $c) {
             $cancelled[$c['rdate']][] = ['start' => zpms_sched_row_start($c), 'end' => zpms_sched_row_end($c), 'reason' => (string)$c['release_reason']];
@@ -631,81 +631,6 @@ function zpms_sched_release_slot(string $refGuid, string $detail = '', string $r
 }
 
 
-/**
- * /appointment/{id}/reschedule -- move an appointment to another place, date
- * or time on the schedule, picking the time by dragging on the calendar.
- * Also how an older appointment (made before the schedule existed) first
- * gets a slot.
- */
-function appointment_reschedule($params) {
-    global $kernel;
-    if (($errmsg = rbacClass::require(ZPMS_PERM_APPOINTMENT_EDIT))) return $errmsg;
-    if (($errmsg = rbacClass::require(ZPMS_PERM_SCHEDULE_MANAGE))) return $errmsg;
-
-    $ap = appointmentsClass::sgetById((int)$params['id']);
-    $pat = $ap && $ap->getdeleted() === null ? patientsClassEx::sgetByGuid($ap->getpguid()) : null;
-    if (!$ap || !$pat) {
-        $kernel->addStatus('error', t('The appointment was not found.'));
-        header('location: '.rel_url('/patients'));
-        exit();
-    }
-    return Renderer::render('reschedule_appointment.zetem', [
-        'action' => rel_url('/appointment/' . $ap->getid() . '/reschedule'),
-        'patient_name' => $pat->getpname(),
-        'booking_picker' => zpms_booking_picker_for_record($ap->getguid(), $ap->getadate(), (int)$ap->getduration_minutes(), (string)$ap->getaplace(),
-            $ap->getatype() === 'operation' ? 'surgery' : 'appointment',
-            ['platform' => $ap->getremote_platform() ?: 'zoom', 'contact' => $ap->getremote_contact(), 'code' => $ap->getremote_code()]),
-    ]);
-}
-
-function appointment_reschedule_post($params) {
-    global $kernel;
-    if (($errmsg = rbacClass::require(ZPMS_PERM_APPOINTMENT_EDIT))) return $errmsg;
-    if (($errmsg = rbacClass::require(ZPMS_PERM_SCHEDULE_MANAGE))) return $errmsg;
-
-    $ap = appointmentsClass::sgetById((int)$params['id']);
-    $pat = $ap && $ap->getdeleted() === null ? patientsClassEx::sgetByGuid($ap->getpguid()) : null;
-    if (!$ap || !$pat) {
-        $kernel->addStatus('error', t('The appointment was not found.'));
-        header('location: '.rel_url('/patients'));
-        exit();
-    }
-    $back = rel_url('/patient/' . $pat->getid() . '/edit');
-    if (!csrfClass::verifyRequest()) {
-        $kernel->addStatus('error', t('Invalid security token (CSRF). Please try again.'));
-        header('location: ' . $back);
-        exit();
-    }
-    if (isset($_POST['cancel'])) {
-        header('location: ' . $back);
-        exit();
-    }
-
-    $booking = zpms_booking_from_post($ap->getguid(), $ap->getatype() === 'operation' ? 'surgery' : 'appointment', (string)$ap->getanote());
-    if ($booking['mode'] !== 'ok') {
-        $msg = $booking['mode'] === 'error' ? $booking['message'] : t('Choose the time by dragging on the calendar.');
-        $kernel->addStatus('error', htmlspecialchars($msg, ENT_QUOTES, 'UTF-8'));
-        header('location: ' . rel_url('/appointment/' . $ap->getid() . '/reschedule'));
-        exit();
-    }
-
-    $changed = [];
-    if ($ap->getadate() !== $booking['datetime']) { $changed[] = 'appointment-date'; }
-    if ($ap->getaplace() !== $booking['name']) { $changed[] = 'appointment-place'; }
-    $ap->setadate($booking['datetime']);
-    $ap->setaplace($booking['name']);
-    $ap->setduration_minutes($booking['duration']);
-    zpms_booking_apply_remote($ap, $booking['remote']);
-    $ap->update();
-
-    zpms_record_appointment_change((int)$ap->getid(), $kernel->getUserName(), $changed);
-    zpms_audit_appointment('appointment_updated', $ap, zpms_audit_fields($changed ?: ['appointment-date']));
-    zpms_appointment_sync_to_calendar($ap);
-    $kernel->addStatus('notice', t('The appointment was rescheduled.'));
-    header('location: ' . $back);
-    exit();
-}
-
 // ------------------------------------------------ cancelled bookings
 
 /** Why a booking was released: key => label (English tokens, translated by t()). */
@@ -715,12 +640,13 @@ const ZPMS_SCHED_RELEASE_REASONS = [
     'calendar_cancelled' => 'Cancelled in Google Calendar',
     'calendar_conflict' => 'Moved in Google Calendar to a time that is not allowed',
     'moved' => 'Moved to another time',
+    'edited' => 'Changed on the patient record',
 ];
 
 /**
  * /schedule/cancelled -- bookings that were released (cancelled, deleted, moved
- * away), newest first, kept as history. "Moved" rows only on request: they
- * are not cancellations, the appointment still exists elsewhere. Staff page:
+ * away), newest first, kept as history. "Moved" and "edited" rows only on
+ * request: they are not cancellations, the appointment still exists. Staff page:
  * shows who the booking was for (name, linked while the record exists), unlike
  * the audit log. Needs ZPMS_PERM_SCHEDULE_MANAGE.
  */
@@ -749,7 +675,7 @@ function schedule_cancelled($params) {
         $where[] = 'release_reason = ?';
         $bind[] = $filters['reason'];
     } elseif ($filters['moved'] === '') {
-        $where[] = "(release_reason IS NULL OR release_reason <> 'moved')";
+        $where[] = "(release_reason IS NULL OR release_reason NOT IN ('moved', 'edited'))";
     }
     if ($filters['loc'] !== '') { $where[] = 'location = ?'; $bind[] = $filters['loc']; }
     if ($filters['date_from'] !== '') { $where[] = 'rdate >= ?'; $bind[] = $filters['date_from']; }

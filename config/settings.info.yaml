@@ -259,20 +259,6 @@ routes:
     url: /schedule
     handler: schedule_view
     method: get
-  appointment_reschedule:
-    title:
-      gr: "Αλλαγή ώρας ραντεβού"
-      en: "Reschedule the appointment"
-    url: "/appointment/{id}/reschedule"
-    handler: appointment_reschedule
-    method: get
-  appointment_reschedule_post:
-    title:
-      gr: "Αλλαγή ώρας ραντεβού"
-      en: "Reschedule the appointment"
-    url: "/appointment/{id}/reschedule"
-    handler: appointment_reschedule_post
-    method: post
   schedule_cancelled:
     title:
       gr: "Ακυρωμένες κρατήσεις"

@@ -1,6 +1,5 @@
 {% attach_library('appointment-improvements') %}
 {% attach_library('flatpickr-library') %}
-{% attach_library('booking-picker') %}
 
 {# Visually hidden: the breadcrumb already names the page. #}
 <h2 class="sr-only">{{($appointment->getatype() == 'operation') ? t('New operation') : t('New appointment')}}</h2>
@@ -33,9 +32,20 @@
     <form action="{{$action}}" method="post">
         {{ csrf_field() }}
         <div class="input-header">
-            {# Place, date, the calendar to drag on and (phone / online) the platform
-               fields -- zpms_booking_picker() in web/schedule_pages.php. #}
-            {{ $booking_picker }}
+            <div class="input-div" role="rendezvouz">
+                <label for="appointment-date">{{{t('Appointment date & time')}}}</label>
+                <input type="text" name="appointment-date" id="appointment-date" value="{{$appointment->getadate() | date('Y-m-d H:i')}}">
+            </div>
+
+            <div class="input-div">
+                <label for="appointment-place" role="location">{{{t('Area')}}}</label>
+                <select name="appointment-place" id="appointment-place">
+                    {% foreach($locations as $loc): %}
+                    <option value="{{$loc->getmachinename()}}" {{($loc->getname() ==
+                        $appointment->getaplace())?"selected":""}}>{{$loc->getname()}}</option>
+                    {% endforeach %}
+                </select>
+            </div>
 
             <!-- Fixed for this new appointment already, by which
                  "Add ..." button was clicked on the patient page (see
@@ -64,3 +74,16 @@
         </div>
     </form>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        flatpickr('#appointment-date', {
+            enableTime: true,
+            time_24hr: true,
+            dateFormat: 'Y-m-d H:i',
+            altInput: true,
+            altFormat: 'd-m-Y H:i',
+            allowInput: true
+        });
+    });
+</script>

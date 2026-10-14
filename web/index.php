@@ -667,7 +667,6 @@ require_once(__DIR__ . '/zpms_mailer.php');
                             'appointment_anchor' => '#app-' . (count($apprender)+1),
                         ];
                     }
-                    $apSlot = zpms_sched_slot_for_ref(dbConnection::getConnection(), $ap->getguid());
                     $apRemote = zpms_remote_label($ap->getremote_platform());
                     $apprender[] = [
                         'index' => count($apprender),
@@ -689,14 +688,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
                                                         'appointment' => $ap,
                                                         'locations' => $loc,
                                                         'files' => $apFiles,
-                                                        'can_edit' => $canEditAppointment,
-                                                        // An appointment that holds a slot on the schedule is moved
-                                                        // on its own page, so the date and place here are shown, not edited.
-                                                        'scheduled' => $apSlot !== null,
-                                                        'slot_text' => $apSlot ? date('d/m/Y', strtotime($apSlot['rdate'])) . ' ' . $apSlot['start_time'] . '–' . $apSlot['end_time'] : '',
-                                                        'remote_label' => $apRemote,
-                                                        'remote_contact' => (string)$ap->getremote_contact(),
-                                                        'reschedule_url' => ($canEditAppointment && rbacClass::isPermitted(ZPMS_PERM_SCHEDULE_MANAGE)) ? rel_url('/appointment/' . $ap->getid() . '/reschedule') : '',
+                                                        'can_edit' => $canEditAppointment
                                                     ]),
                         'attributes' => new Attributes()
                     ];
@@ -1053,12 +1045,12 @@ require_once(__DIR__ . '/zpms_mailer.php');
         // locations table, or one deleted between page load and submit) used to
         // be an uncaught fatal error (getname() on null) instead of just saving
         // an empty place, a real crash on a plain edit-and-save.
-        // An appointment that holds a slot on the schedule is moved on its own
-        // page (/appointment/{id}/reschedule): the date and place posted by
-        // this card (an older page, or a crafted request) are ignored.
-        $heldSlot = zpms_sched_slot_for_ref(dbConnection::getConnection(), $ap->getguid());
+        // Date, time and place of an appointment on a patient record are free:
+        // nothing here is checked against the schedule. (An appointment that
+        // still holds a slot from when it was a pending appointment gives the
+        // slot up below if its date, time or place changes.)
         $loc = locationsClassEx::getbyMachineName($_POST['appointment-place'] ?? '', $kernel->getCurrentLanguage());
-        $newPlace = $heldSlot || !isset($_POST['appointment-place']) ? $oldPlace : ($loc ? $loc->getname() : '');
+        $newPlace = !isset($_POST['appointment-place']) ? $oldPlace : ($loc ? $loc->getname() : '');
         if ($newPlace !== $oldPlace) {
             $changedFields[] = 'appointment-place';
         }
@@ -1073,9 +1065,14 @@ require_once(__DIR__ . '/zpms_mailer.php');
         // is named 'appointment-date'
         $newDate = $oldDate;
         foreach($_POST as $postkey => $postval) {
-            if(!$heldSlot && strstr($postkey, "appointment-date")) {
+            if(strstr($postkey, "appointment-date")) {
                 // error_log($postkey . ' ==> ' . print_r($postkey, 1));
                 $newDate = getDBformattime($postval);    //$_POST['appointment-date']));
+                // The card posts the date only: the same day must not wipe the
+                // time the appointment was booked for.
+                if (!preg_match('/\d{1,2}:\d{2}/', (string)$postval) && date('Y-m-d', strtotime($newDate)) === date('Y-m-d', strtotime($oldDate))) {
+                    $newDate = $oldDate;
+                }
                 $ap->setadate($newDate);
             }
         }
@@ -1096,6 +1093,10 @@ require_once(__DIR__ . '/zpms_mailer.php');
 
         $ap->update();
         zpms_sched_set_note_for_ref(dbConnection::getConnection(), $ap->getguid(), (string)$newNote);
+        if (in_array('appointment-date', $changedFields, true) || in_array('appointment-place', $changedFields, true)) {
+            // No longer the time that was booked: the slot is given up (kept as history).
+            zpms_sched_release_slot($ap->getguid(), 'appointment_id=' . (int)$ap->getid(), 'edited');
+        }
         // Only a changed date or place is pushed: the card autosaves the note on
         // every pause in typing, and a Calendar call each time would be slow.
         if (in_array('appointment-date', $changedFields, true) || in_array('appointment-place', $changedFields, true)) {
@@ -1220,24 +1221,11 @@ require_once(__DIR__ . '/zpms_mailer.php');
         ]);
         // $kernel->setS
         // $pat = $pc->getById($params['id']);
-        // The calendar page (/schedule) sends the chosen place and time along.
-        global $Request;
-        $get = isset($Request) ? $Request->getParams() : $_GET;
-        $prefillTime = fn($v) => preg_match('/^\d{2}:\d{2}$/', (string)$v) ? (string)$v : '';
-        $ap->setanote(mb_substr((string)($get['note'] ?? ''), 0, 255));
-
         return (Renderer::render("edit_appointment.zetem", [
             'action' => rel_url('/appointment/' . $params['id'] . '/newappointment'),
             'id' => null,
             'appointment' => $ap,
             'patient' => $p,
-            'booking_picker' => zpms_booking_picker([
-                'loc' => (string)($get['loc'] ?? ''),
-                'date' => zpms_sched_valid_date($get['date'] ?? null) ? $get['date'] : '',
-                'start' => $prefillTime($get['start'] ?? ''),
-                'end' => $prefillTime($get['end'] ?? ''),
-                'kind' => $atype === 'operation' ? 'surgery' : 'appointment',
-            ]),
             'locations' => $loc
         ]));
     }
@@ -1290,18 +1278,10 @@ require_once(__DIR__ . '/zpms_mailer.php');
         // dropdown, and never touched again after this insert.
         $atype = ($_POST['appointment-type'] ?? '') === 'operation' ? 'operation' : 'appointment';
 
-        // Books the slot first; nothing is saved when it is not allowed. An
-        // operation is booked as surgery, which also shades the other
-        // locations. A form without the booking block (an older client)
-        // keeps the plain place + date fields and books nothing.
-        $appGuid = guid();
-        $booking = zpms_booking_from_post($appGuid, $atype === 'operation' ? 'surgery' : 'appointment', (string)($_POST['appointment-notes'] ?? ''));
-        if ($booking['mode'] === 'error') {
-            $kernel->addStatus('error', htmlspecialchars($booking['message'], ENT_QUOTES, 'UTF-8'));
-            header('location: '.rel_url('/appointment/' . $params['id'] . ($atype === 'operation' ? '/newoperation' : '/newappointment')));
-            exit();
-        }
-        $loc = $booking['mode'] === 'ok' ? null : locationsClassEx::getbyMachineName($_POST['appointment-place'] ?? '', $kernel->getCurrentLanguage());
+        // Appointments made on a patient record are not held to the schedule: any
+        // date, time and place is accepted, and no slot is booked (the schedule
+        // rules apply to pending appointments only).
+        $loc = locationsClassEx::getbyMachineName($_POST['appointment-place'] ?? '', $kernel->getCurrentLanguage());
 
         // echo "this is the post version<br/>";
         $app = new appointmentsClass([
@@ -1314,25 +1294,16 @@ require_once(__DIR__ . '/zpms_mailer.php');
             // appointment_files.php's upload) already uses this.
             'cuser' => $kernel->getUserName(),
             'cdate' => getDBtime(),
-            'adate' => $booking['mode'] === 'ok' ? $booking['datetime'] : getDBformattime($_POST['appointment-date']),
-            'aplace' => $booking['mode'] === 'ok' ? $booking['name'] : (($loc)?$loc->getname():''),
-            'duration_minutes' => $booking['mode'] === 'ok' ? $booking['duration'] : null,
+            'adate' => getDBformattime($_POST['appointment-date']),
+            'aplace' => ($loc)?$loc->getname():'',
             'anote' => $_POST['appointment-notes'],
             'atype' => $atype,
-            'guid' => $appGuid,
+            'guid' => guid(),
             'pguid' => $pat->getguid()
         ]);
-        if ($booking['mode'] === 'ok') {
-            zpms_booking_apply_remote($app, $booking['remote']);
-        }
         // print_r( $pc );
 
-        try {
-            $app->insert();
-        } catch (Throwable $e) {
-            dbConnection::getConnection()->prepare('DELETE FROM slot_reservations WHERE ref_guid = ?')->execute([$appGuid]);
-            throw $e;
-        }
+        $app->insert();
         zpms_audit('appointment_created', ['patient' => $pat, 'appointment_id' => $app->getid(), 'detail' => 'type=' . $app->getatype()]);
         // Appointments and operations go to Google Calendar too (not free time).
         zpms_appointment_sync_to_calendar($app);

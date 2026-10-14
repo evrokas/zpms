@@ -265,51 +265,74 @@ function zpms_booking_functional_tests(TestRunner $runner, string $baseUrl): voi
         assert_equal('phone', zpms_bk_slot_for($ap['guid'])['location'], 'the appointment does');
     });
 
-    $runner->add('an operation is booked as surgery, shades the other location, and can be rescheduled', function () use ($doctor, $mon, $tue) {
+    $runner->add('appointments on a patient record are free: no booking block, any date, time and place, no slot', function () use ($doctor, $mon) {
         $pid = (int)zpms_bk_db()->query("SELECT id FROM patients WHERE pname = 'Remote Ok' ORDER BY id DESC LIMIT 1")->fetchColumn();
         $page = $doctor->get('/appointment/' . $pid . '/newoperation');
         assert_equal(200, $page['status']);
-        assert_contains('data-kind="surgery"', $page['body']);
+        assert_contains('name="appointment-date"', $page['body'], 'the plain date and time field');
+        assert_not_contains('data-booking-picker', $page['body'], 'no schedule calendar here');
         $token = TestHttpClient::extractCsrfToken($page['body']);
-        $res = $doctor->post('/appointment/' . $pid . '/newappointment', ['csrf_token' => $token, 'appointment-type' => 'operation', 'appointment-notes' => 'Χειρουργείο ΤΕΣΤ']
-            + zpms_bk_fields('bk_p', $mon, '13:00', '14:00'));
-        assert_equal(302, $res['status']);
-        $ap = zpms_bk_db()->query("SELECT * FROM appointments WHERE atype = 'operation' ORDER BY id DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
-        assert_true($ap !== false, 'operation saved');
-        $slot = zpms_bk_slot_for($ap['guid']);
-        assert_equal(['surgery', '13:00', '14:00'], [$slot['kind'], $slot['start_time'], $slot['end_time']]);
-        // It shades Metropolitan (30' of travel either side): 12:30-14:30 on Monday.
-        $blocks = zpms_sched_page_model_bk($doctor->get('/schedule?loc=bk_m&date=' . $mon)['body'])['days'][0]['blocks'];
-        $shadow = array_values(array_filter($blocks, fn($b) => $b['type'] === 'shadow' && $b['ref'] === 'surgery'));
-        assert_true(count($shadow) >= 1, 'the operation shades the other location');
-
-        // Rescheduling.
-        $r = $doctor->get('/appointment/' . $ap['id'] . '/reschedule');
-        assert_equal(200, $r['status']);
-        assert_contains('data-start="13:00"', $r['body']);
-        $rt = TestHttpClient::extractCsrfToken($r['body']);
-        $done = $doctor->post('/appointment/' . $ap['id'] . '/reschedule', ['csrf_token' => $rt] + zpms_bk_fields('bk_p', $tue, '14:00', '15:30'));
-        assert_equal(302, $done['status']);
-        $slot = zpms_bk_slot_for($ap['guid']);
-        assert_equal(['14:00', '15:30'], [$slot['start_time'], $slot['end_time']]);
-        $row = zpms_bk_db()->query('SELECT * FROM appointments WHERE id = ' . (int)$ap['id'])->fetch(PDO::FETCH_ASSOC);
-        assert_equal($tue . ' 14:00:00', $row['adate']);
-        assert_equal(90, (int)$row['duration_minutes']);
-
-        // The patient page now shows the slot and the Reschedule link instead of editable date and place fields.
+        // Monday 10:30 at bk_p is taken by a booking, 03:00 is outside any schedule: both are accepted.
+        foreach (['10:30', '03:00'] as $time) {
+            $res = $doctor->post('/appointment/' . $pid . '/newappointment', ['csrf_token' => $token, 'appointment-type' => 'operation', 'appointment-notes' => "Ελεύθερο $time",
+                'appointment-date' => "$mon $time", 'appointment-place' => 'bk_p']);
+            assert_equal(302, $res['status']);
+            $ap = zpms_bk_db()->query("SELECT * FROM appointments WHERE anote = " . zpms_bk_db()->quote("Ελεύθερο $time"))->fetch(PDO::FETCH_ASSOC);
+            assert_true($ap !== false, "an operation at $time is saved");
+            assert_equal("$mon $time:00", $ap['adate']);
+            assert_equal('Περιστέρι', $ap['aplace']);
+            assert_true(zpms_bk_slot_for($ap['guid']) === null, 'and holds no slot');
+        }
+        // The patient page shows editable date and place fields on every card, and no Reschedule link.
         $patient = $doctor->get('/patient/' . $pid . '/edit');
-        assert_contains('/appointment/' . $ap['id'] . '/reschedule', $patient['body']);
-        // An older card or a crafted request cannot move a scheduled appointment around the schedule.
-        $edit = $doctor->post('/appointment/' . $ap['id'] . '/edit', ['csrf_token' => TestHttpClient::extractCsrfToken($patient['body']), 'appointment-date-1' => '2031-01-01', 'appointment-place' => 'bk_m', 'appointment-notes' => 'Αλλαγμένη', 'use_ajax' => '1']);
-        $row = zpms_bk_db()->query('SELECT * FROM appointments WHERE id = ' . (int)$ap['id'])->fetch(PDO::FETCH_ASSOC);
-        assert_equal($tue . ' 14:00:00', $row['adate'], 'the date did not move');
-        assert_equal('Περιστέρι', $row['aplace'], 'nor the place');
-        assert_equal('Αλλαγμένη', zpms_bk_slot_for($ap['guid'])['note'], 'but the note follows to the calendar');
+        assert_contains('name="appointment-date-1"', $patient['body']);
+        assert_not_contains('appointment-reschedule', $patient['body']);
+        assert_not_contains('appointment-slot', $patient['body'], 'no read-only slot display');
+    });
 
-        // Deleting the appointment frees the slot.
-        $doctor->post('/appointment/' . $ap['id'] . '/delete', ['csrf_token' => TestHttpClient::extractCsrfToken($patient['body'])]);
-        assert_true(zpms_bk_slot_for($ap['guid']) === null, 'deleting frees the slot');
-        assert_equal('deleted', zpms_bk_db()->query("SELECT release_reason FROM slot_reservations WHERE ref_guid = " . zpms_bk_db()->quote($ap['guid']) . " AND released_at IS NOT NULL ORDER BY id DESC LIMIT 1")->fetchColumn());
+    $runner->add('editing a patient appointment that still holds a slot: a note keeps it, a changed date or place gives it up, delete releases it', function () use ($doctor, $mon) {
+        $db = zpms_bk_db();
+        $pid = (int)$db->query("SELECT id FROM patients WHERE pname = 'Remote Ok' ORDER BY id DESC LIMIT 1")->fetchColumn();
+        $pguid = (string)$db->query("SELECT guid FROM patients WHERE id = $pid")->fetchColumn();
+        $newAppointment = function (string $time) use ($db, $pguid, $mon) {
+            $guid = guid();
+            $db->prepare('INSERT INTO appointments (guid, cdate, cuser, pguid, adate, aplace, anote, atype, duration_minutes) VALUES (?,?,?,?,?,?,?,?,?)')
+                ->execute([$guid, getDBtime(), 'test', $pguid, "$mon $time:00", 'Τηλεφωνικά', 'αρχική', 'appointment', 30]);
+            $id = (int)$db->lastInsertId();
+            $m = zpms_sched_time_to_min($time);
+            assert_true(zpms_sched_reserve($db, 'phone', $mon, $m, $m + 30, 'appointment', $guid, 'αρχική', 'test')['ok'], 'setup slot');
+            return [$id, $guid];
+        };
+        $token = TestHttpClient::extractCsrfToken($doctor->get('/patient/' . $pid . '/edit')['body']);
+
+        [$id, $guid] = $newAppointment('15:00');
+        // The card posts the date only (autosave): same day, the booked time must stay, and the slot too.
+        $doctor->post("/appointment/$id/edit", ['csrf_token' => $token, 'use_ajax' => '1', "appointment-date-1" => $mon, 'appointment-place' => 'phone', 'appointment-notes' => 'νέα σημείωση']);
+        $row = $db->query("SELECT * FROM appointments WHERE id = $id")->fetch(PDO::FETCH_ASSOC);
+        assert_equal("$mon 15:00:00", $row['adate'], 'the time survives a note edit');
+        $slot = zpms_bk_slot_for($guid);
+        assert_true($slot !== null, 'the slot is kept');
+        assert_equal('νέα σημείωση', $slot['note'], 'and shows the new note');
+
+        // A different date: allowed with no check, and the slot is given up (kept as history, reason edited).
+        $other = date('Y-m-d', strtotime($mon . ' +3 days'));
+        $doctor->post("/appointment/$id/edit", ['csrf_token' => $token, 'use_ajax' => '1', "appointment-date-1" => $other, 'appointment-place' => 'phone', 'appointment-notes' => 'νέα σημείωση']);
+        $row = $db->query("SELECT * FROM appointments WHERE id = $id")->fetch(PDO::FETCH_ASSOC);
+        assert_equal("$other 00:00:00", $row['adate'], 'the new date is accepted as typed');
+        assert_true(zpms_bk_slot_for($guid) === null, 'no longer on the schedule');
+        $kept = $db->query("SELECT * FROM slot_reservations WHERE ref_guid = " . $db->quote($guid))->fetch(PDO::FETCH_ASSOC);
+        assert_equal(['edited', TestFixtures::USERNAME], [$kept['release_reason'], $kept['released_by']]);
+
+        // A changed place gives it up too.
+        [$id2, $guid2] = $newAppointment('15:30');
+        $doctor->post("/appointment/$id2/edit", ['csrf_token' => $token, 'use_ajax' => '1', "appointment-date-1" => $mon, 'appointment-place' => 'bk_p', 'appointment-notes' => 'αρχική']);
+        assert_true(zpms_bk_slot_for($guid2) === null, 'a changed place gives up the slot');
+
+        // Deleting frees it as "deleted".
+        [$id3, $guid3] = $newAppointment('15:00');
+        $doctor->post("/appointment/$id3/delete", ['csrf_token' => $token]);
+        assert_true(zpms_bk_slot_for($guid3) === null);
+        assert_equal('deleted', $db->query("SELECT release_reason FROM slot_reservations WHERE ref_guid = " . $db->quote($guid3) . " AND released_at IS NOT NULL ORDER BY id DESC LIMIT 1")->fetchColumn());
     });
 
     $runner->add('the cancelled-bookings list: names, reasons, moved only on request, filters, secretary access, calendar overlay', function () use ($doctor, $secretary, $mon) {
@@ -320,6 +343,9 @@ function zpms_booking_functional_tests(TestRunner $runner, string $baseUrl): voi
         assert_not_contains('Booking One', $page['body'], 'a booking that was only moved is not a cancellation');
         $withMoved = $doctor->get('/schedule/cancelled?moved=1');
         assert_contains('Booking One', $withMoved['body'], 'moved bookings on request');
+        $edited = '<td>Άλλαξε στον φάκελο ασθενούς</td>';   // a table cell: the reason also appears as a filter option
+        assert_not_contains($edited, $page['body'], 'a slot given up by editing the appointment is not a cancellation');
+        assert_contains($edited, $withMoved['body'], 'but is listed on request');
         $byReason = $doctor->get('/schedule/cancelled?reason=deleted');
         assert_contains('Remote Ok', $byReason['body']);
         assert_not_contains('Booking Two', $byReason['body'], 'filtered by reason');

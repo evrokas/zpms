@@ -495,4 +495,5 @@ return [
     'Applied from @from to @to' => 'Ίσχυε από @from έως @to',
     'Booked operation' => 'Κρατημένο χειρουργείο',
     '@name was notified of the new time.' => 'Ο/Η @name ενημερώθηκε για τη νέα ώρα.',
+    'Changed on the patient record' => 'Άλλαξε στον φάκελο ασθενούς',
 ];
