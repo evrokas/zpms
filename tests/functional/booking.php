@@ -7,6 +7,7 @@
  * Driven over HTTP like a browser would post the forms. */
 
 require_once __DIR__ . '/../../web/schedule.php';
+require_once __DIR__ . '/../../web/zpms_mailer.php';
 
 function zpms_bk_db(): PDO { return dbConnection::getConnection(); }
 
@@ -188,6 +189,65 @@ function zpms_booking_functional_tests(TestRunner $runner, string $baseUrl): voi
         assert_equal(['cancelled', TestFixtures::USERNAME], [$kept['release_reason'], $kept['released_by']], 'kept as history, with who and why');
         $rows = zpms_bk_db()->query("SELECT * FROM audit_log WHERE id > $audit AND event_type = 'slot_released'")->fetchAll(PDO::FETCH_ASSOC);
         assert_equal(1, count($rows), 'and audits it');
+    });
+
+    $runner->add('rescheduling a pending appointment emails the assigned doctor; editing something else does not', function () use ($doctor, $mon) {
+        $doctorId = (string)zpms_bk_db()->query("SELECT id FROM users WHERE uname = '" . TestFixtures::USERNAME . "'")->fetchColumn();
+        // No SMTP is configured in the tests, so an attempted send shows up as the "could not be sent" warning.
+        $warning = 'Δεν ήταν δυνατή η αποστολή email';
+        zpms_bk_pending(zpms_bk_fields('bk_p', $mon, '11:00', '11:15', ['patient-name' => 'Mail Move', 'appointment-user' => $doctorId]), $doctor);
+        $doctor->get('/consultation/pending');   // the booking's own flash messages
+        $p = zpms_bk_pending_row('Mail Move');
+        assert_true($p !== null);
+        $page = $doctor->get('/consultation/pending/' . $p['id'] . '/edit');
+        $token = TestHttpClient::extractCsrfToken($page['body']);
+        $base = ['csrf_token' => $token, 'patient-name' => 'Mail Move', 'patient-telephone' => '2100000000', 'appointment-user' => $doctorId];
+
+        // Only the note changes: same slot, no email.
+        $doctor->post('/consultation/pending/' . $p['id'] . '/edit', $base + zpms_bk_fields('bk_p', $mon, '11:00', '11:15', ['appointment-notes' => 'μόνο σημείωση']));
+        assert_not_contains($warning, $doctor->get('/consultation/pending')['body'], 'a note change sends nothing');
+
+        // A new time: the doctor is written to again (and here that fails, which is told).
+        $doctor->post('/consultation/pending/' . $p['id'] . '/edit', $base + zpms_bk_fields('bk_p', $mon, '11:15', '11:30', ['appointment-notes' => 'μόνο σημείωση']));
+        assert_contains($warning, $doctor->get('/consultation/pending')['body'], 'a new time sends an email to the assigned doctor');
+
+        // A new time with nobody assigned: nobody to write to.
+        $doctor->post('/consultation/pending/' . $p['id'] . '/edit', ['appointment-user' => ''] + $base + zpms_bk_fields('bk_p', $mon, '11:30', '11:45'));
+        assert_not_contains($warning, $doctor->get('/consultation/pending')['body'], 'no assigned doctor, no email');
+    });
+
+    $runner->add('the reschedule email: what counts as a change, what it says, and that it is sent through the mailer', function () {
+        assert_false(zpms_pending_time_changed('2026-12-14 10:00:00', '2026-12-14 10:00:30'), 'seconds are not a change');
+        assert_true(zpms_pending_time_changed('2026-12-14 10:00:00', '2026-12-14 10:15:00'));
+        assert_true(zpms_pending_time_changed('2026-12-14 10:00:00', '2026-12-15 10:00:00'));
+        assert_false(zpms_pending_time_changed(null, '2026-12-14 10:00:00'));
+
+        Renderer::init([ZPMS_TEST_APPDIR . '/web/templates/email/'], false, sys_get_temp_dir(), false);
+        $pending = new pendingAppointmentsClass(['patient_name' => 'Μαρία Τεστ', 'patient_phone' => '2101112223', 'appointment_datetime' => '2026-12-15 11:30:00',
+            'location' => 'Μάνδρα', 'notes' => 'σημείωση ΤΕΣΤ', 'remote_platform' => 'zoom', 'remote_contact' => 'https://z.example/9', 'remote_code' => '77']);
+        $doctor = ['id' => 3, 'name' => 'Ιατρός Τεστ', 'uname' => 'doc', 'email' => 'doc@example.invalid'];
+        $vars = zpms_reschedule_email_vars($pending, $doctor, '2026-12-14 10:00:00');
+        assert_equal(['15/12/2026', '11:30', '14/12/2026', '10:00'], [$vars['new_date'], $vars['new_time'], $vars['old_date'], $vars['old_time']]);
+        assert_contains('Zoom: https://z.example/9 (77)', $vars['remote']);
+
+        $mail = new class {
+            public array $to = [];
+            public string $Subject = '', $Body = '', $AltBody = '';
+            public bool $sent = false;
+            function addAddress($a, $n = '') { $this->to[] = $a; }
+            function isHTML($v) {}
+            function send() { $this->sent = true; return true; }
+        };
+        assert_true(zpms_send_appointment_rescheduled_email($pending, $doctor, '2026-12-14 10:00:00', $mail));
+        assert_true($mail->sent);
+        assert_equal(['doc@example.invalid'], $mail->to);
+        assert_contains('Μαρία Τεστ', $mail->Subject);
+        foreach (['Ιατρός Τεστ', '15/12/2026', '11:30', '14/12/2026', 'Μάνδρα', 'σημείωση ΤΕΣΤ', 'https://z.example/9'] as $needle) {
+            assert_contains($needle, $mail->Body, "the email mentions $needle");
+        }
+        $none = new class { function addAddress() {} function isHTML() {} function send() { throw new Exception('x'); } public string $Subject = '', $Body = '', $AltBody = ''; };
+        assert_false(zpms_send_appointment_rescheduled_email($pending, $doctor, '2026-12-14 10:00:00', $none), 'a failing mailer is reported, not thrown');
+        assert_false(zpms_send_appointment_rescheduled_email($pending, ['id' => 4, 'name' => 'x', 'uname' => 'x', 'email' => ''], '2026-12-14 10:00:00', $mail), 'a doctor without an address is skipped');
     });
 
     $runner->add('turning a pending appointment into a patient record keeps its slot, now owned by the appointment', function () use ($doctor) {

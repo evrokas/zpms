@@ -1696,6 +1696,8 @@ require_once(__DIR__ . '/zpms_mailer.php');
             exit();
         }
 
+        $oldDatetime = (string)$pending->getappointment_datetime();
+
         $pending->setpatient_name($_POST['patient-name']);
         $pending->setpatient_phone($_POST['patient-telephone'] ?? '');
         $pending->setpatient_amka($_POST['patient-amka'] ?? '');
@@ -1719,6 +1721,16 @@ require_once(__DIR__ . '/zpms_mailer.php');
         zpms_pending_appointment_sync_to_calendar($pending);
 
         $kernel->addStatus('notice', t('The pending appointment was updated.'));
+
+        // A moved date or time is sent to the assigned doctor again (nothing else
+        // about the booking is: a changed name or note is not worth an email).
+        if ($assignedDoctor && zpms_pending_time_changed($oldDatetime, $pending->getappointment_datetime())) {
+            if (zpms_send_appointment_rescheduled_email($pending, $assignedDoctor, $oldDatetime)) {
+                $kernel->addStatus('notice', t('@name was notified of the new time.', ['name' => htmlspecialchars($assignedDoctor['name'] ?: $assignedDoctor['uname'], ENT_QUOTES, 'UTF-8')]));
+            } else {
+                $kernel->addStatus('warning', t('The notification email could not be sent to @name.', ['name' => htmlspecialchars($assignedDoctor['name'] ?: $assignedDoctor['uname'], ENT_QUOTES, 'UTF-8')]));
+            }
+        }
         header('location: '.rel_url('/consultation/pending'));
         exit();
     }

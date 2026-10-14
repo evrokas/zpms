@@ -494,4 +494,5 @@ return [
     'The current pattern has applied since @date.' => 'Το τρέχον πρότυπο ισχύει από @date.',
     'Applied from @from to @to' => 'Ίσχυε από @from έως @to',
     'Booked operation' => 'Κρατημένο χειρουργείο',
+    '@name was notified of the new time.' => 'Ο/Η @name ενημερώθηκε για τη νέα ώρα.',
 ];

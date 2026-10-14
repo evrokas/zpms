@@ -142,3 +142,65 @@ function zpms_send_appointment_assignment_email(pendingAppointmentsClass $pendin
         return false;
     }
 }
+
+
+/** True when a pending appointment's date or time (to the minute) really changed. */
+function zpms_pending_time_changed(?string $old, ?string $new): bool {
+    $a = $old ? strtotime($old) : false;
+    $b = $new ? strtotime($new) : false;
+    return $a !== false && $b !== false && date('Y-m-d H:i', $a) !== date('Y-m-d H:i', $b);
+}
+
+/** What the "time changed" email shows: the new and the previous time, and the booking's details. */
+function zpms_reschedule_email_vars(pendingAppointmentsClass $pending, array $doctor, string $oldDatetime): array {
+    $new = strtotime($pending->getappointment_datetime());
+    $old = strtotime($oldDatetime);
+    $remote = '';
+    if ($pending->getremote_platform() && function_exists('zpms_remote_label')) {
+        $remote = zpms_remote_label($pending->getremote_platform()) . ': ' . $pending->getremote_contact()
+            . ($pending->getremote_code() ? ' (' . $pending->getremote_code() . ')' : '');
+    }
+    return [
+        'doctor_name' => $doctor['name'] ?: $doctor['uname'],
+        'patient_name' => $pending->getpatient_name(),
+        'patient_phone' => $pending->getpatient_phone(),
+        'new_date' => date('d/m/Y', $new),
+        'new_time' => date('H:i', $new),
+        'old_date' => date('d/m/Y', $old),
+        'old_time' => date('H:i', $old),
+        'location' => $pending->getlocation(),
+        'remote' => $remote,
+        'notes' => $pending->getnotes(),
+    ];
+}
+
+/**
+ * Tells the assigned doctor that a pending appointment was moved to another
+ * date or time (web/templates/email/consultation_rescheduled.zetem). Same
+ * rules as zpms_send_appointment_assignment_email(): never throws, never
+ * blocks the save, true on success. $mail lets a test pass a stand-in mailer.
+ */
+function zpms_send_appointment_rescheduled_email(pendingAppointmentsClass $pending, array $doctor, string $oldDatetime, $mail = null): bool {
+    if (empty($doctor['email'])) {
+        error_log('zpms_send_appointment_rescheduled_email: doctor #' . ($doctor['id'] ?? '?') . ' has no email on file -- skipped');
+        return false;
+    }
+    $mail = $mail ?? zpms_build_mailer();
+    if (!is_object($mail)) {
+        error_log('zpms_send_appointment_rescheduled_email: ' . $mail);
+        return false;
+    }
+    try {
+        $vars = zpms_reschedule_email_vars($pending, $doctor, $oldDatetime);
+        $mail->addAddress($doctor['email'], $vars['doctor_name']);
+        $mail->isHTML(true);
+        $mail->Subject = 'Αλλαγή ώρας ραντεβού: ' . $pending->getpatient_name();
+        $mail->Body = Renderer::render('consultation_rescheduled.zetem', $vars);
+        $mail->AltBody = trim(strip_tags(str_replace(['<br>', '<br/>', '<br />'], "\n", $mail->Body)));
+        $mail->send();
+        return true;
+    } catch (Throwable $e) {
+        error_log('zpms_send_appointment_rescheduled_email: send failed -- ' . $e->getMessage());
+        return false;
+    }
+}

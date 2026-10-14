@@ -2385,3 +2385,9 @@ ALTER TABLE `schedule_templates` ADD COLUMN `valid_to` date DEFAULT NULL;
 then `bin/update.sh` and `php bin/import_dictionary.php`. Until the `ALTER`s are applied the schedule page will fail on the missing columns, so run them together with the deploy.
 
 Tests: `tests/functional/schedule.php` (re-saving keeps the slot, moving keeps a released row, a released slot blocks nothing, pattern versions and past dates) and `tests/functional/booking.php` (cancel and delete record who and why, the list, its filters and the moved toggle, secretary access, the calendar overlay, purge removing released rows).
+
+### Email to the doctor when a pending appointment is moved
+
+Editing a pending appointment (`/consultation/pending/{id}/edit`) so that its **date or time changes** (to the minute) now sends the assigned doctor a second email, "Αλλαγή ώρας ραντεβού: <patient>" (`web/templates/email/consultation_rescheduled.zetem`), with the new date and time, the previous one struck through, and the patient, phone, location, remote link/number and notes. It goes to the doctor assigned on the form when it is saved (nobody assigned, nobody to write to). Changing only the name, notes, location or doctor sends nothing; the first booking's email is unchanged. The flash message tells whether the doctor was notified or the email could not be sent (SMTP not set up, no address on the doctor's account); a failed email never blocks the save.
+
+Not covered: a move made in the Google Calendar app (applied by `bin/sync_google_calendar.php`, which runs outside the web app) and appointments that were already turned into a patient record. Tests: `tests/functional/booking.php` (what counts as a change, the email's content through a stand-in mailer, and that a time change, a note change and a missing doctor behave as above over HTTP).
