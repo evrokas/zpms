@@ -160,7 +160,12 @@ function zpms_booking_functional_tests(TestRunner $runner, string $baseUrl): voi
         $res = $doctor->post('/consultation/pending/' . $p['id'] . '/edit', $base + zpms_bk_fields('bk_p', $mon, '12:00', '12:30', ['appointment-notes' => 'Νέα σημείωση']));
         assert_equal(302, $res['status']);
         $slots = zpms_bk_db()->query("SELECT * FROM slot_reservations WHERE ref_guid = " . zpms_bk_db()->quote($p['guid']))->fetchAll(PDO::FETCH_ASSOC);
-        assert_equal(1, count($slots), 'one slot, not two');
+        $live = array_values(array_filter($slots, fn($x) => $x['released_at'] === null));
+        assert_equal(1, count($live), 'one live slot');
+        assert_equal(2, count($slots), 'the old time is kept as history');
+        $slots = $live;
+        $old = zpms_bk_db()->query("SELECT * FROM slot_reservations WHERE ref_guid = " . zpms_bk_db()->quote($p['guid']) . " AND released_at IS NOT NULL")->fetch(PDO::FETCH_ASSOC);
+        assert_equal(['10:00', 'moved', TestFixtures::USERNAME], [$old['start_time'], $old['release_reason'], $old['released_by']], 'released as moved, by the user who moved it');
         assert_equal(['12:00', '12:30', 'Νέα σημείωση'], [$slots[0]['start_time'], $slots[0]['end_time'], $slots[0]['note']]);
         $row = zpms_bk_pending_row('Booking One');
         assert_equal($mon . ' 12:00:00', $row['appointment_datetime']);
@@ -179,6 +184,8 @@ function zpms_booking_functional_tests(TestRunner $runner, string $baseUrl): voi
         $two = zpms_bk_pending_row('Booking Two');
         $res = $doctor->post('/consultation/pending/' . $two['id'] . '/delete', ['csrf_token' => $token]);
         assert_true(zpms_bk_slot_for($two['guid']) === null, 'cancelling frees the slot');
+        $kept = zpms_bk_db()->query("SELECT * FROM slot_reservations WHERE ref_guid = " . zpms_bk_db()->quote($two['guid']))->fetch(PDO::FETCH_ASSOC);
+        assert_equal(['cancelled', TestFixtures::USERNAME], [$kept['release_reason'], $kept['released_by']], 'kept as history, with who and why');
         $rows = zpms_bk_db()->query("SELECT * FROM audit_log WHERE id > $audit AND event_type = 'slot_released'")->fetchAll(PDO::FETCH_ASSOC);
         assert_equal(1, count($rows), 'and audits it');
     });
@@ -242,6 +249,34 @@ function zpms_booking_functional_tests(TestRunner $runner, string $baseUrl): voi
         // Deleting the appointment frees the slot.
         $doctor->post('/appointment/' . $ap['id'] . '/delete', ['csrf_token' => TestHttpClient::extractCsrfToken($patient['body'])]);
         assert_true(zpms_bk_slot_for($ap['guid']) === null, 'deleting frees the slot');
+        assert_equal('deleted', zpms_bk_db()->query("SELECT release_reason FROM slot_reservations WHERE ref_guid = " . zpms_bk_db()->quote($ap['guid']) . " AND released_at IS NOT NULL ORDER BY id DESC LIMIT 1")->fetchColumn());
+    });
+
+    $runner->add('the cancelled-bookings list: names, reasons, moved only on request, filters, secretary access, calendar overlay', function () use ($doctor, $secretary, $mon) {
+        $page = $doctor->get('/schedule/cancelled');
+        assert_equal(200, $page['status']);
+        assert_contains('Booking Two', $page['body'], 'the cancelled pending appointment is listed with the name');
+        assert_contains('Remote Ok', $page['body'], 'the deleted operation (patient Remote Ok) is listed');
+        assert_not_contains('Booking One', $page['body'], 'a booking that was only moved is not a cancellation');
+        $withMoved = $doctor->get('/schedule/cancelled?moved=1');
+        assert_contains('Booking One', $withMoved['body'], 'moved bookings on request');
+        $byReason = $doctor->get('/schedule/cancelled?reason=deleted');
+        assert_contains('Remote Ok', $byReason['body']);
+        assert_not_contains('Booking Two', $byReason['body'], 'filtered by reason');
+        $byLoc = $doctor->get('/schedule/cancelled?loc=bk_m');
+        assert_not_contains('Booking Two', $byLoc['body'], 'filtered by location');
+        assert_equal(200, $secretary->get('/schedule/cancelled')['status'], 'the secretary can read it');
+
+        $week = zpms_sched_page_model_bk($doctor->get('/schedule?loc=bk_p&date=' . $mon . '&cancelled=1')['body']);
+        assert_true(count((array)$week['cancelled']) >= 1, 'the calendar can show where bookings were cancelled');
+        $plain = zpms_sched_page_model_bk($doctor->get('/schedule?loc=bk_p&date=' . $mon)['body']);
+        assert_equal(0, count((array)$plain['cancelled']), 'and does not by default');
+    });
+
+    $runner->add('a released slot blocks nothing', function () use ($doctor, $mon) {
+        // Booking Two's 10:00-10:30 was cancelled above, so the time is free again.
+        zpms_bk_pending(zpms_bk_fields('bk_p', $mon, '10:00', '10:30', ['patient-name' => 'Booking Three']), $doctor);
+        assert_true(zpms_bk_pending_row('Booking Three') !== null, 'a cancelled time can be booked again');
     });
 
     $runner->add('purging an appointment with zpmscli takes its slot with it', function () use ($doctor, $mon) {
@@ -250,6 +285,8 @@ function zpms_booking_functional_tests(TestRunner $runner, string $baseUrl): voi
         assert_true(zpms_bk_slot_for($ap['guid']) !== null);
         zpmscli_purge_appointments(zpms_bk_db(), [$ap], sys_get_temp_dir(), true);
         assert_true(zpms_bk_slot_for($ap['guid']) === null, 'the slot is gone');
+        $left = (int)zpms_bk_db()->query("SELECT COUNT(*) FROM slot_reservations WHERE ref_guid = " . zpms_bk_db()->quote($ap['guid']))->fetchColumn();
+        assert_equal(0, $left, 'released rows (history, with the note text) go too: erasure leaves nothing behind');
     });
 
     $runner->add('cleanup: booking test rows removed', function () {

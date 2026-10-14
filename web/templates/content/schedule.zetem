@@ -22,6 +22,8 @@
     <a class="sched-btn" href="{{{$next_url}}}" aria-label="{{{t('Next week')}}}">&rsaquo;</a>
     <a class="sched-btn" href="{{{$today_url}}}">{{{t('Today')}}}</a>
     <span class="sched-grow"></span>
+    <a class="sched-btn" href="{{{$cancelled_toggle_url}}}">{{($show_cancelled) ? t('Hide cancelled') : t('Show cancelled')}}</a>
+    <a class="sched-btn" href="{{{$cancelled_list_url}}}">{{{t('Cancelled bookings')}}}</a>
     <button type="button" class="sched-btn" id="sched-open-pattern"><i class="bx bx-repeat"></i> {{{t('Weekly pattern')}}}</button>
     <button type="button" class="sched-btn" id="sched-open-travel"><i class="bx bx-car"></i> {{{t('Travel times')}}}</button>
 </div>
@@ -58,8 +60,9 @@
     <h3>{{{t('Weekly pattern')}}} &middot; {{{$location_name}}}</h3>
     <p class="sched-sub">{{{t('Repeats every week. To change a single date, drag on the calendar instead.')}}}</p>
     <label class="sched-field">{{{t('Applies from')}}}
-        <input type="text" id="sched-valid-from" autocomplete="off" placeholder="{{{t('yyyy-mm-dd, empty = always')}}}">
+        <input type="text" id="sched-valid-from" autocomplete="off" placeholder="{{{t('yyyy-mm-dd, empty = today')}}}">
     </label>
+    <p class="sched-sub" id="sched-pattern-since"></p>
     <div class="sched-scroll">
         <table class="sched-table">
             <thead><tr>
@@ -71,6 +74,10 @@
     </div>
     <p><button type="button" class="sched-btn" id="sched-pattern-add">+ {{{t('Add interval')}}}</button></p>
     <div id="sched-pattern-msg"></div>
+    <details class="sched-history" id="sched-pattern-history" hidden>
+        <summary>{{{t('Earlier versions of the pattern')}}}</summary>
+        <div id="sched-pattern-history-body"></div>
+    </details>
     <div class="sched-foot">
         <button type="button" class="sched-btn" data-close>{{{t('Cancel')}}}</button>
         <button type="button" class="sched-btn pri" id="sched-pattern-save">{{{t('Save pattern')}}}</button>

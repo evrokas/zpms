@@ -42,4 +42,10 @@ table:
   - name: valid_from
     type: date
     default: null
+  # The last day the row applies (inclusive). NULL = still in force. Saving a
+  # new pattern closes the old rows here instead of deleting them, so past
+  # weeks always show the pattern they had.
+  - name: valid_to
+    type: date
+    default: null
 ...

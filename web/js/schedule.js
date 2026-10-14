@@ -93,6 +93,13 @@
 
     function isPast(d) { return M.days[d].date < M.today; }
 
+    // Where bookings were cancelled this week (only when "show cancelled" is on).
+    function releasedAt(d, m) {
+        var list = (M.cancelled || {})[M.days[d].date] || [];
+        for (var i = 0; i < list.length; i++) if (m >= list[i].start && m < list[i].end) return list[i];
+        return null;
+    }
+
     function allowed(d, r) {
         if (isPast(d)) return false;
         var c = cells[d][r];
@@ -117,6 +124,8 @@
                 var title = c ? [blockLabel({ block: c.block, idx: 0 }), c.block.note].filter(Boolean).join(' · ') : '';
                 if (isPast(d)) cls += ' past';
                 if (m % 60 === 0) cls += ' hr0';
+                var rel = releasedAt(d, m);
+                if (rel && (!c || c.block.type === 'avail')) { cls += ' released'; title = (title ? title + ' · ' : '') + txt('schedCancelledHere'); }
                 if (sel && sel.d === d && r >= sel.r0 && r <= sel.r1) {
                     cls = 's sel kind-' + tool + (m % 60 === 0 ? ' hr0' : '') + (r === sel.r0 ? ' first' : '') + (r === sel.r1 ? ' last' : '');
                     label = r === sel.r0 ? hm(rowMin(sel.r0)) + '–' + hm(rowMin(sel.r1) + STEP) : '';
@@ -397,10 +406,32 @@
     document.getElementById('sched-open-pattern').addEventListener('click', function () {
         patternRows.innerHTML = '';
         M.pattern.rows.forEach(function (r) { patternRows.appendChild(patternRow(r)); });
-        document.getElementById('sched-valid-from').value = M.pattern.validFrom || '';
+        // Empty = from today. The date of the version in force is only shown: a new
+        // version can never start earlier than today (past weeks keep their pattern).
+        document.getElementById('sched-valid-from').value = '';
+        document.getElementById('sched-pattern-since').textContent = M.pattern.validFrom ? txt('schedPatSince', { date: M.pattern.validFrom.split('-').reverse().join('/') }) : '';
         document.getElementById('sched-pattern-msg').innerHTML = '';
+        renderPatternHistory();
         patternDlg.showModal();
     });
+    function renderPatternHistory() {
+        var box = document.getElementById('sched-pattern-history'), body = document.getElementById('sched-pattern-history-body');
+        body.innerHTML = '';
+        var hist = M.pattern.history || [];
+        box.hidden = hist.length === 0;
+        var kindLabel = { available: txt('schedPatAvailable'), hold: txt('schedPatHold'), surgery: txt('schedPatSurgery') };
+        hist.forEach(function (v) {
+            var fmt = function (d) { return d ? d.split('-').reverse().join('/') : '…'; };
+            body.appendChild(el('p', 'sched-sub', txt('schedPatVersion', { from: fmt(v.from), to: fmt(v.to) })));
+            var table = el('table', 'sched-table'), tb = el('tbody');
+            v.rows.forEach(function (r) {
+                var tr = el('tr');
+                [M.weekdayNames[r.weekday - 1], r.start + '–' + r.end, kindLabel[r.kind] || r.kind, r.note].forEach(function (c) { tr.appendChild(el('td', null, c)); });
+                tb.appendChild(tr);
+            });
+            table.appendChild(tb); body.appendChild(table);
+        });
+    }
     document.getElementById('sched-pattern-add').addEventListener('click', function () {
         patternRows.appendChild(patternRow({ weekday: 1, start_time: '10:00', end_time: '14:00', kind: 'available', slot_minutes: 30, note: '' }));
     });
@@ -417,6 +448,8 @@
             var box = el('div', 'sched-msgs');
             if (res.error === 'invalid') {
                 (res.errors || []).forEach(function (e) { addMsg(box, 'bad', txt('schedPatRow', { row: e.row + 1, reason: txt('schedPatErr_' + e.code) })); });
+            } else if (res.error === 'past') {
+                addMsg(box, 'bad', txt('schedPatPast'));
             } else if (res.error === 'blocked') {
                 if ((res.stranded || []).length) addMsg(box, 'bad', txt('schedPatStranded') + ' ' + res.stranded.map(strandedText).join('; '));
                 (res.conflicts || []).forEach(function (p) { addMsg(box, 'bad', (p.date ? p.date.split('-').reverse().join('/') + ': ' : '') + problemText(p)); });

@@ -420,6 +420,10 @@ require_once(__DIR__ . '/zpms_mailer.php');
             'loadRecord' => t('Load record'),
             'filledFrom' => t('The details of @name were filled in from the existing record.'),
             // Appointment schedule (web/js/schedule.js, schedule-picker.js)
+            'schedCancelledHere' => t('A booking was cancelled here'),
+            'schedPatPast' => t('The "applies from" date cannot be earlier than today: past weeks keep the pattern they had.'),
+            'schedPatSince' => t('The current pattern has applied since @date.'),
+            'schedPatVersion' => t('Applied from @from to @to'),
             'schedRemoteLink' => t('Meeting link'),
             'schedRemoteNumber' => t('Patient\'s number (to call or message)'),
             'schedThisAppointment' => t('This appointment'),
@@ -1127,7 +1131,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
         $app = $ap->getById($id);
         $app->setdeleted( getDBtime() );
         $app->update();
-        zpms_sched_release_slot($app->getguid(), 'appointment_id=' . (int)$app->getid());
+        zpms_sched_release_slot($app->getguid(), 'appointment_id=' . (int)$app->getid(), 'deleted');
         zpms_appointment_calendar_delete($app);
         zpms_audit_appointment('appointment_deleted', $app);
 
@@ -1326,7 +1330,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
         try {
             $app->insert();
         } catch (Throwable $e) {
-            zpms_sched_release_ref(dbConnection::getConnection(), $appGuid);
+            dbConnection::getConnection()->prepare('DELETE FROM slot_reservations WHERE ref_guid = ?')->execute([$appGuid]);
             throw $e;
         }
         zpms_audit('appointment_created', ['patient' => $pat, 'appointment_id' => $app->getid(), 'detail' => 'type=' . $app->getatype()]);
@@ -1558,7 +1562,8 @@ require_once(__DIR__ . '/zpms_mailer.php');
         try {
             $pending->insert();
         } catch (Throwable $e) {
-            zpms_sched_release_ref(dbConnection::getConnection(), $pendingGuid);
+            // The save failed: the slot just booked for it never existed.
+            dbConnection::getConnection()->prepare('DELETE FROM slot_reservations WHERE ref_guid = ?')->execute([$pendingGuid]);
             throw $e;
         }
         zpms_audit('pending_created', ['detail' => 'pending_id=' . (int)$pending->getid()]);
@@ -1743,7 +1748,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
             }
             $pending->setcancelled_at(getDBtime());
             $pending->update();
-            zpms_sched_release_slot($pending->getguid(), 'pending_id=' . (int)$pending->getid());
+            zpms_sched_release_slot($pending->getguid(), 'pending_id=' . (int)$pending->getid(), 'cancelled');
             zpms_audit('pending_cancelled', ['detail' => 'pending_id=' . (int)$pending->getid()]);
             $kernel->addStatus('notice', t('The appointment was cancelled.'));
         }

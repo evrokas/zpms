@@ -129,13 +129,14 @@ function schedule_view($params) {
     unset($day);
 
     $patternRows = [];
-    $st = $db->prepare('SELECT weekday, start_time, end_time, kind, slot_minutes, note, valid_from FROM schedule_templates WHERE location = ? ORDER BY weekday, start_time');
+    // The version in force (or next in line): rows not closed yet.
+    $st = $db->prepare('SELECT weekday, start_time, end_time, kind, slot_minutes, note, valid_from FROM schedule_templates WHERE location = ? AND valid_to IS NULL ORDER BY weekday, start_time');
     $st->execute([$loc]);
     foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) {
         $patternRows[] = ['weekday' => (int)$r['weekday'], 'start_time' => $r['start_time'], 'end_time' => $r['end_time'],
             'kind' => $r['kind'], 'slot_minutes' => (int)$r['slot_minutes'], 'note' => (string)$r['note']];
     }
-    $validFrom = $db->prepare('SELECT MAX(valid_from) FROM schedule_templates WHERE location = ?');
+    $validFrom = $db->prepare('SELECT MAX(valid_from) FROM schedule_templates WHERE location = ? AND valid_to IS NULL');
     $validFrom->execute([$loc]);
 
     $travel = zpms_sched_load_travel($db);
@@ -148,7 +149,20 @@ function schedule_view($params) {
         }
     }
 
+    // Optional: show where bookings were cancelled this week (history), as faint dashed outlines.
+    $showCancelled = !empty($get['cancelled']);
+    $cancelled = [];
+    if ($showCancelled && $db->query("SHOW COLUMNS FROM slot_reservations LIKE 'released_at'")->fetchColumn()) {
+        $weekEnd = $shift($days - 1);
+        $cq = $db->prepare("SELECT rdate, start_time, end_time, release_reason FROM slot_reservations WHERE location = ? AND rdate BETWEEN ? AND ? AND released_at IS NOT NULL AND (release_reason IS NULL OR release_reason <> 'moved')");
+        $cq->execute([$loc, $monday, $weekEnd]);
+        foreach ($cq->fetchAll(PDO::FETCH_ASSOC) as $c) {
+            $cancelled[$c['rdate']][] = ['start' => zpms_sched_row_start($c), 'end' => zpms_sched_row_end($c), 'reason' => (string)$c['release_reason']];
+        }
+    }
+
     $model = [
+        'cancelled' => (object)$cancelled,
         'location' => $loc,
         'phoneCode' => ZPMS_SCHED_ONLINE,
         'locations' => array_map(fn($code, $name) => ['code' => $code, 'name' => $name], array_keys($names), array_values($names)),
@@ -161,7 +175,7 @@ function schedule_view($params) {
         'step' => ZPMS_SCHED_STEP,
         'weekdayNames' => $weekdayNames,
         'canOverride' => rbacClass::isPermitted(ZPMS_PERM_SCHEDULE_OVERRIDE),
-        'pattern' => ['rows' => $patternRows, 'validFrom' => (string)($validFrom->fetchColumn() ?: '')],
+        'pattern' => ['rows' => $patternRows, 'validFrom' => (string)($validFrom->fetchColumn() ?: ''), 'history' => zpms_sched_pattern_history($db, $loc)],
         'travel' => $travelRows,
         'newAppointmentUrl' => rel_url('/consultation/new'),
         'urls' => [
@@ -183,6 +197,9 @@ function schedule_view($params) {
         'prev_url' => rel_url('/schedule?loc=' . rawurlencode($loc) . '&date=' . $shift(-7)),
         'next_url' => rel_url('/schedule?loc=' . rawurlencode($loc) . '&date=' . $shift(7)),
         'today_url' => rel_url('/schedule?loc=' . rawurlencode($loc)),
+        'cancelled_toggle_url' => rel_url('/schedule?loc=' . rawurlencode($loc) . '&date=' . $monday . ($showCancelled ? '' : '&cancelled=1')),
+        'show_cancelled' => $showCancelled,
+        'cancelled_list_url' => rel_url('/schedule/cancelled?loc=' . rawurlencode($loc)),
         'range_label' => date('d/m/Y', strtotime($monday)) . ' – ' . date('d/m/Y', strtotime($shift($days - 1))),
         'location_name' => $names[$loc],
         'model_json' => json_encode($model, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE),
@@ -324,6 +341,9 @@ function schedule_pattern_save($params) {
         zpms_sched_json(['ok' => false, 'error' => 'invalid', 'errors' => $errors], 422);
     }
     $res = zpms_sched_pattern_replace($db, $loc, $clean, $validFrom !== '' ? $validFrom : null, $kernel->getUserName(), date('Y-m-d'));
+    if (!$res['ok'] && ($res['error'] ?? '') === 'past') {
+        zpms_sched_json(['ok' => false, 'error' => 'past'], 422);
+    }
     if (!$res['ok']) {
         zpms_sched_json(['ok' => false, 'error' => 'blocked', 'stranded' => zpms_sched_stranded_list($res['stranded']),
             'conflicts' => zpms_sched_problem_list($res['conflicts'])], 409);
@@ -599,13 +619,14 @@ function zpms_booking_picker_for_record(string $refGuid, ?string $datetime, int 
 }
 
 /** Frees the slot of an appointment or pending appointment (cancelled, deleted) and audits it if there was one. */
-function zpms_sched_release_slot(string $refGuid, string $detail = ''): void {
+function zpms_sched_release_slot(string $refGuid, string $detail = '', string $reason = 'cancelled'): void {
+    global $kernel;
     $db = dbConnection::getConnection();
     $slot = zpms_sched_slot_for_ref($db, $refGuid);
     if (!$slot) {
         return;
     }
-    zpms_sched_release_ref($db, $refGuid);
+    zpms_sched_release_ref($db, $refGuid, $reason, isset($kernel) ? (string)$kernel->getUserName() : '');
     zpms_audit('slot_released', ['detail' => 'loc=' . $slot['location'] . ' date=' . $slot['rdate'] . ' ' . $slot['start_time'] . '-' . $slot['end_time'] . ($detail !== '' ? ' ' . $detail : '')]);
 }
 
@@ -683,4 +704,107 @@ function appointment_reschedule_post($params) {
     $kernel->addStatus('notice', t('The appointment was rescheduled.'));
     header('location: ' . $back);
     exit();
+}
+
+// ------------------------------------------------ cancelled bookings
+
+/** Why a booking was released: key => label (English tokens, translated by t()). */
+const ZPMS_SCHED_RELEASE_REASONS = [
+    'cancelled' => 'Cancelled',
+    'deleted' => 'Appointment deleted',
+    'calendar_cancelled' => 'Cancelled in Google Calendar',
+    'calendar_conflict' => 'Moved in Google Calendar to a time that is not allowed',
+    'moved' => 'Moved to another time',
+];
+
+/**
+ * /schedule/cancelled -- bookings that were released (cancelled, deleted, moved
+ * away), newest first, kept as history. "Moved" rows only on request: they
+ * are not cancellations, the appointment still exists elsewhere. Staff page:
+ * shows who the booking was for (name, linked while the record exists), unlike
+ * the audit log. Needs ZPMS_PERM_SCHEDULE_MANAGE.
+ */
+function schedule_cancelled($params) {
+    global $Request;
+    if (($errmsg = rbacClass::require(ZPMS_PERM_SCHEDULE_MANAGE))) return $errmsg;
+    $get = isset($Request) ? $Request->getParams() : $_GET;
+    $db = dbConnection::getConnection();
+    $names = zpms_sched_location_names($db);
+
+    $filters = [
+        'loc' => isset($names[$get['loc'] ?? '']) ? (string)$get['loc'] : '',
+        'date_from' => zpms_sched_valid_date($get['date_from'] ?? null) ? (string)$get['date_from'] : '',
+        'date_to' => zpms_sched_valid_date($get['date_to'] ?? null) ? (string)$get['date_to'] : '',
+        'reason' => isset(ZPMS_SCHED_RELEASE_REASONS[$get['reason'] ?? '']) ? (string)$get['reason'] : '',
+        'moved' => !empty($get['moved']) ? '1' : '',
+    ];
+    if (!$db->query("SHOW COLUMNS FROM slot_reservations LIKE 'released_at'")->fetchColumn()) {
+        return Renderer::render('cancelled_bookings.zetem', ['missing_table' => true, 'rows' => [], 'filters' => $filters, 'locations' => $names,
+            'reasons' => [], 'total' => 0, 'page' => 1, 'pages' => 1, 'prev_url' => null, 'next_url' => null, 'filtered' => false]);
+    }
+
+    $where = ['released_at IS NOT NULL'];
+    $bind = [];
+    if ($filters['reason'] !== '') {
+        $where[] = 'release_reason = ?';
+        $bind[] = $filters['reason'];
+    } elseif ($filters['moved'] === '') {
+        $where[] = "(release_reason IS NULL OR release_reason <> 'moved')";
+    }
+    if ($filters['loc'] !== '') { $where[] = 'location = ?'; $bind[] = $filters['loc']; }
+    if ($filters['date_from'] !== '') { $where[] = 'rdate >= ?'; $bind[] = $filters['date_from']; }
+    if ($filters['date_to'] !== '') { $where[] = 'rdate <= ?'; $bind[] = $filters['date_to']; }
+    $whereSql = 'WHERE ' . implode(' AND ', $where);
+
+    $perPage = 50;
+    $page = max(1, (int)($get['page'] ?? 1));
+    $count = $db->prepare("SELECT COUNT(*) FROM slot_reservations $whereSql");
+    $count->execute($bind);
+    $total = (int)$count->fetchColumn();
+    $pages = max(1, (int)ceil($total / $perPage));
+    $page = min($page, $pages);
+    $st = $db->prepare("SELECT * FROM slot_reservations $whereSql ORDER BY released_at DESC, id DESC LIMIT $perPage OFFSET " . (($page - 1) * $perPage));
+    $st->execute($bind);
+
+    $reasons = [];
+    foreach (ZPMS_SCHED_RELEASE_REASONS as $key => $label) { $reasons[$key] = t($label); }
+    $byAppointment = $db->prepare('SELECT p.id AS pid, p.pname, p.deleted FROM appointments a JOIN patients p ON p.guid = a.pguid WHERE a.guid = ? LIMIT 1');
+    $byPending = $db->prepare('SELECT patient_name FROM pending_appointments WHERE guid = ? LIMIT 1');
+
+    $rows = [];
+    foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) {
+        $who = '';
+        $url = null;
+        if ($r['ref_guid']) {
+            $byAppointment->execute([$r['ref_guid']]);
+            if ($a = $byAppointment->fetch(PDO::FETCH_ASSOC)) {
+                $who = (string)$a['pname'];
+                $url = $a['deleted'] === null ? rel_url('/patient/' . $a['pid'] . '/edit') : null;
+            } else {
+                $byPending->execute([$r['ref_guid']]);
+                $who = (string)($byPending->fetchColumn() ?: '');
+            }
+        }
+        $rows[] = [
+            'released_at' => date('d/m/Y H:i', strtotime($r['released_at'])),
+            'released_by' => (string)$r['released_by'],
+            'reason' => $reasons[$r['release_reason']] ?? (string)$r['release_reason'],
+            'reason_key' => (string)$r['release_reason'],
+            'when' => date('d/m/Y', strtotime($r['rdate'])) . ' ' . $r['start_time'] . '–' . $r['end_time'],
+            'location' => $names[$r['location']] ?? $r['location'],
+            'kind' => $r['kind'] === 'surgery' ? t('Operation') : t('Appointment'),
+            'who' => $who,
+            'url' => $url,
+            'note' => (string)$r['note'],
+        ];
+    }
+
+    $query = fn(array $extra) => '/schedule/cancelled?' . http_build_query(array_filter($extra + $filters, fn($v) => $v !== ''));
+    return Renderer::render('cancelled_bookings.zetem', [
+        'missing_table' => false, 'rows' => $rows, 'filters' => $filters, 'locations' => $names, 'reasons' => $reasons,
+        'total' => $total, 'page' => $page, 'pages' => $pages,
+        'prev_url' => $page > 1 ? rel_url($query(['page' => (string)($page - 1)])) : null,
+        'next_url' => $page < $pages ? rel_url($query(['page' => (string)($page + 1)])) : null,
+        'filtered' => (bool)array_filter($filters),
+    ]);
 }

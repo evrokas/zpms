@@ -118,7 +118,8 @@ function zpms_sched_round_margin(int $minutes): int {
  * (nothing planned) or ['kind' => available|hold|surgery, 'note' => string,
  * 'slot' => int, 'source' => 'template'|'override'].
  *
- * Pattern rows apply on their weekday from their valid_from date on; overrides
+ * Pattern rows apply on their weekday from valid_from to valid_to (both inclusive,
+ * either may be empty: a closed row is an earlier version); overrides
  * for exactly this date are laid on top and win over the pattern whatever
  * their kind. Within one source, surgery beats hold beats available.
  *
@@ -148,7 +149,8 @@ function zpms_sched_day_cells(array $templates, array $overrides, string $locati
 
     $apply(array_filter($templates, function ($t) use ($location, $weekday, $date) {
         return $t['location'] === $location && (int)$t['weekday'] === $weekday
-            && (($t['valid_from'] ?? null) === null || $t['valid_from'] === '' || $t['valid_from'] <= $date);
+            && (($t['valid_from'] ?? null) === null || $t['valid_from'] === '' || $t['valid_from'] <= $date)
+            && (($t['valid_to'] ?? null) === null || $t['valid_to'] === '' || $t['valid_to'] >= $date);
     }), 'template');
 
     $apply(array_filter($overrides, fn($o) => $o['location'] === $location && $o['odate'] === $date), 'override');
@@ -452,7 +454,7 @@ function zpms_sched_load_context(PDO $db, string $date): array {
     $st->execute([$date]);
     $overrides = $st->fetchAll(PDO::FETCH_ASSOC);
 
-    $st = $db->prepare('SELECT * FROM slot_reservations WHERE rdate = ?');
+    $st = $db->prepare('SELECT * FROM slot_reservations WHERE rdate = ? AND released_at IS NULL');
     $st->execute([$date]);
     $reservations = $st->fetchAll(PDO::FETCH_ASSOC);
 
@@ -486,7 +488,7 @@ function zpms_sched_reserve(PDO $db, string $location, string $date, int $start,
         $db->beginTransaction();
     }
     try {
-        $st = $db->prepare('SELECT guid FROM slot_reservations WHERE rdate = ? FOR UPDATE');
+        $st = $db->prepare('SELECT guid FROM slot_reservations WHERE rdate = ? AND released_at IS NULL FOR UPDATE');
         $st->execute([$date]);
         $ctx = zpms_sched_load_context($db, $date);
         $problems = zpms_sched_check($ctx, $location, $date, $start, $end, $kind, $refGuid !== null ? zpms_sched_ref_reservation($ctx, $refGuid) : null);
@@ -500,9 +502,17 @@ function zpms_sched_reserve(PDO $db, string $location, string $date, int $start,
 
         $guid = guid();
         if ($refGuid !== null) {
-            // Booking again for the same appointment moves it: the earlier
-            // slot (on this or any other date) is freed in the same transaction.
-            $db->prepare('DELETE FROM slot_reservations WHERE ref_guid = ?')->execute([$refGuid]);
+            $old = zpms_sched_slot_for_ref($db, $refGuid);
+            if ($old && $old['location'] === $location && $old['rdate'] === $date && $old['start_time'] === zpms_sched_min_to_time($start)
+                && $old['end_time'] === zpms_sched_min_to_time($end) && $old['kind'] === $kind) {
+                // Saved again without moving: the same slot, only its note may change.
+                $db->prepare('UPDATE slot_reservations SET note = ? WHERE guid = ?')->execute([$note !== '' ? $note : null, $old['guid']]);
+                if ($own) { $db->commit(); }
+                return ['ok' => true, 'guid' => $old['guid'], 'problems' => $problems];
+            }
+            // Booking again for the same appointment moves it: the earlier slot
+            // (on this or any other date) is kept as history, released as "moved".
+            zpms_sched_release_ref($db, $refGuid, 'moved', $cuser);
         }
         $db->prepare('INSERT INTO slot_reservations (guid, cdate, cuser, location, rdate, start_time, end_time, kind, ref_guid, note, shadow_override) VALUES (?,?,?,?,?,?,?,?,?,?,?)')
             ->execute([$guid, getDBtime(), $cuser, $location, $date, zpms_sched_min_to_time($start), zpms_sched_min_to_time($end), $kind, $refGuid, $note !== '' ? $note : null, $shadow ? 1 : 0]);
@@ -524,10 +534,13 @@ function zpms_sched_ref_reservation(array $ctx, string $refGuid): ?string {
     return null;
 }
 
-/** Frees a booking (the slot becomes bookable again). Returns whether a row was removed. */
-function zpms_sched_release(PDO $db, string $guid): bool {
-    $st = $db->prepare('DELETE FROM slot_reservations WHERE guid = ?');
-    $st->execute([$guid]);
+/**
+ * Frees a booking (the time becomes bookable again). The row stays as history,
+ * marked released. Returns whether a live booking was released.
+ */
+function zpms_sched_release(PDO $db, string $guid, string $reason = 'cancelled', string $by = ''): bool {
+    $st = $db->prepare('UPDATE slot_reservations SET released_at = ?, released_by = ?, release_reason = ? WHERE guid = ? AND released_at IS NULL');
+    $st->execute([getDBtime(), $by !== '' ? mb_substr($by, 0, 64) : null, $reason, $guid]);
     return $st->rowCount() > 0;
 }
 
@@ -544,10 +557,10 @@ function zpms_sched_release(PDO $db, string $guid): bool {
  */
 function zpms_sched_stranded_reservations(PDO $db, array $templates, string $today, ?string $onlyDate = null): array {
     if ($onlyDate !== null) {
-        $st = $db->prepare('SELECT * FROM slot_reservations WHERE rdate = ? ORDER BY start_time');
+        $st = $db->prepare('SELECT * FROM slot_reservations WHERE rdate = ? AND released_at IS NULL ORDER BY start_time');
         $st->execute([$onlyDate]);
     } else {
-        $st = $db->prepare('SELECT * FROM slot_reservations WHERE rdate >= ? ORDER BY rdate, start_time');
+        $st = $db->prepare('SELECT * FROM slot_reservations WHERE rdate >= ? AND released_at IS NULL ORDER BY rdate, start_time');
         $st->execute([$today]);
     }
     $stranded = [];
@@ -580,7 +593,7 @@ function zpms_sched_load_context_range(PDO $db, string $from, string $to): array
     $st = $db->prepare('SELECT * FROM schedule_overrides WHERE odate BETWEEN ? AND ?');
     $st->execute([$from, $to]);
     $overrides = $st->fetchAll(PDO::FETCH_ASSOC);
-    $st = $db->prepare('SELECT * FROM slot_reservations WHERE rdate BETWEEN ? AND ? ORDER BY start_time');
+    $st = $db->prepare('SELECT * FROM slot_reservations WHERE rdate BETWEEN ? AND ? AND released_at IS NULL ORDER BY start_time');
     $st->execute([$from, $to]);
     $reservations = $st->fetchAll(PDO::FETCH_ASSOC);
     return [
@@ -776,34 +789,65 @@ function zpms_sched_validate_pattern_rows(array $rows): array {
 }
 
 /**
- * Replaces one location's weekly pattern. Refused (nothing written) while a
- * future booking would end up outside an available time, or while a surgery
- * row would collide with a future booking elsewhere; the offending bookings
- * come back so the user can move them first. Past bookings are never looked
- * at. $rows must already be cleaned by zpms_sched_validate_pattern_rows().
+ * Saves one location's weekly pattern as a NEW VERSION from $validFrom (today
+ * when empty; never earlier, history is not rewritten). The rows in force
+ * before are not deleted: they are closed on the day before ($valid_to), so a
+ * past week is always drawn with the pattern it had. Rows that had not come
+ * into force yet and would start on or after the new date are replaced.
  *
- * @return array ['ok' => bool, 'stranded' => array[], 'conflicts' => array[]]
+ * Refused (nothing written) while a future booking would end up outside an
+ * available time, or while a surgery row would collide with a future booking
+ * elsewhere; the offending bookings come back so the user can move them
+ * first. Past bookings are never looked at. $rows must already be cleaned by
+ * zpms_sched_validate_pattern_rows().
+ *
+ * @return array ['ok' => bool, 'stranded' => array[], 'conflicts' => array[], 'error' => 'past' (only)]
  */
 function zpms_sched_pattern_replace(PDO $db, string $location, array $rows, ?string $validFrom, string $cuser, string $today): array {
+    $effective = ($validFrom === null || $validFrom === '') ? $today : $validFrom;
+    if ($effective < $today) {
+        return ['ok' => false, 'stranded' => [], 'conflicts' => [], 'error' => 'past'];
+    }
+    $dayBefore = (new DateTime($effective))->modify('-1 day')->format('Y-m-d');
+
     $newRows = [];
     foreach ($rows as $r) {
         $newRows[] = ['guid' => guid(), 'location' => $location, 'weekday' => $r['weekday'],
             'start_time' => zpms_sched_min_to_time($r['start']), 'end_time' => zpms_sched_min_to_time($r['end']),
-            'kind' => $r['kind'], 'slot_minutes' => $r['slot_minutes'], 'note' => $r['note'], 'valid_from' => $validFrom];
+            'kind' => $r['kind'], 'slot_minutes' => $r['slot_minutes'], 'note' => $r['note'], 'valid_from' => $effective, 'valid_to' => null];
     }
-    $others = array_values(array_filter($db->query('SELECT * FROM schedule_templates')->fetchAll(PDO::FETCH_ASSOC), fn($t) => $t['location'] !== $location));
-    $templates = array_merge($others, $newRows);
+
+    // What happens to this location's existing rows: dropped (they would only
+    // have started on/after the new date), closed the day before, or left alone
+    // (already ended earlier: history).
+    $drop = [];
+    $close = [];
+    $kept = [];
+    $others = [];
+    foreach ($db->query('SELECT * FROM schedule_templates')->fetchAll(PDO::FETCH_ASSOC) as $t) {
+        if ($t['location'] !== $location) {
+            $others[] = $t;
+        } elseif (($t['valid_from'] ?? null) !== null && $t['valid_from'] !== '' && $t['valid_from'] >= $effective) {
+            $drop[] = $t['guid'];
+        } elseif (($t['valid_to'] ?? null) === null || $t['valid_to'] === '' || $t['valid_to'] >= $effective) {
+            $close[] = $t['guid'];
+            $kept[] = ['valid_to' => $dayBefore] + $t;
+        } else {
+            $kept[] = $t;
+        }
+    }
+    $templates = array_merge($others, $kept, $newRows);
 
     $stranded = zpms_sched_stranded_reservations($db, $templates, $today);
 
     $conflicts = [];
-    $st = $db->prepare('SELECT DISTINCT rdate FROM slot_reservations WHERE rdate >= ?');
+    $st = $db->prepare('SELECT DISTINCT rdate FROM slot_reservations WHERE rdate >= ? AND released_at IS NULL');
     $st->execute([$today]);
     foreach ($st->fetchAll(PDO::FETCH_COLUMN) as $date) {
         $ctx = zpms_sched_load_context($db, $date);
         $ctx['templates'] = $templates;
         foreach ($newRows as $t) {
-            if ($t['kind'] === 'surgery' && (int)$t['weekday'] === zpms_sched_weekday($date) && ($validFrom === null || $validFrom <= $date)) {
+            if ($t['kind'] === 'surgery' && (int)$t['weekday'] === zpms_sched_weekday($date) && $effective <= $date) {
                 foreach (zpms_sched_check_block($ctx, $location, $date, zpms_sched_row_start($t), zpms_sched_row_end($t), 'surgery') as $p) {
                     $conflicts[] = $p + ['date' => $date];
                 }
@@ -817,10 +861,13 @@ function zpms_sched_pattern_replace(PDO $db, string $location, array $rows, ?str
     $own = !$db->inTransaction();
     if ($own) { $db->beginTransaction(); }
     try {
-        $db->prepare('DELETE FROM schedule_templates WHERE location = ?')->execute([$location]);
-        $ins = $db->prepare('INSERT INTO schedule_templates (guid, cdate, cuser, location, weekday, start_time, end_time, kind, slot_minutes, note, valid_from) VALUES (?,?,?,?,?,?,?,?,?,?,?)');
+        $del = $db->prepare('DELETE FROM schedule_templates WHERE guid = ?');
+        foreach ($drop as $guid) { $del->execute([$guid]); }
+        $upd = $db->prepare('UPDATE schedule_templates SET valid_to = ? WHERE guid = ?');
+        foreach ($close as $guid) { $upd->execute([$dayBefore, $guid]); }
+        $ins = $db->prepare('INSERT INTO schedule_templates (guid, cdate, cuser, location, weekday, start_time, end_time, kind, slot_minutes, note, valid_from, valid_to) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)');
         foreach ($newRows as $t) {
-            $ins->execute([$t['guid'], getDBtime(), $cuser, $location, $t['weekday'], $t['start_time'], $t['end_time'], $t['kind'], $t['slot_minutes'], $t['note'] !== '' ? $t['note'] : null, $validFrom]);
+            $ins->execute([$t['guid'], getDBtime(), $cuser, $location, $t['weekday'], $t['start_time'], $t['end_time'], $t['kind'], $t['slot_minutes'], $t['note'] !== '' ? $t['note'] : null, $effective, null]);
         }
         if ($own) { $db->commit(); }
     } catch (Throwable $e) {
@@ -828,6 +875,24 @@ function zpms_sched_pattern_replace(PDO $db, string $location, array $rows, ?str
         throw $e;
     }
     return ['ok' => true, 'stranded' => [], 'conflicts' => []];
+}
+
+/**
+ * The versions of one location's weekly pattern that have ended, newest first:
+ * each ['from' => ?Y-m-d, 'to' => Y-m-d, 'rows' => [[weekday, start, end, kind, note]]].
+ * Read-only history for the pattern dialog.
+ */
+function zpms_sched_pattern_history(PDO $db, string $location, int $limit = 10): array {
+    $st = $db->prepare('SELECT * FROM schedule_templates WHERE location = ? AND valid_to IS NOT NULL ORDER BY valid_to DESC, valid_from DESC, weekday, start_time');
+    $st->execute([$location]);
+    $versions = [];
+    foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $t) {
+        $key = ($t['valid_from'] ?? '') . '|' . $t['valid_to'];
+        $versions[$key]['from'] = $t['valid_from'];
+        $versions[$key]['to'] = $t['valid_to'];
+        $versions[$key]['rows'][] = ['weekday' => (int)$t['weekday'], 'start' => $t['start_time'], 'end' => $t['end_time'], 'kind' => $t['kind'], 'note' => (string)$t['note']];
+    }
+    return array_slice(array_values($versions), 0, $limit);
 }
 
 /**
@@ -885,15 +950,20 @@ function zpms_sched_travel_replace(PDO $db, array $rows, bool $symmetric, string
 
 /** The slot an appointment (or pending appointment) holds, or null. */
 function zpms_sched_slot_for_ref(PDO $db, string $refGuid): ?array {
-    $st = $db->prepare('SELECT * FROM slot_reservations WHERE ref_guid = ? LIMIT 1');
+    $st = $db->prepare('SELECT * FROM slot_reservations WHERE ref_guid = ? AND released_at IS NULL LIMIT 1');
     $st->execute([$refGuid]);
     $row = $st->fetch(PDO::FETCH_ASSOC);
     return $row ?: null;
 }
 
-/** Frees whatever slot an appointment holds (cancelled, deleted, purged). */
-function zpms_sched_release_ref(PDO $db, string $refGuid): void {
-    $db->prepare('DELETE FROM slot_reservations WHERE ref_guid = ?')->execute([$refGuid]);
+/**
+ * Frees whatever live slot an appointment holds. It stays as history, marked
+ * with who released it and why ('cancelled', 'deleted', 'moved',
+ * 'calendar_cancelled', 'calendar_conflict').
+ */
+function zpms_sched_release_ref(PDO $db, string $refGuid, string $reason = 'cancelled', string $by = ''): void {
+    $db->prepare('UPDATE slot_reservations SET released_at = ?, released_by = ?, release_reason = ? WHERE ref_guid = ? AND released_at IS NULL')
+        ->execute([getDBtime(), $by !== '' ? mb_substr($by, 0, 64) : null, $reason, $refGuid]);
 }
 
 /** The slot of a pending appointment now belongs to the appointment made from it. */
@@ -904,7 +974,7 @@ function zpms_sched_reassign_ref(PDO $db, string $fromGuid, string $toGuid): voi
 /** Keeps the note shown on the calendar equal to the appointment's note. */
 function zpms_sched_set_note_for_ref(PDO $db, string $refGuid, string $note): void {
     $note = mb_substr(trim($note), 0, 255);
-    $db->prepare('UPDATE slot_reservations SET note = ? WHERE ref_guid = ?')->execute([$note !== '' ? $note : null, $refGuid]);
+    $db->prepare('UPDATE slot_reservations SET note = ? WHERE ref_guid = ? AND released_at IS NULL')->execute([$note !== '' ? $note : null, $refGuid]);
 }
 
 
@@ -937,6 +1007,6 @@ function zpms_sched_follow_calendar(PDO $db, string $refGuid, string $newDatetim
     if ($res['ok']) {
         return 'moved';
     }
-    zpms_sched_release_ref($db, $refGuid);
+    zpms_sched_release_ref($db, $refGuid, 'calendar_conflict', $cuser);
     return 'released';
 }

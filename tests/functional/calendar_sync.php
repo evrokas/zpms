@@ -195,6 +195,8 @@ function zpms_calendar_sync_functional_tests(TestRunner $runner): void {
         assert_true(zpms_sched_reserve($db, 'cs_p', $future, $m('10:00'), $m('10:30'), 'appointment', $other, '', 'test')['ok']);
         assert_equal('released', zpms_sched_follow_calendar($db, $ref, "$future 10:15:00"));
         assert_true(zpms_sched_slot_for_ref($db, $ref) === null, 'no phantom booking is left behind');
+        $kept = $db->query("SELECT release_reason, released_by FROM slot_reservations WHERE ref_guid = " . $db->quote($ref) . " AND released_at IS NOT NULL ORDER BY id DESC LIMIT 1")->fetch(PDO::FETCH_ASSOC);
+        assert_equal(['calendar_conflict', 'google-calendar-sync'], [$kept['release_reason'], $kept['released_by']], 'kept as history, with the reason');
         assert_true(zpms_sched_slot_for_ref($db, $other) !== null, 'the other booking is untouched');
 
         $db->exec('DELETE FROM slot_reservations');

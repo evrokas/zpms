@@ -160,7 +160,7 @@ foreach ($events as $event) {
         if ($isCancelled) {
             $app->setdeleted(getDBtime());
             $app->update();
-            zpms_sched_release_ref($pdo, $app->getguid());
+            zpms_sched_release_ref($pdo, $app->getguid(), 'calendar_cancelled', 'google-calendar-sync');
             $countCancelled++;
         } elseif ($newDatetime !== null) {
             if ($newDatetime !== $app->getadate()) {
@@ -198,7 +198,7 @@ foreach ($events as $event) {
                 if ($app->getdeleted() === null) {
                     $app->setdeleted(getDBtime());
                     $app->update();
-                    zpms_sched_release_ref($pdo, $app->getguid());
+                    zpms_sched_release_ref($pdo, $app->getguid(), 'calendar_cancelled', 'google-calendar-sync');
                     $countCancelled++;
                 }
             } elseif ($newDatetime !== null) {
@@ -223,7 +223,7 @@ foreach ($events as $event) {
         if ($isCancelled) {
             $pending->setcancelled_at(getDBtime());
             $pending->update();
-            zpms_sched_release_ref($pdo, $pending->getguid());
+            zpms_sched_release_ref($pdo, $pending->getguid(), 'calendar_cancelled', 'google-calendar-sync');
             $countCancelled++;
         } elseif ($newDatetime !== null) {
             if ($newDatetime !== $pending->getappointment_datetime()) {

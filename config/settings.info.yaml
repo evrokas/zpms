@@ -273,6 +273,13 @@ routes:
     url: "/appointment/{id}/reschedule"
     handler: appointment_reschedule_post
     method: post
+  schedule_cancelled:
+    title:
+      gr: "Ακυρωμένες κρατήσεις"
+      en: "Cancelled bookings"
+    url: /schedule/cancelled
+    handler: schedule_cancelled
+    method: get
   schedule_check:
     title: "Check a schedule change"
     url: /schedule/check
@@ -727,6 +734,12 @@ menu:
             gr: 'Πρόγραμμα Ραντεβού'
             en: 'Appointment schedule'
           url: /schedule
+          permission: schedule-manage
+        - schedule_cancelled:
+          text:
+            gr: 'Ακυρωμένες κρατήσεις'
+            en: 'Cancelled bookings'
+          url: /schedule/cancelled
           permission: schedule-manage
         - pending_appointments_list:
           text:

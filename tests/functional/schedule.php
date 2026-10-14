@@ -221,6 +221,84 @@ function zpms_schedule_functional_tests(TestRunner $runner): void {
 
     // ------------------------------------------------ database-backed
 
+    $runner->add('history: a saved-again slot is the same row; moving keeps the old one released; released rows block nothing', function () use ($MON, $m) {
+        $db = zpms_sched_db();
+        foreach (['slot_reservations', 'schedule_templates', 'schedule_overrides', 'location_travel_times'] as $t) { $db->exec("DELETE FROM $t"); }
+        $db->prepare('INSERT INTO schedule_templates (guid, cdate, cuser, location, weekday, start_time, end_time, kind, slot_minutes) VALUES (?,?,?,?,?,?,?,?,?)')
+            ->execute([guid(), getDBtime(), 't', 'hp', 1, '10:00', '14:00', 'available', 30]);
+        $ref = guid();
+        $a = zpms_sched_reserve($db, 'hp', $MON, $m('10:00'), $m('10:30'), 'appointment', $ref, 'α', 'u1');
+        assert_true($a['ok']);
+        $again = zpms_sched_reserve($db, 'hp', $MON, $m('10:00'), $m('10:30'), 'appointment', $ref, 'β', 'u1');
+        assert_equal($a['guid'], $again['guid'], 're-saving without moving keeps the slot');
+        assert_equal(1, (int)$db->query('SELECT COUNT(*) FROM slot_reservations')->fetchColumn(), 'no new row');
+        assert_equal('β', zpms_sched_slot_for_ref($db, $ref)['note'], 'only the note changed');
+
+        $moved = zpms_sched_reserve($db, 'hp', $MON, $m('12:00'), $m('12:30'), 'appointment', $ref, 'β', 'u2');
+        assert_true($moved['ok']);
+        assert_equal(2, (int)$db->query('SELECT COUNT(*) FROM slot_reservations')->fetchColumn(), 'the old slot stays as history');
+        $old = $db->query("SELECT * FROM slot_reservations WHERE guid = " . $db->quote($a['guid']))->fetch(PDO::FETCH_ASSOC);
+        assert_equal(['moved', 'u2', '10:00'], [$old['release_reason'], $old['released_by'], $old['start_time']]);
+        assert_true($old['released_at'] !== null);
+
+        // The old time is free again for somebody else, and the rules never see the released row.
+        $other = zpms_sched_reserve($db, 'hp', $MON, $m('10:00'), $m('10:30'), 'appointment', guid(), '', 'u3');
+        assert_true($other['ok'], 'a released slot blocks nothing');
+        assert_equal(2, count(zpms_sched_load_context($db, $MON)['reservations']), 'the context holds live bookings only');
+
+        // Releasing by reference records reason and person; releasing twice changes nothing.
+        zpms_sched_release_ref($db, $ref, 'cancelled', 'u4');
+        zpms_sched_release_ref($db, $ref, 'deleted', 'u5');
+        $rel = $db->query("SELECT release_reason, released_by FROM slot_reservations WHERE guid = " . $db->quote($moved['guid']))->fetch(PDO::FETCH_ASSOC);
+        assert_equal(['cancelled', 'u4'], [$rel['release_reason'], $rel['released_by']], 'the first release stands');
+        assert_true(zpms_sched_slot_for_ref($db, $ref) === null);
+        $db->exec('DELETE FROM slot_reservations'); $db->exec('DELETE FROM schedule_templates');
+    });
+
+    $runner->add('pattern history: a new version closes the old one; past dates keep the old pattern; the past is refused', function () {
+        $db = zpms_sched_db();
+        foreach (['slot_reservations', 'schedule_templates'] as $t) { $db->exec("DELETE FROM $t"); }
+        $today = date('Y-m-d');
+        $weekday = zpms_sched_weekday($today);
+        $old = [['weekday' => $weekday, 'start' => 600, 'end' => 720, 'kind' => 'available', 'slot_minutes' => 30, 'note' => '']];
+        $new = [['weekday' => $weekday, 'start' => 840, 'end' => 960, 'kind' => 'available', 'slot_minutes' => 30, 'note' => '']];
+        $past = date('Y-m-d', strtotime('-7 days'));
+        // The first pattern, back-dated the only way possible: written directly (an install that had one before).
+        $db->prepare('INSERT INTO schedule_templates (guid, cdate, cuser, location, weekday, start_time, end_time, kind, slot_minutes, valid_from) VALUES (?,?,?,?,?,?,?,?,?,?)')
+            ->execute([guid(), getDBtime(), 't', 'ph', $weekday, '10:00', '12:00', 'available', 30, date('Y-m-d', strtotime('-60 days'))]);
+
+        $r = zpms_sched_pattern_replace($db, 'ph', $new, $past, 'u', $today);
+        assert_false($r['ok']);
+        assert_equal('past', $r['error'], 'history is not rewritten');
+
+        $r = zpms_sched_pattern_replace($db, 'ph', $new, null, 'u', $today);
+        assert_true($r['ok']);
+        $rows = $db->query("SELECT * FROM schedule_templates WHERE location = 'ph' ORDER BY id")->fetchAll(PDO::FETCH_ASSOC);
+        assert_equal(2, count($rows), 'old version kept, new one added');
+        assert_equal(date('Y-m-d', strtotime('yesterday')), $rows[0]['valid_to']);
+        assert_equal([$today, null], [$rows[1]['valid_from'], $rows[1]['valid_to']]);
+
+        $cells = fn(string $date) => zpms_sched_cells_to_intervals(zpms_sched_day_cells($rows, [], 'ph', $date));
+        $lastWeek = date('Y-m-d', strtotime("-7 days"));
+        assert_equal([600, 720], [$cells($lastWeek)[0]['start'], $cells($lastWeek)[0]['end']], 'last week still shows 10:00-12:00');
+        assert_equal([840, 960], [$cells($today)[0]['start'], $cells($today)[0]['end']], 'from today, the new pattern');
+        assert_equal(1, count($cells($today)), 'and only the new one');
+
+        // A version scheduled for the future, then replaced by a nearer one: the unstarted one is dropped, not kept as history.
+        $future = date('Y-m-d', strtotime('+14 days'));
+        zpms_sched_pattern_replace($db, 'ph', $old, $future, 'u', $today);
+        $nearer = date('Y-m-d', strtotime('+7 days'));
+        zpms_sched_pattern_replace($db, 'ph', $new, $nearer, 'u', $today);
+        $all = $db->query("SELECT valid_from, valid_to FROM schedule_templates WHERE location = 'ph' ORDER BY valid_from")->fetchAll(PDO::FETCH_ASSOC);
+        assert_equal(3, count($all), 'the first-ever row, the version closed before the nearer one, the nearer one');
+        assert_true(!in_array($future, array_column($all, 'valid_from'), true), 'the version that never started is gone');
+
+        $hist = zpms_sched_pattern_history($db, 'ph');
+        assert_true(count($hist) >= 2, 'history lists the ended versions');
+        assert_true($hist[0]['to'] >= $hist[1]['to'], 'newest first');
+        $db->exec('DELETE FROM schedule_templates');
+    });
+
     $runner->add('reserve: books, refuses overlap and shadow, doctor override only, release frees the slot', function () use ($MON, $TUE, $m) {
         $db = zpms_sched_db();
         $db->exec('DELETE FROM slot_reservations');
@@ -496,9 +574,16 @@ function zpms_schedule_http_tests(TestRunner $runner, string $baseUrl): void {
 
         [$st] = zpms_sched_api($http, $token, '/schedule/pattern', ['loc' => 'sched_m', 'valid_from' => '', 'rows' => json_encode($good)]);
         assert_equal(200, $st);
-        $rows = zpms_sched_db()->query("SELECT * FROM schedule_templates WHERE location = 'sched_m'")->fetchAll(PDO::FETCH_ASSOC);
-        assert_equal(1, count($rows), 'the old surgery row was replaced');
+        $rows = zpms_sched_db()->query("SELECT * FROM schedule_templates WHERE location = 'sched_m' AND valid_to IS NULL")->fetchAll(PDO::FETCH_ASSOC);
+        assert_equal(1, count($rows), 'one version is in force');
         assert_equal('16:00', $rows[0]['start_time']);
+        assert_equal(date('Y-m-d'), $rows[0]['valid_from'], 'from today');
+        $closed = zpms_sched_db()->query("SELECT * FROM schedule_templates WHERE location = 'sched_m' AND valid_to IS NOT NULL")->fetchAll(PDO::FETCH_ASSOC);
+        assert_equal(1, count($closed), 'the old surgery row is kept as history');
+        assert_equal(date('Y-m-d', strtotime('yesterday')), $closed[0]['valid_to'], 'closed the day before');
+        [$st, $past] = zpms_sched_api($http, $token, '/schedule/pattern', ['loc' => 'sched_m', 'valid_from' => date('Y-m-d', strtotime('yesterday')), 'rows' => json_encode($good)]);
+        assert_equal(422, $st);
+        assert_equal('past', $past['error'], 'a new version cannot start in the past');
 
         // A future booking at Peristeri on Monday 10:00; replacing Peristeri's pattern without Monday must be refused.
         $b = zpms_sched_reserve(zpms_sched_db(), 'sched_p', $monday, $m('10:00'), $m('10:30'), 'appointment', null, '', 'test');

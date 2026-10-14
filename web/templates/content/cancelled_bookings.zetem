@@ -1,0 +1,89 @@
+{% attach_library('schedule-badge') %}
+{% attach_library('flatpickr-library') %}
+{#
+  cancelled_bookings.zetem -- bookings released from the schedule (cancelled,
+  deleted, moved away), rendered by schedule_cancelled() in
+  web/schedule_pages.php. Read-only history; shows who the booking was for.
+#}
+
+<h2 class="sr-only">{{{t('Cancelled bookings')}}}</h2>
+
+{% if($missing_table): %}
+<p class="sched-notice">{{{t('The schedule tables are not up to date yet. Apply the update described in the README, then reload this page.')}}}</p>
+{% else: %}
+
+<p class="sched-sub">{{{t('Bookings that were cancelled, deleted or moved away, newest first. They no longer block any time.')}}}</p>
+
+<form class="sched-filters" method="get" action="{{rel_url('/schedule/cancelled')}}">
+    <label>{{{t('Location')}}}
+        <select name="loc">
+            <option value="">{{{t('All locations')}}}</option>
+            {% foreach($locations as $code => $name): %}
+            <option value="{{{$code}}}" {{($filters['loc'] === (string)$code) ? 'selected' : ''}}>{{{$name}}}</option>
+            {% endforeach %}
+        </select>
+    </label>
+    <label>{{{t('Reason')}}}
+        <select name="reason">
+            <option value="">{{{t('All reasons')}}}</option>
+            {% foreach($reasons as $key => $label): %}
+            <option value="{{{$key}}}" {{($filters['reason'] === (string)$key) ? 'selected' : ''}}>{{{$label}}}</option>
+            {% endforeach %}
+        </select>
+    </label>
+    <label>{{{t('From')}}} <input type="text" name="date_from" id="cb-from" value="{{{$filters['date_from']}}}" autocomplete="off"></label>
+    <label>{{{t('To')}}} <input type="text" name="date_to" id="cb-to" value="{{{$filters['date_to']}}}" autocomplete="off"></label>
+    <label class="sched-check"><input type="checkbox" name="moved" value="1" {{($filters['moved'] === '1') ? 'checked' : ''}}> {{{t('Also show bookings that were only moved')}}}</label>
+    <div class="sched-filter-actions">
+        <button type="submit" class="sched-btn pri">{{{t('Apply')}}}</button>
+        {% if($filtered): %}<a href="{{rel_url('/schedule/cancelled')}}">{{{t('Clear')}}}</a>{% endif %}
+    </div>
+</form>
+
+<div class="sched-cal" style="max-height:none">
+    {% if(count($rows) == 0): %}
+        <p class="sched-sub" style="padding:1rem;margin:0">{{{t('No entries.')}}}</p>
+    {% else: %}
+    <div class="sched-scroll">
+    <table class="sched-table">
+        <thead><tr>
+            <th>{{{t('Released')}}}</th><th>{{{t('Reason')}}}</th><th>{{{t('Booking')}}}</th><th>{{{t('Location')}}}</th>
+            <th>{{{t('Patient')}}}</th><th>{{{t('Type')}}}</th><th>{{{t('Note')}}}</th>
+        </tr></thead>
+        <tbody>
+        {% foreach($rows as $r): %}
+        <tr>
+            <td>{{{$r['released_at']}}}<br><span class="muted">{{{$r['released_by']}}}</span></td>
+            <td>{{{$r['reason']}}}</td>
+            <td>{{{$r['when']}}}</td>
+            <td>{{{$r['location']}}}</td>
+            <td>{% if($r['url']): %}<a href="{{{$r['url']}}}">{{{$r['who']}}}</a>{% else: %}{{{$r['who'] ?: '-'}}}{% endif %}</td>
+            <td>{{{$r['kind']}}}</td>
+            <td>{{{$r['note']}}}</td>
+        </tr>
+        {% endforeach %}
+        </tbody>
+    </table>
+    </div>
+    {% endif %}
+    <div class="sched-pager">
+        <span>{{{t('@count entries', ['count' => $total])}}}</span>
+        {% if($pages > 1): %}
+        <nav>
+            {% if($prev_url): %}<a href="{{{$prev_url}}}" aria-label="{{{t('Previous page')}}}">&lsaquo;</a>{% endif %}
+            <span>{{{t('Page @current of @last', ['current' => $page, 'last' => $pages])}}}</span>
+            {% if($next_url): %}<a href="{{{$next_url}}}" aria-label="{{{t('Next page')}}}">&rsaquo;</a>{% endif %}
+        </nav>
+        {% endif %}
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        if (typeof flatpickr !== 'function') return;
+        ['#cb-from', '#cb-to'].forEach(function(sel) {
+            flatpickr(sel, { dateFormat: 'Y-m-d', altInput: true, altFormat: 'd-m-Y', allowInput: true });
+        });
+    });
+</script>
+{% endif %}

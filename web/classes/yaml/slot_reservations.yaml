@@ -38,4 +38,19 @@ table:
   - name: shadow_override
     type: int
     default: 0
+  # Booking history: a slot that is cancelled, deleted or moved is NOT removed;
+  # it is marked released and ignored by every rule, calendar and Google event
+  # (released_at IS NULL = the booking is live). release_reason: cancelled |
+  # deleted | moved | calendar_cancelled | calendar_conflict. The rows go when
+  # the appointment is purged (patient erasure), never otherwise: they carry
+  # the note text.
+  - name: released_at
+    type: datetime
+    default: null
+  - name: released_by
+    type: varchar(64)
+    default: null
+  - name: release_reason
+    type: varchar(24)
+    default: null
 ...
