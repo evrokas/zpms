@@ -537,7 +537,21 @@ function schedule_day($params) {
         }
     }
     unset($b);
-    zpms_sched_json(['ok' => true, 'blocks' => $blocks, 'past' => $date < date('Y-m-d')]);
+
+    // Times that keep the day consecutive (right after or before a booking, or
+    // at the start of the available time) for a booking of the default length;
+    // the appointment being moved does not count against itself.
+    $suggestions = [];
+    if ($date >= date('Y-m-d')) {
+        $own = $ref !== '' ? zpms_sched_ref_reservation($ctx, $ref) : null;
+        $ctx['reservations'] = array_values(array_filter($ctx['reservations'], fn($r) => $own === null || $r['guid'] !== $own));
+        $len = max(15, min(240, (int)($_POST['len'] ?? 30)));
+        $len -= $len % 15;
+        foreach (zpms_sched_suggest($ctx, $loc, $date, $len, 4) as $s) {
+            $suggestions[] = ['start' => zpms_sched_min_to_time($s['start']), 'end' => zpms_sched_min_to_time($s['start'] + $len), 'reason' => $s['reason']];
+        }
+    }
+    zpms_sched_json(['ok' => true, 'blocks' => $blocks, 'past' => $date < date('Y-m-d'), 'suggestions' => $suggestions]);
 }
 
 

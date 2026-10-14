@@ -2244,3 +2244,105 @@ DELETE FROM webforms WHERE form_name = 'operations';
 Then run `bin/update.sh` (regenerates `web/classes/` without the removed classes), `php bin/migrate_roles.php --yes` (adds the `audit-log-view` permission), `php bin/import_dictionary.php` (the page and event labels), and create `logs/` at the project root, writable by the web server user (`mkdir -m 2770 logs && chown www-data:www-data logs`). Without the table the app keeps working: events go only to `logs/audit.log`, and `/audit` says the table is missing.
 
 Tests: `tests/functional/audit_log.php` (sign-in/out and a forged-line attempt; patient create/view/change/delete by id with no name, note or phone anywhere in the rows or the file; appointment and file events without the file name; `/audit` access, menu and filter; `/admin` changes with field names only; the profile fix; a zpmscli purge as a command-line action) and the audit writer test in `tests/functional/zpmscli.php`. `bin/run_tests.sh`: 138/138 static, 72/72 functional.
+
+## Appointment schedule: calendars per location, booking by dragging, remote appointments
+
+A calendar for every location, with a repeating weekly pattern, changes for single dates, travel times between locations, and bookings that obey the rules. Doctor and secretary use it (permission `schedule-manage`); only the doctor can override the surgery shade (`schedule-override-shadow`).
+
+### The rules (`web/schedule.php`, pure functions, tested without a database)
+
+- Every location, **the phone / online one included**, has its own weekly pattern of *available*, *reserved* (a hold, with a reason) and *surgery* intervals on a **15-minute grid**. The phone location is an ordinary `locations` row (`web/content/locations/phone.yml`, machinename `phone`), with 0 minutes of travel to every place unless you set it.
+- A single date can be changed on top of the pattern (open extra time, reserve it, surgery, or back to the pattern). A change always wins over the pattern for the interval it covers, and is refused while it would leave a booking outside the available time.
+- **Bookings never overlap, at any location** (there is one doctor), and bookings at different locations keep the **travel time** between them (Settings table, editable on the calendar page; default 30 minutes for a pair with no entry, rounded out to the 15-minute grid).
+- **Surgery shades every other location**, widened by the travel time: surgery in the pattern, on a single date, or an operation appointment. Booking into the shade is refused for everyone except the doctor, who must tick "book anyway"; the slot is then marked `shadow_override`. No location is exempt. A surgery cannot be placed within travel time of another surgery or of a booking.
+- Free time left stranded between a new booking and a neighbouring booking or hold produces a warning, with times that avoid the gap. The calendar and the booking forms suggest consecutive times first: right after a booking, right before one, or at the start of the available time.
+- Changing a weekly pattern is refused while a **future** booking would end up outside it (the bookings are listed by date, time and place, never by name). Past bookings are never looked at.
+
+### Pages
+
+- **Apps menu → Appointment schedule** (`/schedule`): one location's week (Mon-Sat). Choose a tool and **drag on the calendar**: appointment, open time, surgery, reserve, or back to the pattern. The selection stops at anything booked or reserved; handles and the +-15 minute buttons adjust it. The server checks each selection (`POST /schedule/check`) and the panel says what it found. Surgery and reservations need a **reason**, shown on the calendar; a reservation can apply to every location. The *Weekly pattern* and *Travel times* dialogs edit the rest.
+- **Booking forms** (phone booking `/consultation/new`, editing a pending appointment, a new appointment or operation on a patient record, and the new `/appointment/{id}/reschedule`) carry a booking block: location, date, a one-day calendar to drag on, and for the phone / online location the **platform** (Zoom, Webex, Microsoft Teams, Google Meet, Viber, WhatsApp, phone call, other), the link or number, and an optional meeting code. Saving books the slot first and refuses with the reason otherwise. The appointment's note is shown on its slot and follows later edits. The "Create an appointment" button on the calendar opens the form prefilled with place, time and note.
+- An appointment that holds a slot shows its date and place read-only on the patient page, with a *Reschedule* link. Cancelling a pending appointment, deleting an appointment, and `zpmscli` purges free the slot; converting a pending appointment keeps it, now owned by the appointment. A form posted without the booking block (an older client) saves as before and books nothing.
+
+### Data
+
+New tables `schedule_templates`, `schedule_overrides`, `slot_reservations`, `location_travel_times`; new columns `duration_minutes`, `remote_platform`, `remote_contact`, `remote_code` on `appointments` and `pending_appointments`. Audit events: `schedule_pattern_changed`, `schedule_override_set`, `schedule_override_cleared`, `schedule_travel_changed`, `slot_reserved`, `slot_released` -- codes, dates and times only, never the reason or note text.
+
+### Deploying to an existing install
+
+Back up the database first, then:
+
+```sql
+CREATE TABLE IF NOT EXISTS `schedule_templates` (
+  `id` INTEGER NOT NULL AUTO_INCREMENT UNIQUE,
+  `guid` CHAR(36) NOT NULL,
+  `cdate` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `cuser` CHAR(32) NOT NULL,
+  `location` varchar(64) DEFAULT NULL ,
+  `weekday` int DEFAULT NULL ,
+  `start_time` char(5) DEFAULT NULL ,
+  `end_time` char(5) DEFAULT NULL ,
+  `kind` varchar(16) DEFAULT NULL ,
+  `slot_minutes` int DEFAULT 30,
+  `note` varchar(255) DEFAULT NULL ,
+  `valid_from` date DEFAULT NULL ,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `schedule_overrides` (
+  `id` INTEGER NOT NULL AUTO_INCREMENT UNIQUE,
+  `guid` CHAR(36) NOT NULL,
+  `cdate` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `cuser` CHAR(32) NOT NULL,
+  `location` varchar(64) DEFAULT NULL ,
+  `odate` date DEFAULT NULL ,
+  `start_time` char(5) DEFAULT NULL ,
+  `end_time` char(5) DEFAULT NULL ,
+  `kind` varchar(16) DEFAULT NULL ,
+  `note` varchar(255) DEFAULT NULL ,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `slot_reservations` (
+  `id` INTEGER NOT NULL AUTO_INCREMENT UNIQUE,
+  `guid` CHAR(36) NOT NULL,
+  `cdate` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `cuser` CHAR(32) NOT NULL,
+  `location` varchar(64) DEFAULT NULL ,
+  `rdate` date DEFAULT NULL ,
+  `start_time` char(5) DEFAULT NULL ,
+  `end_time` char(5) DEFAULT NULL ,
+  `kind` varchar(16) DEFAULT NULL ,
+  `ref_guid` char(36) DEFAULT NULL ,
+  `note` varchar(255) DEFAULT NULL ,
+  `shadow_override` int DEFAULT 0,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS `location_travel_times` (
+  `id` INTEGER NOT NULL AUTO_INCREMENT UNIQUE,
+  `guid` CHAR(36) NOT NULL,
+  `cdate` DATETIME DEFAULT CURRENT_TIMESTAMP,
+  `cuser` CHAR(32) NOT NULL,
+  `from_location` varchar(64) DEFAULT NULL ,
+  `to_location` varchar(64) DEFAULT NULL ,
+  `minutes` int DEFAULT NULL ,
+  PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- appointments and pending appointments: length and remote details
+ALTER TABLE `appointments`
+  ADD COLUMN `duration_minutes` int DEFAULT NULL,
+  ADD COLUMN `remote_platform` varchar(16) DEFAULT NULL,
+  ADD COLUMN `remote_contact` varchar(255) DEFAULT NULL,
+  ADD COLUMN `remote_code` varchar(64) DEFAULT NULL;
+ALTER TABLE `pending_appointments`
+  ADD COLUMN `duration_minutes` int DEFAULT NULL,
+  ADD COLUMN `remote_platform` varchar(16) DEFAULT NULL,
+  ADD COLUMN `remote_contact` varchar(255) DEFAULT NULL,
+  ADD COLUMN `remote_code` varchar(64) DEFAULT NULL;
+```
+
+Then run `bin/update.sh` (regenerates the classes and loads the new phone location from `web/content/locations/phone.yml`), `php bin/migrate_roles.php --yes` (adds `schedule-manage` to doctor and secretary, `schedule-override-shadow` to doctor) and `php bin/import_dictionary.php`. Then open **Appointment schedule**, add a weekly pattern for each location (*Weekly pattern*) and check the *Travel times*. Without a pattern nothing can be booked through the forms: the booking calendar shows no free time. Appointments made before this keep working; the first *Reschedule* gives one a slot.
+
+Tests: `tests/functional/schedule.php` (the rules on built data, then the booking functions, the stranded-booking check, the calendar page and its endpoints) and `tests/functional/booking.php` (booking through the forms: phone booking, remote details, refusals, the surgery shade and its override, moving, cancelling, converting, operations, rescheduling, purge).

@@ -36,6 +36,7 @@
     var sel = null;                            // {r0, r1}
     var drag = null;
     var result = null;
+    var daySuggestions = [];                   // for a default-length booking, from /schedule/day
     var useOverride = false;
     var seq = 0;
 
@@ -196,6 +197,19 @@
         if (loaded && !sel) {
             var any = cells.some(function (b) { return b && (b.type === 'avail' || (b.type === 'resv' && b.own)); });
             panelEl.appendChild(el('p', 'hint', any ? txt('schedHintBook') : txt('schedNoFree')));
+            if (daySuggestions.length) {
+                panelEl.appendChild(el('p', 'hint', txt('schedSuggestions')));
+                var sg0 = el('div', 'sched-suggest');
+                daySuggestions.forEach(function (s) {
+                    var b0 = el('button', null, '★ ' + s.start + '–' + s.end + ' · ' + txt('schedSugg_' + s.reason)); b0.type = 'button';
+                    b0.addEventListener('click', function () {
+                        sel = { r0: (toMin(s.start) - DAY_START) / STEP, r1: (toMin(s.end) - DAY_START) / STEP - 1 };
+                        useOverride = false; setFields(); render(); runCheck();
+                    });
+                    sg0.appendChild(b0);
+                });
+                panelEl.appendChild(sg0);
+            }
             return;
         }
         if (!sel) return;
@@ -242,13 +256,14 @@
 
     function load() {
         sel = null; result = null; useOverride = false; setFields();
-        cells = new Array(ROWS).fill(null); loaded = false;
+        cells = new Array(ROWS).fill(null); loaded = false; daySuggestions = [];
         updateRemote();
         if (!locEl.value || !dateEl.value) { render(); renderPanel(false); return Promise.resolve(); }
         var my = ++seq;
         return post(root.dataset.dayUrl, { loc: locEl.value, date: dateEl.value, ref: ref }).then(function (res) {
             if (my !== seq || !res.ok) { if (my === seq) panelMessage('bad', txt('schedFailed')); return; }
             isPast = !!res.past;
+            daySuggestions = res.suggestions || [];
             res.blocks.forEach(function (b) {
                 for (var m = b.start; m < b.end; m += STEP) { var r = (m - DAY_START) / STEP; if (r >= 0 && r < ROWS) cells[r] = b; }
             });

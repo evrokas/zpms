@@ -92,6 +92,21 @@ function zpms_booking_functional_tests(TestRunner $runner, string $baseUrl): voi
         assert_equal('Πρώτη επίσκεψη ΤΕΣΤ', $resv[0]['note']);
     });
 
+    $runner->add('the day endpoint offers consecutive times first: right after the booking, right before it', function () use ($doctor, $mon) {
+        $page = $doctor->get('/consultation/new');
+        $token = html_entity_decode(preg_match('/<meta name="csrf-token" content="([^"]+)"/', $page['body'], $m) ? $m[1] : '');
+        $res = $doctor->postWithHeaders('/schedule/day', ['loc' => 'bk_p', 'date' => $mon], ['X-CSRF-Token' => $token]);
+        $json = json_decode(substr($res['body'], strpos($res['body'], '{"')), true);
+        assert_true($json['ok']);
+        assert_equal(['10:45', 'after'], [$json['suggestions'][0]['start'], $json['suggestions'][0]['reason']], 'right after the 10:00-10:45 booking');
+        $starts = array_column($json['suggestions'], 'start');
+        assert_true(in_array('10:00', $starts, true) === false, '10:00 is taken');
+        // The appointment being moved does not count against itself.
+        $p = zpms_bk_pending_row('Booking One');
+        $own = $doctor->postWithHeaders('/schedule/day', ['loc' => 'bk_p', 'date' => $mon, 'ref' => $p['guid'] ?? ''], ['X-CSRF-Token' => $token]);
+        assert_equal(200, $own['status']);
+    });
+
     $runner->add('an overlap, a time outside the schedule and a missing location are refused and write nothing', function () use ($doctor, $mon) {
         $before = (int)zpms_bk_db()->query('SELECT COUNT(*) FROM pending_appointments')->fetchColumn();
         foreach ([
