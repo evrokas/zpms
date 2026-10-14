@@ -202,4 +202,65 @@ function zpms_calendar_sync_functional_tests(TestRunner $runner): void {
         $db->exec('DELETE FROM slot_reservations');
         $db->exec('DELETE FROM schedule_templates');
     });
+
+    $runner->add('a pending appointment moved in Calendar: new time, the slot follows, and the assigned doctor is emailed', function () use ($future, $m) {
+        $db = zpms_cs_db();
+        foreach (['slot_reservations', 'schedule_templates', 'schedule_overrides'] as $t) { $db->exec("DELETE FROM $t"); }
+        $db->prepare('INSERT INTO schedule_templates (guid, cdate, cuser, location, weekday, start_time, end_time, kind, slot_minutes) VALUES (?,?,?,?,?,?,?,?,?)')
+            ->execute([guid(), getDBtime(), 't', 'cs_q', zpms_sched_weekday($future), '10:00', '14:00', 'available', 30]);
+        Renderer::init([ZPMS_TEST_APPDIR . '/web/templates/email/'], false, sys_get_temp_dir(), false);
+        $doctorId = (int)$db->query("SELECT id FROM users WHERE uname = '" . TestFixtures::USERNAME . "'")->fetchColumn();
+        $mailer = fn() => new class {
+            public array $to = [];
+            public string $Subject = '', $Body = '', $AltBody = '';
+            function addAddress($a, $n = '') { $this->to[] = $a; }
+            function isHTML($v) {}
+            function send() { return true; }
+        };
+        $make = function (?int $assigned) use ($db, $future, $m) {
+            $pending = new pendingAppointmentsClass(['guid' => guid(), 'cuser' => 't', 'cdate' => getDBtime(), 'patient_name' => 'Ημερολόγιο Μετακίνηση',
+                'appointment_datetime' => "$future 10:00:00", 'location' => 'Q', 'assigned_user_id' => $assigned, 'notes' => 'σημ']);
+            $pending->insert();
+            assert_true(zpms_sched_reserve($db, 'cs_q', $future, $m('10:00'), $m('10:30'), 'appointment', $pending->getguid(), '', 't')['ok'], 'setup booking');
+            return $pending;
+        };
+
+        // 1. Moved to 12:00: the row has the new time, the slot followed, the doctor got the email naming Google Calendar.
+        $pending = $make($doctorId);
+        $mail = $mailer();
+        $r = zpms_calendar_pending_moved($pending, "$future 12:00:00", $db, $mail);
+        assert_equal([true, 'moved', true], [$r['changed'], $r['slot'], $r['notified']]);
+        assert_equal("$future 12:00:00", $pending->getappointment_datetime());
+        assert_equal('12:00', zpms_sched_slot_for_ref($db, $pending->getguid())['start_time']);
+        assert_equal(['zpms-test@example.invalid'], $mail->to, 'the assigned doctor');
+        assert_contains('Google Calendar', $mail->Body, 'the email says where the change was made');
+        assert_contains('12:00', $mail->Body);
+        assert_contains('10:00', $mail->Body, 'and the previous time');
+
+        // 2. Same time (or only seconds apart): nothing happens, nobody is written to.
+        $mail = $mailer();
+        $r = zpms_calendar_pending_moved($pending, "$future 12:00:30", $db, $mail);
+        assert_equal(false, $r['changed']);
+        assert_equal([], $mail->to);
+
+        // 3. Moved to a time the schedule does not allow: still told, the slot is freed.
+        $r = zpms_calendar_pending_moved($pending, "$future 18:00:00", $db, $mailer());
+        assert_equal(['released', true], [$r['slot'], $r['notified']]);
+        assert_true(zpms_sched_slot_for_ref($db, $pending->getguid()) === null);
+
+        // 4. Nobody assigned (a Calendar-native booking): moved, nobody to email.
+        $native = $make(null);
+        $mail = $mailer();
+        $r = zpms_calendar_pending_moved($native, "$future 11:00:00", $db, $mail);
+        assert_equal([true, null], [$r['changed'], $r['notified']]);
+        assert_equal([], $mail->to);
+
+        // 5. Mail not set up (the real mailer, in a script with no web app): reported as not sent, never a fatal.
+        $unconfigured = $make($doctorId);
+        $r = zpms_calendar_pending_moved($unconfigured, "$future 13:00:00", $db);
+        assert_equal([true, false], [$r['changed'], $r['notified']], 'a failed email is reported, the move still happens');
+
+        $db->exec('DELETE FROM slot_reservations'); $db->exec('DELETE FROM schedule_templates');
+        $db->exec("DELETE FROM pending_appointments WHERE patient_name = 'Ημερολόγιο Μετακίνηση'");
+    });
 }

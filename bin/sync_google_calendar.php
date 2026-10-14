@@ -91,6 +91,8 @@ ob_start();
 require_once __FWDIR__ . '/bootstrap.php';
 require_once __APPDIR__ . '/web/google_calendar_client.php';
 require_once __APPDIR__ . '/web/schedule.php';
+require_once __APPDIR__ . '/web/schedule_calendar.php';   // also loads the mailer and remote-platform names
+Renderer::init([__APPDIR__ . '/web/templates/email/'], false, sys_get_temp_dir(), false);
 ob_end_clean();
 
 dbConnection::init(DB_HOST, DB_USER, DB_PASS, DB_NAME);
@@ -131,6 +133,7 @@ $countRescheduled = 0;
 $countCancelled = 0;
 $countQueued = 0;
 $countDismissed = 0;
+$countNotified = 0;
 
 foreach ($events as $event) {
     $googleEventId = $event['id'] ?? null;
@@ -227,10 +230,16 @@ foreach ($events as $event) {
             $countCancelled++;
         } elseif ($newDatetime !== null) {
             if ($newDatetime !== $pending->getappointment_datetime()) {
-                $pending->setappointment_datetime($newDatetime);
                 $countRescheduled++;
-                if (zpms_sched_follow_calendar($pdo, $pending->getguid(), $newDatetime) === 'released') {
+                // New time, the slot following it, and the assigned doctor told.
+                $moved = zpms_calendar_pending_moved($pending, $newDatetime, $pdo);
+                if ($moved['slot'] === 'released') {
                     $log("pending appointment #{$pending->getid()}: the new time is not allowed on the schedule, its slot was freed");
+                }
+                if ($moved['notified'] === true) {
+                    $countNotified++;
+                } elseif ($moved['notified'] === false) {
+                    $log("pending appointment #{$pending->getid()}: the assigned doctor could not be emailed about the new time");
                 }
             }
             $pending->setgoogle_synced_at(getDBtime());
@@ -287,9 +296,10 @@ $state->setlast_synced_at(getDBtime());
 $state->update();
 
 $log(sprintf(
-    'Synced %d event(s): %d rescheduled, %d cancelled, %d queued for review, %d dismissed.',
+    'Synced %d event(s): %d rescheduled (%d doctor(s) emailed), %d cancelled, %d queued for review, %d dismissed.',
     count($events),
     $countRescheduled,
+    $countNotified,
     $countCancelled,
     $countQueued,
     $countDismissed

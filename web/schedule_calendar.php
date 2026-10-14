@@ -20,6 +20,7 @@
 
 require_once __DIR__ . '/schedule.php';
 require_once __DIR__ . '/schedule_pages.php';
+require_once __DIR__ . '/zpms_mailer.php';
 
 /** The default API: googleCalendarClass behind the small interface the functions below use. */
 function zpms_gcal_api(): object {
@@ -172,4 +173,27 @@ function zpms_gcal_reconcile_overrides(PDO $db, string $date, array $before, ?ob
         error_log('zpms_gcal_reconcile_overrides failed: ' . $e->getMessage());
     }
     return $out;
+}
+
+
+/**
+ * A pending appointment whose event was moved in the Google Calendar app
+ * (called by bin/sync_google_calendar.php): takes the new date/time, makes its
+ * slot on the schedule follow (or frees it when the new time is not allowed),
+ * and tells the assigned doctor, as when the move is made in ZPMS. Does not
+ * save: the caller updates the row. $mail is for tests.
+ *
+ * @return array ['changed' => bool, 'slot' => string (see zpms_sched_follow_calendar), 'notified' => ?bool]
+ *   'notified' is null when there is nobody to tell (no active doctor assigned).
+ */
+function zpms_calendar_pending_moved(pendingAppointmentsClass $pending, string $newDatetime, PDO $db, $mail = null): array {
+    $old = (string)$pending->getappointment_datetime();
+    if (!zpms_pending_time_changed($old, $newDatetime)) {
+        return ['changed' => false, 'slot' => 'unchanged', 'notified' => null];
+    }
+    $pending->setappointment_datetime($newDatetime);
+    $slot = zpms_sched_follow_calendar($db, $pending->getguid(), $newDatetime);
+    $doctor = zpms_assigned_doctor_for($pending);
+    $notified = $doctor ? zpms_send_appointment_rescheduled_email($pending, $doctor, $old, $mail, 'Google Calendar') : null;
+    return ['changed' => true, 'slot' => $slot, 'notified' => $notified];
 }

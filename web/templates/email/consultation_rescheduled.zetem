@@ -32,6 +32,9 @@
                 {% if($remote): %}
                 <tr><td style="font-weight:bold; vertical-align:top;">Εξ αποστάσεως</td><td>{{{$remote}}}</td></tr>
                 {% endif %}
+                {% if($source): %}
+                <tr><td style="font-weight:bold; vertical-align:top; color:#6b7280;">Πηγή αλλαγής</td><td style="color:#6b7280;">{{{$source}}}</td></tr>
+                {% endif %}
                 {% if($notes): %}
                 <tr><td style="font-weight:bold; vertical-align:top;">Σημειώσεις</td><td>{{{$notes}}}</td></tr>
                 {% endif %}

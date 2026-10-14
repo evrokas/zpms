@@ -53,12 +53,15 @@ function zpms_mail_settings(): ?mailSettingsClass {
  * @return \PHPMailer\PHPMailer\PHPMailer|string
  */
 function zpms_build_mailer() {
+    // t() needs the running web app; bin/sync_google_calendar.php sends mail
+    // without one, so the English text stands there.
+    $say = fn(string $text) => isset($GLOBALS['kernel']) ? t($text) : $text;
     $settings = zpms_mail_settings();
     if (!$settings || !$settings->getsmtp_host() || !$settings->getfrom_email()) {
-        return t('The SMTP details have not been set up. Go to Settings -> Email.');
+        return $say('The SMTP details have not been set up. Go to Settings -> Email.');
     }
     if (!zpms_phpmailer_available()) {
-        return t('The PHPMailer library is not installed (lib/phpmailer) -- see README.md.');
+        return $say('The PHPMailer library is not installed (lib/phpmailer) -- see README.md.');
     }
 
     require_once __APPDIR__ . '/lib/phpmailer/src/Exception.php';
@@ -152,7 +155,7 @@ function zpms_pending_time_changed(?string $old, ?string $new): bool {
 }
 
 /** What the "time changed" email shows: the new and the previous time, and the booking's details. */
-function zpms_reschedule_email_vars(pendingAppointmentsClass $pending, array $doctor, string $oldDatetime): array {
+function zpms_reschedule_email_vars(pendingAppointmentsClass $pending, array $doctor, string $oldDatetime, string $source = ''): array {
     $new = strtotime($pending->getappointment_datetime());
     $old = strtotime($oldDatetime);
     $remote = '';
@@ -171,7 +174,31 @@ function zpms_reschedule_email_vars(pendingAppointmentsClass $pending, array $do
         'location' => $pending->getlocation(),
         'remote' => $remote,
         'notes' => $pending->getnotes(),
+        'source' => $source,
     ];
+}
+
+/**
+ * The account a pending appointment is assigned to, as the mailer needs it
+ * (id, uname, name, email), or null when none is assigned or it is no longer
+ * an active doctor account. Plain SQL, so the Calendar sync script can use it.
+ */
+function zpms_assigned_doctor_for(pendingAppointmentsClass $pending): ?array {
+    $id = (int)$pending->getassigned_user_id();
+    if (!$id) {
+        return null;
+    }
+    $st = dbConnection::getConnection()->prepare(
+        "SELECT u.id, u.uname, u.name, u.email
+           FROM users u
+           JOIN user_roles ur ON ur.user_id = u.id
+           JOIN roles r ON r.id = ur.role_id AND r.name = 'doctor'
+          WHERE u.id = ? AND u.active = 1 AND u.expired = 0
+          LIMIT 1"
+    );
+    $st->execute([$id]);
+    $row = $st->fetch(PDO::FETCH_ASSOC);
+    return $row ? ['id' => (int)$row['id'], 'uname' => $row['uname'], 'name' => $row['name'], 'email' => $row['email']] : null;
 }
 
 /**
@@ -180,7 +207,7 @@ function zpms_reschedule_email_vars(pendingAppointmentsClass $pending, array $do
  * rules as zpms_send_appointment_assignment_email(): never throws, never
  * blocks the save, true on success. $mail lets a test pass a stand-in mailer.
  */
-function zpms_send_appointment_rescheduled_email(pendingAppointmentsClass $pending, array $doctor, string $oldDatetime, $mail = null): bool {
+function zpms_send_appointment_rescheduled_email(pendingAppointmentsClass $pending, array $doctor, string $oldDatetime, $mail = null, string $source = ''): bool {
     if (empty($doctor['email'])) {
         error_log('zpms_send_appointment_rescheduled_email: doctor #' . ($doctor['id'] ?? '?') . ' has no email on file -- skipped');
         return false;
@@ -191,7 +218,7 @@ function zpms_send_appointment_rescheduled_email(pendingAppointmentsClass $pendi
         return false;
     }
     try {
-        $vars = zpms_reschedule_email_vars($pending, $doctor, $oldDatetime);
+        $vars = zpms_reschedule_email_vars($pending, $doctor, $oldDatetime, $source);
         $mail->addAddress($doctor['email'], $vars['doctor_name']);
         $mail->isHTML(true);
         $mail->Subject = 'Αλλαγή ώρας ραντεβού: ' . $pending->getpatient_name();
