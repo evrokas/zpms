@@ -271,6 +271,10 @@ function schedule_override_save($params) {
     $dbKind = $kind === 'clear' ? null : $kind;
     $user = $kernel->getUserName();
 
+    // Event ids of this date's surgeries/reservations before the change, so
+    // Calendar can be brought in line after it (web/schedule_calendar.php).
+    $eventsBefore = function_exists('zpms_gcal_override_event_ids') ? zpms_gcal_override_event_ids($db, $date) : [];
+
     $db->beginTransaction();
     try {
         foreach ($targets as $target) {
@@ -294,6 +298,9 @@ function schedule_override_save($params) {
         zpms_sched_json(['ok' => false, 'error' => 'server'], 500);
     }
 
+    if (function_exists('zpms_gcal_reconcile_overrides')) {
+        zpms_gcal_reconcile_overrides($db, $date, $eventsBefore);
+    }
     zpms_audit($kind === 'clear' ? 'schedule_override_cleared' : 'schedule_override_set', [
         'detail' => 'loc=' . ($targets === $locations && count($targets) > 1 ? 'all' : $loc) . ' date=' . $date . ' ' . zpms_sched_min_to_time($start) . '-' . zpms_sched_min_to_time($end) . ' kind=' . $kind,
     ]);
@@ -350,7 +357,10 @@ function schedule_travel_save($params) {
 function zpms_remote_platforms(): array {
     return [
         'zoom' => 'Zoom', 'webex' => 'Webex', 'teams' => 'Microsoft Teams', 'meet' => 'Google Meet',
-        'viber' => 'Viber', 'whatsapp' => 'WhatsApp', 'phone' => t('Phone call'), 'other' => t('Other'),
+        // t() needs the running app; without it (a script, a test) the English names stand.
+        'viber' => 'Viber', 'whatsapp' => 'WhatsApp',
+        'phone' => isset($GLOBALS['kernel']) ? t('Phone call') : 'Phone call',
+        'other' => isset($GLOBALS['kernel']) ? t('Other') : 'Other',
     ];
 }
 
@@ -669,6 +679,7 @@ function appointment_reschedule_post($params) {
 
     zpms_record_appointment_change((int)$ap->getid(), $kernel->getUserName(), $changed);
     zpms_audit_appointment('appointment_updated', $ap, zpms_audit_fields($changed ?: ['appointment-date']));
+    zpms_appointment_sync_to_calendar($ap);
     $kernel->addStatus('notice', t('The appointment was rescheduled.'));
     header('location: ' . $back);
     exit();

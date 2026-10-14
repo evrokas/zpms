@@ -27,6 +27,7 @@ require_once(__DIR__ . '/apyweb_client.php');
 require_once(__DIR__ . '/google_calendar_client.php');
 require_once(__DIR__ . '/rbac.php');
 require_once(__DIR__ . '/schedule_pages.php');
+require_once(__DIR__ . '/schedule_calendar.php');
 require_once(__DIR__ . '/zpms_mailer.php');
 
 
@@ -1091,6 +1092,11 @@ require_once(__DIR__ . '/zpms_mailer.php');
 
         $ap->update();
         zpms_sched_set_note_for_ref(dbConnection::getConnection(), $ap->getguid(), (string)$newNote);
+        // Only a changed date or place is pushed: the card autosaves the note on
+        // every pause in typing, and a Calendar call each time would be slow.
+        if (in_array('appointment-date', $changedFields, true) || in_array('appointment-place', $changedFields, true)) {
+            zpms_appointment_sync_to_calendar($ap);
+        }
 
         zpms_record_appointment_change((int)$ap->getid(), $kernel->getUserName(), $changedFields);
         if ($changedFields) {
@@ -1122,6 +1128,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
         $app->setdeleted( getDBtime() );
         $app->update();
         zpms_sched_release_slot($app->getguid(), 'appointment_id=' . (int)$app->getid());
+        zpms_appointment_calendar_delete($app);
         zpms_audit_appointment('appointment_deleted', $app);
 
         // $app->delete();
@@ -1323,6 +1330,8 @@ require_once(__DIR__ . '/zpms_mailer.php');
             throw $e;
         }
         zpms_audit('appointment_created', ['patient' => $pat, 'appointment_id' => $app->getid(), 'detail' => 'type=' . $app->getatype()]);
+        // Appointments and operations go to Google Calendar too (not free time).
+        zpms_appointment_sync_to_calendar($app);
 
         // error_log('\nREFERER: '. $_SERVER['HTTP_REFERER']."\n");
 

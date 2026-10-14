@@ -28,4 +28,11 @@ table:
   - name: note
     type: varchar(255)
     default: null
+  # The Google Calendar event for a one-off surgery or reservation (push only:
+  # ZPMS -> Calendar, never pulled back). Rows of the same time and reason at
+  # several locations (a reservation at every location) share ONE event.
+  # NULL = no event: available time is never sent to Calendar.
+  - name: google_event_id
+    type: varchar(255)
+    default: null
 ...

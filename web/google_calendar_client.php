@@ -47,6 +47,15 @@ define('GOOGLE_CALENDAR_TIMEOUT_SECONDS', 8);
 // pending_appointments.yaml's own docblock for the full lifecycle.
 define('GOOGLE_CALENDAR_PENDING_APPOINTMENT_PROPERTY', 'zpms_pending_appointment_id');
 
+// Same idea for an event that belongs to an appointment made directly on a
+// patient record (appointments.id) -- no pending appointment ever existed.
+define('GOOGLE_CALENDAR_APPOINTMENT_PROPERTY', 'zpms_appointment_id');
+
+// An event for a one-off surgery or reservation on the schedule
+// (schedule_overrides). Push-only: bin/sync_google_calendar.php skips these,
+// so they are never turned into pending appointments or changed from Calendar.
+define('GOOGLE_CALENDAR_SCHEDULE_PROPERTY', 'zpms_schedule_override_id');
+
 // Default length of a plain phone-booked consultation, for the Calendar
 // event's end time only -- neither pending_appointments nor appointments
 // has a duration column, and nothing here needs one beyond sizing the
@@ -247,7 +256,7 @@ class googleCalendarClass {
      * contact data -- keeping PII out of a field this class also reads
      * back verbatim on every sync pass is deliberate, not an oversight).
      */
-    private static function buildEventFields(
+    static function buildEventFields(
         string $patientName,
         string $phone,
         string $amka,
@@ -344,6 +353,46 @@ class googleCalendarClass {
         $calendarId = rawurlencode($config['calendar_id']);
         $eventId = rawurlencode($eventId);
         $resp = self::request('PATCH', "/calendars/{$calendarId}/events/{$eventId}", $event);
+        return $resp !== null;
+    }
+
+    /**
+     * The event body for something that is not a pending appointment: a
+     * summary, a description, a start and a length, and one private property
+     * naming what it belongs to. Pure -- no network -- so it can be tested.
+     */
+    static function buildLinkedEvent(string $property, string $id, string $summary, string $description, string $startDateTime, int $durationMinutes): array {
+        $start = new DateTime($startDateTime);
+        $end = (clone $start)->modify("+{$durationMinutes} minutes");
+        return [
+            'summary' => $summary,
+            'description' => $description,
+            'start' => ['dateTime' => $start->format(DateTime::RFC3339)],
+            'end' => ['dateTime' => $end->format(DateTime::RFC3339)],
+            'extendedProperties' => ['private' => [$property => $id]],
+        ];
+    }
+
+    /** Creates an event for an appointment or a schedule entry; returns its id, or null. */
+    static function createLinkedEvent(string $property, string $id, string $summary, string $description, string $startDateTime, int $durationMinutes): ?string {
+        if (!self::isEnabled()) {
+            return null;
+        }
+        $config = self::getConfig();
+        $event = self::buildLinkedEvent($property, $id, $summary, $description, $startDateTime, $durationMinutes);
+        $resp = self::request('POST', '/calendars/' . rawurlencode($config['calendar_id']) . '/events', $event);
+        return (is_array($resp) && !empty($resp['id'])) ? $resp['id'] : null;
+    }
+
+    /** Rewrites summary, description and time of an existing event. */
+    static function updateLinkedEvent(string $eventId, string $summary, string $description, string $startDateTime, int $durationMinutes): bool {
+        if (!self::isEnabled()) {
+            return false;
+        }
+        $config = self::getConfig();
+        $event = self::buildLinkedEvent('x', '', $summary, $description, $startDateTime, $durationMinutes);
+        unset($event['extendedProperties']);
+        $resp = self::request('PATCH', '/calendars/' . rawurlencode($config['calendar_id']) . '/events/' . rawurlencode($eventId), $event);
         return $resp !== null;
     }
 

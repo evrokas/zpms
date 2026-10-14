@@ -90,6 +90,7 @@ chdir(__APPDIR__ . '/web');
 ob_start();
 require_once __FWDIR__ . '/bootstrap.php';
 require_once __APPDIR__ . '/web/google_calendar_client.php';
+require_once __APPDIR__ . '/web/schedule.php';
 ob_end_clean();
 
 dbConnection::init(DB_HOST, DB_USER, DB_PASS, DB_NAME);
@@ -142,6 +143,40 @@ foreach ($events as $event) {
     $newStart = $event['start']['dateTime'] ?? $event['start']['date'] ?? null;
     $newDatetime = $newStart !== null ? (new DateTime($newStart))->format('Y-m-d H:i:s') : null;
 
+    // A one-off surgery or reservation pushed from the schedule: push-only,
+    // never read back (not a patient booking, and must not become one).
+    if (isset($event['extendedProperties']['private'][GOOGLE_CALENDAR_SCHEDULE_PROPERTY])) {
+        continue;
+    }
+
+    // An appointment or operation made directly on a patient record (no pending
+    // appointment behind it): a move or cancellation in Calendar applies to it.
+    $appointmentId = $event['extendedProperties']['private'][GOOGLE_CALENDAR_APPOINTMENT_PROPERTY] ?? null;
+    if ($appointmentId !== null) {
+        $app = appointmentsClass::sgetById((int)$appointmentId);
+        if ($app === null || $app->getgoogle_event_id() !== $googleEventId || $app->getdeleted() !== null) {
+            continue;
+        }
+        if ($isCancelled) {
+            $app->setdeleted(getDBtime());
+            $app->update();
+            zpms_sched_release_ref($pdo, $app->getguid());
+            $countCancelled++;
+        } elseif ($newDatetime !== null) {
+            if ($newDatetime !== $app->getadate()) {
+                $app->setadate($newDatetime);
+                $countRescheduled++;
+                $follow = zpms_sched_follow_calendar($pdo, $app->getguid(), $newDatetime);
+                if ($follow === 'released') {
+                    $log("appointment #{$app->getid()}: the new time is not allowed on the schedule, its slot was freed");
+                }
+            }
+            $app->setgoogle_synced_at(getDBtime());
+            $app->update();
+        }
+        continue;
+    }
+
     if ($pendingId !== null) {
         $pending = pendingAppointmentsClass::sgetById((int)$pendingId);
         if ($pending === null || $pending->getgoogle_event_id() !== $googleEventId) {
@@ -163,12 +198,16 @@ foreach ($events as $event) {
                 if ($app->getdeleted() === null) {
                     $app->setdeleted(getDBtime());
                     $app->update();
+                    zpms_sched_release_ref($pdo, $app->getguid());
                     $countCancelled++;
                 }
             } elseif ($newDatetime !== null) {
                 if ($newDatetime !== $app->getadate()) {
                     $app->setadate($newDatetime);
                     $countRescheduled++;
+                    if (zpms_sched_follow_calendar($pdo, $app->getguid(), $newDatetime) === 'released') {
+                        $log("appointment #{$app->getid()}: the new time is not allowed on the schedule, its slot was freed");
+                    }
                 }
                 $app->setgoogle_synced_at(getDBtime());
                 $app->update();
@@ -184,11 +223,15 @@ foreach ($events as $event) {
         if ($isCancelled) {
             $pending->setcancelled_at(getDBtime());
             $pending->update();
+            zpms_sched_release_ref($pdo, $pending->getguid());
             $countCancelled++;
         } elseif ($newDatetime !== null) {
             if ($newDatetime !== $pending->getappointment_datetime()) {
                 $pending->setappointment_datetime($newDatetime);
                 $countRescheduled++;
+                if (zpms_sched_follow_calendar($pdo, $pending->getguid(), $newDatetime) === 'released') {
+                    $log("pending appointment #{$pending->getid()}: the new time is not allowed on the schedule, its slot was freed");
+                }
             }
             $pending->setgoogle_synced_at(getDBtime());
             $pending->update();

@@ -65,6 +65,7 @@ require_once __DIR__ . '/functional/zpmscli.php';
 require_once __DIR__ . '/functional/audit_log.php';
 require_once __DIR__ . '/functional/schedule.php';
 require_once __DIR__ . '/functional/booking.php';
+require_once __DIR__ . '/functional/calendar_sync.php';
 
 // Fresh database + a login-capable test account, every run -- see
 // TestSchema::reset()'s own docblock for why this matters.
@@ -152,6 +153,11 @@ try {
     $bookingRunner = new TestRunner('Booking through the forms');
     zpms_booking_functional_tests($bookingRunner, $server->baseUrl());
     $ok = $bookingRunner->run() && $ok;
+
+    // What goes to Google Calendar from the schedule (stand-in for Google; no network).
+    $calendarRunner = new TestRunner('Google Calendar sync of the schedule');
+    zpms_calendar_sync_functional_tests($calendarRunner);
+    $ok = $calendarRunner->run() && $ok;
 } finally {
     $server->stop();
 }

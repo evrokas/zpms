@@ -906,3 +906,37 @@ function zpms_sched_set_note_for_ref(PDO $db, string $refGuid, string $note): vo
     $note = mb_substr(trim($note), 0, 255);
     $db->prepare('UPDATE slot_reservations SET note = ? WHERE ref_guid = ?')->execute([$note !== '' ? $note : null, $refGuid]);
 }
+
+
+/**
+ * A move made in the Calendar app: the slot of $refGuid follows to the event's
+ * new start (same length). If the new time is not allowed under the schedule
+ * rules (overlap, outside availability, travel time, off the 15-minute grid)
+ * the slot is freed instead, so no phantom booking stays behind; the caller
+ * logs it. No override is ever applied from Calendar.
+ *
+ * @return string 'none' (it held no slot) | 'unchanged' | 'moved' | 'released'
+ */
+function zpms_sched_follow_calendar(PDO $db, string $refGuid, string $newDatetime, string $cuser = 'google-calendar-sync'): string {
+    $slot = zpms_sched_slot_for_ref($db, $refGuid);
+    if (!$slot) {
+        return 'none';
+    }
+    $ts = strtotime($newDatetime);
+    if ($ts === false) {
+        return 'unchanged';
+    }
+    $date = date('Y-m-d', $ts);
+    $start = date('H:i', $ts);
+    if ($date === $slot['rdate'] && $start === $slot['start_time']) {
+        return 'unchanged';
+    }
+    $len = zpms_sched_row_end($slot) - zpms_sched_row_start($slot);
+    $s = zpms_sched_time_to_min($start);
+    $res = zpms_sched_reserve($db, $slot['location'], $date, $s, $s + $len, (string)$slot['kind'], $refGuid, (string)$slot['note'], $cuser, false);
+    if ($res['ok']) {
+        return 'moved';
+    }
+    zpms_sched_release_ref($db, $refGuid);
+    return 'released';
+}
