@@ -2260,7 +2260,7 @@ A calendar for every location, with a repeating weekly pattern, changes for sing
 
 ### Pages
 
-- **Apps menu → Appointment schedule** (`/schedule`): one location's week (Mon-Sat). Choose a tool and **drag on the calendar**: appointment, open time, surgery, reserve, or back to the pattern. The selection stops at anything booked or reserved; handles and the +-15 minute buttons adjust it. The server checks each selection (`POST /schedule/check`) and the panel says what it found. Surgery and reservations need a **reason**, shown on the calendar; a reservation can apply to every location. The *Weekly pattern* and *Travel times* dialogs edit the rest.
+- **Appointments menu → Appointment schedule** (`/schedule`): one location's week (Mon-Sat). Choose a tool and **drag on the calendar**: appointment, open time, surgery, reserve, or back to the pattern. The selection stops at anything booked or reserved; handles and the +-15 minute buttons adjust it. The server checks each selection (`POST /schedule/check`) and the panel says what it found. Surgery and reservations need a **reason**, shown on the calendar; a reservation can apply to every location. The *Weekly pattern* and *Travel times* dialogs edit the rest.
 - **Booking forms** (phone booking `/consultation/new`, editing a pending appointment, a new appointment or operation on a patient record, and the new `/appointment/{id}/reschedule`) carry a booking block: location, date, a one-day calendar to drag on, and for the phone / online location the **platform** (Zoom, Webex, Microsoft Teams, Google Meet, Viber, WhatsApp, phone call, other), the link or number, and an optional meeting code. Saving books the slot first and refuses with the reason otherwise. The appointment's note is shown on its slot and follows later edits. The "Create an appointment" button on the calendar opens the form prefilled with place, time and note.
 - An appointment that holds a slot shows its date and place read-only on the patient page, with a *Reschedule* link. Cancelling a pending appointment, deleting an appointment, and `zpmscli` purges free the slot; converting a pending appointment keeps it, now owned by the appointment. A form posted without the booking block (an older client) saves as before and books nothing.
 
@@ -2286,6 +2286,7 @@ CREATE TABLE IF NOT EXISTS `schedule_templates` (
   `slot_minutes` int DEFAULT 30,
   `note` varchar(255) DEFAULT NULL ,
   `valid_from` date DEFAULT NULL ,
+  `valid_to` date DEFAULT NULL,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -2316,6 +2317,9 @@ CREATE TABLE IF NOT EXISTS `slot_reservations` (
   `ref_guid` char(36) DEFAULT NULL ,
   `note` varchar(255) DEFAULT NULL ,
   `shadow_override` int DEFAULT 0,
+  `released_at` datetime DEFAULT NULL,
+  `released_by` varchar(64) DEFAULT NULL,
+  `release_reason` varchar(24) DEFAULT NULL,
   PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -2359,3 +2363,25 @@ Tests: `tests/functional/schedule.php` (the rules on built data, then the bookin
 **Deploying:** one new column, `ALTER TABLE schedule_overrides ADD COLUMN google_event_id varchar(255) DEFAULT NULL;` (already in the `CREATE TABLE` above for a fresh install), then `bin/update.sh`.
 
 Code: `web/schedule_calendar.php` (what is sent), `web/google_calendar_client.php` (`createLinkedEvent`/`updateLinkedEvent`), `zpms_sched_follow_calendar()` in `web/schedule.php`. Tests: `tests/functional/calendar_sync.php` (Google replaced by a recording stand-in: what would be sent, the event bodies, the grouping and cleanup of reservation events, the slot following a move or being freed). Not tested against a live Google calendar.
+
+### History: cancelled bookings and past patterns
+
+**Bookings are never deleted from the schedule, only released.** Cancelling a pending appointment, deleting an appointment, moving a booking to another time, or a cancellation/move in Google Calendar marks the slot `released_at` / `released_by` / `release_reason` (`cancelled`, `deleted`, `moved`, `calendar_cancelled`, `calendar_conflict`) instead of removing it. Every rule, calendar view and Google event ignores released rows, so a released time can be booked again at once. Saving an appointment again without changing its time keeps the same slot (only the note may change); moving it keeps the old slot as a `moved` row.
+
+- **Appointments → Cancelled bookings** (`/schedule/cancelled`, doctor and secretary): released bookings, newest first, 50 per page: when and by whom, the reason, the booked place/date/time, **the patient's name** (a link while the record exists; a pending appointment shows the name it was booked under), the type and the note. Filters: location, reason, booking date range. **Bookings that were only moved are hidden** (the appointment still exists elsewhere); tick "Also show bookings that were only moved" to see them. On the calendar, *Show cancelled* outlines (dashed) the times where a booking was cancelled that week.
+- **Retention is indefinite**, with one exception that matters: erasure. Released rows carry the note text, so they are removed with the appointment when it is purged (`zpmscli` purge, `cleanup:deleted`, patient erasure); a purge leaves nothing of the booking behind in the schedule. The audit log still holds only codes, dates and times.
+- **Weekly patterns are versioned.** Saving a pattern starts a new version from the "applies from" date (today when empty; **never earlier**, history is not rewritten). The rows in force are closed the day before (`valid_to`) instead of being deleted, so a past week is always drawn with the pattern it had. A version that had not started yet and would start on or after the new date is replaced. The weekly-pattern dialog lists the earlier versions (read-only) and says since when the current one applies. Weeks before the first versioned save show the first pattern, as before (those rows have no start date).
+
+**Deploying:** back up, then
+
+```sql
+ALTER TABLE `slot_reservations`
+  ADD COLUMN `released_at` datetime DEFAULT NULL,
+  ADD COLUMN `released_by` varchar(64) DEFAULT NULL,
+  ADD COLUMN `release_reason` varchar(24) DEFAULT NULL;
+ALTER TABLE `schedule_templates` ADD COLUMN `valid_to` date DEFAULT NULL;
+```
+
+then `bin/update.sh` and `php bin/import_dictionary.php`. Until the `ALTER`s are applied the schedule page will fail on the missing columns, so run them together with the deploy.
+
+Tests: `tests/functional/schedule.php` (re-saving keeps the slot, moving keeps a released row, a released slot blocks nothing, pattern versions and past dates) and `tests/functional/booking.php` (cancel and delete record who and why, the list, its filters and the moved toggle, secretary access, the calendar overlay, purge removing released rows).
