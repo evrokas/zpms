@@ -88,6 +88,7 @@
 
     function cellClass(c) {
         if (!c) return '';
+        if (c.block.type === 'resv') return c.block.label === 'surgery' ? 'resv opsurg' : 'resv';
         return c.block.type === 'avail' ? 'avail' : c.block.type;
     }
 

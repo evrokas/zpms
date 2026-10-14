@@ -493,4 +493,5 @@ return [
     'The "applies from" date cannot be earlier than today: past weeks keep the pattern they had.' => 'Η ημερομηνία «Ισχύει από» δεν μπορεί να είναι πριν από σήμερα: οι προηγούμενες εβδομάδες κρατούν το πρότυπο που είχαν.',
     'The current pattern has applied since @date.' => 'Το τρέχον πρότυπο ισχύει από @date.',
     'Applied from @from to @to' => 'Ίσχυε από @from έως @to',
+    'Booked operation' => 'Κρατημένο χειρουργείο',
 ];

@@ -102,7 +102,7 @@
         for (var r = 0; r < ROWS; r++) {
             var m = rowMin(r), b = cells[r], cls = 's', label = '';
             if (b) {
-                cls += ' ' + (b.type === 'avail' ? 'avail' : (b.type === 'resv' && b.own ? 'avail own' : b.type));
+                cls += ' ' + (b.type === 'avail' ? 'avail' : (b.type === 'resv' && b.own ? 'avail own' : (b.type === 'resv' && b.label === 'surgery' ? 'resv opsurg' : b.type)));
                 var idx = 0;
                 while (r - 1 - idx >= 0 && cells[r - 1 - idx] === b) idx++;
                 label = blockLabel(b, idx);

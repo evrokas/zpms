@@ -32,8 +32,9 @@
 .sched-legend { display: flex; flex-wrap: wrap; gap: 0.3rem 1rem; margin: 0 0 0.6rem; font-size: 0.78rem; color: var(--dark-gray); }
 .sched-legend i { display: inline-block; width: 14px; height: 14px; margin-right: 0.35rem; border-radius: 3px; border: 1px solid var(--border-color); vertical-align: -3px; }
 .sw-avail { background: #e6f4e7; }
-.sw-resv { background: #dcebf7; }
-.sw-hold { background: repeating-linear-gradient(90deg, #e3e8e9 0 6px, #f2f5f5 6px 7px); }
+.sw-resv { background: #2b6cb0; }
+.sw-opsurg { background: #b45f06; }
+.sw-hold { background: repeating-linear-gradient(135deg, #c9d2d4 0 4px, #dbe2e3 4px 8px); }
 .sw-surg { background: #f6e3c4; }
 .sw-shadow { background: repeating-linear-gradient(135deg, #f3dcdc 0 4px, #ead0d0 4px 8px); }
 
@@ -47,8 +48,9 @@
 .sched-grid .s { height: 18px; line-height: 17px; padding: 0 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-top: 1px solid var(--medium-gray); border-left: 1px solid var(--medium-gray); user-select: none; -webkit-user-select: none; cursor: pointer; }
 .sched-grid .s.hr0 { border-top-color: var(--dark-gray); }
 .sched-grid .s.avail { background: #e6f4e7; color: #1f5d26; }
-.sched-grid .s.resv { background: #dcebf7; color: #16477a; font-weight: 500; cursor: not-allowed; }
-.sched-grid .s.hold { background: repeating-linear-gradient(90deg, #e3e8e9 0 10px, #f2f5f5 10px 11px); color: var(--text); box-shadow: inset 3px 0 0 var(--dark-gray); }
+.sched-grid .s.resv { background: #2b6cb0; color: #fff; font-weight: 500; cursor: not-allowed; border-top-color: rgba(255, 255, 255, 0.3); box-shadow: inset 4px 0 0 #1a4480; }
+.sched-grid .s.resv.opsurg { background: #b45f06; box-shadow: inset 4px 0 0 #7a3f04; }
+.sched-grid .s.hold { background: repeating-linear-gradient(135deg, #c9d2d4 0 6px, #dbe2e3 6px 12px); color: #1f2a2c; font-weight: 500; box-shadow: inset 4px 0 0 #5d6d70; }
 .sched-grid .s.surgery { background: #f6e3c4; color: #7a4a05; font-weight: 600; }
 .sched-grid .s.shadow { background: repeating-linear-gradient(135deg, #f3dcdc 0 6px, #ead0d0 6px 12px); color: #8a2a2a; cursor: not-allowed; }
 .sched-grid .s.past { opacity: 0.55; cursor: not-allowed; }
@@ -103,7 +105,7 @@
 .booking-picker .booking-panel { max-width: 32rem; }
 .booking-picker .booking-remote { margin: 0 0 0.6rem; padding: 0.6rem 0.8rem; background: #dcebf7; border: 1px solid #7fb0dc; border-radius: var(--border-radius-md); }
 .booking-picker .booking-remote[hidden] { display: none; }
-.booking-picker .sched-grid .s.own { background: #e6f4e7; color: #1f5d26; box-shadow: inset 0 0 0 2px #2f9e44; cursor: pointer; }
+.booking-picker .sched-grid .s.own { background: #e6f4e7 !important; box-shadow: inset 0 0 0 2px #2f9e44 !important; color: #1f5d26; box-shadow: inset 0 0 0 2px #2f9e44; cursor: pointer; }
 .booking-picker .sched-grid .s.sel.kind-book { background: var(--primary); }
 .sched-badge { display: inline-block; padding: 0.05rem 0.55rem; font-size: 0.75rem; font-weight: 600; color: #16477a; background: #dcebf7; border: 1px solid #7fb0dc; border-radius: 999px; }
 
