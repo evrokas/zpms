@@ -496,4 +496,5 @@ return [
     'Booked operation' => 'Κρατημένο χειρουργείο',
     '@name was notified of the new time.' => 'Ο/Η @name ενημερώθηκε για τη νέα ώρα.',
     'Changed on the patient record' => 'Άλλαξε στον φάκελο ασθενούς',
+    'Appointment not held on the schedule (patient record)' => 'Ραντεβού εκτός προγράμματος (φάκελος ασθενούς)',
 ];

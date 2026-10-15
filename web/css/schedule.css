@@ -127,3 +127,8 @@
 .sched-history { margin-top: 0.8rem; font-size: 0.86rem; }
 .sched-history summary { cursor: pointer; color: var(--primary); }
 .sched-history .sched-table td { padding: 0.25rem 0.4rem; }
+
+/* appointment that is not held on the schedule (patient record / older): same shade, dashed edge, never selectable */
+.sched-grid .s.resv.seen { box-shadow: inset 4px 0 0 #1a4480, inset 0 0 0 1px rgba(255, 255, 255, 0.35); background-image: repeating-linear-gradient(135deg, rgba(255,255,255,0.14) 0 5px, transparent 5px 10px); }
+.sched-grid .s.resv.opsurg.seen { box-shadow: inset 4px 0 0 #7a3f04, inset 0 0 0 1px rgba(255, 255, 255, 0.35); }
+.sw-seen { background: #2b6cb0 repeating-linear-gradient(135deg, rgba(255,255,255,0.3) 0 3px, transparent 3px 6px); }

@@ -122,9 +122,13 @@ function schedule_view($params) {
     $week = zpms_sched_week_model($db, $loc, $monday, $days);
     $shift = fn(int $d) => (new DateTime($monday))->modify(($d >= 0 ? '+' : '') . $d . ' days')->format('Y-m-d');
     $weekdayNames = [t('Mon'), t('Tue'), t('Wed'), t('Thu'), t('Fri'), t('Sat'), t('Sun')];
+    // Appointments that are not held on the schedule (made on a patient record,
+    // or booked before the schedule existed) are shown too, view-only.
+    $seen = zpms_sched_unscheduled_blocks($db, $loc, $monday, $days);
     foreach ($week as $i => &$day) {
         $day['weekday'] = $weekdayNames[$i];
         $day['short'] = date('d/m', strtotime($day['date']));
+        $day['blocks'] = array_merge($day['blocks'], $seen[$day['date']] ?? []);
     }
     unset($day);
 
@@ -733,4 +737,53 @@ function schedule_cancelled($params) {
         'next_url' => $page < $pages ? rel_url($query(['page' => (string)($page + 1)])) : null,
         'filtered' => (bool)array_filter($filters),
     ]);
+}
+
+
+/**
+ * Appointments and pending appointments at $location in the week that hold no
+ * slot (so the rules never see them) as view-only blocks for the calendar:
+ * ['start','end','type' => 'seen','label' => 'appointment'|'surgery'|'pending',
+ * 'note','info' => ['patient' => id] | ['pending' => true]], keyed by date. They
+ * need a time of day: an appointment stored with a date only (00:00) is not drawn.
+ */
+function zpms_sched_unscheduled_blocks(PDO $db, string $location, string $monday, int $days): array {
+    $names = $db->prepare('SELECT DISTINCT name FROM locations WHERE machinename = ?');
+    $names->execute([$location]);
+    $names = $names->fetchAll(PDO::FETCH_COLUMN);
+    if (!$names) {
+        return [];
+    }
+    $from = $monday . ' 00:00:00';
+    $to = (new DateTime($monday))->modify("+$days days")->format('Y-m-d') . ' 00:00:00';
+    $in = implode(',', array_fill(0, count($names), '?'));
+    $out = [];
+    $add = function (string $datetime, ?int $minutes, string $label, string $note, array $info) use (&$out) {
+        $ts = strtotime($datetime);
+        $start = (int)date('H', $ts) * 60 + (int)date('i', $ts);
+        if ($start === 0) {
+            return;
+        }
+        $start -= $start % ZPMS_SCHED_STEP;
+        $end = min(1440, $start + ($minutes ?: ZPMS_CONSULTATION_DEFAULT_DURATION_MINUTES));
+        $out[date('Y-m-d', $ts)][] = ['start' => $start, 'end' => $end, 'type' => 'seen', 'label' => $label, 'note' => mb_substr($note, 0, 255), 'ref' => '', 'guid' => '', 'info' => $info];
+    };
+
+    $st = $db->prepare("SELECT a.adate, a.duration_minutes, a.atype, a.anote, p.id AS pid
+                          FROM appointments a JOIN patients p ON p.guid = a.pguid
+                         WHERE a.deleted IS NULL AND p.deleted IS NULL AND a.adate >= ? AND a.adate < ? AND a.aplace IN ($in)
+                           AND NOT EXISTS (SELECT 1 FROM slot_reservations s WHERE s.ref_guid = a.guid AND s.released_at IS NULL)");
+    $st->execute(array_merge([$from, $to], $names));
+    foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) {
+        $add($r['adate'], (int)$r['duration_minutes'], $r['atype'] === 'operation' ? 'surgery' : 'appointment', (string)$r['anote'], ['patient' => (int)$r['pid']]);
+    }
+    $st = $db->prepare("SELECT pa.appointment_datetime, pa.duration_minutes, pa.notes
+                          FROM pending_appointments pa
+                         WHERE pa.converted_at IS NULL AND pa.cancelled_at IS NULL AND pa.appointment_datetime >= ? AND pa.appointment_datetime < ? AND pa.location IN ($in)
+                           AND NOT EXISTS (SELECT 1 FROM slot_reservations s WHERE s.ref_guid = pa.guid AND s.released_at IS NULL)");
+    $st->execute(array_merge([$from, $to], $names));
+    foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) {
+        $add($r['appointment_datetime'], (int)$r['duration_minutes'], 'pending', (string)$r['notes'], ['pending' => true]);
+    }
+    return $out;
 }

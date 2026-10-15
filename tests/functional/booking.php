@@ -285,6 +285,11 @@ function zpms_booking_functional_tests(TestRunner $runner, string $baseUrl): voi
         }
         // The patient page shows editable date and place fields on every card, and no Reschedule link.
         $patient = $doctor->get('/patient/' . $pid . '/edit');
+        // They are not held on the schedule, but the calendar still shows them (view-only) so they are visible.
+        $seen = array_values(array_filter(zpms_sched_page_model_bk($doctor->get('/schedule?loc=bk_p&date=' . $mon)['body'])['days'][0]['blocks'], fn($b) => $b['type'] === 'seen'));
+        $times = array_map(fn($b) => [$b['start'], $b['end'], $b['label']], $seen);
+        assert_true(in_array([630, 660, 'surgery'], $times, true), 'the operation at 10:30 is drawn: ' . json_encode($times));
+        assert_equal($pid, $seen[0]['info']['patient'], 'with the patient number, not the name');
         assert_contains('name="appointment-date-1"', $patient['body']);
         assert_not_contains('appointment-reschedule', $patient['body']);
         assert_not_contains('appointment-slot', $patient['body'], 'no read-only slot display');

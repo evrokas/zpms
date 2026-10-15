@@ -49,6 +49,7 @@
     <span><i class="sw-avail"></i>{{{t('Free')}}}</span>
     <span><i class="sw-resv"></i>{{{t('Booked appointment')}}}</span>
     <span><i class="sw-opsurg"></i>{{{t('Booked operation')}}}</span>
+    <span><i class="sw-seen"></i>{{{t('Appointment not held on the schedule (patient record)')}}}</span>
     <span><i class="sw-hold"></i>{{{t('Reserved, with a reason')}}}</span>
     <span><i class="sw-surg"></i>{{{t('Surgery')}}}</span>
     <span><i class="sw-shadow"></i>{{{t('Surgery or booking elsewhere (plus travel)')}}}</span>

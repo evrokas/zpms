@@ -62,7 +62,7 @@
             day.blocks.forEach(function (b) {
                 for (var m = b.start, i = 0; m < b.end; m += STEP, i++) {
                     var r = (m - M.dayStart) / STEP;
-                    if (r >= 0 && r < ROWS) col[r] = { block: b, idx: i };
+                    if (r >= 0 && r < ROWS && !(b.type === 'seen' && col[r] && (col[r].block.type === 'resv' || col[r].block.type === 'hold'))) col[r] = { block: b, idx: i };
                 }
             });
             return col;
@@ -71,13 +71,16 @@
 
     function blockLabel(c) {
         var b = c.block;
-        if (c.idx === 1 && b.note && (b.type === 'resv' || b.type === 'hold' || b.type === 'surgery')) return b.note;
+        if (c.idx === 1 && b.note && (b.type === 'resv' || b.type === 'hold' || b.type === 'surgery' || b.type === 'seen')) return b.note;
         if (c.idx !== 0) return '';
         switch (b.type) {
             case 'avail': return txt('schedAvailable');
             case 'hold': return txt('schedReserved');
             case 'surgery': return txt('schedSurgery');
             case 'shadow': return b.ref === 'surgery' ? txt('schedSurgeryAt', { location: locName[b.label] || b.label }) : txt('schedBookingAt', { location: locName[b.label] || b.label });
+            case 'seen':
+                var si = b.info || {};
+                return (b.label === 'surgery' ? txt('schedSurgery') + ' · ' : '') + (si.patient ? txt('schedPatient', { id: si.patient }) : txt('schedPendingLabel'));
             case 'resv':
                 var info = M.refs[b.ref] || {};
                 var who = info.patient ? txt('schedPatient', { id: info.patient }) : (info.pending ? txt('schedPendingLabel') : txt('schedBooked'));
@@ -89,6 +92,7 @@
     function cellClass(c) {
         if (!c) return '';
         if (c.block.type === 'resv') return c.block.label === 'surgery' ? 'resv opsurg' : 'resv';
+        if (c.block.type === 'seen') return c.block.label === 'surgery' ? 'resv opsurg seen' : 'resv seen';
         return c.block.type === 'avail' ? 'avail' : c.block.type;
     }
 
