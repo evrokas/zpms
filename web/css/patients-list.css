@@ -244,6 +244,13 @@
     text-decoration: underline;
 }
 
+.pt-operated {
+    margin-left: 0.4rem;
+    font-size: 0.95rem;
+    vertical-align: -0.1em;
+    color: var(--operation-text);
+}
+
 .pt-sub {
     display: flex;
     flex-wrap: wrap;

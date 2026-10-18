@@ -52,6 +52,7 @@ return [
     'New appointment' => 'Νέο Ραντεβού',
     'New operation' => 'Νέο Χειρουργείο',
     'Operation' => 'Χειρουργείο',
+    'Has been operated' => 'Έχει χειρουργηθεί',
     'Appointment' => 'Ραντεβού',
     'Attached files' => 'Συνημμένα Αρχεία',
     'Change history' => 'Ιστορικό Αλλαγών',

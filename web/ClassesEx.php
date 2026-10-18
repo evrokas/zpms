@@ -364,7 +364,8 @@ class patientsClassEx extends patientsClass {
             ? "p.pname $dir, p.id ASC"
             : "COALESCE(la.adate, p.cdate) $dir, p.id DESC";
         $sql = "SELECT p.id, p.pname, p.pamka, p.ptel, p.pemail, p.pdob, p.pgender, p.cdate,
-                       la.adate AS last_adate, la.atype AS last_atype, la.aplace AS last_aplace
+                       la.adate AS last_adate, la.atype AS last_atype, la.aplace AS last_aplace,
+                       EXISTS (SELECT 1 FROM appointments ao WHERE ao.pguid = p.guid AND ao.atype = 'operation' AND ao.deleted IS NULL) AS has_operation
                 $from $whereSql ORDER BY $order";
         if ($perPage > 0) {
             $sql .= ' LIMIT :lim OFFSET :off';

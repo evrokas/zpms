@@ -260,6 +260,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
                 'tel' => (string)$r['ptel'],
                 'email' => (string)$r['pemail'],
                 'last' => $last,
+                'operated' => !empty($r['has_operation']),
                 'url' => rel_url('/patient/' . $r['id'] . '/edit'),
             ];
         }

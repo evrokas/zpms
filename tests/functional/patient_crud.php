@@ -163,6 +163,15 @@ function zpms_functional_patient_crud(TestRunner $runner, TestHttpClient $http):
         $db->prepare('INSERT INTO appointment_files (guid, cuser, appointment_id, file_name, file_path, file_size, mime_type, file_hash) VALUES (?,?,?,?,?,?,?,?)')
             ->execute([guid(), 'test-fixture', $opId, 'εξέταση-κεφαλίδας.pdf', 'x', 2048, 'application/pdf', str_repeat('a', 64)]);
 
+        // The patient list marks a patient who has an operation record, and
+        // only that one (a deleted operation does not count).
+        $list = $http->get('/patients?q=' . rawurlencode('Κεφαλίδας'));
+        assert_contains('pt-operated', $list['body'], 'the patient list does not mark an operated patient');
+        $db->prepare("UPDATE appointments SET deleted = NOW() WHERE pguid = ? AND atype = 'operation'")->execute([$p->getguid()]);
+        $list = $http->get('/patients?q=' . rawurlencode('Κεφαλίδας'));
+        assert_not_contains('pt-operated', $list['body'], 'a deleted operation still marks the patient as operated');
+        $db->prepare("UPDATE appointments SET deleted = NULL WHERE pguid = ? AND atype = 'operation'")->execute([$p->getguid()]);
+
         $page = $http->get('/patient/' . $p->getid() . '/edit');
         assert_equal(200, $page['status'], 'GET the patient record did not return 200');
         // First use of a t() term adds it to the dictionary untranslated (the

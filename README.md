@@ -2403,3 +2403,7 @@ An appointment that was **turned into a record from a pending one keeps its slot
 Tests: `tests/functional/booking.php` (free forms and saving over a booked time, the card edits above).
 
 **They are still visible on the calendar, view-only.** The week calendar draws appointments and pending appointments that hold no slot as dashed, hatched blue blocks (orange for operations), labelled with the patient, so nothing seen on a patient record is invisible. These blocks cannot be selected or booked over by dragging, and never block or shade anything; the legend names them "Appointment not held on the schedule". Appointments stored with a date only (no time) are not drawn.
+
+### Patient list: operated marker
+
+A patient with at least one (non-deleted) operation record gets a small medical-cross icon beside their name in `/patients` (tooltip "Has been operated"). It comes from an `EXISTS` subquery in `patientsClassEx::getPatientList()` (`has_operation`), so it covers the patient's whole history, not just the last appointment. Test: `tests/functional/patient_crud.php`.

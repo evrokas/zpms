@@ -91,7 +91,7 @@
                     <div class="pt-who">
                         <span class="pt-avatar tone-{{$r['tone']}}" aria-hidden="true">{{{$r['initials']}}}</span>
                         <div class="pt-id">
-                            <a class="pt-name" href="{{$r['url']}}">{{{$r['name']}}}</a>
+                            <a class="pt-name" href="{{$r['url']}}">{{{$r['name']}}}</a>{% if($r['operated']): %}<i class="bx bx-plus-medical pt-operated" title="{{{t('Has been operated')}}}" aria-label="{{{t('Has been operated')}}}"></i>{% endif %}
                             <div class="pt-sub">
                                 {% if($r['age'] !== null): %}<span class="pt-age">{{t('@age years old', ['age' => (int)$r['age']])}}</span>{% endif %}
                                 {% if($r['amka'] !== ''): %}<span>{{{t('AMKA')}}} {{{$r['amka']}}} <i class="bx bx-copy" title="{{{t('Copy AMKA')}}}" data-copy-text="{{{$r['amka']}}}"></i></span>{% endif %}
