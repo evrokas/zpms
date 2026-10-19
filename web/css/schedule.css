@@ -106,7 +106,7 @@
 /* Fixed height: the panel's content changes with every drag and check result
    (hint, time summary, messages, suggestions), and a height that follows it
    made the whole form jump. It scrolls inside instead, in a smaller font. */
-.booking-picker .booking-panel { height: 11rem; min-height: 11rem; overflow-y: auto; font-size: 0.8rem; box-sizing: border-box; }
+.booking-picker .booking-panel { height: 6rem; min-height: 6rem; overflow-y: auto; font-size: 0.8rem; box-sizing: border-box; }
 .booking-picker .booking-panel .hint { font-size: 0.8rem; }
 .booking-picker .booking-panel .sched-msgs { margin-top: 0.3rem; gap: 0.25rem; }
 .booking-picker .booking-panel .sched-msg { padding: 0.3rem 0.55rem; font-size: 0.78rem; }
