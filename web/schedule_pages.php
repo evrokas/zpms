@@ -175,7 +175,7 @@ function schedule_view($params) {
         'days' => $week,
         'refs' => zpms_sched_resolve_refs($db, $week),
         'dayStart' => 7 * 60,
-        'dayEnd' => 21 * 60,
+        'dayEnd' => 22 * 60,
         'step' => ZPMS_SCHED_STEP,
         'weekdayNames' => $weekdayNames,
         'canOverride' => rbacClass::isPermitted(ZPMS_PERM_SCHEDULE_OVERRIDE),

@@ -11,7 +11,7 @@
     if (!root) return;
 
     var T = window.zpmsText || {};
-    var STEP = 15, DAY_START = 7 * 60, DAY_END = 21 * 60, ROWS = (DAY_END - DAY_START) / STEP;
+    var STEP = 15, DAY_START = 7 * 60, DAY_END = 22 * 60, ROWS = (DAY_END - DAY_START) / STEP;
     var form = root.closest('form');
     var gridEl = root.querySelector('[data-booking-grid]');
     var panelEl = root.querySelector('[data-booking-panel]');
