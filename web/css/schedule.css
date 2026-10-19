@@ -103,6 +103,15 @@
 .booking-picker .sched-grid.dayone { grid-template-columns: 3.4rem minmax(9rem, 1fr); min-width: 0; max-width: 32rem; }
 .booking-picker .booking-cal { max-height: 22rem; max-width: 32rem; }
 .booking-picker .booking-panel { max-width: 32rem; }
+/* Fixed height: the panel's content changes with every drag and check result
+   (hint, time summary, messages, suggestions), and a height that follows it
+   made the whole form jump. It scrolls inside instead, in a smaller font. */
+.booking-picker .booking-panel { height: 11rem; min-height: 11rem; overflow-y: auto; font-size: 0.8rem; box-sizing: border-box; }
+.booking-picker .booking-panel .hint { font-size: 0.8rem; }
+.booking-picker .booking-panel .sched-msgs { margin-top: 0.3rem; gap: 0.25rem; }
+.booking-picker .booking-panel .sched-msg { padding: 0.3rem 0.55rem; font-size: 0.78rem; }
+.booking-picker .booking-panel .sched-suggest { margin-top: 0.3rem; }
+.booking-picker .booking-panel .sched-suggest button { font-size: 0.76rem; padding: 0.15rem 0.55rem; }
 /* The picker's .input-div is a two-column grid (label | field) on the entry
    forms, so the calendar and the panel under it must sit in the field column
    -- left alone, the panel auto-placed itself in the label column's row below,
