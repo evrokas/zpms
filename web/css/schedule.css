@@ -103,6 +103,17 @@
 .booking-picker .sched-grid.dayone { grid-template-columns: 3.4rem minmax(9rem, 1fr); min-width: 0; max-width: 32rem; }
 .booking-picker .booking-cal { max-height: 22rem; max-width: 32rem; }
 .booking-picker .booking-panel { max-width: 32rem; }
+/* The picker's .input-div is a two-column grid (label | field) on the entry
+   forms, so the calendar and the panel under it must sit in the field column
+   -- left alone, the panel auto-placed itself in the label column's row below,
+   flush left under the label. */
+.booking-picker .booking-cal, .booking-picker .booking-panel { grid-column: 2; width: 100%; box-sizing: border-box; }
+.booking-picker .booking-panel { grid-row: 2; margin-top: 0.6rem; }
+@media screen and (max-width: 470px) {
+    .booking-picker .booking-cal, .booking-picker .booking-panel { grid-column: 1; }
+    .booking-picker .booking-cal { grid-row: 2; }
+    .booking-picker .booking-panel { grid-row: 3; }
+}
 .booking-picker .booking-remote { margin: 0 0 0.6rem; padding: 0.6rem 0.8rem; background: #dcebf7; border: 1px solid #7fb0dc; border-radius: var(--border-radius-md); }
 .booking-picker .booking-remote[hidden] { display: none; }
 .booking-picker .sched-grid .s.own { background: #e6f4e7 !important; box-shadow: inset 0 0 0 2px #2f9e44 !important; color: #1f5d26; box-shadow: inset 0 0 0 2px #2f9e44; cursor: pointer; }
