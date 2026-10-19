@@ -101,7 +101,7 @@
 /* ---- booking picker (inside the appointment forms) ---- */
 .booking-picker { display: block; }
 .booking-picker .sched-grid.dayone { grid-template-columns: 3.4rem minmax(9rem, 1fr); min-width: 0; max-width: 32rem; }
-.booking-picker .booking-cal { max-height: 22rem; max-width: 32rem; }
+.booking-picker .booking-cal { max-height: none; overflow: visible; max-width: 32rem; }
 .booking-picker .booking-panel { max-width: 32rem; }
 /* Fixed height: the panel's content changes with every drag and check result
    (hint, time summary, messages, suggestions), and a height that follows it
