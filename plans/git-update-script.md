@@ -72,8 +72,7 @@ lock held), 2 a step failed.
 Constraint: **Linux ignores the setuid bit on scripts**, so "a script with sticky
 permissions" will not work as a plain setuid shell script. (The "sticky bit" itself only
 applies to directories.) Options, best first:
-1. **sudo to a dedicated user (recommended).** Create a deploy user (the "owner with
-   proper permissions", e.g. `zpmsdeploy`) that owns the checkout files and holds a
+1. **sudo to a dedicated user (recommended).** Create a deploy user (the Linux user that owns the script, e.g. `zpmsdeploy`) that owns the checkout files and holds a
    read-only GitHub deploy key. Install a small root-owned wrapper
    `/usr/local/sbin/zpms-git-update` (0755, not writable by anyone else) that:
    validates its arguments (branch matches `^[A-Za-z0-9._/-]+$`, no leading `-`, is in
@@ -113,7 +112,7 @@ CSRF). Decide after the CLI works.
 
 ## 7. Open questions
 1. `bin/import_translations.php` does not exist: is `bin/import_dictionary.php` the right one?
-2. "Owner a minister": I read this as a dedicated deploy user/administrator account. Right?
+2. (Answered) The wrapper's owner is a Linux user, the dedicated deploy user: it owns the checkout and the wrapper runs the update as that user.
 3. Is sudo available on the server, and should the web app be able to trigger it (section 4)?
 4. Should the script also update the ZeusFW checkout (`fw/`), or only ZPMS?
 5. Is a database backup wanted before every update (and which command)?
