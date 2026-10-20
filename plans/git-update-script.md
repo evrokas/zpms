@@ -89,10 +89,45 @@ Also needed: `git config --global safe.directory <path>` for the deploy user, co
 ownership after pull (reuse the `data/` permission rules; the web server must still read
 `web/` and write `logs/`/`data/`), and nothing secret in the repo.
 
-## 4. Optional later: a button in ZPMS
-An admin-only page that calls the sudo wrapper and shows the log. Not part of the first
-version (it makes the web user able to trigger deployments; needs an audit event and
-CSRF). Decide after the CLI works.
+## 4. The web page (now in scope; decided 2026-10-20)
+An admin-only page `/admin/update` ("Update from git"), permission `system-update`
+(administrator only), CSRF-protected, that calls the sudo wrapper:
+- **Branch selection box** for ZPMS, filled from the wrapper's `--list-branches`
+  (the deploy user does `git fetch` and prints the allowed remote branches; the web
+  user never touches git or the key). Current branch and commit shown above it.
+- **Checkbox "Also update the framework (fw/)"**; when ticked, a second selection box
+  appears with the ZeusFW branches.
+- **Checkbox "Back up the database first"**, checked by default.
+- More checkboxes, all passed to the wrapper as validated flags: "Run update.sh"
+  (checked), "Import translations/dictionary" (checked), "Apply database schema changes"
+  (UNCHECKED by default, it changes the live DB).
+- A "Preview" button runs `--dry-run` (fetch + incoming commits only); "Update" runs it for
+  real after a confirm dialog. The run happens in the background under the lock; the
+  page polls the log and shows the output and the final result.
+- Audit event `system_update` with branch names, old/new commit ids, flags and result
+  only. Permission added by `bin/migrate_roles.php`; Greek strings in the dictionary.
+- The wrapper accepts only: `--list-branches`, `--status`, `--dry-run`, and
+  `--branch X [--fw-branch Y] [--backup|--no-backup] [--no-update-sh] [--no-dictionary]
+  [--apply-schema]`. Branch names are checked against the allow-list from the config.
+
+## 4b. Setting up the Linux user (one time, as root on the server)
+1. `adduser --system --group --home /var/lib/zpmsdeploy --shell /bin/bash zpmsdeploy`
+   and `usermod -aG www-data zpmsdeploy`.
+2. Ownership: checkout files `zpmsdeploy:www-data`; directories setgid `2775`, files
+   `664`/`775`, so the web server can still read `web/` and write `logs/` and `data/`
+   exactly as now. `bin/fix_permissions`-style script to re-apply after each update.
+3. As `zpmsdeploy`: `ssh-keygen -t ed25519`; add the public key as a read-only deploy
+   key on the zpms and zeusfw GitHub repos; `ssh-keyscan github.com >> ~/.ssh/known_hosts`;
+   `git remote set-url origin git@github.com:evrokas/<repo>.git` in both checkouts;
+   `git config --global --add safe.directory <zpms path>` (and the fw path).
+4. Install the wrapper `/usr/local/sbin/zpms-git-update` (root:root 0755) and
+   `/etc/zpms/update.conf` (root:root 0644, no secrets in it).
+5. `/etc/sudoers.d/zpms-update` (checked with `visudo -c`):
+   `www-data ALL=(zpmsdeploy) NOPASSWD: /usr/local/sbin/zpms-git-update`
+6. Backups: `zpmsdeploy` must be able to read `config/db.php` (group `www-data`, mode 640),
+   have `mysqldump`, and own a backup directory (e.g. `/var/backups/zpms`).
+Reference copies go in `deploy/` (wrapper, sudoers, update.conf.example, a
+`setup_update_user.sh` that does steps 1-6 with `--dry-run`).
 
 ## 5. Tests and docs
 - `update.sh`: run with every flag combination against the disposable test DB
@@ -108,11 +143,11 @@ CSRF). Decide after the CLI works.
 1. `update.sh` flags (ZeusFW), tests.
 2. `update_from_git.sh` + config example, tests.
 3. Wrapper + sudoers + deploy user setup notes.
-4. README and docs. 5. (optional) web button.
+4. The `/admin/update` page, permission, audit event, tests. 5. README and docs.
 
 ## 7. Open questions
 1. `bin/import_translations.php` does not exist: is `bin/import_dictionary.php` the right one?
 2. (Answered) The wrapper's owner is a Linux user, the dedicated deploy user: it owns the checkout and the wrapper runs the update as that user.
-3. Is sudo available on the server, and should the web app be able to trigger it (section 4)?
-4. Should the script also update the ZeusFW checkout (`fw/`), or only ZPMS?
-5. Is a database backup wanted before every update (and which command)?
+3. (Answered) Yes, the web page triggers it through the sudo wrapper (section 4). Still to confirm: sudo is installed on the server.
+4. (Answered) Yes, optional: a checkbox on the page, with its own branch selection box.
+5. (Answered) A checkbox, checked by default. Still to confirm: the backup command (default: `mysqldump` to a dated, compressed file in the backup directory).
