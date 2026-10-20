@@ -192,6 +192,12 @@ function zpms_schedule_functional_tests(TestRunner $runner): void {
         assert_equal(['gap'], zpms_sched_codes(zpms_sched_check($ctx, 'p', $MON, $m('13:00'), $m('13:30')), 'warn'));
     });
 
+    $runner->add('location order: Iatriko, Mandra, Metropolitan, other places, online last', function () {
+        $codes = ['bioclinic_athens', 'phone', 'metropolitan', 'henry_dunant', 'mandra', 'iatriko_peristeriou'];
+        usort($codes, fn($a, $b) => [zpms_sched_location_rank($a), $a] <=> [zpms_sched_location_rank($b), $b]);
+        assert_equal(['iatriko_peristeriou', 'mandra', 'metropolitan', 'bioclinic_athens', 'henry_dunant', 'phone'], $codes);
+    });
+
     $runner->add('suggestions: consecutive slots first, never a hole, never a shadow', function () use ($MON, $m) {
         $ctx = zpms_sched_ctx([zpms_sched_r('r1', 'p', $MON, '12:00', '12:30')]);
         $s = zpms_sched_suggest($ctx, 'p', $MON, 30);

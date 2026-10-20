@@ -39,6 +39,8 @@ const ZPMS_SCHED_STEP = 15;
 const ZPMS_SCHED_DEFAULT_TRAVEL_MINUTES = 30;
 /** locations.machinename of the phone / online location. */
 const ZPMS_SCHED_ONLINE = 'phone';
+/** Locations listed first, in this order; any other location follows by name, the online one last. */
+const ZPMS_SCHED_LOCATION_ORDER = ['iatriko_peristeriou', 'mandra', 'metropolitan'];
 const ZPMS_SCHED_KINDS = ['available', 'hold', 'surgery'];
 /** Later kinds win where intervals of one source overlap. */
 const ZPMS_SCHED_KIND_PRIORITY = ['available' => 0, 'hold' => 1, 'surgery' => 2];
@@ -436,7 +438,15 @@ function zpms_sched_locations(PDO $db): array {
     if (!in_array(ZPMS_SCHED_ONLINE, $codes, true)) {
         $codes[] = ZPMS_SCHED_ONLINE;
     }
+    usort($codes, fn($a, $b) => [zpms_sched_location_rank($a), $a] <=> [zpms_sched_location_rank($b), $b]);
     return $codes;
+}
+
+/** Sort rank of a location code: the preferred ones first, other places next, online last. */
+function zpms_sched_location_rank(string $code): int {
+    if ($code === ZPMS_SCHED_ONLINE) return 1000;
+    $i = array_search($code, ZPMS_SCHED_LOCATION_ORDER, true);
+    return $i === false ? 100 : (int)$i;
 }
 
 /** The travel table as [from][to] => minutes. */

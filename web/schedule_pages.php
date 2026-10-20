@@ -15,7 +15,7 @@
 
 require_once __DIR__ . '/schedule.php';
 
-/** Location code => display name, in the current language; the phone location last. */
+/** Location code => display name, in the current language; preferred places first (ZPMS_SCHED_LOCATION_ORDER), the phone location last. */
 function zpms_sched_location_names(PDO $db): array {
     global $kernel;
     $lang = isset($kernel) ? $kernel->getCurrentLanguage() : 'gr';
@@ -29,7 +29,7 @@ function zpms_sched_location_names(PDO $db): array {
     foreach (zpms_sched_locations($db) as $code) {
         $out[$code] = $names[$code] ?? $code;
     }
-    uksort($out, fn($a, $b) => [$a === ZPMS_SCHED_ONLINE, $out[$a]] <=> [$b === ZPMS_SCHED_ONLINE, $out[$b]]);
+    uksort($out, fn($a, $b) => [zpms_sched_location_rank($a), $out[$a]] <=> [zpms_sched_location_rank($b), $out[$b]]);
     return $out;
 }
 
