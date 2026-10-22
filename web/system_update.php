@@ -17,7 +17,6 @@
 
 /** The command that reaches the wrapper: sudo -n -u <deploy user> <wrapper>. */
 function zpms_update_command(): array {
-    global $kernel;
     // Test suite only: run a stand-in script instead of sudo + the real wrapper.
     // Honoured only against a database whose name ends in _test (the suite refuses
     // to run against anything else), never on a real installation.
@@ -25,9 +24,24 @@ function zpms_update_command(): array {
     if ($stub !== false && $stub !== '' && defined('DB_NAME') && substr((string)DB_NAME, -5) === '_test') {
         return [$stub];
     }
-    $user = (isset($kernel) ? (string)$kernel->getConfig('update_deploy_user') : '') ?: 'zpmsdeploy';
-    $wrapper = (isset($kernel) ? (string)$kernel->getConfig('update_wrapper') : '') ?: '/usr/local/sbin/zpms-git-update';
+    $user = zpms_update_setting('update_deploy_user', 'zpmsdeploy');
+    $wrapper = zpms_update_setting('update_wrapper', '/usr/local/sbin/zpms-git-update');
+    // These two end up in a command line: only plain names and absolute paths.
+    if (!preg_match('/^[a-z_][a-z0-9_-]*$/i', $user)) $user = 'zpmsdeploy';
+    if (!preg_match('#^/[A-Za-z0-9_./-]+$#', $wrapper)) $wrapper = '/usr/local/sbin/zpms-git-update';
     return ['sudo', '-n', '-u', $user, $wrapper];
+}
+
+/**
+ * A text setting from config/site.info.yaml, or $default. Kernel::getConfig() answers
+ * an empty ARRAY for a key that is not set (and an array when two config layers both
+ * set it), so a plain string cast would give the text "Array".
+ */
+function zpms_update_setting(string $key, string $default): string {
+    global $kernel;
+    $v = isset($kernel) ? $kernel->getConfig($key) : null;
+    if (is_array($v)) $v = end($v);
+    return (is_string($v) && trim($v) !== '') ? trim($v) : $default;
 }
 
 /** Is the wrapper installed at all? (A missing one means "not set up yet", not an error.) */

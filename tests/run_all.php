@@ -77,6 +77,7 @@ TestFixtures::createTestUser();
 // The stand-in for the sudo wrapper behind /system/update (see functional/system_update.php).
 $suStub = zpms_su_stub();
 putenv('ZPMS_UPDATE_TEST_WRAPPER=' . $suStub);
+$GLOBALS['suStubForTests'] = $suStub;
 
 $server = new TestServer();
 $server->start();

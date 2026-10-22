@@ -50,6 +50,22 @@ function zpms_su_meta_token(string $html): string {
 }
 
 function zpms_system_update_tests(TestRunner $runner, string $baseUrl, string $stub): void {
+    $runner->add('the wrapper command: defaults when nothing is configured (an unset key is an empty array, not "Array")', function () {
+        global $kernel;
+        $saved = $kernel ?? null;
+        $fake = new class { public $v = []; function getConfig($k) { return $this->v[$k] ?? []; } };
+        $kernel = $fake;
+        $default = ['sudo', '-n', '-u', 'zpmsdeploy', '/usr/local/sbin/zpms-git-update'];
+        putenv('ZPMS_UPDATE_TEST_WRAPPER');
+        assert_equal($default, zpms_update_command(), 'unset keys did not give the defaults');
+        $fake->v = ['update_deploy_user' => 'deployer', 'update_wrapper' => '/opt/x/wrap'];
+        assert_equal(['sudo', '-n', '-u', 'deployer', '/opt/x/wrap'], zpms_update_command());
+        $fake->v = ['update_deploy_user' => ['a', 'deployer'], 'update_wrapper' => 'rel/path; rm'];
+        assert_equal(['sudo', '-n', '-u', 'deployer', '/usr/local/sbin/zpms-git-update'], zpms_update_command(), 'a layered value or an unsafe path was not handled');
+        $kernel = $saved;
+        putenv('ZPMS_UPDATE_TEST_WRAPPER=' . ($GLOBALS['suStubForTests'] ?? ''));
+    });
+
     $runner->add('branch names: only safe ones are accepted', function () {
         foreach (['main', 'release/1.2', 'feature_x-1', 'v2.0.1'] as $ok) assert_true(zpms_update_valid_branch($ok), "$ok should be valid");
         foreach (['', '-main', '--upload-pack=x', 'a b', 'a;b', 'x..y', 'a/', 'a.lock', 'a//b', '$(id)', '`id`', "a\nb", str_repeat('a', 101)] as $bad) {
