@@ -2,7 +2,7 @@
 /* How the framework loads an app's configuration files (Kernel::loadConfigFiles()):
  * the list comes from zeusfw's own config/zeusfw.info.yaml (`config_files:`), a
  * loaded file may add more, each is loaded once, in order, and a name can never
- * leave the config directory. Runs without the real config: a Kernel built without
+
  * its constructor reads throw-away files from a temp folder. */
 
 function zpms_config_files_tests(TestRunner $runner): void {
@@ -59,5 +59,23 @@ function zpms_config_files_tests(TestRunner $runner): void {
         foreach (['', '/etc/passwd.yaml', '../x.yaml', 'a/../../x.yaml', 'x.php', 'x.yaml.php', 'a b.yaml', "x\0.yaml"] as $bad) {
             assert_false(Kernel::validConfigFileName($bad), 'accepted: ' . json_encode($bad));
         }
+    });
+
+    $runner->add('@app, @core and @mod name root folders; a plain name stays in the config directory', function () {
+        assert_equal('/c/x.yaml', Kernel::resolveConfigFilePath('x.yaml', '/c/'));
+        assert_equal(__APPDIR__ . '/config/u.yaml', Kernel::resolveConfigFilePath('@app/config/u.yaml', '/c'));
+        assert_equal(__FWDIR__ . '/config/zeusfw.info.yaml', Kernel::resolveConfigFilePath('@core/config/zeusfw.info.yaml', '/c'));
+        // @mod: the first of web/modules, core/modules that holds the file
+        assert_equal(__FWDIR__ . '/modules/backup/backup.yaml', Kernel::resolveConfigFilePath('@mod/backup/backup.yaml', '/c'));
+        foreach (['@app/a.yaml', '@core/a/b.yml', '@mod/m/m.yaml'] as $ok) assert_true(Kernel::validConfigFileName($ok), "$ok should be valid");
+        foreach (['@app/', '@app/../x.yaml', '@core//etc/x.yaml', '@mod/x.php', '@other/x.yaml', '@app/a b.yaml'] as $bad) {
+            assert_false(Kernel::validConfigFileName($bad), 'accepted: ' . $bad);
+        }
+    });
+
+    $runner->add('a config file can be loaded through a root macro', function () use ($kernelWith) {
+        $k = $kernelWith(['@mod/backup/backup.yaml', '@app/config/absent.yaml']);
+        $k->loadConfigFiles('/nonexistent');
+        assert_true(!empty($k->getConfig('libraries')), 'the module file was not loaded');
     });
 }
