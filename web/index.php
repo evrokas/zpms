@@ -690,7 +690,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
                             'date' => $ap->getadate(),
                             'is_operation' => ($ap->getatype() == 'operation'),
                             'place' => $ap->getaplace() . ($apRemote !== '' ? ' · ' . $apRemote : ''),
-                            'note' => mb_strimwidth((string)$ap->getanote(), 0, 220, '…'),
+                            'note' => mb_strimwidth(zpms_first_line((string)$ap->getanote()), 0, 220, '…'),
                             'file_count' => count($apFiles),
                         ],
                         'markup' => Renderer::render('view_appointment.zetem', [
@@ -1893,6 +1893,14 @@ require_once(__DIR__ . '/zpms_mailer.php');
         exit();
     }
 
+
+    /** The first line of a multi-line note (leading blank lines skipped), trimmed. */
+    function zpms_first_line(string $text): string {
+        foreach (preg_split('/\R/u', $text) as $line) {
+            if (trim($line) !== '') return trim($line);
+        }
+        return '';
+    }
 
     function settings($params) {
         global $kernel;
