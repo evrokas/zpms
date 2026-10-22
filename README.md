@@ -2431,6 +2431,8 @@ sudo bash deploy/setup_update_user.sh                # then:
 ```
 It creates the user (in the web server's group), makes the checkout `zpmsdeploy:<web group>` with setgid directories (folders the web server writes to — `web/cache`, `web/files`, `logs` — stay with it), creates `/var/backups/zpms`, installs the wrapper, `/etc/zpms/update.conf` (if absent) and the sudoers rule (checked with `visudo`), and generates the deploy key. By hand afterwards: add the printed public key as a **read-only deploy key** on the zpms and zeusfw repositories, switch both remotes to `git@github.com:evrokas/<repo>.git`, edit `/etc/zpms/update.conf`, run `php bin/migrate_roles.php --yes` (adds the `system-update` permission) and `php bin/import_dictionary.php`. Check with `sudo -u www-data sudo -u zpmsdeploy /usr/local/sbin/zpms-git-update branches`. Without the wrapper the page just says the tools are not set up.
 
+**Using your own login account instead of a new user.** The deploy user does not have to be a new account: pass your own login name (`sudo bash deploy/setup_update_user.sh --user <your login>`). If that user already owns the checkout, ownership is not changed and no key is generated (it already pulls this checkout); the sudoers rule and the page then run the update as you, and the script adds `update_deploy_user: <your login>` to `config/site.info.yaml` so the page calls the right user. Only the web-written folders (`web/cache`, `web/files`, `logs`) and `config/db.php`'s group are adjusted. If the checkout was already handed to `zpmsdeploy` by an earlier run, running it again with `--user <your login>` hands it back to you.
+
 ### From the command line
 
 ```sh
