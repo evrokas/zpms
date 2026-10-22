@@ -5,6 +5,7 @@
   system_update_view() in web/system_update.php.
 
   $available   the sudo wrapper is installed
+  $looked_for  the wrapper path that was checked (shown when it is missing)
   $error       why the wrapper did not answer (text from the server, not translated)
   $app, $fw    ['available', 'current', 'commit', 'dirty', 'branches' => [...]]
   $last        the last run (started, finished, result, app/fw branch+commits) or null
@@ -17,6 +18,7 @@
 {% if(!$available): %}
 <div class="su-notice">
     <p><b>{{{t('The update tools are not set up on this server.')}}}</b></p>
+    <p>{{{t('Looked for')}}}: <code>{{{$looked_for}}}</code></p>
     <p>{{{t('Run deploy/setup_update_user.sh as root (see "Updating from git" in the README), then reload this page.')}}}</p>
 </div>
 {% elseif($error !== ''): %}

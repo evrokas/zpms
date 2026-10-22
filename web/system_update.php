@@ -155,6 +155,7 @@ function system_update_view($params) {
     $repos = is_array($state) ? ($state['repos'] ?? []) : [];
     return Renderer::render('system_update.zetem', [
         'available' => $available,
+        'looked_for' => end(zpms_update_command()),
         'error' => $error,
         'app' => $repos['app'] ?? ['available' => false],
         'fw' => $repos['fw'] ?? ['available' => false],

@@ -535,4 +535,5 @@ return [
     'Choose a valid framework branch.' => 'Διαλέξτε ένα έγκυρο branch του πλαισίου.',
     'Confirmation missing.' => 'Λείπει η επιβεβαίωση.',
     'Application update from git started' => 'Ξεκίνησε ενημέρωση της εφαρμογής από git',
+    'Looked for' => 'Αναζητήθηκε',
 ];
