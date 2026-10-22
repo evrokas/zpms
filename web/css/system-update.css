@@ -1,0 +1,29 @@
+/* Update from git (system_update.zetem, js/system-update.js). */
+.su-intro, .su-muted { color: var(--dark-gray); font-size: 0.9rem; }
+.su-intro { margin: 0 0 var(--spacing); max-width: 44rem; }
+.su-notice { padding: 0.9rem 1.1rem; background: var(--light-gray); border: 1px solid var(--border-color); border-radius: var(--border-radius-lg); max-width: 44rem; }
+.su-notice-bad { background: #fde8ea; border-color: #e49aa3; color: #a3202c; }
+.su-notice p { margin: 0 0 0.4rem; }
+.su-form { display: grid; gap: 0.9rem; max-width: 44rem; }
+.su-card { margin: 0; padding: 0.8rem 1rem 1rem; background: #fff; border: 1px solid var(--border-color); border-radius: var(--border-radius-lg); }
+.su-card legend { padding: 0 0.4rem; font-weight: 600; }
+.su-state { margin: 0 0 0.6rem; font-size: 0.88rem; color: var(--dark-gray); }
+.su-state b { color: var(--text); }
+.su-state code { margin-left: 0.3rem; font-size: 0.82rem; }
+.su-warn { display: block; margin-top: 0.3rem; color: #a3202c; font-weight: 600; }
+.su-field { display: grid; gap: 0.3rem; font-size: 0.78rem; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--dark-gray); }
+.su-field[hidden] { display: none; }
+.su-field select { padding: 0.5rem 0.65rem; font: inherit; font-size: 0.92rem; text-transform: none; letter-spacing: normal; font-weight: 400; color: var(--text); background: #fff; border: 1px solid var(--border-color); border-radius: var(--border-radius-md); max-width: 24rem; }
+.su-check { display: flex; align-items: flex-start; gap: 0.5rem; margin: 0 0 0.45rem; font-size: 0.92rem; }
+.su-check input { margin-top: 0.25rem; }
+.su-sub { margin-left: 1.6rem; }
+.su-actions { display: flex; flex-wrap: wrap; gap: 0.6rem; }
+.su-btn { padding: 0.55rem 1.1rem; font: inherit; font-size: 0.92rem; color: var(--text); background: #fff; border: 1px solid var(--border-color); border-radius: var(--border-radius-md); cursor: pointer; }
+.su-btn:hover { background: var(--light-gray); }
+.su-btn[disabled] { opacity: 0.55; cursor: not-allowed; }
+.su-primary { color: #fff; background: var(--primary); border-color: var(--primary); }
+.su-primary:hover { background: var(--primary-dark); }
+.su-status { min-height: 1.4rem; margin: 0.9rem 0 0.4rem; font-weight: 600; }
+.su-status.is-ok { color: #1f5d26; }
+.su-status.is-bad { color: #a3202c; }
+.su-log { height: 22rem; max-width: 60rem; margin: 0 0 var(--spacing); padding: 0.7rem 0.9rem; overflow: auto; font-size: 0.8rem; line-height: 1.45; white-space: pre-wrap; word-break: break-word; color: #e8f0ee; background: #12201f; border-radius: var(--border-radius-lg); }

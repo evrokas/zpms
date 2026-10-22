@@ -117,6 +117,7 @@ function zpms_permission_label_seed(): array {
         ZPMS_PERM_AUDIT_VIEW => 'Read the GDPR audit log (who did what to patient data)',
         ZPMS_PERM_SCHEDULE_MANAGE => 'View and edit the appointment schedule (calendars, patterns, travel times)',
         ZPMS_PERM_SCHEDULE_OVERRIDE => 'Book a slot inside a surgery shadow (doctor only)',
+        ZPMS_PERM_SYSTEM_UPDATE => 'Update the application from git (branch, backup, update scripts)',
         ZEUSFW_PERM_MANAGE_USERS => 'Manage user accounts and roles/permissions',
         // zeusfw core's own default permission for core/modules/live_edit/
         // (a dev-tooling overlay showing which .zetem template a page's

@@ -29,12 +29,14 @@ function zpms_static_dictionary_terms(TestRunner $runner): void {
         'web/templates/blocks/user_profile.zetem',
         'web/templates/apps/genqr/genqr.zetem',
         'web/templates/content/audit_log.zetem',
+        'web/templates/content/system_update.zetem',
     ];
     $phpFiles = [
         'web/index.php',
         'web/appointment_history.php',
         'web/zpms_mailer.php',
         'web/audit.php',
+        'web/system_update.php',
     ];
 
     foreach (array_merge($templates, $phpFiles) as $rel) {

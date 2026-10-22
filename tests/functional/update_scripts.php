@@ -6,7 +6,8 @@
 
 function zpms_update_scripts_tests(TestRunner $runner): void {
     foreach (['update_from_git.sh' => 'update_from_git.sh (branches, backup, refusals)',
-              'update_sh_flags.sh' => 'update.sh options (--yes, --non-interactive, --dry-run)'] as $file => $label) {
+              'update_sh_flags.sh' => 'update.sh options (--yes, --non-interactive, --dry-run)',
+              'git_update_wrapper.sh' => 'zpms-git-update wrapper (allowed commands, branch validation)'] as $file => $label) {
         $runner->add($label, function () use ($file) {
             $out = [];
             exec('bash ' . escapeshellarg(ZPMS_TEST_APPDIR . '/tests/shell/' . $file) . ' 2>&1', $out, $rc);

@@ -2407,3 +2407,41 @@ Tests: `tests/functional/booking.php` (free forms and saving over a booked time,
 ### Patient list: operated marker
 
 A patient with at least one (non-deleted) operation record gets a small medical-cross icon beside their name in `/patients` (tooltip "Has been operated"). It comes from an `EXISTS` subquery in `patientsClassEx::getPatientList()` (`has_operation`), so it covers the patient's whole history, not just the last appointment. Test: `tests/functional/patient_crud.php`.
+
+## Updating from git (`/system/update`, `bin/update_from_git.sh`)
+
+An administrator can update the installation from the web: **Apps → Update from git** (permission `system-update`, held by administrator; give it to another role on `/admin/role_permissions`). The page has a branch selection box, a checkbox "Also update the framework (fw/)" with its own branch box, "Back up the database first" (ticked by default), "Run update.sh", "Also apply the database changes" (**not** ticked: without it `update.sh` only lists the `diff:sql` changes) and "Import the translations". **Preview** fetches and lists the incoming commits and changes nothing; **Update** asks to confirm, runs in the background and shows the log as it goes. Starting an update is audit-logged (`system_update_started`, branch names and flags only).
+
+What a run does, in order: fetch (nothing is touched if it fails) → check the branches (valid name, matches `ALLOWED_BRANCHES`, exists on the remote) and refuse if files were modified on the server → show the incoming commits → database backup (`mysqldump` to `/var/backups/zpms`, newest 14 kept; a failed backup stops everything before anything is pulled) → pull `fw/` then ZPMS (fast-forward only by default) → `fw/bin/update.sh` → `php bin/import_dictionary.php` → optional extra steps and restart. On a failure it prints how to go back (`git checkout <old commit>`); it never rolls back by itself, since database changes cannot be undone that way.
+
+### How it is wired (and why)
+
+The web server never runs git and never holds the GitHub key. The page calls `sudo -n -u zpmsdeploy /usr/local/sbin/zpms-git-update <command>`:
+
+- **`deploy/zpms-git-update`** (installed root-owned, 0755) is the only door. Commands: `branches`, `status`, `log [N]`, `preview [options]`, `run [options]`. Options are a fixed list (`--branch X --fw-branch X --fw --backup --no-backup --no-update-sh --apply-schema --no-dictionary --no-post`); every branch name is checked; nothing is evaluated; `--config` and `--yes` cannot be passed by the caller.
+- **`deploy/zpms-update.sudoers`** lets the web server user run exactly that file, as the deploy user, with no password and no shell.
+- **A dedicated Linux user** (`zpmsdeploy`) owns the checkout and holds a read-only GitHub deploy key. (A "setuid script" would not work here: Linux ignores the setuid bit on scripts, and the sticky bit only applies to directories — hence sudo.)
+- **`bin/update_from_git.sh`** does the work; **`/etc/zpms/update.conf`** (`deploy/update.conf.example`) configures it: repositories, allowed branches, default branches, pull mode (`ff-only`/`merge`/`rebase`), whether modified files refuse the run, the `update.sh` options, the translations command, extra `POST_STEPS`, `RESTART_CMD`, backup folder/count/command, log, lock. Command line beats config beats built-in defaults.
+
+### Setup (once, as root)
+
+```sh
+sudo bash deploy/setup_update_user.sh --dry-run      # read what it would do
+sudo bash deploy/setup_update_user.sh                # then:
+```
+It creates the user (in the web server's group), makes the checkout `zpmsdeploy:<web group>` with setgid directories (folders the web server writes to — `web/cache`, `web/files`, `logs` — stay with it), creates `/var/backups/zpms`, installs the wrapper, `/etc/zpms/update.conf` (if absent) and the sudoers rule (checked with `visudo`), and generates the deploy key. By hand afterwards: add the printed public key as a **read-only deploy key** on the zpms and zeusfw repositories, switch both remotes to `git@github.com:evrokas/<repo>.git`, edit `/etc/zpms/update.conf`, run `php bin/migrate_roles.php --yes` (adds the `system-update` permission) and `php bin/import_dictionary.php`. Check with `sudo -u www-data sudo -u zpmsdeploy /usr/local/sbin/zpms-git-update branches`. Without the wrapper the page just says the tools are not set up.
+
+### From the command line
+
+```sh
+sudo -u zpmsdeploy bin/update_from_git.sh                       # menu of branches, then asks to continue
+sudo -u zpmsdeploy bin/update_from_git.sh --branch main --fw --fw-branch main --yes
+sudo -u zpmsdeploy bin/update_from_git.sh --branch main --dry-run
+```
+`--help` lists everything. Exit status 0 ok, 1 refused (bad branch, modified files, already running, cancelled), 2 a step failed. The log is `logs/update.log`, the last result `logs/update_status.json`.
+
+### `fw/bin/update.sh` options
+
+Every question of the framework's `update.sh` now has an option, so it can run unattended: `--core-tables=`, `--web-tables=`, `--core-diff=`, `--web-diff=`, `--content=`, `--generate-feeders=`, `--clean-feeds=`, `--forms=` (each `ask|yes|all|no`), `--yes` (answer yes to everything **except** the two database-diff questions and `--clean-feeds`, which change or empty live data and must be given explicitly), `--non-interactive` (never read the terminal; an unanswered question is "no"), `--dry-run` (list the missing tables and the database diffs, change nothing) and `--help`. With no options it asks exactly as before. It exits non-zero when a step fails.
+
+Tests: `tests/shell/update_from_git.sh` (throwaway git repositories: branch choice, dry run, refusals, diverged history, backup failure, lock), `tests/shell/update_sh_flags.sh`, `tests/shell/git_update_wrapper.sh` (needs root; skipped otherwise) and `tests/functional/system_update.php` (the page, with a stand-in for the wrapper) — all run by `php tests/run_all.php`.

@@ -1,0 +1,99 @@
+{% attach_library('boxicons') %}
+{% attach_library('system-update') %}
+{#
+  system_update.zetem -- "Update from git" (/system/update), rendered by
+  system_update_view() in web/system_update.php.
+
+  $available   the sudo wrapper is installed
+  $error       why the wrapper did not answer (text from the server, not translated)
+  $app, $fw    ['available', 'current', 'commit', 'dirty', 'branches' => [...]]
+  $last        the last run (started, finished, result, app/fw branch+commits) or null
+  $running     an update is running right now
+  $urls        the JSON endpoints web/js/system-update.js calls
+#}
+
+<h2 class="sr-only">{{{t('Update from git')}}}</h2>
+
+{% if(!$available): %}
+<div class="su-notice">
+    <p><b>{{{t('The update tools are not set up on this server.')}}}</b></p>
+    <p>{{{t('Run deploy/setup_update_user.sh as root (see "Updating from git" in the README), then reload this page.')}}}</p>
+</div>
+{% elseif($error !== ''): %}
+<div class="su-notice su-notice-bad">
+    <p><b>{{{t('The update tools did not answer.')}}}</b></p>
+    <p><code>{{{$error}}}</code></p>
+</div>
+{% else: %}
+
+<p class="su-intro">{{{t('Pick the branch to switch to and pull. The site keeps running while the update works. Use Preview first to see what would change.')}}}</p>
+
+<div class="su-root" id="su-root"
+     data-url-branches="{{{$urls['branches']}}}" data-url-status="{{{$urls['status']}}}"
+     data-url-preview="{{{$urls['preview']}}}" data-url-run="{{{$urls['run']}}}"
+     data-running="{{{($running) ? '1' : '0'}}}">
+
+<form class="su-form" id="su-form" autocomplete="off" onsubmit="return false;">
+
+    <fieldset class="su-card">
+        <legend>{{{t('Application (ZPMS)')}}}</legend>
+        <p class="su-state">
+            {{{t('Now on')}}} <b id="su-app-current">{{{$app['current'] ?? ''}}}</b>
+            <code id="su-app-commit">{{{$app['commit'] ?? ''}}}</code>
+            {% if(!empty($app['dirty'])): %}<span class="su-warn">{{{t('Files were modified on the server: the update will refuse to run.')}}}</span>{% endif %}
+        </p>
+        <label class="su-field">{{{t('Branch')}}}
+            <select name="branch" id="su-branch" required>
+                {% foreach(($app['branches'] ?? []) as $b): %}
+                <option value="{{{$b}}}" {{(($app['current'] ?? '') === $b) ? 'selected' : ''}}>{{{$b}}}</option>
+                {% endforeach %}
+            </select>
+        </label>
+    </fieldset>
+
+    <fieldset class="su-card">
+        <legend>{{{t('Framework (fw/)')}}}</legend>
+        {% if(empty($fw['available'])): %}
+        <p class="su-muted">{{{t('The framework checkout was not found as a git repository.')}}}</p>
+        {% else: %}
+        <label class="su-check"><input type="checkbox" name="fw" id="su-fw" value="1"> {{{t('Also update the framework (fw/)')}}}</label>
+        <p class="su-state">
+            {{{t('Now on')}}} <b id="su-fw-current">{{{$fw['current'] ?? ''}}}</b> <code id="su-fw-commit">{{{$fw['commit'] ?? ''}}}</code>
+            {% if(!empty($fw['dirty'])): %}<span class="su-warn">{{{t('Files were modified on the server: the update will refuse to run.')}}}</span>{% endif %}
+        </p>
+        <label class="su-field" id="su-fw-branch-wrap" hidden>{{{t('Framework branch')}}}
+            <select name="fw_branch" id="su-fw-branch">
+                {% foreach(($fw['branches'] ?? []) as $b): %}
+                <option value="{{{$b}}}" {{(($fw['current'] ?? '') === $b) ? 'selected' : ''}}>{{{$b}}}</option>
+                {% endforeach %}
+            </select>
+        </label>
+        {% endif %}
+    </fieldset>
+
+    <fieldset class="su-card">
+        <legend>{{{t('Steps')}}}</legend>
+        <label class="su-check"><input type="checkbox" name="backup" id="su-backup" value="1" checked> {{{t('Back up the database first')}}}</label>
+        <label class="su-check"><input type="checkbox" name="update_sh" id="su-update-sh" value="1" checked> {{{t('Run update.sh (regenerate classes, load content and forms)')}}}</label>
+        <label class="su-check su-sub"><input type="checkbox" name="apply_schema" id="su-schema" value="1"> {{{t('Also apply the database changes (diff:sql)')}}}</label>
+        <p class="su-muted su-sub">{{{t('Without this the database changes are listed in the log but not applied.')}}}</p>
+        <label class="su-check"><input type="checkbox" name="dictionary" id="su-dictionary" value="1" checked> {{{t('Import the translations')}}}</label>
+    </fieldset>
+
+    <div class="su-actions">
+        <button type="button" class="su-btn" id="su-refresh">{{{t('Refresh branches')}}}</button>
+        <button type="button" class="su-btn" id="su-preview">{{{t('Preview')}}}</button>
+        <button type="button" class="su-btn su-primary" id="su-run">{{{t('Update')}}}</button>
+    </div>
+</form>
+
+<p class="su-status" id="su-status" role="status" aria-live="polite"></p>
+<pre class="su-log" id="su-log" tabindex="0">{{{t('The log appears here.')}}}</pre>
+
+{% if($last): %}
+<p class="su-muted">{{{t('Last update')}}}: {{{$last['finished'] ?? ''}}} &mdash; <b>{{{$last['result'] ?? ''}}}</b>
+    ({{{$last['app']['branch'] ?? ''}}} {{{substr((string)($last['app']['old'] ?? ''), 0, 9)}}} &rarr; {{{substr((string)($last['app']['new'] ?? ''), 0, 9)}}})</p>
+{% endif %}
+
+</div>
+{% endif %}

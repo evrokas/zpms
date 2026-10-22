@@ -55,6 +55,7 @@ const ZPMS_AUDIT_EVENT_LABELS = [
     'pending_updated' => 'Pending appointment changed',
     'pending_cancelled' => 'Pending appointment cancelled',
     'pending_converted' => 'Pending appointment turned into a patient record',
+    'system_update_started' => 'Application update from git started',
     'schedule_pattern_changed' => 'Schedule: weekly pattern changed',
     'schedule_override_set' => 'Schedule: date changed',
     'schedule_override_cleared' => 'Schedule: date back to the pattern',

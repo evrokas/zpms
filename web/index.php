@@ -27,6 +27,7 @@ require_once(__DIR__ . '/apyweb_client.php');
 require_once(__DIR__ . '/google_calendar_client.php');
 require_once(__DIR__ . '/rbac.php');
 require_once(__DIR__ . '/schedule_pages.php');
+require_once(__DIR__ . '/system_update.php');
 require_once(__DIR__ . '/schedule_calendar.php');
 require_once(__DIR__ . '/zpms_mailer.php');
 
@@ -420,6 +421,18 @@ require_once(__DIR__ . '/zpms_mailer.php');
             'useDetails' => t('Use these details'),
             'loadRecord' => t('Load record'),
             'filledFrom' => t('The details of @name were filled in from the existing record.'),
+            // Update from git (web/js/system-update.js)
+            'sysUpdConfirm' => t('Start the update now? The site keeps running while it works.'),
+            'sysUpdConfirmSchema' => t('This will also APPLY the database changes. Make sure the backup box is ticked. Start the update now?'),
+            'sysUpdRunning' => t('The update is running...'),
+            'sysUpdSuccess' => t('The update finished successfully.'),
+            'sysUpdFailed' => t('The update failed or was refused -- see the log below.'),
+            'sysUpdIdle' => t('No update is running.'),
+            'sysUpdNetwork' => t('Could not reach the server.'),
+            'sysUpdFetching' => t('Fetching the branches from git...'),
+            'sysUpdNoBranches' => t('No branches are available.'),
+            'sysUpdPreviewing' => t('Checking what would change...'),
+            'sysUpdNotSetUp' => t('The update tools are not set up on this server.'),
             // Appointment schedule (web/js/schedule.js, schedule-picker.js)
             'schedCancelledHere' => t('A booking was cancelled here'),
             'schedPatPast' => t('The "applies from" date cannot be earlier than today: past weeks keep the pattern they had.'),

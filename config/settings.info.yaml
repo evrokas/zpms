@@ -115,6 +115,17 @@ libraries:
         type: 'text/javascript'
         src: 'js/schedule-picker.js'
         defer:
+  # Update from git page (system_update.zetem, web/system_update.php).
+  system-update:
+    css:
+      - system_update:
+        type: 'text/css'
+        src: 'css/system-update.css'
+    foot_script:
+      - system_update:
+        type: 'text/javascript'
+        src: 'js/system-update.js'
+        defer:
   # GDPR audit log page (audit_log.zetem).
   audit-log:
     css:
@@ -259,6 +270,35 @@ routes:
     url: /schedule
     handler: schedule_view
     method: get
+  # Update from git (web/system_update.php, system_update.zetem): the page and
+  # the JSON endpoints its script calls. Every handler checks system-update.
+  system_update:
+    title:
+      gr: "Ενημέρωση από git"
+      en: "Update from git"
+    url: /system/update
+    handler: system_update_view
+    method: get
+  system_update_branches:
+    title: "List the branches available for the update"
+    url: /system/update/branches
+    handler: system_update_branches
+    method: get
+  system_update_status:
+    title: "Progress of the update"
+    url: /system/update/status
+    handler: system_update_status
+    method: get
+  system_update_preview:
+    title: "Preview the update"
+    url: /system/update/preview
+    handler: system_update_preview
+    method: post
+  system_update_run:
+    title: "Start the update"
+    url: /system/update/run
+    handler: system_update_run
+    method: post
   schedule_cancelled:
     title:
       gr: "Ακυρωμένες κρατήσεις"
@@ -810,6 +850,13 @@ menu:
           url: /audit
           # Same permission audit_log_view() checks (ZPMS_PERM_AUDIT_VIEW).
           permission: audit-log-view
+        - system_update:
+          text:
+            gr: 'Ενημέρωση από git'
+            en: 'Update from git'
+          url: /system/update
+          # Same permission system_update_view() checks (ZPMS_PERM_SYSTEM_UPDATE).
+          permission: system-update
 
 
 

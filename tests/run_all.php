@@ -67,11 +67,16 @@ require_once __DIR__ . '/functional/schedule.php';
 require_once __DIR__ . '/functional/booking.php';
 require_once __DIR__ . '/functional/calendar_sync.php';
 require_once __DIR__ . '/functional/update_scripts.php';
+require_once __DIR__ . '/functional/system_update.php';
 
 // Fresh database + a login-capable test account, every run -- see
 // TestSchema::reset()'s own docblock for why this matters.
 TestSchema::reset();
 TestFixtures::createTestUser();
+
+// The stand-in for the sudo wrapper behind /system/update (see functional/system_update.php).
+$suStub = zpms_su_stub();
+putenv('ZPMS_UPDATE_TEST_WRAPPER=' . $suStub);
 
 $server = new TestServer();
 $server->start();
@@ -159,6 +164,10 @@ try {
     $calendarRunner = new TestRunner('Google Calendar sync of the schedule');
     zpms_calendar_sync_functional_tests($calendarRunner);
     $ok = $calendarRunner->run() && $ok;
+
+    $suRunner = new TestRunner('Update from git page');
+    zpms_system_update_tests($suRunner, $server->baseUrl(), $suStub);
+    $ok = $suRunner->run() && $ok;
 
     $updateRunner = new TestRunner('Update-from-git scripts');
     zpms_update_scripts_tests($updateRunner);

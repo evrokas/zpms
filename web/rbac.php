@@ -109,6 +109,10 @@ const ZPMS_PERM_SCHEDULE_MANAGE = 'schedule-manage';
 // location is exempt from the shadow, this only lets the doctor knowingly
 // accept it -- see zpms_sched_reserve().
 const ZPMS_PERM_SCHEDULE_OVERRIDE = 'schedule-override-shadow';
+// Update the application from git (/system/update, web/system_update.php): pull a
+// branch, run update.sh, import translations. Granted to no role by default -- an
+// administrator (is_superuser) has it anyway.
+const ZPMS_PERM_SYSTEM_UPDATE = 'system-update';
 
 // Every permission slug above, plus the framework's own
 // ZEUSFW_PERM_MANAGE_USERS (core/lib/Rbac.php -- gates zeusfw core's
@@ -149,6 +153,7 @@ function zpms_all_permission_slugs(): array {
         ZPMS_PERM_AUDIT_VIEW,
         ZPMS_PERM_SCHEDULE_MANAGE,
         ZPMS_PERM_SCHEDULE_OVERRIDE,
+        ZPMS_PERM_SYSTEM_UPDATE,
         ZEUSFW_PERM_MANAGE_USERS,
         ZEUSFW_PERM_LIVE_EDIT,
     ];
