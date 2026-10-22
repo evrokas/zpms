@@ -1,3 +1,4 @@
+{% attach_library('schedule-setup') %}
 {#
   settings.zetem -- reference lists (clinics, doctors), the notification
   email's SMTP settings, and links to user/role management.
@@ -19,6 +20,9 @@
     <nav class="settings-jump" aria-label="{{{t('Settings sections')}}}">
         <a href="#settings-clinics"><i class="bx bx-clinic"></i> {{{t('Clinics')}}}</a>
         <a href="#settings-doctors"><i class="bx bx-plus-medical"></i> {{{t('Doctors')}}}</a>
+        {% if($schedule_setup): %}
+        <a href="#settings-schedule"><i class="bx bx-calendar"></i> {{{t('Appointment schedule')}}}</a>
+        {% endif %}
         <a href="#settings-email"><i class="bx bx-envelope"></i> {{{t('Email')}}}</a>
         {% if($show_user_management): %}
         <a href="#settings-users"><i class="bx bx-group"></i> {{{t('Users & roles')}}}</a>
@@ -54,6 +58,84 @@
             {{$doctors}}
         </div>
     </section>
+
+    {% if($schedule_setup): %}
+    <section class="settings-section" id="settings-schedule">
+        <header class="settings-section-header">
+            <span class="settings-section-icon"><i class="bx bx-calendar"></i></span>
+            <div>
+                <h3>{{{t('Appointment schedule setup')}}}</h3>
+                <p>{{{t('Where appointments can be made, the weekly program of each location and the travel times between them.')}}}</p>
+            </div>
+        </header>
+
+        <script type="application/json" id="schedule-setup-data">{{ $schedule_setup_json }}</script>
+
+        <form method="post" action="{{rel_url('/settings/schedule-locations')}}" class="sched-locs">
+            {{csrf_field()}}
+            <h4>{{{t('Locations that take appointments')}}}</h4>
+            <p class="sched-sub">{{{t('Switching a location off only stops new appointments there. Its weekly program and the appointments already made are kept, and show again when you switch it back on.')}}}</p>
+            {% foreach($schedule_setup['locations'] as $l): %}
+            <label class="sched-loc-check">
+                <input type="checkbox" name="enabled[]" value="{{{$l['code']}}}" {{($l['enabled']) ? 'checked' : ''}}> {{{$l['name']}}}
+            </label>
+            {% endforeach %}
+            <div class="settings-form-actions">
+                <button type="submit"><i class="bx bx-save"></i> {{{t('Save')}}}</button>
+            </div>
+        </form>
+
+        {% if($can_edit_schedule): %}
+        <div class="sched-setup-buttons">
+            <button type="button" class="sched-btn" id="sched-open-pattern"><i class="bx bx-repeat"></i> {{{t('Weekly pattern')}}}</button>
+            <button type="button" class="sched-btn" id="sched-open-travel"><i class="bx bx-car"></i> {{{t('Travel times')}}}</button>
+            <a class="sched-btn" href="{{rel_url('/schedule')}}"><i class="bx bx-calendar-week"></i> {{{t('Appointment schedule')}}}</a>
+        </div>
+
+        <dialog class="sched-dialog" id="sched-pattern">
+    <h3>{{{t('Weekly pattern')}}}</h3>
+    <label class="sched-field">{{{t('Location')}}} <select id="sched-pattern-loc-select"></select></label>
+    <p class="sched-sub">{{{t('Repeats every week. To change a single date, drag on the calendar instead.')}}}</p>
+    <label class="sched-field">{{{t('Applies from')}}}
+        <input type="text" id="sched-valid-from" autocomplete="off" placeholder="{{{t('yyyy-mm-dd, empty = today')}}}">
+    </label>
+    <p class="sched-sub" id="sched-pattern-since"></p>
+    <div class="sched-scroll">
+        <table class="sched-table">
+            <thead><tr>
+                <th>{{{t('Day')}}}</th><th>{{{t('From')}}}</th><th>{{{t('To')}}}</th><th>{{{t('Type')}}}</th>
+                <th>{{{t('Slot (min)')}}}</th><th>{{{t('Reason')}}}</th><th></th>
+            </tr></thead>
+            <tbody id="sched-pattern-rows"></tbody>
+        </table>
+    </div>
+    <p><button type="button" class="sched-btn" id="sched-pattern-add">+ {{{t('Add interval')}}}</button></p>
+    <div id="sched-pattern-msg"></div>
+    <details class="sched-history" id="sched-pattern-history" hidden>
+        <summary>{{{t('Earlier versions of the pattern')}}}</summary>
+        <div id="sched-pattern-history-body"></div>
+    </details>
+    <div class="sched-foot">
+        <button type="button" class="sched-btn" data-close>{{{t('Cancel')}}}</button>
+        <button type="button" class="sched-btn pri" id="sched-pattern-save">{{{t('Save pattern')}}}</button>
+    </div>
+</dialog>
+
+<dialog class="sched-dialog" id="sched-travel">
+    <h3>{{{t('Travel times')}}}</h3>
+    <p class="sched-sub">{{{t('Minutes the doctor needs between two locations. The phone / online location needs none unless you set it.')}}}</p>
+    <div class="sched-scroll"><table class="sched-table" id="sched-travel-table"></table></div>
+    <label class="sched-check"><input type="checkbox" id="sched-travel-sym" checked> {{{t('A change applies in both directions')}}}</label>
+    <div id="sched-travel-msg"></div>
+    <div class="sched-foot">
+        <button type="button" class="sched-btn" data-close>{{{t('Cancel')}}}</button>
+        <button type="button" class="sched-btn pri" id="sched-travel-save">{{{t('Save')}}}</button>
+    </div>
+</dialog>
+
+        {% endif %}
+    </section>
+    {% endif %}
 
     <section class="settings-section" id="settings-email">
         <header class="settings-section-header">

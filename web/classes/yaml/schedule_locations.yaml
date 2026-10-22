@@ -1,0 +1,20 @@
+# Which locations take appointments (Settings -> Appointment schedule setup).
+# One row per location code (locations.machinename, or 'online'); a location
+# with no row is enabled. Switching a location off only stops NEW bookings
+# there: its weekly pattern, dated changes, travel times and the appointments
+# already booked are never touched (web/schedule.php).
+table:
+  name: schedule_locations
+  class: scheduleLocationsClass
+  fields:
+  - name: guid
+    type: '@guid'
+  - name: cdate
+    type: '@cdate'
+  - name: cuser
+    type: '@cuser'
+  - name: location
+    type: varchar(64) UNIQUE
+  - name: enabled
+    type: tinyint(1)
+    default: 1

@@ -132,7 +132,7 @@ function zpms_gcal_reconcile_overrides(PDO $db, string $date, array $before, ?ob
         if (!$api->enabled()) {
             return $out;
         }
-        $names = function_exists('zpms_sched_location_names') ? zpms_sched_location_names($db) : [];
+        $names = function_exists('zpms_sched_location_names') ? zpms_sched_location_names($db, true) : [];
         $allCount = count($names) ?: count(zpms_sched_locations($db));
 
         $st = $db->prepare("SELECT * FROM schedule_overrides WHERE odate = ? AND kind IN ('surgery','hold') AND google_event_id IS NULL ORDER BY location");

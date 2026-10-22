@@ -627,9 +627,54 @@ function zpms_schedule_http_tests(TestRunner $runner, string $baseUrl): void {
         assert_equal(['schedule_travel_changed'], array_column(zpms_sched_audit_rows($audit), 'event_type'));
     });
 
+    $runner->add('locations can be switched off for new appointments without deleting anything', function () use ($baseUrl, $monday, $m) {
+        $db = zpms_sched_db();
+        $http = new TestHttpClient($baseUrl);
+        TestFixtures::loginAsTestUser($http);
+        $token = zpms_sched_meta_token($http->get('/settings')['body']);
+        $codes = fn(string $html) => array_column(zpms_sched_page_model($html)['locations'], 'code');
+        $save = fn(array $enabled) => $http->postWithHeaders('/settings/schedule-locations', ['enabled' => $enabled], ['X-CSRF-Token' => $token]);
+
+        $b = zpms_sched_reserve($db, 'sched_p', $monday, $m('10:00'), $m('10:30'), 'appointment', null, '', 'test');
+        assert_true($b['ok'], 'setup booking');
+        $templates = (int)$db->query('SELECT COUNT(*) FROM schedule_templates')->fetchColumn();
+        $travel = (int)$db->query('SELECT COUNT(*) FROM location_travel_times')->fetchColumn();
+        $audit = (int)$db->query('SELECT COALESCE(MAX(id),0) FROM audit_log')->fetchColumn();
+
+        assert_contains('name="enabled[]" value="sched_p" checked', $http->get('/settings')['body'], 'all on by default');
+
+        $save(['sched_m', 'phone']);
+        assert_equal('0', (string)$db->query("SELECT enabled FROM schedule_locations WHERE location = 'sched_p'")->fetchColumn(), 'sched_p is off');
+        assert_equal(1, (int)$db->query("SELECT enabled FROM schedule_locations WHERE location = 'sched_m'")->fetchColumn());
+        assert_equal($templates, (int)$db->query('SELECT COUNT(*) FROM schedule_templates')->fetchColumn(), 'no weekly pattern deleted');
+        assert_equal($travel, (int)$db->query('SELECT COUNT(*) FROM location_travel_times')->fetchColumn(), 'no travel time deleted');
+        assert_equal(1, (int)$db->query("SELECT COUNT(*) FROM slot_reservations WHERE guid = '" . $b['guid'] . "' AND released_at IS NULL")->fetchColumn(), 'the booked appointment is still held');
+        assert_equal(['schedule_locations_changed'], array_column(zpms_sched_audit_rows($audit), 'event_type'));
+
+        $tabs = $codes($http->get('/schedule?loc=sched_m&date=' . $monday)['body']);
+        assert_true(!in_array('sched_p', $tabs, true), 'a switched-off location is not offered');
+        $viewed = zpms_sched_page_model($http->get('/schedule?loc=sched_p&date=' . $monday)['body']);
+        assert_equal('sched_p', $viewed['location'], 'its calendar can still be looked at');
+        assert_equal(600, $viewed['days'][0]['blocks'][0]['start'], 'with its pattern');
+        assert_true(count(array_filter($viewed['days'][0]['blocks'], fn($bl) => $bl['type'] === 'resv')) === 1, 'and its booking');
+
+        $save([]);
+        assert_equal(0, (int)$db->query("SELECT COUNT(*) FROM schedule_locations WHERE enabled = 0 AND location IN ('sched_m','phone')")->fetchColumn(), 'at least one must stay on: nothing changed');
+
+        $save(['sched_p', 'sched_m', 'phone']);
+        assert_equal(0, (int)$db->query('SELECT COUNT(*) FROM schedule_locations WHERE enabled = 0')->fetchColumn(), 'all back on');
+        assert_equal($templates, (int)$db->query('SELECT COUNT(*) FROM schedule_templates')->fetchColumn());
+        assert_contains('sched_p', json_encode($codes($http->get('/schedule?loc=sched_m&date=' . $monday)['body'])), 'offered again');
+        zpms_sched_release($db, $b['guid']);
+
+        $anon = new TestHttpClient($baseUrl);
+        $anon->postWithHeaders('/settings/schedule-locations', ['enabled' => ['sched_p']], ['X-CSRF-Token' => 'x']);
+        assert_equal(0, (int)$db->query('SELECT COUNT(*) FROM schedule_locations WHERE enabled = 0')->fetchColumn(), 'logged out: refused');
+    });
+
     $runner->add('cleanup: schedule test rows removed', function () {
         $db = zpms_sched_db();
-        foreach (['slot_reservations', 'schedule_templates', 'schedule_overrides', 'location_travel_times'] as $t) {
+        foreach (['slot_reservations', 'schedule_templates', 'schedule_overrides', 'location_travel_times', 'schedule_locations'] as $t) {
             $db->exec("DELETE FROM $t");
         }
         $db->exec("DELETE FROM locations WHERE machinename IN ('sched_p','sched_m','phone')");

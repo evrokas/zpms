@@ -1908,6 +1908,8 @@ require_once(__DIR__ . '/zpms_mailer.php');
         // $dbclinics = formsClass::getForm('clinics');
         // $dbdoctors = formsClass::getForm('doctors');
 
+        $scheduleSetup = zpms_sched_setup_model(dbConnection::getConnection());
+
         return Renderer::render('settings.zetem', [
             // 'view_add' -- each yaml's compact one-button form view, shown
             // inline under its table (settings.zetem). The full view
@@ -1937,6 +1939,12 @@ require_once(__DIR__ . '/zpms_mailer.php');
             // the form in that case, same "optional integration, never a
             // fatal error" convention as $calendar_enabled above.
             'mail_settings' => zpms_mail_settings(),
+
+            // Appointment schedule setup (locations on/off, weekly pattern, travel
+            // times) -- null on an install without the schedule tables.
+            'schedule_setup' => $scheduleSetup,
+            'schedule_setup_json' => $scheduleSetup ? json_encode($scheduleSetup, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE) : '{}',
+            'can_edit_schedule' => rbacClass::isPermitted(ZPMS_PERM_SCHEDULE_MANAGE),
         ]);
 
     }

@@ -60,6 +60,7 @@ const ZPMS_AUDIT_EVENT_LABELS = [
     'schedule_override_set' => 'Schedule: date changed',
     'schedule_override_cleared' => 'Schedule: date back to the pattern',
     'schedule_travel_changed' => 'Schedule: travel times changed',
+    'schedule_locations_changed' => 'Schedule: locations taking appointments changed',
     'slot_reserved' => 'Schedule: slot booked',
     'slot_released' => 'Schedule: slot released',
     'mail_settings_updated' => 'Email settings changed',

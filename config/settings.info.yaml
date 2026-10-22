@@ -102,6 +102,18 @@ libraries:
         type: 'text/javascript'
         src: 'js/schedule.js'
         defer:
+  # Settings -> Appointment schedule setup: the weekly-pattern and travel-time
+  # dialogs (web/js/schedule-setup.js) with the schedule styles.
+  schedule-setup:
+    css:
+      - schedule:
+        type: 'text/css'
+        src: 'css/schedule.css'
+    foot_script:
+      - schedule_setup:
+        type: 'text/javascript'
+        src: 'js/schedule-setup.js'
+        defer:
   # Only the schedule styles (the "Online · Zoom" badge on appointment cards
   # and the pending list).
   schedule-badge:
@@ -337,6 +349,12 @@ routes:
     url: /schedule/travel
     handler: schedule_travel_save
     method: post
+  settings_schedule_locations_save:
+    title: "Save the locations that take appointments"
+    url: "/settings/schedule-locations"
+    handler: settings_schedule_locations_save
+    method: post
+    access: authenticated
   settings_mail_save:
     title: "Save email settings"
     url: "/settings/mail"

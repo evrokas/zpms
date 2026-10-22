@@ -15,8 +15,25 @@
 
 require_once __DIR__ . '/schedule.php';
 
-/** Location code => display name, in the current language; preferred places first (ZPMS_SCHED_LOCATION_ORDER), the phone location last. */
-function zpms_sched_location_names(PDO $db): array {
+/**
+ * Location codes switched off for new appointments (Settings -> Appointment
+ * schedule setup). Only a flag: nothing is deleted from the schedule when a
+ * location is switched off. An install without the table yet has none off.
+ */
+function zpms_sched_disabled_locations(PDO $db): array {
+    try {
+        return $db->query('SELECT location FROM schedule_locations WHERE enabled = 0')->fetchAll(PDO::FETCH_COLUMN);
+    } catch (Throwable $e) {
+        return [];
+    }
+}
+
+/**
+ * Location code => display name, in the current language; preferred places first
+ * (ZPMS_SCHED_LOCATION_ORDER), the phone location last. Locations switched off
+ * are left out unless $includeDisabled (history, existing appointments, setup).
+ */
+function zpms_sched_location_names(PDO $db, bool $includeDisabled = false): array {
     global $kernel;
     $lang = isset($kernel) ? $kernel->getCurrentLanguage() : 'gr';
     $names = [];
@@ -26,7 +43,9 @@ function zpms_sched_location_names(PDO $db): array {
         $names[$row['machinename']] = $row['name'];
     }
     $out = [];
+    $off = $includeDisabled ? [] : array_flip(zpms_sched_disabled_locations($db));
     foreach (zpms_sched_locations($db) as $code) {
+        if (isset($off[$code])) continue;
         $out[$code] = $names[$code] ?? $code;
     }
     uksort($out, fn($a, $b) => [zpms_sched_location_rank($a), $out[$a]] <=> [zpms_sched_location_rank($b), $out[$b]]);
@@ -110,9 +129,15 @@ function schedule_view($params) {
     }
 
     $names = zpms_sched_location_names($db);
+    $allNames = zpms_sched_location_names($db, true);
     $loc = (string)($get['loc'] ?? '');
+    if (!isset($names[$loc]) && isset($allNames[$loc])) {
+        // A location switched off can still be looked at: its appointments are still there.
+        $names[$loc] = $allNames[$loc] . ' (' . t('switched off') . ')';
+    }
     if (!isset($names[$loc])) {
-        $loc = array_key_first($names);
+        $loc = array_key_first($names) ?? array_key_first($allNames);
+        $names = $names ?: $allNames;
     }
     $date = (string)($get['date'] ?? '');
     $today = date('Y-m-d');
@@ -131,27 +156,6 @@ function schedule_view($params) {
         $day['blocks'] = array_merge($day['blocks'], $seen[$day['date']] ?? []);
     }
     unset($day);
-
-    $patternRows = [];
-    // The version in force (or next in line): rows not closed yet.
-    $st = $db->prepare('SELECT weekday, start_time, end_time, kind, slot_minutes, note, valid_from FROM schedule_templates WHERE location = ? AND valid_to IS NULL ORDER BY weekday, start_time');
-    $st->execute([$loc]);
-    foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) {
-        $patternRows[] = ['weekday' => (int)$r['weekday'], 'start_time' => $r['start_time'], 'end_time' => $r['end_time'],
-            'kind' => $r['kind'], 'slot_minutes' => (int)$r['slot_minutes'], 'note' => (string)$r['note']];
-    }
-    $validFrom = $db->prepare('SELECT MAX(valid_from) FROM schedule_templates WHERE location = ? AND valid_to IS NULL');
-    $validFrom->execute([$loc]);
-
-    $travel = zpms_sched_load_travel($db);
-    $travelRows = [];
-    foreach (array_keys($names) as $from) {
-        foreach (array_keys($names) as $to) {
-            if ($from !== $to) {
-                $travelRows[] = ['from' => $from, 'to' => $to, 'minutes' => zpms_sched_travel_minutes($travel, $from, $to), 'set' => isset($travel[$from][$to])];
-            }
-        }
-    }
 
     // Optional: show where bookings were cancelled this week (history), as faint dashed outlines.
     $showCancelled = !empty($get['cancelled']);
@@ -179,14 +183,10 @@ function schedule_view($params) {
         'step' => ZPMS_SCHED_STEP,
         'weekdayNames' => $weekdayNames,
         'canOverride' => rbacClass::isPermitted(ZPMS_PERM_SCHEDULE_OVERRIDE),
-        'pattern' => ['rows' => $patternRows, 'validFrom' => (string)($validFrom->fetchColumn() ?: ''), 'history' => zpms_sched_pattern_history($db, $loc)],
-        'travel' => $travelRows,
         'newAppointmentUrl' => rel_url('/consultation/new'),
         'urls' => [
             'check' => rel_url('/schedule/check'),
             'override' => rel_url('/schedule/override'),
-            'pattern' => rel_url('/schedule/pattern'),
-            'travel' => rel_url('/schedule/travel'),
         ],
     ];
 
@@ -203,6 +203,7 @@ function schedule_view($params) {
         'today_url' => rel_url('/schedule?loc=' . rawurlencode($loc)),
         'cancelled_toggle_url' => rel_url('/schedule?loc=' . rawurlencode($loc) . '&date=' . $monday . ($showCancelled ? '' : '&cancelled=1')),
         'show_cancelled' => $showCancelled,
+        'setup_url' => rbacClass::isPermitted(ZPMS_PERM_SETTINGS_MANAGE) ? rel_url('/settings#settings-schedule') : '',
         'cancelled_list_url' => rel_url('/schedule/cancelled?loc=' . rawurlencode($loc)),
         'range_label' => date('d/m/Y', strtotime($monday)) . ' – ' . date('d/m/Y', strtotime($shift($days - 1))),
         'location_name' => $names[$loc],
@@ -356,6 +357,82 @@ function schedule_pattern_save($params) {
     zpms_sched_json(['ok' => true]);
 }
 
+/**
+ * What Settings -> Appointment schedule setup needs: every location with its
+ * on/off flag, each one's weekly pattern (current version and history) and the
+ * travel-time table, as the JSON web/js/schedule-setup.js reads. Null when the
+ * schedule tables are not there yet.
+ */
+function zpms_sched_setup_model(PDO $db): ?array {
+    if (!$db->query("SHOW TABLES LIKE 'schedule_templates'")->fetchColumn()) {
+        return null;
+    }
+    $names = zpms_sched_location_names($db, true);
+    $off = array_flip(zpms_sched_disabled_locations($db));
+    $locations = [];
+    $patterns = [];
+    foreach ($names as $code => $name) {
+        $locations[] = ['code' => $code, 'name' => $name, 'enabled' => !isset($off[$code])];
+        $rows = [];
+        $st = $db->prepare('SELECT weekday, start_time, end_time, kind, slot_minutes, note FROM schedule_templates WHERE location = ? AND valid_to IS NULL ORDER BY weekday, start_time');
+        $st->execute([$code]);
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $rows[] = ['weekday' => (int)$r['weekday'], 'start_time' => $r['start_time'], 'end_time' => $r['end_time'],
+                'kind' => $r['kind'], 'slot_minutes' => (int)$r['slot_minutes'], 'note' => (string)$r['note']];
+        }
+        $vf = $db->prepare('SELECT MAX(valid_from) FROM schedule_templates WHERE location = ? AND valid_to IS NULL');
+        $vf->execute([$code]);
+        $patterns[$code] = ['rows' => $rows, 'validFrom' => (string)($vf->fetchColumn() ?: ''), 'history' => zpms_sched_pattern_history($db, $code)];
+    }
+    $travel = zpms_sched_load_travel($db);
+    $travelRows = [];
+    foreach (array_keys($names) as $from) {
+        foreach (array_keys($names) as $to) {
+            if ($from !== $to) {
+                $travelRows[] = ['from' => $from, 'to' => $to, 'minutes' => zpms_sched_travel_minutes($travel, $from, $to), 'set' => isset($travel[$from][$to])];
+            }
+        }
+    }
+    return [
+        'locations' => $locations,
+        'patterns' => (object)$patterns,
+        'travel' => $travelRows,
+        'weekdayNames' => [t('Mon'), t('Tue'), t('Wed'), t('Thu'), t('Fri'), t('Sat'), t('Sun')],
+        'step' => ZPMS_SCHED_STEP,
+        'urls' => ['pattern' => rel_url('/schedule/pattern'), 'travel' => rel_url('/schedule/travel')],
+    ];
+}
+
+/**
+ * POST /settings/schedule-locations: which locations take appointments.
+ * Only the on/off flags change -- patterns, dated changes, travel times and
+ * booked appointments are never touched, so switching a location off and on
+ * again loses nothing. At least one location must stay on.
+ */
+function settings_schedule_locations_save($params) {
+    global $kernel;
+    if (($errmsg = rbacClass::require(ZPMS_PERM_SETTINGS_MANAGE))) return $errmsg;
+    $back = function () { header('location: ' . rel_url('/settings#settings-schedule')); exit(); };
+    if (!csrfClass::verifyRequest()) {
+        $kernel->addStatus('error', t('Invalid security token (CSRF). Please try again.'));
+        $back();
+    }
+    $db = dbConnection::getConnection();
+    $codes = zpms_sched_locations($db);
+    $on = array_values(array_intersect($codes, array_map('strval', (array)($_POST['enabled'] ?? []))));
+    if (!$on) {
+        $kernel->addStatus('error', t('At least one location must stay enabled.'));
+        $back();
+    }
+    $st = $db->prepare('INSERT INTO schedule_locations (guid, cdate, cuser, location, enabled) VALUES (?,?,?,?,?) ON DUPLICATE KEY UPDATE enabled = VALUES(enabled)');
+    foreach ($codes as $code) {
+        $st->execute([guid(), getDBtime(), $kernel->getUserName(), $code, in_array($code, $on, true) ? 1 : 0]);
+    }
+    zpms_audit('schedule_locations_changed', ['detail' => 'enabled=' . implode(',', $on)]);
+    $kernel->addStatus('notice', t('The appointment locations were saved.'));
+    $back();
+}
+
 /** POST /schedule/travel: replace the travel-time table (rows = JSON, symmetric = 1). */
 function schedule_travel_save($params) {
     global $kernel;
@@ -424,6 +501,12 @@ function zpms_sched_problem_message(array $p, array $names): string {
 function zpms_booking_picker(array $o): string {
     $db = dbConnection::getConnection();
     $names = zpms_sched_location_names($db);
+    // An appointment already at a location that is now switched off keeps it in the list.
+    $current = (string)($o['loc'] ?? '');
+    if ($current !== '' && !isset($names[$current])) {
+        $all = zpms_sched_location_names($db, true);
+        if (isset($all[$current])) $names[$current] = $all[$current] . ' (' . t('switched off') . ')';
+    }
     $h = fn($v) => htmlspecialchars((string)$v, ENT_QUOTES, 'UTF-8');
     $remote = $o['remote'] ?? [];
     $date = (string)($o['date'] ?? '');
@@ -502,7 +585,17 @@ function zpms_booking_from_post(string $refGuid, string $kind, string $note): ar
     $start = zpms_sched_time_to_min((string)($_POST['sched-start'] ?? ''));
     $end = ($_POST['sched-end'] ?? '') === '24:00' ? 1440 : zpms_sched_time_to_min((string)($_POST['sched-end'] ?? ''));
     if (!isset($names[$code])) {
-        return $error(t('Select a location.'));
+        // A location switched off takes no new bookings; an appointment that already
+        // holds a slot there may still be changed (same place) or kept.
+        $all = zpms_sched_location_names($db, true);
+        $held = zpms_sched_slot_for_ref($db, $refGuid);
+        if (isset($all[$code]) && $held && $held['location'] === $code) {
+            $names[$code] = $all[$code];
+        } elseif (isset($all[$code])) {
+            return $error(t('This location is switched off for new appointments.'));
+        } else {
+            return $error(t('Select a location.'));
+        }
     }
     if (!zpms_sched_valid_date($date) || $start === null || $end === null || !zpms_sched_valid_interval($start, $end)) {
         return $error($text['schedP_invalid_interval']);
@@ -659,7 +752,7 @@ function schedule_cancelled($params) {
     if (($errmsg = rbacClass::require(ZPMS_PERM_SCHEDULE_MANAGE))) return $errmsg;
     $get = isset($Request) ? $Request->getParams() : $_GET;
     $db = dbConnection::getConnection();
-    $names = zpms_sched_location_names($db);
+    $names = zpms_sched_location_names($db, true);   // history: switched-off locations too
 
     $filters = [
         'loc' => isset($names[$get['loc'] ?? '']) ? (string)$get['loc'] : '',
