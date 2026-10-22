@@ -68,6 +68,7 @@ require_once __DIR__ . '/functional/booking.php';
 require_once __DIR__ . '/functional/calendar_sync.php';
 require_once __DIR__ . '/functional/update_scripts.php';
 require_once __DIR__ . '/functional/system_update.php';
+require_once __DIR__ . '/functional/config_files.php';
 
 // Fresh database + a login-capable test account, every run -- see
 // TestSchema::reset()'s own docblock for why this matters.
@@ -165,6 +166,10 @@ try {
     $calendarRunner = new TestRunner('Google Calendar sync of the schedule');
     zpms_calendar_sync_functional_tests($calendarRunner);
     $ok = $calendarRunner->run() && $ok;
+
+    $cfgRunner = new TestRunner('Configuration files (config_files:)');
+    zpms_config_files_tests($cfgRunner);
+    $ok = $cfgRunner->run() && $ok;
 
     $suRunner = new TestRunner('Update from git page');
     zpms_system_update_tests($suRunner, $server->baseUrl(), $suStub);
