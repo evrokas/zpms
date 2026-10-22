@@ -1,0 +1,6 @@
+# /etc/sudoers.d/zpms-update  (mode 0440; check with: visudo -cf /etc/sudoers.d/zpms-update)
+#
+# Lets the web server user run the update wrapper, and only that, as the deploy
+# user.  No password, no shell, no other command.  Change the two user names to
+# match the server (setup_update_user.sh does this for you).
+www-data ALL=(zpmsdeploy) NOPASSWD: /usr/local/sbin/zpms-git-update

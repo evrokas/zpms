@@ -1,0 +1,47 @@
+# Settings for bin/update_from_git.sh and deploy/zpms-git-update.
+# Install as /etc/zpms/update.conf (root:root, mode 0644; no secrets in here).
+# It is read as shell: KEY=value.  Everything is optional except where noted;
+# the command line of update_from_git.sh overrides every value.
+
+# --- used by the sudo wrapper (deploy/zpms-git-update) ----------------------
+DEPLOY_APP_ROOT=/var/www/zpms          # the checkout (required by the wrapper)
+
+# --- repositories -----------------------------------------------------------
+#APP_ROOT=                             # default: the directory above bin/
+#FW_DIR=                               # default: ./fw, else where web/core points
+REMOTE=origin
+
+# Branches that may be selected (regular expressions).  A branch that does not
+# match is refused even if it exists.  Be strict on a production server.
+ALLOWED_BRANCHES='^(main|prod|release/[A-Za-z0-9._-]+)$'
+#ALLOWED_FW_BRANCHES=                  # default: same as ALLOWED_BRANCHES
+DEFAULT_BRANCH=main                    # used when no branch is given and nobody is at a terminal
+DEFAULT_FW_BRANCH=main
+
+PULL_MODE=ff-only                      # ff-only (safest) | merge | rebase
+ALLOW_DIRTY=no                         # yes = do not refuse when files were modified on the server
+
+# --- steps ------------------------------------------------------------------
+UPDATE_FW=no                           # also update the ZeusFW checkout by default?
+RUN_UPDATE_SH=yes
+# Options for fw/bin/update.sh (see: fw/bin/update.sh --help).  Database
+# changes (diff:sql) are NOT applied unless --apply-schema is given.
+UPDATE_ARGS="--non-interactive --yes"
+RUN_IMPORT_DICTIONARY=yes
+DICTIONARY_CMD="php bin/import_dictionary.php"
+# Extra commands, run from the application root after the update:
+POST_STEPS=()
+#POST_STEPS=("php bin/migrate_roles.php --yes")
+RESTART_CMD=""                         # e.g. "sudo systemctl reload php8.3-fpm" (needs its own sudoers rule)
+
+# --- database backup --------------------------------------------------------
+BACKUP_BEFORE=yes
+BACKUP_DIR=/var/backups/zpms
+BACKUP_KEEP=14                         # newest dumps to keep
+#BACKUP_CMD=                           # default: mysqldump of the database in config/db.php
+
+# --- housekeeping -----------------------------------------------------------
+#LOG_FILE=                             # default: <app>/logs/update.log
+#STATUS_FILE=                          # default: <app>/logs/update_status.json
+LOCK_FILE=/tmp/zpms-update.lock
+GIT_TIMEOUT=180

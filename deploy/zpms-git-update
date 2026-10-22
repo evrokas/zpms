@@ -1,0 +1,92 @@
+#!/bin/bash
+#
+# The only door the web server gets to the update.  Install as
+# /usr/local/sbin/zpms-git-update (root:root, 0755: nobody but root can change
+# it) and allow it in sudoers to run AS THE DEPLOY USER (deploy/zpms-update.sudoers),
+# so it needs no root rights itself.
+#
+# It accepts a fixed set of commands and options, checks every branch name, and
+# never evaluates anything it is given:
+#
+#   zpms-git-update branches              fetch, print the allowed branches (JSON)
+#   zpms-git-update status                current state + last run + running? (JSON)
+#   zpms-git-update log [LINES]           last lines of the update log (default 200, max 1000)
+#   zpms-git-update preview [OPTIONS]     dry run, waits, prints the result
+#   zpms-git-update run [OPTIONS]         start the update in the background, return at once
+#
+# OPTIONS: --branch NAME  --fw-branch NAME  --fw  --backup  --no-backup
+#          --no-update-sh  --apply-schema  --no-dictionary  --no-post
+
+set -u
+CONF=/etc/zpms/update.conf
+PATH=/usr/local/bin:/usr/bin:/bin
+export PATH
+
+die() { echo "zpms-git-update: $*" >&2; exit 1; }
+
+[[ -r $CONF ]] || die "cannot read $CONF"
+DEPLOY_APP_ROOT=""; LOG_FILE=""; STATUS_FILE=""; LOCK_FILE=/tmp/zpms-update.lock
+# shellcheck disable=SC1090
+source "$CONF" || die "error in $CONF"
+[[ -n $DEPLOY_APP_ROOT && -x $DEPLOY_APP_ROOT/bin/update_from_git.sh ]] || die "DEPLOY_APP_ROOT is not set to an installation with bin/update_from_git.sh"
+[[ -n $LOG_FILE ]]    || LOG_FILE=$DEPLOY_APP_ROOT/logs/update.log
+[[ -n $STATUS_FILE ]] || STATUS_FILE=$DEPLOY_APP_ROOT/logs/update_status.json
+
+SCRIPT=$DEPLOY_APP_ROOT/bin/update_from_git.sh
+
+valid_branch() {
+    local b=$1
+    [[ $b =~ ^[A-Za-z0-9][A-Za-z0-9._/-]*$ ]] || return 1
+    [[ $b == *..* || $b == */ || $b == *.lock || $b == *//* || ${#b} -gt 100 ]] && return 1
+    return 0
+}
+
+# Turn the OPTIONS into a validated argument list in ARGS.
+parse_options() {
+    ARGS=()
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --branch|--fw-branch)
+                [[ $# -ge 2 ]] || die "$1 needs a value"
+                valid_branch "$2" || die "invalid branch name"
+                ARGS+=("$1" "$2"); shift ;;
+            --fw|--backup|--no-backup|--no-update-sh|--apply-schema|--no-dictionary|--no-post)
+                ARGS+=("$1") ;;
+            *) die "option not allowed: $1" ;;
+        esac
+        shift
+    done
+}
+
+cmd=${1:-}; [[ $# -gt 0 ]] && shift
+case $cmd in
+    branches)
+        [[ $# -eq 0 ]] || die "branches takes no arguments"
+        exec "$SCRIPT" --config "$CONF" --list-branches ;;
+
+    status)
+        [[ $# -eq 0 ]] || die "status takes no arguments"
+        repos=$("$SCRIPT" --config "$CONF" --status) || repos='{}'
+        last=null; [[ -r $STATUS_FILE ]] && last=$(cat "$STATUS_FILE")
+        running=false
+        if ( exec 8>"$LOCK_FILE" && ! flock -n 8 ) 2>/dev/null; then running=true; fi
+        printf '{"repos":%s,"last":%s,"running":%s}\n' "$repos" "${last:-null}" "$running" ;;
+
+    log)
+        n=${1:-200}; [[ $n =~ ^[0-9]+$ ]] || die "log: LINES must be a number"
+        (( n > 1000 )) && n=1000
+        [[ -r $LOG_FILE ]] && tail -n "$n" "$LOG_FILE" ;;
+
+    preview)
+        parse_options "$@"
+        exec timeout 300 "$SCRIPT" --config "$CONF" --dry-run "${ARGS[@]}" ;;
+
+    run)
+        parse_options "$@"
+        if ( exec 8>"$LOCK_FILE" && ! flock -n 8 ) 2>/dev/null; then die "another update is already running"; fi
+        # detached: it keeps running after the web request has ended
+        setsid nohup "$SCRIPT" --config "$CONF" --yes "${ARGS[@]}" >/dev/null 2>&1 < /dev/null &
+        echo "started" ;;
+
+    *) die "usage: zpms-git-update branches|status|log [LINES]|preview [OPTIONS]|run [OPTIONS]" ;;
+esac

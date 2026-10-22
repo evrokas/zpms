@@ -15,6 +15,10 @@
  * back out via $_SERVER['QUERY_STRING'].
  */
 
+// Some PHP builds do not run auto_prepend_file under `php -S`; load the test
+// database constants here as well (require_once: harmless when it already ran).
+require_once __DIR__ . '/prepend_test_db.php';
+
 $uri = urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
 $file = __DIR__ . '/../../web' . $uri;
 
