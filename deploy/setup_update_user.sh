@@ -117,12 +117,16 @@ else
 fi
 run install -o root -g root -m 0755 "$APP_ROOT/deploy/zpms-git-update" /usr/local/sbin/zpms-git-update
 # The web page runs "sudo -u <user>": tell it the name when it is not the default.
-SITE_CFG=$APP_ROOT/config/site.info.yaml
-if [[ $DEPLOY_USER != zpmsdeploy && -f $SITE_CFG ]] && ! grep -q '^update_deploy_user:' "$SITE_CFG"; then
-    if [[ $DRY == 1 ]]; then echo "[dry-run] append 'update_deploy_user: $DEPLOY_USER' to $SITE_CFG"
-    else printf '\n# Update from git page (web/system_update.php): the user the update runs as.\nupdate_deploy_user: %s\n' "$DEPLOY_USER" >> "$SITE_CFG"; echo "added update_deploy_user: $DEPLOY_USER to $SITE_CFG"; fi
-elif [[ $DEPLOY_USER != zpmsdeploy ]]; then
-    echo "NOTE: set  update_deploy_user: $DEPLOY_USER  in $SITE_CFG (the page calls sudo -u zpmsdeploy by default)"
+# The setting lives in its own file, config/update.info.yaml (loaded via config_files:).
+UPD_CFG=$APP_ROOT/config/update.info.yaml
+if [[ $DEPLOY_USER != zpmsdeploy ]]; then
+    if [[ -f $UPD_CFG ]] && grep -q '^update_deploy_user:' "$UPD_CFG"; then
+        run sed -i "s/^update_deploy_user:.*/update_deploy_user: $DEPLOY_USER/" "$UPD_CFG"
+    elif [[ $DRY == 1 ]]; then echo "[dry-run] write 'update_deploy_user: $DEPLOY_USER' to $UPD_CFG"
+    else
+        printf '# Update from git page (web/system_update.php): the user the update runs as.\nupdate_deploy_user: %s\n' "$DEPLOY_USER" >> "$UPD_CFG"
+        chmod 644 "$UPD_CFG"; echo "wrote update_deploy_user: $DEPLOY_USER to $UPD_CFG"
+    fi
 fi
 SUDOERS=/etc/sudoers.d/zpms-update
 if [[ $DRY == 1 ]]; then

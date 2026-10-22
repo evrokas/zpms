@@ -41,8 +41,3 @@ zops_backup_status_file: /var/lib/zops/zpms-backup-status.json
 # it stays out of this list; uncomment to turn it off for this site:
 # disabled_packages: [admin_user_crud]
 disabled_packages: []
-
-# Update from git (/system/update, web/system_update.php): the sudo target. Only
-# needed when it differs from the defaults set up by deploy/setup_update_user.sh.
-#update_deploy_user: zpmsdeploy
-#update_wrapper: /usr/local/sbin/zpms-git-update

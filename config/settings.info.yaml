@@ -2,6 +2,11 @@ title: Patient Management System
 
 tz: "Europe/Athens"
 
+# More configuration files (in this directory), loaded after this one. A missing file is
+# skipped. update.info.yaml: the "Update from git" page (see config/update.info.yaml.in).
+config_files:
+  - update.info.yaml
+
 meta:
   - charset="UTF-8"
   - http-equiv="X-UA-Compatible" content="IE=edge"

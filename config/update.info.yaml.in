@@ -1,0 +1,10 @@
+# Settings for the "Update from git" page (/system/update, web/system_update.php).
+# Copy to config/update.info.yaml (deploy/setup_update_user.sh does this when needed).
+# Both keys are optional; the defaults are what deploy/setup_update_user.sh sets up.
+# Set each key in this file only (a key set in two config files becomes an array).
+
+# The Linux user the page runs the update as (sudo -u). Default: zpmsdeploy.
+#update_deploy_user: zpmsdeploy
+
+# The root-owned wrapper sudo is allowed to run.
+#update_wrapper: /usr/local/sbin/zpms-git-update
