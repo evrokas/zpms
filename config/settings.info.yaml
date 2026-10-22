@@ -17,9 +17,10 @@ favicon:
   type: image/png
   src: assets/logo3.png
 
+# Paths may start with @core/ (framework), @app/ (application root) or @mod/ (module folders).
 templates:
-  - './core/templates/'
-  - './templates/'
+  - '@core/templates/'
+  - '@app/web/templates/'
 
 css:
   - normalize:
@@ -894,8 +895,8 @@ modconf:
 # Not used currently -- this app wants every registered package enabled.
 modules:
   path:
-    - "/web/core/modules/"
-    - "/web/modules/"
+    - "@core/modules/"
+    - "@app/web/modules/"
   modules:
     - admin
     - mainnavigation

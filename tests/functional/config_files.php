@@ -78,4 +78,16 @@ function zpms_config_files_tests(TestRunner $runner): void {
         $k->loadConfigFiles('/nonexistent');
         assert_true(!empty($k->getConfig('libraries')), 'the module file was not loaded');
     });
+
+    $runner->add('root macros in templates:, modules: path: and css/js src: resolve to folders and URLs', function () {
+        assert_equal(['plain/x'], Kernel::expandRootMacro('plain/x'));
+        assert_equal([__APPDIR__ . '/web/modules/m', __FWDIR__ . '/modules/m'], Kernel::expandRootMacro('@mod/m'));
+        assert_equal('css/x.css', Kernel::assetUrl('css/x.css'));
+        assert_equal('/core/css/x.css', Kernel::assetUrl('@core/css/x.css'));
+        assert_equal('/css/styles.css', Kernel::assetUrl('@app/web/css/styles.css'));
+        assert_equal('/core/modules/backup/css/backup.css', Kernel::assetUrl('@mod/backup/css/backup.css'));
+        assert_equal(['./t/', __FWDIR__ . '/templates/', __APPDIR__ . '/web/templates/'],
+            Kernel::expandTemplatePaths(['./t/', '@core/templates/', '@app/web/templates/']));
+        assert_equal([__FWDIR__ . '/modules/backup/'], Kernel::expandTemplatePaths(['@mod/backup']), '@mod keeps only folders that exist');
+    });
 }
