@@ -90,4 +90,20 @@ function zpms_config_files_tests(TestRunner $runner): void {
             Kernel::expandTemplatePaths(['./t/', '@core/templates/', '@app/web/templates/']));
         assert_equal([__FWDIR__ . '/modules/backup/'], Kernel::expandTemplatePaths(['@mod/backup']), '@mod keeps only folders that exist');
     });
+
+    $runner->add('enable_template_comments: unset/0 off, 1 on, the old enable_comments key still works, two files do not break it', function () {
+        $with = function (array $cfg): bool {
+            $k = (new ReflectionClass('Kernel'))->newInstanceWithoutConstructor();
+            $p = new ReflectionProperty('Kernel', 'config');
+            $p->setAccessible(true);
+            $p->setValue($k, $cfg);
+            return $k->templateCommentsEnabled();
+        };
+        assert_false($with([]), 'unset');
+        assert_false($with(['enable_template_comments' => 0]));
+        assert_true($with(['enable_template_comments' => 1]));
+        assert_true($with(['enable_template_comments' => true]));
+        assert_false($with(['enable_template_comments' => [1, 0]]), 'set in two files: the last wins');
+        assert_true($with(['enable_comments' => 1]));
+    });
 }
