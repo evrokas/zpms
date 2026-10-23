@@ -37,6 +37,7 @@ const ZPMS_AUDIT_EVENT_LABELS = [
     'login_refused' => 'Sign-in refused (locked or inactive account)',
     'account_locked' => 'Account locked',
     'logout' => 'Signed out',
+    'session_expired' => 'Session ended (idle / time limit)',
     'patient_viewed' => 'Patient record viewed',
     'patient_created' => 'Patient record created',
     'patient_updated' => 'Patient record changed',
@@ -201,6 +202,7 @@ function zeusfw_app_audit_event(string $event, array $context): void {
         case 'login_success':
         case 'login_remembered':
         case 'logout':
+        case 'session_expired':
             $row += ['actor' => $username, 'actor_type' => 'staff'];
             break;
         case 'login_failed':

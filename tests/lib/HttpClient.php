@@ -24,6 +24,17 @@ class TestHttpClient {
         }
     }
 
+    /** The value of a cookie in this client's jar, or null. */
+    function cookie(string $name): ?string {
+        if (!is_file($this->cookieJar)) return null;
+        foreach (file($this->cookieJar, FILE_IGNORE_NEW_LINES) as $line) {
+            $line = preg_replace('/^#HttpOnly_/', '', $line);
+            $f = explode("\t", $line);
+            if (count($f) >= 7 && $f[5] === $name) return $f[6];
+        }
+        return null;
+    }
+
     /** Drops all cookies, e.g. to start a fresh, logged-out session mid-test. */
     function resetCookies(): void {
         @unlink($this->cookieJar);
@@ -71,6 +82,7 @@ class TestHttpClient {
             CURLOPT_FOLLOWLOCATION => false, // tests inspect redirects themselves
             CURLOPT_HTTPHEADER => $headerLines,
             CURLOPT_TIMEOUT => 15,
+            CURLOPT_USERAGENT => 'zpms-test-client', // remember-me stores it in a NOT NULL column
         ]);
         if ($method === 'POST') {
             curl_setopt($ch, CURLOPT_POST, true);

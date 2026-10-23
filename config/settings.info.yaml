@@ -18,6 +18,21 @@ favicon:
   src: assets/logo3.png
 
 # Paths may start with @core/ (framework), @app/ (application root) or @mod/ (module folders).
+# Session lifetime (zeusfw core/lib/SessionPolicy.php): an ordinary session ends after
+# 60 minutes without a real request (polling does not count) or 12 hours after sign-in,
+# whichever comes first. "Remember me" has no idle limit and lasts remember_me_days.
+# Set each of these here only (a scalar set in two config files becomes an array).
+session_idle_minutes: 60
+session_max_hours: 12
+remember_me_days: 15
+session_warn_seconds: 120
+session_passive_routes:
+  - system_update_status
+# Own cookie name and own session folder (var/sessions, mode 0700, created on first use):
+# the distribution's default cleanup deletes shared session files after ~24 minutes.
+session_name: zpms_sess
+session_save_path: '@app/var/sessions'
+
 templates:
   - '@core/templates/'
   - '@app/web/templates/'
@@ -928,6 +943,7 @@ modules:
     - copyright
     - buildnumber
     - live_edit
+    - session_timer
     - content
     - location
     - flatpickr

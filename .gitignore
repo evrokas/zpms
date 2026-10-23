@@ -25,3 +25,4 @@ lib/zops
 web/test
 
 /logs
+/var/

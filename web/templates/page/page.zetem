@@ -23,6 +23,8 @@
    page down a row is an accepted, temporary trade-off while this is being
    tried out. #}
 {{ module('live_edit', ['enabled' => true]) }}
+{# session_timer: warns shortly before the session ends (zeusfw core/modules/session_timer/); renders '' when nobody is signed in. Fixed-position. #}
+{{ module('session_timer', []) }}
 {% $__bareLayout = trim(($regions['header'] ?? '') . ($regions['main_navigation'] ?? '') . ($regions['footer'] ?? '')) === ''; %}
 <div class="wrapper{% if($__bareLayout): %} wrapper-bare{% endif %}">
     {% foreach($regions as $reg): %}

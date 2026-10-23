@@ -69,6 +69,7 @@ require_once __DIR__ . '/functional/calendar_sync.php';
 require_once __DIR__ . '/functional/update_scripts.php';
 require_once __DIR__ . '/functional/system_update.php';
 require_once __DIR__ . '/functional/config_files.php';
+require_once __DIR__ . '/functional/session_policy.php';
 
 // Fresh database + a login-capable test account, every run -- see
 // TestSchema::reset()'s own docblock for why this matters.
@@ -170,6 +171,10 @@ try {
     $cfgRunner = new TestRunner('Configuration files (config_files:)');
     zpms_config_files_tests($cfgRunner);
     $ok = $cfgRunner->run() && $ok;
+
+    $sessRunner = new TestRunner('Session lifetime (idle logout, cap, remember me)');
+    zpms_session_policy_tests($sessRunner, $server->baseUrl());
+    $ok = $sessRunner->run() && $ok;
 
     $suRunner = new TestRunner('Update from git page');
     zpms_system_update_tests($suRunner, $server->baseUrl(), $suStub);
