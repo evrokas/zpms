@@ -8,7 +8,7 @@
         <a class="user-avatar" href="{{rel_url('/profile')}}" title="{{{$__displayName}}}" aria-label="{{{$__displayName}}}">{{{mb_strtoupper(mb_substr($__displayName, 0, 1))}}}</a>
         {# Keep ">Name</a> (username)" as one contiguous run: the topbar
            test in tests/functional/auth_csrf.php asserts on exactly that. #}
-        <span class="user-ident"><a class="user-name" href="{{rel_url('/profile')}}">{{{$__displayName}}}</a> ({{{$name}}})</span>
+        <span class="user-ident"><a class="user-name" href="{{rel_url('/profile')}}">{{{$__displayName}}}</a> ({{{$name}}}) <span class="zfs-label" data-zfw-session-label hidden></span></span>
         <a class="user-logout" href="{{rel_url('/logout')}}" title="{{t('Logout')}}"><i class="bx bx-log-out"></i><span>{{t("Logout")}}</span></a>
     {% else: %}
         <a href="{{rel_url('/login')}}">{{t("Login")}}</a>

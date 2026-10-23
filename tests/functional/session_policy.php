@@ -113,6 +113,7 @@ function zpms_session_policy_tests(TestRunner $runner, string $baseUrl): void {
         $page = $http->get('/patients')['body'];
         assert_contains('id="zfw-session"', $page, 'the warning banner is on the page');
         assert_contains('/session/ping', $page);
+        assert_contains('data-zfw-session-label', $page, 'the countdown label sits beside the user name');
         assert_not_contains('id="zfw-session"', (new TestHttpClient($baseUrl))->get('/login')['body'], 'not for a signed-out visitor');
         $token = zpms_sched_meta_token($page);
         assert_not_null($token);
@@ -123,6 +124,7 @@ function zpms_session_policy_tests(TestRunner $runner, string $baseUrl): void {
         $s = zpms_session_json($http->get('/session/status'));
         assert_true($s['ok'] && $s['enabled'] && !$s['remember'], 'status answers');
         assert_equal('idle', $s['limit']);
+        assert_true($s['cap_left'] > 11 * 3600, 'cap_left says how far a renewal could reach');
         assert_true($s['left'] <= 3000 && $s['left'] > 2900, 'about 50 minutes left, got ' . $s['left']);
         assert_equal($seen, zpms_session_field($file, 'zfw_last_seen'), 'GET /session/status must not touch the session');
 
