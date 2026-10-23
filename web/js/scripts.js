@@ -418,7 +418,7 @@ function dobChange(e) {
  * - data-check-duplicate="fill" (new_consultation.zetem): abandoning the
  *   booking screen (date/time/location/doctor already chosen) just to
  *   look up a phone number would be actively unhelpful -- offer to copy
- *   that patient's phone/AMKA/email straight into the fields named by
+ *   that patient's name (this input itself) and phone/AMKA/email into the fields named by
  *   this input's own data-fill-target-* attributes instead, without
  *   navigating anywhere.
  *
@@ -438,6 +438,9 @@ if(duplicateCheckInput && duplicateCheckBox) {
     let duplicateCheckMinLen = parseInt(duplicateCheckInput.dataset.checkDuplicateMinlen, 10) || 2;
 
     function fillTargets(match) {
+        // The name too: what was typed may be only the start of it. (Setting .value fires no
+        // 'input' event, so this does not start another lookup.)
+        if(match.name) duplicateCheckInput.value = match.name;
         ['phone', 'amka', 'email'].forEach((field) => {
             let targetId = duplicateCheckInput.dataset['fillTarget' + field.charAt(0).toUpperCase() + field.slice(1)];
             let target = targetId ? document.getElementById(targetId) : null;
