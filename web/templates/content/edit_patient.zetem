@@ -175,17 +175,14 @@
             <!-- <input type="text" name="patient-dob" id="datepicker" value="{{$patient->getpdob()}}"> -->
         </div>
  #}
-        {# Gender: three radios rather than a menu, so choosing is one click.
-           The last one ("not set", empty value) is a real choice -- a radio
-           can't be un-picked, and the column is NULL until someone answers.
-           Saved like every other field (autosave posts the whole form). #}
+        {# Gender: two radios rather than a menu, so choosing is one click.
+           The column stays NULL until someone answers. Saved like every other field (autosave posts the whole form). #}
         {% $__g = $patient->getpgender(); %}
         <div class="input-div gender-field">
             <label id="patient-gender-label">{{{t('Gender')}}}</label>
             <div class="gender-radios" role="radiogroup" aria-labelledby="patient-gender-label">
                 <label class="gender-opt"><input type="radio" name="patient-gender" value="M" loader="info-loader" {{($__g === 'M') ? 'checked' : ''}}><span>{{{t('Male')}}}</span></label>
                 <label class="gender-opt"><input type="radio" name="patient-gender" value="F" loader="info-loader" {{($__g === 'F') ? 'checked' : ''}}><span>{{{t('Female')}}}</span></label>
-                <label class="gender-opt gender-none"><input type="radio" name="patient-gender" value="" loader="info-loader" {{($__g !== 'M' && $__g !== 'F') ? 'checked' : ''}}><span title="{{{t('Not set')}}}" aria-label="{{{t('Not set')}}}">&mdash;</span></label>
             </div>
         </div>
 
