@@ -63,6 +63,8 @@ return [
     'Location' => 'Τοποθεσία',
     'Patient documents' => 'Έγγραφα ασθενή',
     'Documents' => 'Έγγραφα',
+    'Expand all' => 'Ανάπτυξη όλων',
+    'Collapse all' => 'Σύμπτυξη όλων',
     'Financial information' => 'Οικονομικά Στοιχεία',
     'Invoices' => 'Παραστατικά',
     'MARK' => 'ΜΑΡΚ',

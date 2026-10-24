@@ -545,6 +545,63 @@
     font-size: 1rem;
 }
 
+/* The Documents title is a button that collapses/expands the list. */
+.edit-patient.is-record .side-card-head {
+    width: 100%;
+    background: transparent;
+    border: 0;
+    border-radius: var(--border-radius-lg);
+    box-shadow: none;
+    transform: none;
+    color: var(--text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.side-card-head .side-chev {
+    margin-left: auto;
+    color: var(--dark-gray);
+    transition: transform var(--transition-fast);
+}
+
+.side-card-head.is-open .side-chev {
+    transform: rotate(180deg);
+}
+
+.side-card-head:focus-visible {
+    outline: 2px solid var(--primary);
+    outline-offset: -2px;
+}
+
+/* Expand all / collapse all, next to the appointments title. */
+.appt-toggle-all {
+    display: inline-flex;
+    gap: 0.25rem;
+}
+
+.edit-patient.is-record .appt-toggle-all .icon-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.9rem;
+    height: 1.9rem;
+    padding: 0;
+    background: transparent;
+    color: var(--dark-gray);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    box-shadow: none;
+    transform: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+}
+
+.edit-patient.is-record .appt-toggle-all .icon-toggle:hover {
+    background: var(--light-gray);
+    color: var(--primary-dark);
+}
+
 .side-files {
     margin: 0;
     padding: 0.25rem 0.6rem 0.6rem;

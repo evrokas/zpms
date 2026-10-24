@@ -280,7 +280,11 @@
             <section class="patient-appts" aria-label="{{{t('Appointments and operations')}}}">
                 <div class="patient-appts-head">
                     <h4>{{{t('Appointments & operations')}}}</h4>
-                    {% if(isset($appointments) && count($appointments) > 0): %}<span class="file-count-badge">{{count($appointments)}}</span>{% endif %}
+                    {% if(isset($appointments) && count($appointments) > 0): %}<span class="file-count-badge">{{count($appointments)}}</span>
+                    <span class="appt-toggle-all">
+                        <button type="button" class="icon-toggle" id="appts-expand-all" title="{{{t('Expand all')}}}" aria-label="{{{t('Expand all')}}}"><i class="bx bx-chevrons-down"></i></button>
+                        <button type="button" class="icon-toggle" id="appts-collapse-all" title="{{{t('Collapse all')}}}" aria-label="{{{t('Collapse all')}}}"><i class="bx bx-chevrons-up"></i></button>
+                    </span>{% endif %}
 
                     {% if($can_edit_appointment): %}
                     <div class="patient-appointments">
@@ -413,10 +417,11 @@
         {% if(isset($all_files) && count($all_files) > 0): %}
         <aside class="patient-side" aria-label="{{{t('Patient documents')}}}">
             <div class="side-card">
-                <div class="side-card-head">
+                <button type="button" class="side-card-head" id="side-docs-toggle" aria-expanded="false" aria-controls="side-docs-list">
                     <h4>{{{t('Documents')}}}</h4><span class="file-count-badge">{{count($all_files)}}</span>
-                </div>
-                <ul class="side-files">
+                    <i class="bx bx-chevron-down side-chev" aria-hidden="true"></i>
+                </button>
+                <ul class="side-files" id="side-docs-list" hidden>
                     {% foreach($all_files as $f): %}
                     <li>
                         <span class="sf-ic{{($f['is_image']) ? ' is-image' : ''}}"><i class="bx {{($f['is_image']) ? 'bx-image' : 'bxs-file-pdf'}}"></i></span>
@@ -575,6 +580,24 @@
                 head.setAttribute('aria-expanded', open ? 'true' : 'false');
                 body.hidden = !open;
             }
+            var expandAll = document.getElementById('appts-expand-all');
+            var collapseAll = document.getElementById('appts-collapse-all');
+            if (expandAll) expandAll.addEventListener('click', function() {
+                document.querySelectorAll('.appt-row').forEach(function(r) { setRow(r, true); });
+            });
+            if (collapseAll) collapseAll.addEventListener('click', function() {
+                document.querySelectorAll('.appt-row').forEach(function(r) { setRow(r, false); });
+            });
+            /* Documents block: collapsed on load, the title toggles it. */
+            var docsToggle = document.getElementById('side-docs-toggle');
+            var docsList = document.getElementById('side-docs-list');
+            function setDocs(open) {
+                if (!docsToggle || !docsList) return;
+                docsList.hidden = !open;
+                docsToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+                docsToggle.classList.toggle('is-open', open);
+            }
+            if (docsToggle) docsToggle.addEventListener('click', function() { setDocs(docsList.hidden); });
             document.querySelectorAll('.appt-row').forEach(function(row) {
                 row.querySelector('.appt-row-head').addEventListener('click', function() {
                     setRow(row, !row.classList.contains('is-open'));
