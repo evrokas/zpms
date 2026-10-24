@@ -180,7 +180,7 @@
         {% $__g = $patient->getpgender(); %}
         <div class="input-div gender-field">
             <label id="patient-gender-label">{{{t('Gender')}}}</label>
-            <div class="gender-radios" role="radiogroup" aria-labelledby="patient-gender-label">
+            <div class="gender-radios{{($__g !== 'M' && $__g !== 'F') ? ' is-unset' : ''}}" role="radiogroup" aria-labelledby="patient-gender-label">
                 <label class="gender-opt"><input type="radio" name="patient-gender" value="M" loader="info-loader" {{($__g === 'M') ? 'checked' : ''}}><span>{{{t('Male')}}}</span></label>
                 <label class="gender-opt"><input type="radio" name="patient-gender" value="F" loader="info-loader" {{($__g === 'F') ? 'checked' : ''}}><span>{{{t('Female')}}}</span></label>
             </div>
@@ -635,6 +635,8 @@
             });
             document.querySelectorAll('#patient-details input[name="patient-gender"]').forEach(function(radio) {
                 radio.addEventListener('change', function() {
+                    var grp = radio.closest('.gender-radios');
+                    if (grp && radio.checked) grp.classList.remove('is-unset');
                     var g = document.getElementById('pi-gender');
                     if (!g || !radio.checked) return;
                     var optLabel = radio.parentNode.querySelector('span');

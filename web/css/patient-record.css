@@ -388,24 +388,26 @@
 }
 
 .edit-patient.is-record .patient-appointments-list {
-    display: block;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
     margin: 0;
-    padding: 0;
+    padding: 0.75rem;
     list-style: none;
 }
 
+/* Each appointment is its own small card with a gap around it, so an
+   expanded one visibly ends before the next begins. */
 .edit-patient.is-record .appt-row {
-    border-bottom: 1px solid var(--border-color);
+    border: 1px solid var(--border-color);
     border-left: 3px solid var(--primary);
+    border-radius: var(--border-radius-md);
+    background: #fff;
+    overflow: hidden;
 }
 
 .edit-patient.is-record .appt-row.is-operation {
     border-left-color: var(--warning-dark);
-}
-
-.edit-patient.is-record .appt-row:last-child {
-    border-bottom: 0;
-    border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
 }
 
 .edit-patient.is-record .appt-row-head {
@@ -809,6 +811,12 @@
 }
 
 /* ---------- gender radios (patient form) ---------- */
+
+/* Nothing chosen yet: red outline, like an invalid text field. */
+.edit-patient .gender-radios.is-unset .gender-opt span {
+    border-color: var(--error);
+}
+
 
 /* Three segmented radios -- Άνδρας / Γυναίκα / "not set" -- one click to
    choose. The native radio is visually hidden but stays focusable and

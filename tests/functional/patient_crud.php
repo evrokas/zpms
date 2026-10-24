@@ -260,9 +260,10 @@ function zpms_functional_patient_crud(TestRunner $runner, TestHttpClient $http):
 
         $http->post("/patient/$id/edit", $edit + ['patient-gender' => 'F']);
         $http->post("/patient/$id/edit", $edit + ['patient-gender' => '']);
-        assert_null($gender(), 'the "not set" radio (empty value) must clear the gender');
+        assert_null($gender(), 'a blank value must clear the gender');
         $page = $http->get("/patient/$id/edit");
-        assert_true(preg_match('/value=""[^>]*checked/', $page['body']) === 1, 'the "not set" radio is not checked for a patient with no gender');
+        assert_true(preg_match('/value="[MF]"[^>]*checked/', $page['body']) === 0, 'no radio may be checked for a patient with no gender');
+        assert_contains('gender-radios is-unset', $page['body'], 'the unset gender group must carry the red-outline class');
     });
 
     $runner->add('patients list: rows per page, paging, "all", sorting, search, area, bad values, and ? in the address', function () use ($http) {
