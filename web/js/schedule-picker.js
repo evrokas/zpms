@@ -129,13 +129,24 @@
         return { r0: Math.min(anchor, end), r1: Math.max(anchor, end) };
     }
 
+    // A click on free time selects one appointment of that interval's own length
+    // (its weekly pattern's slot, e.g. 45 minutes), starting at the clicked row and
+    // staying inside the free time; dragging afterwards still sets any length.
+    function defaultSelection(r) {
+        var b = cells[r], rows = Math.max(1, Math.round(((b && b.slot) || STEP) / STEP));
+        var r0 = r, r1 = r;
+        while (r1 - r0 + 1 < rows && allowed(r1 + 1)) r1++;
+        while (r1 - r0 + 1 < rows && allowed(r0 - 1)) r0--;
+        return { r0: r0, r1: r1 };
+    }
+
     gridEl.addEventListener('pointerdown', function (ev) {
         var r = rowAt(ev.clientX, ev.clientY);
         if (r === null) return;
         if (sel && (r === sel.r0 || r === sel.r1)) drag = { anchor: r === sel.r0 ? sel.r1 : sel.r0 };
         else {
             if (!allowed(r)) { panelMessage('bad', txt('schedNothingHere')); return; }
-            drag = { anchor: r }; sel = { r0: r, r1: r }; useOverride = false;
+            drag = { anchor: r }; sel = defaultSelection(r); useOverride = false;
         }
         try { gridEl.setPointerCapture(ev.pointerId); } catch (e) { /* unsupported */ }
         ev.preventDefault();

@@ -108,6 +108,23 @@ function zpms_booking_functional_tests(TestRunner $runner, string $baseUrl): voi
         assert_equal(200, $own['status']);
     });
 
+    $runner->add('the day endpoint carries the pattern\'s appointment length: blocks and suggestions use 45, not a fixed 30', function () use ($doctor, $mon) {
+        $wed = date('Y-m-d', strtotime($mon . ' +2 days'));
+        zpms_bk_db()->prepare('INSERT INTO schedule_templates (guid, cdate, cuser, location, weekday, start_time, end_time, kind, slot_minutes, note) VALUES (?,?,?,?,?,?,?,?,?,?)')
+            ->execute([guid(), getDBtime(), 't', 'bk_p', 3, '10:00', '13:00', 'available', 45, '']);
+        $page = $doctor->get('/consultation/new');
+        $token = html_entity_decode(preg_match('/<meta name="csrf-token" content="([^"]+)"/', $page['body'], $m) ? $m[1] : '');
+        $res = $doctor->postWithHeaders('/schedule/day', ['loc' => 'bk_p', 'date' => $wed], ['X-CSRF-Token' => $token]);
+        $json = json_decode(substr($res['body'], strpos($res['body'], '{"')), true);
+        assert_true($json['ok']);
+        $avail = array_values(array_filter($json['blocks'], fn($b) => $b['type'] === 'avail'));
+        assert_equal(45, $avail[0]['slot'] ?? null, 'the available block does not say how long an appointment is');
+        $s0 = $json['suggestions'][0] ?? null;
+        assert_not_null($s0, 'no suggestion');
+        $len = (strtotime("2000-01-01 {$s0['end']}") - strtotime("2000-01-01 {$s0['start']}")) / 60;
+        assert_equal(45, (int)$len, 'the suggested time is not 45 minutes long');
+    });
+
     $runner->add('an overlap, a time outside the schedule and a missing location are refused and write nothing', function () use ($doctor, $mon) {
         $before = (int)zpms_bk_db()->query('SELECT COUNT(*) FROM pending_appointments')->fetchColumn();
         foreach ([

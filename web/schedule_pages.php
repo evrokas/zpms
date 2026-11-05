@@ -672,7 +672,16 @@ function schedule_day($params) {
     if ($date >= date('Y-m-d')) {
         $own = $ref !== '' ? zpms_sched_ref_reservation($ctx, $ref) : null;
         $ctx['reservations'] = array_values(array_filter($ctx['reservations'], fn($r) => $own === null || $r['guid'] !== $own));
-        $len = max(15, min(240, (int)($_POST['len'] ?? 30)));
+        // Default length: what the day's available time is set up for (45 minutes
+        // in Settings -> schedule), unless the caller asks for another length.
+        $defaultLen = 30;
+        foreach ($blocks as $b) {
+            if ($b['type'] === 'avail' && !empty($b['slot'])) {
+                $defaultLen = (int)$b['slot'];
+                break;
+            }
+        }
+        $len = max(15, min(240, (int)($_POST['len'] ?? $defaultLen)));
         $len -= $len % 15;
         foreach (zpms_sched_suggest($ctx, $loc, $date, $len, 4) as $s) {
             $suggestions[] = ['start' => zpms_sched_min_to_time($s['start']), 'end' => zpms_sched_min_to_time($s['start'] + $len), 'reason' => $s['reason']];

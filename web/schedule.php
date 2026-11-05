@@ -636,7 +636,9 @@ function zpms_sched_day_blocks(array $ctx, string $location, string $date): arra
     $cells = array_fill(0, 96, null);
     foreach (zpms_sched_day_cells($ctx['templates'], $ctx['overrides'], $location, $date) as $i => $c) {
         if ($c !== null) {
-            $cells[$i] = ['type' => $c['kind'] === 'available' ? 'avail' : $c['kind'], 'label' => '', 'note' => $c['note'], 'ref' => '', 'guid' => ''];
+            // 'slot': the default appointment length of this interval (its weekly pattern's
+            // "slot_minutes"); the booking picker starts a click-selection at this length.
+            $cells[$i] = ['type' => $c['kind'] === 'available' ? 'avail' : $c['kind'], 'label' => '', 'note' => $c['note'], 'ref' => '', 'guid' => '', 'slot' => (int)($c['slot'] ?? 30)];
         }
     }
     $mark = function (int $a, int $b, array $cell) use (&$cells) {
