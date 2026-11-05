@@ -157,3 +157,21 @@
 .sched-locs { display: flex; flex-direction: column; gap: .4rem; margin-bottom: 1rem; }
 .sched-loc-check { display: flex; align-items: center; gap: .5rem; padding: .25rem 0; cursor: pointer; }
 .sched-setup-buttons { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .5rem; }
+
+/* Booking picker: location (1) and date (2) come before the time (3) -- until both
+   are chosen the calendar is dimmed and covered by what is still to do, and the
+   next field is outlined. */
+.booking-picker .booking-step { display: inline-flex; align-items: center; justify-content: center; width: 1.25rem; height: 1.25rem; margin-right: 0.25rem; border-radius: 50%; background: var(--primary); color: #fff; font-size: 0.75rem; font-weight: 600; }
+.booking-picker .booking-cal-wrap { position: relative; max-width: 32rem; }
+.booking-picker .booking-wait { display: none; }
+.booking-picker.is-waiting .booking-cal { opacity: 0.35; pointer-events: none; }
+.booking-picker.is-waiting .booking-wait { display: flex; position: absolute; inset: 0; align-items: flex-start; justify-content: center; padding-top: 3rem; cursor: pointer; }
+.booking-picker .booking-wait-box { background: #fff; border: 1px solid var(--border-color); border-radius: var(--border-radius-lg); box-shadow: var(--shadow-sm); padding: 0.9rem 1.2rem; text-align: left; max-width: 20rem; }
+.booking-picker .booking-wait-box ol { margin: 0.5rem 0; padding-left: 1.4rem; }
+.booking-picker .booking-wait-box li.done { color: var(--dark-gray); text-decoration: line-through; }
+.booking-picker .booking-wait-box span { font-size: 0.85rem; color: var(--dark-gray); }
+.booking-picker .input-div.need select,
+.booking-picker .input-div.need input { outline: 2px solid var(--primary); outline-offset: 1px; }
+.booking-picker .input-div.pulse { animation: booking-pulse 0.9s ease-out 1; }
+@keyframes booking-pulse { 0% { transform: translateX(0); } 20% { transform: translateX(-5px); } 40% { transform: translateX(5px); } 60% { transform: translateX(-3px); } 80% { transform: translateX(3px); } 100% { transform: translateX(0); } }
+@media (prefers-reduced-motion: reduce) { .booking-picker .input-div.pulse { animation: none; } }

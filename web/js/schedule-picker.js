@@ -265,7 +265,36 @@
 
     // --------------------------------------------------------------- load
 
+    // The time calendar is useless until a location and a date are chosen, and the
+    // eye goes straight to it: cover it with the two steps still to do and mark the
+    // field that is next.
+    var waitEl = root.querySelector('[data-booking-wait]');
+    var needLoc = root.querySelector('[data-need-loc]');
+    var needDate = root.querySelector('[data-need-date]');
+    function updateWait() {
+        var hasLoc = !!locEl.value, hasDate = !!dateEl.value;
+        root.classList.toggle('is-waiting', !(hasLoc && hasDate));
+        if (waitEl) {
+            [['loc', hasLoc], ['date', hasDate]].forEach(function (p) {
+                var li = waitEl.querySelector('[data-wait-step="' + p[0] + '"]');
+                if (li) li.classList.toggle('done', p[1]);
+            });
+        }
+        if (needLoc) needLoc.classList.toggle('need', !hasLoc);
+        if (needDate) needDate.classList.toggle('need', hasLoc && !hasDate);
+    }
+    function nudge() {
+        var target = !locEl.value ? needLoc : needDate;
+        if (!target) return;
+        target.classList.remove('pulse'); void target.offsetWidth; target.classList.add('pulse');
+        target.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        var field = !locEl.value ? locEl : (dateEl._flatpickr && dateEl._flatpickr.altInput ? dateEl._flatpickr.altInput : dateEl);
+        try { field.focus({ preventScroll: true }); } catch (e) { /* ignore */ }
+    }
+    if (waitEl) waitEl.addEventListener('pointerdown', function (ev) { ev.preventDefault(); nudge(); });
+
     function load() {
+        updateWait();
         sel = null; result = null; useOverride = false; setFields();
         cells = new Array(ROWS).fill(null); loaded = false; daySuggestions = [];
         updateRemote();
