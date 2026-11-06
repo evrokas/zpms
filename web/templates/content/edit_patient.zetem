@@ -53,6 +53,10 @@
                 {% if($identity['next']): %}<div><dt>{{{t('Next')}}}</dt><dd>{{$identity['next'] | date('d-m-Y')}}</dd></div>{% endif %}
             </dl>
 
+            {% if(!empty($medscribe_new_document_url)): %}
+            <a class="pi-toggle" id="patient-new-document" href="{{{$medscribe_new_document_url}}}" target="_blank" rel="noopener"><i class="bx bx-file"></i><span>{{{t('New document')}}}</span></a>
+            {% endif %}
+
             <button type="button" class="pi-toggle" id="patient-details-toggle" aria-expanded="false" aria-controls="patient-details"
                 data-label-closed="{{{($can_edit_patient) ? t('Edit details') : t('Patient details')}}}"
                 data-label-open="{{{t('Close details')}}}">

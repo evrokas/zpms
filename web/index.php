@@ -11,6 +11,12 @@ if (is_file(__DIR__ . '/../config/docarc_api.php')) {
     include_once(__DIR__ . '/../config/docarc_api.php');
 }
 
+// Optional -- only present once an admin has set up the MedScribe integration
+// (see config/medscribe_api.php.in). Same is_file() guard as docarc_api.php above.
+if (is_file(__DIR__ . '/../config/medscribe_api.php')) {
+    include_once(__DIR__ . '/../config/medscribe_api.php');
+}
+
 // Optional -- only present once an admin has set up the APYweb
 // financial-info lookup integration (see config/apyweb_api.php.in).
 // Same is_file() guard as docarc_api.php above.
@@ -732,7 +738,9 @@ require_once(__DIR__ . '/zpms_mailer.php');
             'can_edit_patient' => $canEditPatient,
             'can_edit_appointment' => $canEditAppointment,
             'can_view_appointment' => $canViewAppointment,
-            'can_delete_patient' => $canDeletePatient
+            'can_delete_patient' => $canDeletePatient,
+            // "New document" button: opens MedScribe on this patient (config/medscribe_api.php).
+            'medscribe_new_document_url' => zpms_medscribe_new_document_url((string)$pat->getguid()),
         ]));
     }
     function patient_edit_post($params) {

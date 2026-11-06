@@ -433,6 +433,11 @@ routes:
     url: "/api/v1/patients/search/{term}"
     handler: docarc_patients_search_api
     method: get
+  patient_get_api:
+    title: "MedScribe patient API"
+    url: "/api/v1/patients/{guid}"
+    handler: medscribe_patient_get_api
+    method: get
   patient_edit:
     title: 
       en: "Patient edit"

@@ -1,0 +1,19 @@
+<?php
+
+// MedScribe integration (the document generator, ../medscribe).
+//
+// MEDSCRIBE_API_KEY: the key MedScribe must present in the X-MedScribe-Api-Key request header when
+// it calls
+//   GET /api/v1/patients/search/{term}   (also open to DocArc's own key)
+//   GET /api/v1/patients/{guid}          (MedScribe only)
+// (web/api_patients.php). Copy this file to medscribe_api.php (gitignored, same pattern as
+// docarc_api.php.in) and replace the placeholder with a long random value, e.g.:
+//   php -r "echo bin2hex(random_bytes(32)), PHP_EOL;"
+// Put the exact same value in MedScribe's config/zpms_api.php. Leave the file absent (or the key
+// blank) to switch the endpoints off for MedScribe: they then answer HTTP 503.
+define('MEDSCRIBE_API_KEY', '<<key>>');
+
+// MEDSCRIBE_BASE_URL: where MedScribe is served, with no trailing slash. When set, the patient
+// page shows a "New document" button that opens MedScribe at /documents/new?patient=<guid>.
+// Leave blank to hide the button.
+define('MEDSCRIBE_BASE_URL', '');
