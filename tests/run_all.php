@@ -59,6 +59,7 @@ require_once __DIR__ . '/lib/TestFixtures.php';
 require_once __DIR__ . '/functional/patient_crud.php';
 require_once __DIR__ . '/functional/appointment_crud.php';
 require_once __DIR__ . '/functional/auth_csrf.php';
+require_once __DIR__ . '/functional/medscribe_api.php';
 require_once __DIR__ . '/functional/file_upload.php';
 require_once __DIR__ . '/functional/admin_crud.php';
 require_once __DIR__ . '/functional/zpmscli.php';
@@ -162,6 +163,14 @@ try {
     $bookingRunner = new TestRunner('Booking through the forms');
     zpms_booking_functional_tests($bookingRunner, $server->baseUrl());
     $ok = $bookingRunner->run() && $ok;
+
+    // The patient API for MedScribe (key checks, fetch by guid, "New document" button).
+    $server->stop();
+    $server = new TestServer();
+    $server->start();
+    $msRunner = new TestRunner('MedScribe patient API');
+    zpms_medscribe_api_functional_tests($msRunner, $server->baseUrl());
+    $ok = $msRunner->run() && $ok;
 
     // What goes to Google Calendar from the schedule (stand-in for Google; no network).
     $calendarRunner = new TestRunner('Google Calendar sync of the schedule');

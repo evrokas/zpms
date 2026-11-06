@@ -45,6 +45,7 @@ const ZPMS_AUDIT_EVENT_LABELS = [
     'patient_purged' => 'Patient record permanently removed',
     'patients_reassigned' => 'Records reassigned to another user',
     'patient_search_api' => 'Patient search by DocArc',
+    'patient_get_api' => 'Patient fetched by MedScribe',
     'appointment_created' => 'Appointment created',
     'appointment_updated' => 'Appointment changed',
     'appointment_deleted' => 'Appointment deleted',

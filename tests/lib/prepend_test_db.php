@@ -32,3 +32,7 @@ if (!is_file($testConfig)) {
 }
 
 require_once $testConfig;
+
+// MedScribe's API key for the test server (functional/medscribe_api.php); the real config file is not used.
+if (!defined('MEDSCRIBE_API_KEY')) define('MEDSCRIBE_API_KEY', 'test-medscribe-key');
+if (!defined('MEDSCRIBE_BASE_URL')) define('MEDSCRIBE_BASE_URL', 'https://medscribe.test');
