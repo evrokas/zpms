@@ -2550,3 +2550,17 @@ The lists come from `GET /notes/suggestions`: refused to accounts that write no 
 **After pulling:** `php bin/import_dictionary.php` (new labels), empty `web/cache/`.
 
 Tests: `tests/note_tags/editing_cases.js` (the field under the caret, prescription blank positions, in the static suite) and the suggestion endpoint in `tests/functional/note_fields.php` (order, counts, deleted and invalid rows left out, refused to a secretary and to signed-out visitors). The aids themselves were checked in Chromium (desktop, and iPhone emulation for the word bar).
+
+## Clinical tags in the notes -- phase 4: the patient record
+
+Fourth phase of `docs/CLINICAL_TAGS_PLAN.md` (details in its section 19). The patient page now shows what the notes say, at a glance:
+
+- **Allergy line** on the patient header (pale orange): every `@αλ` value, each linked to the note it comes from.
+- **«Κλινική εικόνα»** under the header: one small box per tag (diagnoses, levels, allergies, examinations, procedures, therapy, physiotherapy, medication, prescriptions). Values from the patient note come first, then appointment notes newest first, each with its date (or «σημείωση ασθενή») and a link that opens the note. A value repeated across visits is listed once with «×N». Prescriptions show the total tablets.
+- Values from appointment notes appear only for accounts that may see the appointment cards. Deleted appointments and impossible levels are left out.
+
+The blocks are built when the page loads, so a value just typed appears after a reload.
+
+**After pulling:** `php bin/import_dictionary.php` (three new labels), empty `web/cache/`.
+
+Tests: `tests/functional/note_fields.php` (the header line and its link, the boxes, totals, links to the cards, an invalid level and a deleted appointment left out, repeats counted, newest first, and a viewer without appointment access seeing the patient note only).

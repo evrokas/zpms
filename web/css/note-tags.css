@@ -308,3 +308,76 @@ form .input-div.input-notes .zt-box { grid-column: 1; grid-row: 2; }
 @media screen and (max-width: 470px) {
     .zt-fieldbar { left: 0; right: auto; }
 }
+
+/* ---- phase 4: the patient record ---- */
+
+/* Allergy line in the identity header (pale orange, from the tag's colours). */
+.pi-allergies {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.25rem 0.45rem;
+    margin: 0 1.25rem 0.75rem;
+    padding: 0.4rem 0.7rem;
+    background: var(--zt-tint);
+    border: 1px solid var(--zt-mark);
+    border-radius: 6px;
+    color: var(--zt-ink);
+    font-size: 0.9rem;
+}
+.pi-allergies i { font-size: 1.05rem; }
+.pi-allergies-label { font-weight: 600; }
+.pi-allergies a { color: var(--zt-ink); text-decoration: underline; text-decoration-color: var(--zt-mark); text-underline-offset: 3px; }
+.pi-allergies-sep { opacity: 0.6; }
+
+/* «Κλινική εικόνα»: one small box per tag. */
+.clinical-picture {
+    margin: 1rem 0;
+    padding: 0.85rem 1rem 1rem;
+    background: white;
+    border: 1px solid var(--border-color, #d6e1e3);
+    border-radius: var(--border-radius-lg, 0.75rem);
+}
+.cp-title {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0 0 0.7rem;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: var(--text, #182427);
+}
+.cp-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));
+    gap: 0.6rem;
+}
+.cp-box {
+    padding: 0.5rem 0.65rem 0.55rem;
+    background: color-mix(in srgb, var(--zt-tint) 55%, white);
+    border: 1px solid color-mix(in srgb, var(--zt-mark) 60%, white);
+    border-radius: 6px;
+    min-width: 0;
+}
+.cp-label {
+    margin: 0 0 0.3rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--zt-ink);
+}
+.cp-list { margin: 0; padding: 0; list-style: none; }
+.cp-list li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.15rem 0.45rem;
+    padding: 0.15rem 0;
+    font-size: 0.88rem;
+    line-height: 1.35;
+}
+.cp-list li + li { border-top: 1px dashed color-mix(in srgb, var(--zt-mark) 45%, white); }
+.cp-value { color: var(--text, #182427); overflow-wrap: anywhere; }
+a.cp-value { text-decoration: none; }
+a.cp-value:hover { text-decoration: underline; text-decoration-color: var(--zt-mark); }
+.cp-count, .cp-total { color: var(--zt-ink); font-size: 0.8rem; }
+.cp-when { margin-left: auto; color: #8a9a9d; font-size: 0.78rem; white-space: nowrap; }

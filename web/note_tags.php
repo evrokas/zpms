@@ -876,6 +876,70 @@ function zpms_note_suggestions(PDO $db, bool $patientNotes, bool $appointmentNot
     return $out;
 }
 
+/**
+ * The patient record's clinical summary (section 9, phase 4): for every tag with
+ * `summary: true`, the values found in this patient's notes -- the patient note
+ * first (it is the standing record), then appointment notes newest first. A
+ * value repeated in several notes is shown once (its newest occurrence) with a
+ * count. Soft-deleted rows and appointments, and impossible levels, are left
+ * out. Appointment notes count only for a viewer who may see the appointment
+ * cards ($withAppointments); $anchors maps an appointment id to its card's
+ * anchor on the page (#app-N). Never throws: an empty summary on any failure.
+ *
+ * @return array{tags: array<string, array{label:string, colour:string, entries:array}>, allergies: array}
+ */
+function zpms_note_clinical_picture(PDO $db, int $patientId, bool $withAppointments, array $anchors = []): array {
+    $out = ['tags' => [], 'allergies' => []];
+    try {
+        if (!zpms_note_table_exists($db, 'note_fields')) return $out;
+        $spec = zpms_note_tags_spec();
+        $sql = "SELECT n.tag_key, n.value_text, n.normalized, n.source, n.appointment_id, n.rx_total, a.adate
+                FROM note_fields n LEFT JOIN appointments a ON a.id = n.appointment_id
+                WHERE n.patient_id = ? AND n.deleted IS NULL AND n.valid = 1
+                  AND (n.source = 'patient' OR (a.id IS NOT NULL AND a.deleted IS NULL))"
+             . ($withAppointments ? '' : " AND n.source = 'patient'")
+             . " ORDER BY (n.source = 'patient') DESC, a.adate DESC, n.appointment_id DESC, n.pos, n.id";
+        $st = $db->prepare($sql);
+        $st->execute([$patientId]);
+        $seen = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) {
+            $tag = $spec['tags'][$r['tag_key']] ?? null;
+            if (!$tag || empty($tag['summary'])) continue;
+            $key = $r['tag_key'] . '|' . ($r['normalized'] !== null && $r['normalized'] !== '' ? $r['normalized'] : zpms_note_normalize_text((string)$r['value_text']));
+            if (isset($seen[$key])) {
+                [$t, $i] = $seen[$key];
+                $out['tags'][$t]['entries'][$i]['count']++;
+                continue;
+            }
+            $isPatient = $r['source'] === 'patient';
+            $entry = [
+                'text' => (string)$r['value_text'],
+                'date' => $isPatient ? null : (string)$r['adate'],
+                'source' => $r['source'],
+                'link' => $isPatient ? '#patient-note' : ($anchors[(int)$r['appointment_id']] ?? null),
+                'count' => 1,
+                'total' => $r['rx_total'] !== null ? (float)$r['rx_total'] : null,
+                'tag' => $r['tag_key'],
+                'colour' => (string)$tag['colour'],
+            ];
+            if (!isset($out['tags'][$r['tag_key']])) {
+                $out['tags'][$r['tag_key']] = ['label' => (string)$tag['label'], 'colour' => (string)$tag['colour'], 'entries' => []];
+            }
+            $out['tags'][$r['tag_key']]['entries'][] = $entry;
+            $seen[$key] = [$r['tag_key'], count($out['tags'][$r['tag_key']]['entries']) - 1];
+            if (!empty($tag['header_alert'])) $out['allergies'][] = $entry;
+        }
+        // Panel boxes in the order of the tag file.
+        $ordered = [];
+        foreach (array_keys($spec['tags']) as $k) if (isset($out['tags'][$k])) $ordered[$k] = $out['tags'][$k];
+        $out['tags'] = $ordered;
+    } catch (Throwable $e) {
+        error_log('note summary: ' . get_class($e));
+        return ['tags' => [], 'allergies' => []];
+    }
+    return $out;
+}
+
 /** GET /notes/suggestions -- JSON for web/js/note-box.js. Only for accounts that write notes. */
 function note_tags_suggestions($params) {
     header('Content-Type: application/json; charset=utf-8');

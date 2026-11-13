@@ -687,10 +687,13 @@ require_once(__DIR__ . '/zpms_mailer.php');
         // first -- feeds the record page's "Έγγραφα" sidebar so a file can be
         // found without opening each appointment row (see edit_patient.zetem).
         $allFiles = array();
+        $noteAnchors = array();
         foreach($app_list as $ap) {
 
             if($ap->getdeleted() == null) {
                 if ($canEditAppointment || $canViewAppointment) {
+                    // Where this card sits on the page, for the clinical summary's links.
+                    $noteAnchors[(int)$ap->getid()] = '#app-' . (count($apprender)+1);
                     $apFiles = appointmentFilesClassEx::getFilesForAppointment($ap->getid());
                     $apLabel = (($ap->getatype() == 'operation') ? t('Operation') : t('Appointment')) . ' ' . formatDate($ap->getadate());
                     foreach($apFiles as $f) {
@@ -749,6 +752,9 @@ require_once(__DIR__ . '/zpms_mailer.php');
             'all_files' => $allFiles,
             'appointment_summary' => $appointmentSummary,
             'patient_history' => zpms_patient_appointment_history_for_display($appointmentIdsForHistory),
+            // Clinical tags in the notes: allergy line and «Κλινική εικόνα» (web/note_tags.php).
+            'clinical' => zpms_note_clinical_picture(dbConnection::getConnection(), (int)$pat->getid(),
+                $canEditAppointment || $canViewAppointment, $noteAnchors),
             'financials' => $financials,
             'has_financials' => $hasFinancials,
             'can_edit_patient' => $canEditPatient,

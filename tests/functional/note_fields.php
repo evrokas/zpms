@@ -226,6 +226,52 @@ function zpms_functional_note_fields(TestRunner $runner, string $baseUrl): void 
         }
     });
 
+    $runner->add('patient record: allergy line and «Κλινική εικόνα» (newest first, repeats counted, links, no deleted or invalid values)', function () use ($http, $db, &$state) {
+        TestSchema::assertSafeToMutate();
+        $pid = $state['pid'];
+        $body = $http->get("/patient/$pid/edit")['body'];
+        assert_true((bool)preg_match('~<div class="pi-allergies[^"]*"[^>]*>(.*?)</div>~su', $body, $m), 'no allergy line on the patient header');
+        assert_contains('<a href="#patient-note">λάτεξ</a>', $m[1], 'allergy not linked to the patient note');
+        assert_true((bool)preg_match('~<section class="clinical-picture"(.*?)</section>~su', $body, $cp), 'no «Κλινική εικόνα» panel');
+        $panel = $cp[1];
+        foreach (['data-tag="alg"', 'data-tag="dx"', 'data-tag="rx"', 'data-tag="proc"', 'data-tag="lvl"'] as $needle) {
+            assert_contains($needle, $panel, "panel box missing: $needle");
+        }
+        assert_contains('href="#app-', $panel, 'appointment values not linked to their card');
+        assert_true((bool)preg_match('~class="cp-total">[^<]*60~u', $panel), 'prescription total not shown');
+        assert_not_contains('>Ο6<', $panel, 'an impossible level is in the summary');
+
+        // A soft-deleted appointment's values do not show; a repeat is counted once.
+        $mk = function (string $note) use ($state) {
+            $a = new appointmentsClass(['guid' => guid(), 'cuser' => 'test', 'cdate' => getDBtime(), 'adate' => '2026-12-24 10:00:00', 'aplace' => '',
+                'anote' => $note, 'atype' => 'appointment', 'pguid' => $state['guid']]);
+            $a->insert();
+            zpms_note_fields_sync_appointment($a);
+            return $a;
+        };
+        $gone = $mk('@δγ κρυφή διάγνωση');
+        $gone->setdeleted('2026-12-25 00:00:00');
+        $gone->update();
+        zpms_note_fields_hide_appointments($db, [(int)$gone->getid()], '2026-12-25 00:00:00');
+        $again = $mk('@δγ Ριζοπάθεια');
+        $pic = zpms_note_clinical_picture($db, $pid, true, []);
+        $dx = array_column($pic['tags']['dx']['entries'], null, 'text');
+        assert_true(!isset($dx['κρυφή διάγνωση']), 'a deleted appointment\'s value is in the summary');
+        $rizo = array_values(array_filter($pic['tags']['dx']['entries'], fn($e) => zpms_note_fold($e['text']) === 'ριζοπαθεια'));
+        assert_equal(1, count($rizo), 'a repeated value is listed twice');
+        assert_equal(2, $rizo[0]['count'], 'repeat not counted');
+        assert_equal('Ριζοπάθεια', $rizo[0]['text'], 'not the newest occurrence first');
+        assert_equal(['dx', 'lvl', 'alg'], array_slice(array_keys($pic['tags']), 0, 3), 'boxes not in the order of the tag file');
+
+        // A viewer who may not see appointment notes gets the patient note only.
+        $own = zpms_note_clinical_picture($db, $pid, false, []);
+        assert_true(!isset($own['tags']['dx']) && isset($own['tags']['alg']), 'appointment values reached a viewer without appointment access');
+        foreach ([$gone, $again] as $a) {
+            $db->prepare('DELETE FROM note_fields WHERE appointment_id = ?')->execute([$a->getid()]);
+            $db->prepare('DELETE FROM appointments WHERE id = ?')->execute([$a->getid()]);
+        }
+    });
+
     $runner->add('a pending appointment turned into a patient record: its notes are parsed then', function () use ($http, $db, &$state) {
         TestSchema::assertSafeToMutate();
         $pending = new pendingAppointmentsClass([

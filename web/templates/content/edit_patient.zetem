@@ -69,10 +69,45 @@
         {# Only the first line of the notes (up to the first line break); the
            full text is in the Notes field of the details panel. #}
         {% $__noteLine = trim(preg_split('/\r\n|\r|\n/', zpms_note_strip((string)$patient->getpnote()), 2)[0]); %}
+        {# Clinical tags (docs/CLINICAL_TAGS_PLAN.md section 9): every allergy found
+           in the notes, newest first, each linked to the note it comes from. #}
+        {% if(!empty($clinical['allergies'])): %}
+        <div class="pi-allergies zt-c-{{{$clinical['allergies'][0]['colour']}}}" role="note">
+            <i class="bx bx-error-circle"></i><span class="pi-allergies-label">{{{t('Allergies')}}}:</span>
+            {% foreach($clinical['allergies'] as $__i => $__al): %}{% if($__i > 0): %}<span class="pi-allergies-sep">&middot;</span>{% endif %}{% if($__al['link']): %}<a href="{{{$__al['link']}}}">{{{$__al['text']}}}</a>{% else: %}<span>{{{$__al['text']}}}</span>{% endif %}{% endforeach %}
+        </div>
+        {% endif %}
         <div class="pi-note" id="pi-note-wrap" {% if($__noteLine === ''): %}hidden{% endif %}>
             <i class="bx bx-note"></i><span id="pi-note">{{{$__noteLine}}}</span>
         </div>
     </section>
+
+    {# «Κλινική εικόνα»: one box per tag with summary: true, values newest first
+       (a value repeated in several notes once, with a count), each with its date
+       -- or "patient note" -- and a link to the note. web/note_tags.php,
+       zpms_note_clinical_picture(). #}
+    {% if(!empty($clinical['tags'])): %}
+    <section class="clinical-picture" aria-label="{{{t('Clinical picture')}}}">
+        <h3 class="cp-title"><i class="bx bx-clipboard"></i> {{{t('Clinical picture')}}}</h3>
+        <div class="cp-grid">
+            {% foreach($clinical['tags'] as $__key => $__box): %}
+            <div class="cp-box zt-c-{{{$__box['colour']}}}" data-tag="{{{$__key}}}">
+                <h4 class="cp-label">{{{$__box['label']}}}</h4>
+                <ul class="cp-list">
+                    {% foreach($__box['entries'] as $__e): %}
+                    <li>
+                        {% if($__e['link']): %}<a class="cp-value" href="{{{$__e['link']}}}">{{{$__e['text']}}}</a>{% else: %}<span class="cp-value">{{{$__e['text']}}}</span>{% endif %}
+                        {% if($__e['count'] > 1): %}<span class="cp-count" title="{{{t('@n times', ['n' => $__e['count']])}}}">&times;{{$__e['count']}}</span>{% endif %}
+                        {% if($__e['total'] !== null): %}<span class="cp-total">{{{t('Total: @n tablets', ['n' => str_replace('.', ',', (string)(0 + $__e['total']))])}}}</span>{% endif %}
+                        <span class="cp-when">{% if($__e['date']): %}{{$__e['date'] | date('d-m-Y')}}{% else: %}{{{t('patient note')}}}{% endif %}</span>
+                    </li>
+                    {% endforeach %}
+                </ul>
+            </div>
+            {% endforeach %}
+        </div>
+    </section>
+    {% endif %}
     {% endif %}
 
     <div class="patient-details{{($action == 'new') ? ' is-new' : ''}}" id="patient-details" {% if($action != 'new'): %}hidden{% endif %}>
@@ -626,6 +661,14 @@
             document.addEventListener('click', function(e) {
                 var a = e.target.closest('a[href^="#app-"]');
                 if (a && openFromHash(a.getAttribute('href'))) e.preventDefault();
+                /* A value from the patient note: open the details at the Notes field. */
+                var p = e.target.closest('a[href="#patient-note"]');
+                if (p) {
+                    e.preventDefault();
+                    setDetails(true);
+                    var notes = document.querySelector('#patient-details .pd-notes');
+                    if (notes) notes.scrollIntoView({ block: 'center' });
+                }
             });
             if (location.hash) openFromHash(location.hash);
 

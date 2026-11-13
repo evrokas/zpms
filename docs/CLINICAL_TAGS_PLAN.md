@@ -1,8 +1,8 @@
-# Clinical tags in the note boxes -- plan (approved design; phases 1-3 built)
+# Clinical tags in the note boxes -- plan (approved design; phases 1-4 built)
 
 Status: design approved by the user after several mockup rounds, 2026-11-13. **Phases 1 (rules
-and storage), 2 (writing and reading looks) and 3 (suggestions and editing) are built** -- see
-sections 16-18 for what was decided while building them. Phases 4-5 not started. This file is the complete specification: a new session should be able to build
+and storage), 2 (writing and reading looks) and 3 (suggestions and editing) and 4 (patient record) are
+built** -- see sections 16-19 for what was decided while building them. Phase 5 not started. This file is the complete specification: a new session should be able to build
 it from this file alone. Visual mockups (same content, drawn): the "ZPMS Tag Styles" page,
 https://claude.ai/artifact/46PGs1Y4w3avRscQd7ZYyy, and the plan page "ZPMS Clinical Tags",
 https://claude.ai/artifact/41Y52Wzz9m12Q42jZVetPk. Both are also saved in this repository as
@@ -369,7 +369,7 @@ Each phase is usable on its own and adds tests to `bin/run_tests.sh`.
    checklist, grid, prescription blanks, next-word strip, keyboard table, phone word bar,
    value frame + field bar, change field, remove tag. Suggestion endpoint returns only data
    the user may read.
-4. **Patient record.** Allergy line on the header, «Κλινική εικόνα» panel.
+4. **Patient record.** *(Done 2026-11-13; see section 19.)* Allergy line on the header, «Κλινική εικόνα» panel.
 5. **Lists and search.** Settings page «Λίστες σημειώσεων» (per tag: add, edit, reorder,
    deactivate entries; next words; prescription strengths/defaults; "promote frequent
    free-text entries"); patients-list filters.
@@ -511,3 +511,24 @@ the blanks; both browser-only, tested by `tests/note_tags/editing_cases.js`),
 - **Phone**: the word bar is fixed to the bottom of the visual viewport (above the on-screen
   keyboard); checked with Chromium's iPhone 13 emulation, not on a real phone.
 - Programmatic edits (`setRangeText`) are not in the browser's undo history (Ctrl+Z).
+
+## 19. Phase 4 as built (2026-11-13)
+
+`zpms_note_clinical_picture()` (web/note_tags.php) builds both blocks; `patient_edit()` passes it
+to `edit_patient.zetem` as `clinical`; styles in `web/css/note-tags.css`.
+
+- **Order**: the patient note's values first (it is the standing record, so "newest" by
+  definition), then appointment notes by appointment date, newest first. Boxes follow the order
+  of the tag file.
+- **A value repeated in several notes is listed once** (its newest occurrence), with «×N». The
+  plan said "entries newest first"; without grouping, a diagnosis carried through ten visits
+  would fill its box. Grouping uses `normalized`, so «Ριζοπάθεια» and «ριζοπάθεια» are one entry.
+- **Who sees what**: patient-note values for everyone who can open the record; appointment-note
+  values only for a viewer who may see the appointment cards (appointment-view or -edit) -- the
+  same rule as the cards. Soft-deleted appointments, hidden rows and impossible levels are left
+  out. Levels found inside a procedure/therapy are in the levels box, as section 4 asks.
+- **Links**: an appointment value links to its card (`#app-N`, which opens the row); a
+  patient-note value opens the details panel at the Notes field. The allergy line is coloured
+  from the allergy tag's palette entry (`header_alert: true`).
+- Prescription entries show their total («Σύνολο: 60 δισκία»).
+- The blocks are drawn when the page loads; a value typed in a note shows in them after a reload.
