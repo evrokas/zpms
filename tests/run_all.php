@@ -64,6 +64,7 @@ require_once __DIR__ . '/functional/file_upload.php';
 require_once __DIR__ . '/functional/admin_crud.php';
 require_once __DIR__ . '/functional/zpmscli.php';
 require_once __DIR__ . '/functional/audit_log.php';
+require_once __DIR__ . '/functional/profile_notes.php';
 require_once __DIR__ . '/functional/schedule.php';
 require_once __DIR__ . '/functional/booking.php';
 require_once __DIR__ . '/functional/calendar_sync.php';
@@ -141,6 +142,14 @@ try {
     $auditRunner = new TestRunner('Audit log (GDPR)');
     zpms_functional_audit_log($auditRunner, $server->baseUrl());
     $ok = $auditRunner->run() && $ok;
+
+    // Notes box on /profile (userprofile module) -- its own fresh server.
+    $server->stop();
+    $server = new TestServer();
+    $server->start();
+    $notesRunner = new TestRunner('Profile notes (rich-text, autosave)');
+    zpms_functional_profile_notes($notesRunner, $server->baseUrl());
+    $ok = $notesRunner->run() && $ok;
 
     // The scheduling engine (web/schedule.php) -- rules on built data plus the
     // database-backed booking functions; no HTTP.

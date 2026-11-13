@@ -1,0 +1,28 @@
+---
+# Personal notes on a user's own profile page (/profile, the userprofile
+# module). One row per user, keyed by users.id; private to that user --
+# nothing else in the app reads it, and the profile page only ever loads
+# the signed-in user's own row (never an id taken from the request).
+#
+# `notes` holds HTML from the Quill editor, cleaned by
+# zpms_sanitize_notes_html() (web/modules/userprofile/notes_sanitizer.php)
+# before it is written: only a short allowlist of formatting tags survives.
+# Its own table, not a column on `users`, because `users` belongs to the
+# zeusfw core schema shared by every app on the framework.
+table:
+  name: user_notes
+  class: userNotesClass
+  fields:
+  - name: user_id
+    type: int(11) UNIQUE
+    required: true
+
+  - name: notes
+    type: mediumtext
+    default: null
+
+  # When the notes last changed, in the app's own time zone (getDBtime()).
+  - name: updated_at
+    type: datetime
+    default: null
+...

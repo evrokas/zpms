@@ -1,0 +1,59 @@
+/* Notes box on /profile (Quill "snow" theme, see the quill module). */
+.user-notes {
+    margin: 1.5rem 0;
+    max-width: 60rem;
+}
+
+.user-notes-head {
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+}
+
+.user-notes-head h2 {
+    margin: 0;
+}
+
+.user-notes form {
+    margin: .5rem 0 0;
+    /* The app styles every form as a grid with a 16px gap; the editor's
+       toolbar and text area have to touch. */
+    display: block;
+}
+
+.user-notes .ql-toolbar.ql-snow {
+    border-radius: 6px 6px 0 0;
+    background: #fafafa;
+}
+
+.user-notes .ql-container.ql-snow {
+    border-radius: 0 0 6px 6px;
+    font-family: inherit;
+    font-size: 1rem;
+}
+
+.user-notes .ql-editor {
+    min-height: 14rem;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+@media (max-width: 640px) {
+    .user-notes .ql-editor {
+        min-height: 10rem;
+    }
+}
+
+/* Keep the toolbar and the text area joined (the app's general form/field
+   spacing otherwise puts a gap between them). */
+.user-notes .ql-toolbar.ql-snow { margin: 0; }
+.user-notes .ql-container.ql-snow { margin: 0; border-top: 0; }
+
+/* Quill's heading picker labels come from CSS; the template sets them
+   (translated with t()) as custom properties on .user-notes. */
+.user-notes .ql-snow .ql-picker.ql-header .ql-picker-label::before,
+.user-notes .ql-snow .ql-picker.ql-header .ql-picker-item::before { content: var(--notes-label-normal, 'Normal'); }
+.user-notes .ql-snow .ql-picker.ql-header .ql-picker-label[data-value="2"]::before,
+.user-notes .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="2"]::before { content: var(--notes-label-h2, 'Heading'); }
+.user-notes .ql-snow .ql-picker.ql-header .ql-picker-label[data-value="3"]::before,
+.user-notes .ql-snow .ql-picker.ql-header .ql-picker-item[data-value="3"]::before { content: var(--notes-label-h3, 'Subheading'); }

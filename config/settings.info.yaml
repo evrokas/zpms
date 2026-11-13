@@ -952,6 +952,8 @@ modules:
     - content
     - location
     - flatpickr
+    # Quill rich-text editor (web/modules/quill/) for the notes box on /profile.
+    - quill
     - language_selector
     - message
     - backup

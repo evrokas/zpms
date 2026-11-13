@@ -23,4 +23,13 @@ libraries:
     css:
       - userprofile:
         src: '@app/css/userprofile.css'
-
+  # Notes box on /profile: wires the Quill editor (quill module) to
+  # loader.js's autosave. Attached after quill-library in user_profile.zetem.
+  profile-notes-library:
+    css:
+      - profile_notes:
+        src: '@app/css/profile-notes.css'
+    foot_script:
+      - profile_notes:
+        type: 'text/javascript'
+        src: '@app/js/profile-notes.js'

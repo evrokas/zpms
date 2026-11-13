@@ -1,5 +1,7 @@
 <?php
 
+require_once(__DIR__ . '/notes_sanitizer.php');
+
 class UserProfileModule extends moduleClass {
 
     function __construct($adir, $amodule, $atemplate) {
@@ -54,6 +56,7 @@ class UserProfileModule extends moduleClass {
             $user->getExpired()?'checked="checked"':'',
             'devices' => $devices,
             'current_selector' => $currentSelector,
+            'notes_html' => $user ? zpms_profile_notes_load((int)$user->getid()) : '',
         ]);
     }
 
@@ -79,6 +82,46 @@ class UserProfileModule extends moduleClass {
             }
             header('location: ' . rel_url('/profile'));
             exit();
+        }
+
+        // Notes box (Quill editor). Saved by loader.js's autosave (1s after
+        // the last keystroke) as an AJAX POST, or as a plain form post
+        // without JavaScript. Always the signed-in user's own row -- no id
+        // is taken from the request.
+        if($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'save_notes') {
+            $ajax = (($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') === 'XMLHttpRequest') || isset($_POST['use_ajax']);
+            $reply = function(int $status, array $body, string $level, string $message) use ($ajax, $kernel) {
+                if($ajax) {
+                    http_response_code($status);
+                    header('Content-Type: application/json; charset=utf-8');
+                    echo json_encode($body);
+                    exit();
+                }
+                $kernel->addStatus($level, $message);
+                header('location: ' . rel_url('/profile'));
+                exit();
+            };
+
+            if(!csrfClass::verifyRequest()) {
+                $reply(403, ['ok' => false, 'error' => 'csrf'], 'error', 'Μη έγκυρο token ασφαλείας (CSRF). Παρακαλώ προσπαθήστε ξανά.');
+            }
+
+            $u = $kernel->getUserName();
+            $user = $u ? UsersClassEx::getUserAccount($u) : null;
+            if(!$user) {
+                $reply(403, ['ok' => false, 'error' => 'no_user'], 'error', 'Δεν βρέθηκε ο λογαριασμός.');
+            }
+
+            $raw = (string)($_POST['notes'] ?? '');
+            if(strlen($raw) > ZPMS_NOTES_MAX_BYTES) {
+                $reply(413, ['ok' => false, 'error' => 'too_large'], 'error', 'Οι σημειώσεις είναι πολύ μεγάλες για αποθήκευση.');
+            }
+
+            $clean = zpms_sanitize_notes_html($raw);
+            if(zpms_profile_notes_save((int)$user->getid(), $clean)) {
+                zpms_audit('profile_notes_updated', ['target_user' => $u]);
+            }
+            $reply(200, ['ok' => true], 'notice', 'Οι σημειώσεις αποθηκεύτηκαν.');
         }
 
         // Main account form: active/expired flags and an optional password
@@ -161,6 +204,29 @@ class UserProfileModule extends moduleClass {
         // echopre("UserProfile module::run()");
         return $this->render($params);
     }
+}
+
+
+/** The user's saved notes (sanitized HTML), '' when there are none. */
+function zpms_profile_notes_load(int $userId): string {
+    try {
+        $st = dbConnection::getConnection()->prepare('SELECT notes FROM user_notes WHERE user_id = ?');
+        $st->execute([$userId]);
+        return (string)($st->fetchColumn() ?: '');
+    } catch (Throwable $e) {
+        error_log('zpms_profile_notes_load: ' . $e->getMessage());
+        return '';
+    }
+}
+
+/** Stores the notes; true only when the text actually changed. */
+function zpms_profile_notes_save(int $userId, string $html): bool {
+    if(zpms_profile_notes_load($userId) === $html) return false;
+    $st = dbConnection::getConnection()->prepare(
+        'INSERT INTO user_notes (user_id, notes, updated_at) VALUES (?, ?, ?)
+         ON DUPLICATE KEY UPDATE notes = VALUES(notes), updated_at = VALUES(updated_at)');
+    $st->execute([$userId, $html, getDBtime()]);
+    return true;
 }
 
 

@@ -1,0 +1,15 @@
+# Quill 2.0.3 rich-text editor (https://quilljs.com, BSD-3-Clause, see
+# vendor/quill/LICENSE), vendored like the flatpickr module: the two dist
+# files copied straight from the npm package (no build step), the trailing
+# sourceMappingURL comment removed from quill.js since the .map is not
+# shipped. Used by the notes box on /profile (userprofile module), which
+# attaches this library before its own profile-notes script.
+libraries:
+  quill-library:
+    css:
+      - quill:
+        src: '@app/vendor/quill/quill.snow.css'
+    foot_script:
+      - quill:
+        type: 'text/javascript'
+        src: '@app/vendor/quill/quill.js'

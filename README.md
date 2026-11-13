@@ -2456,3 +2456,36 @@ An ordinary session ends after **60 minutes without a real request** (polling su
 
 After pulling: `php bin/import_dictionary.php`, **empty `web/cache/`** (the page template changed), make sure the web user can create `var/` in the checkout (or create `var/sessions` mode 0700 owned by it). Everybody is signed out once (new cookie name and folder).
 
+
+## Personal notes on the profile page (`/profile`)
+
+Every account has a **«Οι σημειώσεις μου»** box on its own profile page: a rich-text editor (Quill 2.0.3) with headings, bold/italic/underline/strike, text and highlight colour, numbered and bulleted lists with indentation, alignment, quotes and links. The notes are **private**: the page and the save handler only ever use the signed-in account's own row, never an id from the request, and no other page shows them.
+
+**Saving works like the patient fields.** `web/js/loader.js` saves 1 second after the last change, and every keystroke restarts that second. The spinner next to the heading turns orange while waiting, spins during the save, then shows green (or red if the save was refused). `web/modules/userprofile/js/profile-notes.js` copies the editor's HTML into the form's hidden `notes` field and hands the form to `loader.js`; leaving the page while a save is still waiting sends it straight away (`sendBeacon`), so the last words are not lost.
+
+**Pieces:**
+- `web/modules/quill/`: the editor, copied from the npm package (`dist/quill.js`, `dist/quill.snow.css`, licence files; only the trailing source-map comment removed), registered as `quill-library`, same shape as the flatpickr module. Listed under `modules:` in `config/settings.info.yaml`.
+- `web/classes/yaml/user_notes.yaml`: table `user_notes` (`user_id` unique, `notes` MEDIUMTEXT holding HTML, `updated_at`). Its own table, because `users` belongs to the zeusfw core schema.
+- `web/modules/userprofile/userprofile.php`: `action=save_notes` (CSRF-checked; JSON reply for the autosave, a redirect with a message otherwise; 413 above 200 KB). `zpms_profile_notes_load()` / `zpms_profile_notes_save()`.
+- `web/modules/userprofile/notes_sanitizer.php`: `zpms_sanitize_notes_html()`, which cleans the HTML **on the server before it is stored**, because it is printed back into the page as-is. Only the formatting tags the toolbar produces survive. `script`/`style`/`iframe`/`svg`/`img`/form controls are removed with their content. Other block tags become paragraphs or headings, and every attribute is dropped except:
+  - `li[data-list]` (bullet or numbered);
+  - `ql-align-*` / `ql-indent-*` classes;
+  - `color` / `background-color` styles with hex or rgb() values;
+  - `http(s)`/`mailto`/`tel` links, which always open in a new tab with `rel="noopener noreferrer"`.
+- Audit event `profile_notes_updated`. It is written only when the text actually changed, and the row never carries the text.
+
+**`loader.js` changes that also apply to the patient fields:**
+- A save the server refuses (non-200) now shows the red error state; before, the spinner kept spinning.
+- The URL is read with `form.getAttribute('action')`, because a form with an input named `action` (this one) shadows the `form.action` property.
+
+**After pulling:**
+1. Run `bin/update.sh` to create the `user_notes` table (the "web tables" step).
+2. Run `php bin/import_dictionary.php` to add the new labels.
+3. Empty `web/cache/`.
+
+Tests: `tests/functional/profile_notes.php` covers:
+- the editor on the page, save and reload;
+- `script`, `onerror`, `javascript:` links, `svg`, `iframe` and CSS `url()` stripped;
+- another account neither sees nor overwrites the notes (a forged `user_id` is ignored), and a signed-out post is refused;
+- a missing or wrong CSRF token, and oversized notes, refused with nothing changed;
+- exactly one audit row per change, without the text.

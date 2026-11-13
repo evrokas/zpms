@@ -67,6 +67,7 @@ const ZPMS_AUDIT_EVENT_LABELS = [
     'slot_released' => 'Schedule: slot released',
     'mail_settings_updated' => 'Email settings changed',
     'profile_updated' => 'Own account changed',
+    'profile_notes_updated' => 'Own profile notes changed',
     'device_revoked' => 'Remembered device removed',
     'admin_created' => 'User management: created',
     'admin_updated' => 'User management: changed',

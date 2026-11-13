@@ -26,7 +26,9 @@ function enableLoader(loader, form) {
         // set X-Requested-With header
         // test for header with, HTTP_X_REQUESTED_WITH
         // value XMLHttpRequest
-        fetch(form.action, {
+        // getAttribute, not form.action: a form with an input named
+        // "action" (the /profile notes form) shadows the property.
+        fetch(form.getAttribute('action'), {
             'method': 'post',
             body: new URLSearchParams( fdata ),
             headers: {
@@ -41,6 +43,11 @@ function enableLoader(loader, form) {
                 console.log('ajax request succesful!');
                 loader.classList.remove('active');
                 loader.classList.add('success');
+            } else {
+                // A refused save (expired session, CSRF, too large) must not
+                // look like it is still in progress.
+                loader.classList.remove('active');
+                loader.classList.add('error');
             }
         }).catch((error) => {
             console.log('ajax request ERROR', error);
