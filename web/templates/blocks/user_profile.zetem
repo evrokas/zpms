@@ -1,7 +1,4 @@
 {% attach_library('userprofile-library') %}
-{% attach_library('loader-library') %}
-{% attach_library('quill-library') %}
-{% attach_library('profile-notes-library') %}
 {% attach_library('location-places') %}
 
 <div class="user-profile">
@@ -56,28 +53,6 @@
             <button type="submit" name="submit">{{{t('Save')}}}</button>
         </div>
     </form>
-
-    {# Personal notes (Quill editor). Private to this account: the handler
-       only ever reads/writes the signed-in user's own row. Autosaves like the
-       patient fields -- loader.js waits 1s after the last change, each
-       keystroke restarts the wait; profile-notes.js copies the editor's HTML
-       into the hidden "notes" field and hands the form to loader.js. The
-       HTML below was cleaned by zpms_sanitize_notes_html() when it was
-       saved, so it is printed as-is. #}
-    <div class="user-notes" style="--notes-label-normal: '{{{t('Normal text')}}}'; --notes-label-h2: '{{{t('Heading')}}}'; --notes-label-h3: '{{{t('Subheading')}}}';">
-        <div class="user-notes-head">
-            <h2>{{{t('My notes')}}}</h2>
-            <div id="notes-loader" class="loader0"></div>
-        </div>
-        <p class="field-hint">{{{t('Visible only to you. Saved automatically as you type.')}}}</p>
-        <form action="{{rel_url('/profile')}}" method="post" id="profile-notes-form">
-            {{ csrf_field() }}
-            <input type="hidden" name="action" value="save_notes">
-            <input type="hidden" name="notes" id="profile-notes-value" value="{{{$notes_html}}}">
-            <div id="profile-notes-editor" class="user-notes-editor" data-placeholder="{{{t('Write your notes here...')}}}">{{ $notes_html }}</div>
-            <button hidden type="button" loader="notes-loader">{{{t('Update')}}}</button>
-        </form>
-    </div>
 
     <div class="user-devices">
         <h2>{{{t('My devices')}}}</h2>

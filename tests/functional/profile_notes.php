@@ -1,5 +1,6 @@
 <?php
-/* The notes box on /profile (userprofile module, action=save_notes): saved
+/* The notes box on the home page, saved through the userprofile module
+ * (POST /profile, action=save_notes): saved
  * and shown back, cleaned of anything scriptable, private to its owner,
  * CSRF-protected, size-limited, and audited without its text. Driven over
  * real HTTP like the other functional suites. */
@@ -21,7 +22,7 @@ function zpms_notes_test_stored(string $uname): ?string {
     return $v === false ? null : (string)$v;
 }
 
-/** Signs in, opens /profile and returns [client, csrf token, page body]. */
+/** Signs in, opens the home page and returns [client, csrf token, page body]. */
 function zpms_notes_test_session(string $baseUrl, string $who): array {
     $http = new TestHttpClient($baseUrl);
     if ($who === 'secretary') {
@@ -31,10 +32,10 @@ function zpms_notes_test_session(string $baseUrl, string $who): array {
     } else {
         TestFixtures::loginAsTestUser($http);
     }
-    $page = $http->get('/profile');
-    assert_equal(200, $page['status'], 'GET /profile did not return 200');
+    $page = $http->get('/');
+    assert_equal(200, $page['status'], 'GET / did not return 200');
     $token = TestHttpClient::extractCsrfToken($page['body']);
-    assert_not_null($token, 'no csrf_token on /profile');
+    assert_not_null($token, 'no csrf_token on the home page');
     return [$http, $token, $page['body']];
 }
 
@@ -45,12 +46,13 @@ function zpms_notes_test_save(TestHttpClient $http, ?string $token, string $note
 }
 
 function zpms_functional_profile_notes(TestRunner $runner, string $baseUrl): void {
-    $runner->add('the editor is on /profile; an autosave stores the notes and the page shows them back', function () use ($baseUrl) {
+    $runner->add('the editor is on the home page (not on /profile); an autosave stores the notes and the page shows them back', function () use ($baseUrl) {
         TestSchema::assertSafeToMutate();
         [$http, $token, $body] = zpms_notes_test_session($baseUrl, 'user');
-        assert_contains('id="profile-notes-editor"', $body, 'notes editor missing from /profile');
-        assert_contains('quill.js', $body, 'Quill script not loaded on /profile');
-        assert_contains('profile-notes.js', $body, 'profile-notes.js not loaded on /profile');
+        assert_contains('id="profile-notes-editor"', $body, 'notes editor missing from the home page');
+        assert_contains('quill.js', $body, 'Quill script not loaded on the home page');
+        assert_contains('profile-notes.js', $body, 'profile-notes.js not loaded on the home page');
+        assert_not_contains('id="profile-notes-editor"', $http->get('/profile')['body'], 'the notes editor is still on /profile');
 
         $html = '<h2>Λίστα</h2><p>Πρώτη <strong>γραμμή</strong> ' . ZPMS_NOTES_TEST_SECRET . '</p>'
               . '<ol><li data-list="bullet">ένα</li><li data-list="ordered">δύο</li></ol>';
@@ -63,7 +65,7 @@ function zpms_functional_profile_notes(TestRunner $runner, string $baseUrl): voi
         assert_true(str_ends_with(trim($res['body']), '{"ok":true}'), 'unexpected JSON reply: ' . substr($res['body'], -300));
         assert_equal($html, zpms_notes_test_stored(TestFixtures::USERNAME), 'stored notes differ from what was sent');
 
-        $page = $http->get('/profile');
+        $page = $http->get('/');
         assert_contains($html, $page['body'], 'saved notes not rendered into the editor');
     });
 
@@ -92,7 +94,7 @@ function zpms_functional_profile_notes(TestRunner $runner, string $baseUrl): voi
         zpms_notes_test_save($http, $token, '<p>' . ZPMS_NOTES_TEST_SECRET . '</p>');
 
         [$other, $otherToken, $otherBody] = zpms_notes_test_session($baseUrl, 'secretary');
-        assert_not_contains(ZPMS_NOTES_TEST_SECRET, $otherBody, "another account's /profile shows the notes");
+        assert_not_contains(ZPMS_NOTES_TEST_SECRET, $otherBody, "another account's home page shows the notes");
 
         // A forged user id in the request is ignored: the row is always the signer's own.
         $other->postWithHeaders('/profile', ['action' => 'save_notes', 'notes' => '<p>secretary</p>',

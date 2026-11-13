@@ -1,7 +1,10 @@
-/* Notes box on /profile (Quill "snow" theme, see the quill module). */
+/* Notes box on the home page (Quill "snow" theme, see the quill module). */
 .user-notes {
-    margin: 1.5rem 0;
-    max-width: 60rem;
+    margin: 0 0 1.5rem;
+    padding: 1rem;
+    background-color: white;
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-base);
 }
 
 .user-notes-head {

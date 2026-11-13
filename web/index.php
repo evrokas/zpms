@@ -153,6 +153,9 @@ require_once(__DIR__ . '/zpms_mailer.php');
             // itself requires, so this card never links anywhere a
             // viewer would immediately get refused from.
             'can_manage_appointments' => rbacClass::isPermitted(ZPMS_PERM_PENDING_APPOINTMENTS_MANAGE),
+            // The signed-in user's own notes box (saved through the
+            // userprofile module, see web/modules/userprofile/userprofile.php).
+            'notes_html' => $account ? zpms_profile_notes_load((int)$account->getid()) : '',
         ]);
     }
 

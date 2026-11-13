@@ -56,7 +56,6 @@ class UserProfileModule extends moduleClass {
             $user->getExpired()?'checked="checked"':'',
             'devices' => $devices,
             'current_selector' => $currentSelector,
-            'notes_html' => $user ? zpms_profile_notes_load((int)$user->getid()) : '',
         ]);
     }
 
@@ -84,7 +83,8 @@ class UserProfileModule extends moduleClass {
             exit();
         }
 
-        // Notes box (Quill editor). Saved by loader.js's autosave (1s after
+        // Notes box (Quill editor) -- shown on the home page (homepage.zetem),
+        // saved here, so the endpoint stays POST /profile. Saved by loader.js's autosave (1s after
         // the last keystroke) as an AJAX POST, or as a plain form post
         // without JavaScript. Always the signed-in user's own row -- no id
         // is taken from the request.
@@ -98,7 +98,7 @@ class UserProfileModule extends moduleClass {
                     exit();
                 }
                 $kernel->addStatus($level, $message);
-                header('location: ' . rel_url('/profile'));
+                header('location: ' . rel_url('/'));
                 exit();
             };
 
