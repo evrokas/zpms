@@ -2,6 +2,7 @@
 {% attach_library('loader-library'); %}
 {% attach_library('flatpickr-library'); %}
 {% attach_library('patient-record'); %}
+{% attach_library('note-tags'); %}
 
 <div class="edit-patient{{($action == 'new') ? '' : ' is-record'}}">    
     {% if($action != 'new'): %}
@@ -67,7 +68,7 @@
         </div>
         {# Only the first line of the notes (up to the first line break); the
            full text is in the Notes field of the details panel. #}
-        {% $__noteLine = trim(preg_split('/\r\n|\r|\n/', (string)$patient->getpnote(), 2)[0]); %}
+        {% $__noteLine = trim(preg_split('/\r\n|\r|\n/', zpms_note_strip((string)$patient->getpnote()), 2)[0]); %}
         <div class="pi-note" id="pi-note-wrap" {% if($__noteLine === ''): %}hidden{% endif %}>
             <i class="bx bx-note"></i><span id="pi-note">{{{$__noteLine}}}</span>
         </div>
@@ -250,7 +251,10 @@
 
         <div class="input-div">
             <label for="patient-note">{{{t('Notes')}}}</label>
-            <textarea name="patient-note" loader="info-loader" id="" rows="5" placeholder="{{{t('Enter notes')}}}">{{{$patient->getpnote()}}}</textarea>
+            {# Clinical tags: the reading look (tag words hidden, values coloured)
+               until the box is clicked; web/js/note-box.js, web/note_tags.php. #}
+            {{ zpms_note_tags_assets() }}
+            <div class="zt-box"><div class="zt-read" data-placeholder="{{{t('Enter notes')}}}">{{ zpms_note_reading_html($patient->getpnote()) }}</div><textarea name="patient-note" loader="info-loader" id="" rows="5" placeholder="{{{t('Enter notes')}}}">{{{$patient->getpnote()}}}</textarea></div>
         </div>
         </div>
         </fieldset>
@@ -646,7 +650,7 @@
                 input.addEventListener('input', function() {
                     var v = input.value;
                     // The header shows only the first line of the notes.
-                    if (m[1] === 'pi-note') v = v.split(/\r\n|\r|\n/)[0].trim();
+                    if (m[1] === 'pi-note') v = (window.ZpmsNoteBox ? window.ZpmsNoteBox.strip(v) : v).split(/\r\n|\r|\n/)[0].trim();
                     var el = show(m[1], v);
                     if (m[1] === 'pi-name') {
                         var av = document.querySelector('.pi-avatar');

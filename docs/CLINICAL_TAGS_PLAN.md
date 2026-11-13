@@ -1,8 +1,8 @@
-# Clinical tags in the note boxes -- plan (approved design; phase 1 built)
+# Clinical tags in the note boxes -- plan (approved design; phases 1-2 built)
 
-Status: design approved by the user after several mockup rounds, 2026-11-13. **Phase 1 (rules
-and storage) is built** -- see section 16 for what was decided while building it. Phases 2-5
-not started. This file is the complete specification: a new session should be able to build
+Status: design approved by the user after several mockup rounds, 2026-11-13. **Phases 1 (rules
+and storage) and 2 (writing and reading looks) are built** -- see sections 16 and 17 for what
+was decided while building them. Phases 3-5 not started. This file is the complete specification: a new session should be able to build
 it from this file alone. Visual mockups (same content, drawn): the "ZPMS Tag Styles" page,
 https://claude.ai/artifact/46PGs1Y4w3avRscQd7ZYyy, and the plan page "ZPMS Clinical Tags",
 https://claude.ai/artifact/41Y52Wzz9m12Q42jZVetPk. Both are also saved in this repository as
@@ -360,7 +360,7 @@ Each phase is usable on its own and adds tests to `bin/run_tests.sh`.
    every note save (section 11); soft-delete and purge paths; `note-fields:rebuild`.
    Done when: saving an appointment or patient note produces the right rows; a soft delete
    hides them, purge removes them; rebuild reproduces them.
-2. **Writing and reading looks in the box.** Reading look when the box has no caret, writing
+2. **Writing and reading looks in the box.** *(Done 2026-11-13; see section 17.)* Reading look when the box has no caret, writing
    look when it has; mirror behind the textarea (following its auto-size): wash on the current
    sentence, pale underline elsewhere, grey tag words; the `@` tag menu. Done when typing never
    shifts letters and the mirror stays aligned while the box grows (check in a real browser at
@@ -427,3 +427,45 @@ Decisions taken while building (section 2 and 10 did not settle them):
 
 After deploying: `bin/update.sh` (new tables), `zpmscli note-lists:seed --yes`,
 `zpmscli note-fields:rebuild --yes`, `php bin/import_dictionary.php`.
+
+## 17. Phase 2 as built (2026-11-13)
+
+Files: `web/js/note-box.js` (the boxes), `web/css/note-tags.css`, library `note-tags` in
+`config/settings.info.yaml` (attached by `edit_patient.zetem`, `view_appointment.zetem`,
+`edit_appointment.zetem`); in `web/note_tags.php`: `zpms_note_runs()` (the note cut into
+text / tag word / value runs -- the same function in note-tags.js, in the shared test cases),
+`zpms_note_strip()`, `zpms_note_reading_html()`, `zpms_note_tags_assets()`.
+
+- **Markup**: each tagged note is `<div class="zt-box"><div class="zt-read">…</div><textarea>`.
+  PHP renders the reading look into `.zt-read`; the script shows it (`.zt-on .zt-reading`) and
+  hides the textarea. Without the script (or with an unreadable tag file) the box is the plain
+  textarea, as before. Every run of the reading look carries `data-o` (its character offset), so
+  a click puts the caret on the same letter in the note (`caretPositionFromPoint` /
+  `caretRangeFromPoint`). Tab into the box puts the caret at the end.
+- `zpms_note_tags_assets()` prints, once per page, the palette as `.zt-c-<colour>` classes and the
+  tag definitions as `<script type="application/json" id="zt-spec">`. Colours stay only in the
+  tag file.
+- The reading div copies the textarea's computed font, padding, border and minimum height, so it
+  matches the box in each of the places a note is shown (patient record panel, appointment card,
+  new-appointment page, phone layout) without repeating their CSS.
+- **Writing look**: the mirror copies the textarea's font/padding/border metrics and its exact
+  sub-pixel box (a width rounded by 0.2px wrapped differently), and follows its size
+  (ResizeObserver, `field-sizing: content`) and scroll. Checked in Chromium at 1280px and 390px:
+  textarea and mirror boxes identical while the note grows from 5 to 20+ lines, text overlaid
+  exactly. **Not checked in Firefox/Safari** (they lack `field-sizing`, so the textarea scrolls;
+  the mirror follows `scrollTop`).
+- A level inside a procedure/therapy keeps its own lavender inside the outer value. An impossible
+  level gets a wavy orange underline while writing (the "quiet warning" of section 4).
+- **@ menu**: opens on typing `@` where a tag may start (not `info@`), filters by any name
+  (accents/case ignored), ↑/↓, Enter or Tab inserts `@<main name> `, Esc closes it for that `@`.
+  Tap/click works the same (the menu keeps the caret in the box). Keys are taken only while it
+  shows; Tab otherwise moves to the next field as before. The insert uses `setRangeText()` plus an
+  `input` event (autosave runs), so Ctrl+Z does not undo the insertion itself.
+- **Previews**: the header's first-line note and the collapsed appointment row show the note
+  without tag words (`zpms_note_strip()`; the header updates live through `ZpmsNoteBox.strip`).
+- **Pending-appointment boxes** (`new_consultation.zetem`, `pending_appointment_edit.zetem`) are
+  left as plain textareas (section 1); tags typed there are read when the appointment is converted.
+- **Fixed on the way**: the appointment note was printed into its textarea with ZETEM's raw
+  `{{ }}` (`view_appointment.zetem`, `edit_appointment.zetem`) -- a note containing
+  `</textarea><script>` would have run as script. Now escaped, covered by a test. The patient name
+  on the new-appointment page had the same problem.

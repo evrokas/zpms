@@ -145,6 +145,38 @@ function zpms_functional_note_fields(TestRunner $runner, string $baseUrl): void 
         assert_equal(3, count(zpms_nf_test_rows("source = 'patient' AND patient_id = ?", [$pid])), 'patient-note rows changed');
     });
 
+    $runner->add('the patient page: note boxes carry the reading look; notes are escaped in the textarea (no script from a note)', function () use ($http, $db, &$state) {
+        TestSchema::assertSafeToMutate();
+        $pid = $state['pid'];
+        $evil = '</textarea><script>alert(1)</script><b>x</b> @δγ κήλη & «στένωση»';
+        $a = new appointmentsClass(['guid' => guid(), 'cuser' => 'test', 'cdate' => getDBtime(), 'adate' => '2027-01-01 10:00:00', 'aplace' => '',
+            'anote' => $evil, 'atype' => 'appointment', 'pguid' => $state['guid']]);
+        $a->insert();
+        $page = $http->get("/patient/$pid/edit");
+        assert_equal(200, $page['status'], 'patient page did not load');
+        $body = $page['body'];
+        assert_not_contains('<script>alert(1)</script>', $body, 'a note broke out of its textarea (stored XSS)');
+        assert_contains('&lt;/textarea&gt;&lt;script&gt;alert(1)&lt;/script&gt;', $body, 'the note is not in the textarea, escaped');
+        assert_equal(1, substr_count($body, 'id="zt-spec"'), 'the tag definitions must be on the page exactly once');
+        assert_contains('.zt-c-rose{', $body, 'palette classes missing');
+        assert_contains('js/note-box.js', $body, 'note-box.js not loaded');
+        assert_contains('css/note-tags.css', $body, 'note-tags.css not loaded');
+        assert_true(substr_count($body, 'class="zt-box"') >= 3, 'not every note (patient + appointments) is in a note box');
+        // Reading look: tag word gone, value coloured, the rest escaped.
+        assert_contains('<span class="zt-v zt-c-rose" data-tag="dx" data-o="', $body, 'reading look of a diagnosis missing');
+        assert_contains('&lt;b&gt;x&lt;/b&gt; </span>', $body, 'text before the tag not escaped in the reading look');
+        assert_contains('>κήλη &amp; «στένωση»</span>', $body, 'value not in the reading look');
+        // The collapsed row and the header line show the note without tag words.
+        assert_true((bool)preg_match('~<span class="ar-note">[^<]*κήλη~u', $body), 'row preview missing');
+        assert_true(!preg_match('~<span class="ar-note">[^<]*@δγ~u', $body), 'row preview shows the tag word');
+        assert_contains('<span id="pi-note">λάτεξ. Ιστορικό: πεταλεκτομή Ο4-Ο5 το 2019.</span>', $body, 'header note line not without tag words');
+        $db->prepare('DELETE FROM appointments WHERE id = ?')->execute([$a->getid()]);
+
+        $form = $http->get("/appointment/$pid/newappointment");
+        assert_contains('class="zt-box"', $form['body'], 'the new-appointment form has no note box');
+        assert_contains('id="zt-spec"', $form['body'], 'the new-appointment form has no tag definitions');
+    });
+
     $runner->add('a pending appointment turned into a patient record: its notes are parsed then', function () use ($http, $db, &$state) {
         TestSchema::assertSafeToMutate();
         $pending = new pendingAppointmentsClass([

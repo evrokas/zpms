@@ -2514,3 +2514,18 @@ Phase 1 adds the rules and the storage only. **Nothing changes on screen yet:** 
 4. `php bin/import_dictionary.php`: two new audit-log labels.
 
 Tests: `tests/static/note_tags.php` (the tag file, and every shared case through both parsers, comparing their results field by field) and `tests/functional/note_fields.php` (saves through the real forms, autosave, the pending-appointment conversion, soft delete, purge, orphans, rebuild, seeding, and the two commands).
+
+## Clinical tags in the notes -- phase 2: writing and reading looks
+
+Second phase of `docs/CLINICAL_TAGS_PLAN.md` (details in its section 17). The patient note and every appointment note now show their tags:
+
+- **Reading look** (a note box without the caret, and always for an account that cannot edit): the tag words are hidden and each tagged value is in its pale ink colour, so the note reads like plain prose.
+- **Writing look** (click or tap into the box; the caret lands on the clicked word): the tag words come back in faint grey, the values of the sentence you are writing get a pale wash, the others a thin pale underline. It is still the same plain textarea underneath (autosave, copy/paste and phone keyboards unchanged); a coloured copy behind it draws the colours, so letters never move.
+- **Typing `@`** opens the tag menu: keep typing to filter (Greek or English names), ↑/↓ and Enter or Tab to insert, Esc to close, or tap an entry.
+- The first-line preview in the patient header and the collapsed appointment rows show the note without tag words.
+
+Also fixed: an appointment note (and the patient name on the new-appointment page) was printed into the page without escaping, so a note containing `</textarea><script>…` would have run as script.
+
+**After pulling:** empty `web/cache/` (changed templates). No database change.
+
+Tests: the shared parser cases now also check how a note is cut into text, tag words and values (both parsers); `tests/functional/note_fields.php` checks the page markup, the escaping, and the previews. The look itself was checked in Chromium at desktop and phone widths (alignment of the coloured copy while the box grows, click-to-caret, the menu, keyboard paths); not yet in Firefox or Safari.

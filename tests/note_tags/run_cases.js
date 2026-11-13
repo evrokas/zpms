@@ -13,4 +13,8 @@ const [specFile, drugsFile, casesFile] = process.argv.slice(2);
 const spec = JSON.parse(fs.readFileSync(specFile, 'utf8'));
 const drugs = JSON.parse(fs.readFileSync(drugsFile, 'utf8'));
 const cases = JSON.parse(fs.readFileSync(casesFile, 'utf8')).cases;
-process.stdout.write(JSON.stringify(cases.map((c) => tags.parse(c.text, spec, drugs))));
+process.stdout.write(JSON.stringify(cases.map((c) => ({
+    rows: tags.parse(c.text, spec, drugs),
+    runs: tags.runs(c.text, spec).map((r) => [r.text, r.offset, r.kind]),
+    plain: tags.strip(c.text, spec),
+}))));

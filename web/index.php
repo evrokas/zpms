@@ -700,7 +700,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
                             'date' => $ap->getadate(),
                             'is_operation' => ($ap->getatype() == 'operation'),
                             'place' => $ap->getaplace() . ($apRemote !== '' ? ' · ' . $apRemote : ''),
-                            'note' => mb_strimwidth(zpms_first_line((string)$ap->getanote()), 0, 220, '…'),
+                            'note' => mb_strimwidth(zpms_first_line(zpms_note_strip((string)$ap->getanote())), 0, 220, '…'),
                             'file_count' => count($apFiles),
                         ],
                         'markup' => Renderer::render('view_appointment.zetem', [

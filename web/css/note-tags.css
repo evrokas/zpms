@@ -1,0 +1,141 @@
+/* Clinical tags in the note boxes (docs/CLINICAL_TAGS_PLAN.md sections 7-9;
+   web/js/note-box.js). The colours of each tag come from config/note_tags.yaml
+   as .zt-c-<colour> { --zt-tint; --zt-mark; --zt-ink } (zpms_note_tags_assets()).
+
+   A .zt-box holds the reading look (.zt-read), the mirror (.zt-mirror, made by
+   the script) and the textarea that is saved. Until the script has run
+   (.zt-on), only the textarea shows, so a page without JavaScript still works.
+   The script also copies the textarea's own font, padding and border onto the
+   reading div, so it looks like the box in every place a note appears. */
+
+.zt-box {
+    position: relative;
+    min-width: 0;
+}
+
+/* The wrapper takes the grid cell the textarea used to have. */
+form .input-div .zt-box { grid-column: 2; grid-row: 1; }
+form .input-div.input-notes .zt-box { grid-column: 1; grid-row: 2; }
+.edit-patient.is-record .patient-details .input-div .zt-box { grid-column: 1; grid-row: 2; }
+@media screen and (max-width: 470px) {
+    form .input-div .zt-box { grid-column: 1; grid-row: 2; }
+}
+
+.zt-read,
+.zt-mirror {
+    display: none;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+    word-break: normal;
+    color: var(--text, #182427);
+}
+
+/* ---- reading look ---- */
+
+.zt-box.zt-on.zt-reading .zt-read { display: block; }
+.zt-box.zt-on.zt-reading textarea { display: none; }
+
+.zt-read {
+    box-sizing: border-box;
+    min-height: 5lh;
+    cursor: text;
+    background: white;
+}
+.zt-box.zt-readonly .zt-read { cursor: default; }
+.zt-read:empty::before {
+    content: attr(data-placeholder);
+    color: #8a9a9d;
+}
+.zt-read:focus { outline: none; }
+.zt-read .zt-v { color: var(--zt-ink); }
+
+/* ---- writing look: transparent textarea over the coloured mirror ---- */
+
+.zt-box.zt-writing .zt-mirror {
+    display: block;
+    position: absolute;
+    overflow: hidden;
+    pointer-events: none;
+    border-color: transparent !important;
+    background: white;
+    z-index: 0;
+}
+.zt-box.zt-writing textarea {
+    position: relative;
+    z-index: 1;
+    background: transparent !important;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    caret-color: var(--text, #182427);
+}
+.zt-box.zt-writing textarea::placeholder {
+    color: #8a9a9d;
+    -webkit-text-fill-color: #8a9a9d;
+}
+.zt-box.zt-writing textarea::selection {
+    background: rgba(3, 99, 121, 0.22);
+}
+
+/* Nothing here may take space: colour, background and box-shadow only. */
+.zt-mirror .zt-tag { color: #a7b4b7; }
+.zt-mirror .zt-under {
+    text-decoration: underline 1.5px color-mix(in srgb, var(--zt-mark) 55%, transparent);
+    text-underline-offset: 5px;
+}
+.zt-mirror .zt-wash {
+    background: var(--zt-tint);
+    box-shadow: 0 0 0 2px var(--zt-tint);
+    border-radius: 2px;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+}
+/* An impossible level: a quiet warning, never a refusal. */
+.zt-mirror .zt-bad {
+    text-decoration: underline wavy 1px #d98a3d;
+    text-underline-offset: 4px;
+}
+.zt-mirror .zt-caret { display: inline; }
+
+/* ---- the @ tag menu ---- */
+
+.zt-menu {
+    position: absolute;
+    z-index: 30;
+    margin: 0;
+    padding: 4px;
+    list-style: none;
+    min-width: 14rem;
+    max-width: calc(100vw - 2rem);
+    max-height: 17rem;
+    overflow-y: auto;
+    background: white;
+    border: 1px solid var(--border-color, #d6e1e3);
+    border-radius: 8px;
+    box-shadow: 0 8px 22px rgba(24, 36, 39, 0.14);
+    font-size: 0.9rem;
+    line-height: 1.3;
+}
+.zt-menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    padding: 0.4rem 0.55rem;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.zt-menu-item.is-active,
+.zt-menu-item:hover { background: #e2f3f3; }
+.zt-menu-dot {
+    flex: none;
+    width: 0.65rem;
+    height: 0.65rem;
+    border-radius: 50%;
+    background: var(--zt-tint);
+    box-shadow: inset 0 0 0 1.5px var(--zt-mark);
+}
+.zt-menu-label { flex: 1; color: var(--zt-ink); }
+.zt-menu-name { color: #8a9a9d; }
+
+@media (pointer: coarse) {
+    .zt-menu-item { padding: 0.6rem 0.65rem; }
+}

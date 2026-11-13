@@ -511,6 +511,106 @@ function zpms_note_parse_rx(string $value, array $drugs): array {
 }
 
 // --------------------------------------------------------------------------
+// display (keep in step with runs()/strip() in web/js/note-tags.js)
+// --------------------------------------------------------------------------
+
+/**
+ * The note cut into runs for display: [text, offset, kind, row] where kind is
+ * 'text', 'tag' (the @name and the spaces after it) or 'value' (row = the
+ * parsed entry; a level inside another value is its own run).
+ */
+function zpms_note_runs(string $text, array $spec): array {
+    $chars = zpms_note_chars($text);
+    $rows = zpms_note_parse($text, $spec);
+    $kind = array_fill(0, count($chars), null);   // null = text, -1 = tag, i = value of row i
+    foreach ($rows as $i => $r) {
+        if ($r['origin'] === null) {
+            for ($k = $r['pos']; $k < $r['start']; $k++) $kind[$k] = -1;
+        }
+        for ($k = $r['start']; $k < $r['end']; $k++) $kind[$k] = $i;
+    }
+    $runs = [];
+    $n = count($chars);
+    for ($k = 0; $k < $n; ) {
+        $e = $k;
+        while ($e < $n && $kind[$e] === $kind[$k]) $e++;
+        $runs[] = [implode('', array_slice($chars, $k, $e - $k)), $k,
+            $kind[$k] === null ? 'text' : ($kind[$k] === -1 ? 'tag' : 'value'), is_int($kind[$k]) && $kind[$k] >= 0 ? $rows[$kind[$k]] : null];
+        $k = $e;
+    }
+    return $runs;
+}
+
+/** The note as read: the tag words left out (for previews like the first line of a note). */
+function zpms_note_strip(string $text, ?array $spec = null): string {
+    try {
+        $out = '';
+        foreach (zpms_note_runs($text, $spec ?? zpms_note_tags_spec()) as [$t, , $kind]) {
+            if ($kind !== 'tag') $out .= $t;
+        }
+        return $out;
+    } catch (Throwable $e) {
+        return $text;
+    }
+}
+
+/**
+ * The reading look of a note (docs/CLINICAL_TAGS_PLAN.md section 9): tag
+ * words left out, each value in its ink colour. Every run is escaped and
+ * carries data-o, its character offset in the note, so a click can put the
+ * caret on the same word (web/js/note-box.js). Empty for an empty note.
+ */
+function zpms_note_reading_html(?string $text): string {
+    $text = (string)$text;
+    $h = fn(string $s) => htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
+    try {
+        $spec = zpms_note_tags_spec();
+        $out = '';
+        foreach (zpms_note_runs($text, $spec) as [$t, $o, $kind, $row]) {
+            if ($kind === 'tag') continue;
+            if ($kind === 'value') {
+                $tag = $spec['tags'][$row['tag']];
+                $out .= '<span class="zt-v zt-c-' . $h($tag['colour']) . '" data-tag="' . $h($row['tag']) . '" data-o="' . $o . '" title="' . $h((string)$tag['label']) . '">' . $h($t) . '</span>';
+            } else {
+                $out .= '<span data-o="' . $o . '">' . $h($t) . '</span>';
+            }
+        }
+        return $out;
+    } catch (Throwable $e) {
+        return $text === '' ? '' : '<span data-o="0">' . $h($text) . '</span>';
+    }
+}
+
+/**
+ * Once per page, before the first note box: the colour classes (from the
+ * palette in config/note_tags.yaml) and the tag definitions for
+ * web/js/note-box.js. Empty if the tag file cannot be read -- the boxes then
+ * stay plain textareas.
+ */
+function zpms_note_tags_assets(): string {
+    static $done = false;
+    if ($done) return '';
+    try {
+        $spec = zpms_note_tags_spec();
+    } catch (Throwable $e) {
+        error_log('note tags: ' . $e->getMessage());
+        return '';
+    }
+    $done = true;
+    $css = '';
+    foreach ($spec['palette'] as $name => $c) {
+        if (!preg_match('/^[a-z][a-z0-9_-]*$/', (string)$name)) continue;
+        $v = [];
+        foreach (['tint', 'mark', 'ink'] as $part) {
+            if (preg_match('/^#[0-9a-fA-F]{3,8}$/', (string)($c[$part] ?? ''))) $v[] = "--zt-$part:{$c[$part]}";
+        }
+        $css .= ".zt-c-$name{" . implode(';', $v) . "}\n";
+    }
+    $json = json_encode(['tags' => $spec['tags']], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+    return "<style>\n$css</style>\n<script type=\"application/json\" id=\"zt-spec\">$json</script>\n";
+}
+
+// --------------------------------------------------------------------------
 // storage (plain PDO: shared with bin/zpmscli.php)
 // --------------------------------------------------------------------------
 

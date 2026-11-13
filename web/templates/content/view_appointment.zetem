@@ -1,6 +1,7 @@
 {% attach_library('appointment-improvements') %}
 {% attach_library('loader-library') %}
 {% attach_library('flatpickr-library') %}
+{% attach_library('note-tags') %}
 
 <!-- <hr> -->
 <!-- appointment-type-operation/-visit drives this whole card's accent
@@ -86,8 +87,12 @@
                          needed (web/js/textarea-autoexapand.js, which did
                          this by hand on every keyup, is gone). rows="2" is
                          just the pre-field-sizing-support fallback size. -->
-                    <textarea name="appointment-notes" id="" rows="2"
-                        loader="app-loader-{{$index}}">{{$appointment->getanote()}}</textarea>
+                    {# Clinical tags: reading look until clicked (web/js/note-box.js).
+                       The note goes through the escaping triple-brace echo: the
+                       double-brace one prints raw HTML. #}
+                    {{ zpms_note_tags_assets() }}
+                    <div class="zt-box"><div class="zt-read" data-placeholder="">{{ zpms_note_reading_html($appointment->getanote()) }}</div><textarea name="appointment-notes" id="" rows="2"
+                        loader="app-loader-{{$index}}">{{{$appointment->getanote()}}}</textarea></div>
                 </div>
 
                 {% if($can_edit): %}

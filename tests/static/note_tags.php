@@ -51,6 +51,18 @@ function zpms_static_note_tags(TestRunner $runner): void {
         assert_equal(6, count(zpms_note_rx_drugs_from_config()), 'starter drug list');
     });
 
+    $runner->add('reading look: tag words left out, values coloured, everything escaped, offsets kept', function () {
+        $html = zpms_note_reading_html('Βλ. <b>@δγ κήλη & "στένωση"</b> τέλος');
+        assert_equal('<span data-o="0">Βλ. &lt;b&gt;</span><span class="zt-v zt-c-rose" data-tag="dx" data-o="11" title="Διάγνωση">κήλη &amp; &quot;στένωση&quot;&lt;/b&gt; τέλος</span>', $html);
+        assert_equal('', zpms_note_reading_html(''), 'an empty note must give an empty box (the placeholder shows)');
+        assert_equal('<span data-o="0">χωρίς ετικέτες</span>', zpms_note_reading_html('χωρίς ετικέτες'));
+        $assets = zpms_note_tags_assets();
+        assert_contains('.zt-c-rose{--zt-tint:#fbebea;--zt-mark:#e6b2ac;--zt-ink:#8c3b34}', $assets, 'palette classes');
+        assert_contains('id="zt-spec"', $assets, 'tag definitions for the browser');
+        assert_not_contains('</script><', substr($assets, strpos($assets, 'zt-spec'), -10), 'spec JSON not safe inside <script>');
+        assert_equal('', zpms_note_tags_assets(), 'assets emitted twice on one page');
+    });
+
     $runner->add('a malformed tag file is refused, not half-read', function () {
         $tmp = tempnam(sys_get_temp_dir(), 'zpmstags') . '.yaml';
         file_put_contents($tmp, "tags:\n  dx: { names: [δγ], colour: nope, value: text }\npalette:\n  rose: { tint: '#ffffff', mark: '#ffffff', ink: '#ffffff' }\n");
@@ -75,6 +87,7 @@ function zpms_static_note_tags(TestRunner $runner): void {
     foreach ($cases as $case) {
         $runner->add('PHP parser: ' . $case['name'], function () use ($case, $spec, $drugs) {
             zpms_note_tags_test_match($case['expect'], zpms_note_parse($case['text'], $spec, $drugs), 'PHP');
+            if (isset($case['plain'])) assert_equal($case['plain'], zpms_note_strip($case['text'], $spec), 'PHP: note without the tag words');
         });
     }
 
@@ -96,8 +109,11 @@ function zpms_static_note_tags(TestRunner $runner): void {
     foreach ($cases as $i => $case) {
         $runner->add('JS parser: ' . $case['name'] . ' (and same as PHP)', function () use ($case, $i, $spec, $drugs, &$js) {
             assert_true(is_array($js), 'the JS parser did not run');
-            zpms_note_tags_test_match($case['expect'], $js[$i], 'JS');
-            assert_equal(zpms_note_tags_test_canon(zpms_note_parse($case['text'], $spec, $drugs)), zpms_note_tags_test_canon($js[$i]), 'PHP and JS differ');
+            zpms_note_tags_test_match($case['expect'], $js[$i]['rows'], 'JS');
+            assert_equal(zpms_note_tags_test_canon(zpms_note_parse($case['text'], $spec, $drugs)), zpms_note_tags_test_canon($js[$i]['rows']), 'PHP and JS differ');
+            $phpRuns = array_map(fn($r) => [$r[0], $r[1], $r[2]], zpms_note_runs($case['text'], $spec));
+            assert_equal($phpRuns, $js[$i]['runs'], 'PHP and JS cut the note into different runs');
+            if (isset($case['plain'])) assert_equal($case['plain'], $js[$i]['plain'], 'JS: note without the tag words');
         });
     }
 }

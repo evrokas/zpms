@@ -165,6 +165,22 @@ libraries:
       - audit_log:
         type: 'text/css'
         src: 'css/audit-log.css'
+  # Clinical tags in the note boxes (docs/CLINICAL_TAGS_PLAN.md): reading and
+  # writing looks, the @ tag menu. Attached by every template with a note box.
+  note-tags:
+    css:
+      - note_tags:
+        type: 'text/css'
+        src: 'css/note-tags.css'
+    foot_script:
+      - note_tags:
+        type: 'text/javascript'
+        src: 'js/note-tags.js'
+        defer:
+      - note_box:
+        type: 'text/javascript'
+        src: 'js/note-box.js'
+        defer:
   appointment-improvements:
     css:
       - uploads:

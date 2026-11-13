@@ -1,5 +1,5 @@
 {
-  "_comment": "Test cases for the clinical-tag parser, run by BOTH web/note_tags.php and web/js/note-tags.js (tests/static/note_tags.php). Tags and drugs come from config/note_tags.yaml. `expect` lists every row the note must produce, in order; only the keys given are compared (rx: only its keys given). Positions are characters.",
+  "_comment": "Test cases for the clinical-tag parser, run by BOTH web/note_tags.php and web/js/note-tags.js (tests/static/note_tags.php). Tags and drugs come from config/note_tags.yaml. `expect` lists every row the note must produce, in order; only the keys given are compared (rx: only its keys given). Positions are characters. `plain`, when given, is the note with the tag words left out (zpms_note_strip / strip).",
   "cases": [
     {
       "name": "the plan's example: diagnosis and levels in prose",
@@ -22,7 +22,8 @@
           "pos": 56,
           "origin": null
         }
-      ]
+      ],
+      "plain": "Η μαγνητική δείχνει κήλη μεσοσπονδυλίου δίσκου, στο Ο4-Ο5 με πίεση της ρίζας."
     },
     {
       "name": "tag names ignore case and Greek accents",
@@ -86,7 +87,8 @@
     {
       "name": "e-mail addresses, a lone @ and unknown names are plain text",
       "text": "Στείλτε στο doctor@δγ.gr ή στο a@b.gr @ @abc κάτι",
-      "expect": []
+      "expect": [],
+      "plain": "Στείλτε στο doctor@δγ.gr ή στο a@b.gr @ @abc κάτι"
     },
     {
       "name": "a value ends at a comma, a semicolon (Greek ano teleia, ;), a full stop + space, a line break",
@@ -173,7 +175,8 @@
           "tag": "exam",
           "value": "μαγνητική τομογραφία ΟΜΣΣ"
         }
-      ]
+      ],
+      "plain": "@δγ, @αλ. μαγνητική τομογραφία ΟΜΣΣ @θερ\n"
     },
     {
       "name": "text values are normalised: folded, whitespace collapsed",
@@ -349,7 +352,8 @@
           "tag": "dx",
           "value": "κήλη Ο4-Ο5"
         }
-      ]
+      ],
+      "plain": "μικροδισκεκτομή Ο4-Ο5. επισκληρίδιος έγχυση στο Ο5-Ι1 και L4-L5. κήλη Ο4-Ο5"
     },
     {
       "name": "levels inside words are not levels",
@@ -536,7 +540,8 @@
           "tag": "med",
           "value": "ΜΣΑΦ (όχι ασπιρίνη) τώρα"
         }
-      ]
+      ],
+      "plain": "λάτεξ (ακτινογραφία) «υδροκέφαλος» ΜΣΑΦ (όχι ασπιρίνη) τώρα"
     },
     {
       "name": "positions are characters, also after characters outside the BMP",

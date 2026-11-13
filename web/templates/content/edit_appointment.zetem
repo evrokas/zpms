@@ -1,12 +1,13 @@
 {% attach_library('appointment-improvements') %}
 {% attach_library('flatpickr-library') %}
+{% attach_library('note-tags') %}
 
 {# Visually hidden: the breadcrumb already names the page. #}
 <h2 class="sr-only">{{($appointment->getatype() == 'operation') ? t('New operation') : t('New appointment')}}</h2>
 
 {% if(isset($patient)):%}
     <div class="appointment-patient-name">
-        <h4>{{{t('Patient')}}}: <span>{{$patient->getpname()}}</span> </h4>
+        <h4>{{{t('Patient')}}}: <span>{{{$patient->getpname()}}}</span> </h4>
     </div>
 {% endif %}
 
@@ -63,7 +64,8 @@
 
                 <div class="input-div input-notes">
                     <label for="appointment-notes">{{{t('Notes')}}}</label>
-                    <textarea name="appointment-notes" id="appointment-notes" rows="5">{{$appointment->getanote()}}</textarea>
+                    {{ zpms_note_tags_assets() }}
+                    <div class="zt-box"><div class="zt-read" data-placeholder="">{{ zpms_note_reading_html($appointment->getanote()) }}</div><textarea name="appointment-notes" id="appointment-notes" rows="5">{{{$appointment->getanote()}}}</textarea></div>
                 </div>
 
                 <div class="buttons">

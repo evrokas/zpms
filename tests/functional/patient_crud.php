@@ -215,7 +215,10 @@ function zpms_functional_patient_crud(TestRunner $runner, TestHttpClient $http):
         $body = $http->get('/patient/' . $p->getid() . '/edit')['body'];
         assert_contains('<span id="pi-note">Πρώτη γραμμή σημείωσης</span>', $body, 'the header does not show exactly the first line of the notes');
         assert_contains('Δεύτερη γραμμή', $body, 'the Notes field lost the later lines');
-        assert_equal(1, substr_count($body, 'Δεύτερη γραμμή'), 'a later line of the notes also appears in the header');
+        // The Notes field holds the note twice (the textarea and its reading
+        // look, see web/note_tags.php), so check the header itself.
+        assert_true((bool)preg_match('~<div class="pi-note" id="pi-note-wrap"[^>]*>(.*?)</div>~su', $body, $hm), 'header note line not found');
+        assert_not_contains('Δεύτερη γραμμή', $hm[1], 'a later line of the notes also appears in the header');
 
         // A note that starts with a line break has an empty first line: no header line at all.
         $q = new patientsClass(['guid' => guid(), 'cuser' => 'test-fixture', 'cdate' => getDBtime(), 'pname' => 'Σημειώσεις Κενή Αρχή',

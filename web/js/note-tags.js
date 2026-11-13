@@ -319,7 +319,34 @@
         return rx;
     }
 
+    /** The note cut into runs: {text, offset, kind: 'text'|'tag'|'value', row} -- zpms_note_runs() in PHP. */
+    function runs(text, spec) {
+        var chars = Array.from(String(text || '')), rows = new Parser(chars.join(''), spec, []).parse();
+        var kind = chars.map(function () { return null; }), k;
+        rows.forEach(function (r, i) {
+            if (r.origin === null) for (k = r.pos; k < r.start; k++) kind[k] = -1;
+            for (k = r.start; k < r.end; k++) kind[k] = i;
+        });
+        var out = [], n = chars.length;
+        for (k = 0; k < n;) {
+            var e = k;
+            while (e < n && kind[e] === kind[k]) e++;
+            out.push({ text: chars.slice(k, e).join(''), offset: k,
+                kind: kind[k] === null ? 'text' : (kind[k] === -1 ? 'tag' : 'value'),
+                row: kind[k] !== null && kind[k] >= 0 ? rows[kind[k]] : null });
+            k = e;
+        }
+        return out;
+    }
+
+    /** The note with the tag words left out -- zpms_note_strip() in PHP. */
+    function strip(text, spec) {
+        return runs(text, spec).filter(function (r) { return r.kind !== 'tag'; }).map(function (r) { return r.text; }).join('');
+    }
+
     var api = {
+        runs: runs,
+        strip: strip,
         fold: fold,
         normalizeText: normalizeText,
         /** One entry per tagged value -- see zpms_note_parse() in web/note_tags.php. */
