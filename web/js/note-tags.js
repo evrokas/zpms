@@ -308,6 +308,8 @@
         // An amount of tablets: 1, 1,5, ½, 1/2, 1/4, 3/4. Units for a strength.
         var qty = '(?:[13]/[24]|[0-9]+(?:[.,][0-9]+)?|½|¼)';
         var units = '(?:mg|mcg|μg|μγ|ug|gr|g|ml|iu)';
+        // A combination strength: «160+12,5», «160/12.5».
+        var combo = '[0-9]+(?:[.,][0-9]+)?(?:' + sp + '*[+/]' + sp + '*[0-9]+(?:[.,][0-9]+)?)+';
         var dailyTablets = null, axbStrength = null;
 
         // Old notation, morning - noon - evening: "1 - 0 - 2", "x 1-1-1", "1 - 1/2 - 1/2", "150-0-300mg".
@@ -324,10 +326,12 @@
                 dailyTablets = given.reduce(function (x, y) { return x + y; }, 0);
                 rx.per_dose = Math.round(dailyTablets / given.length * 100) / 100;
             }
-        } else if ((m = find(nb + '(' + qty + ')' + sp + '*[xχ×]' + sp + '*([0-9]+)' + na))) {
-            var qa = num(group(m, 1)), qb = parseInt(group(m, 2), 10);
+        } else if ((m = find(nb + '((?:[13]/[24](?![0-9.,])|' + combo + '|' + qty + '))' + sp + '*[xχ×]' + sp + '*([0-9]+)' + na))) {
+            // A combination before the x ("co-valsart 160+12,5 x 2") is the strength.
+            var isCombo = /[+/]/.test(group(m, 1)) && !/^[13]\/[24]$/.test(group(m, 1));
+            var qa = isCombo ? 0 : num(group(m, 1)), qb = parseInt(group(m, 2), 10);
             spans.per_day = [m[0], m[1]];
-            if (qa > 4) {
+            if (isCombo || qa > 4) {
                 // "300 x 1": 300 (mg) once a day.
                 axbStrength = group(m, 1);
                 rx.per_day_text = 'x' + qb;

@@ -94,10 +94,10 @@ after:   MRI: @δγ ΚΜΔ Ο4/5 αριστερά
    | `lobivon 1/2`, `1/4 x 1`, `1/2 x2` | part of a tablet | per dose 0.5 / 0.25 |
    | `t4 25ug` | micrograms | strength 25ug |
    | `tb …`, `caps …` | the form | goes to the note, not the drug name |
-   | `thyrohormone 0,1`, `nexium 40` | bare strength of an unlisted drug | strength 0,1mg / 40mg |
+   | `thyrohormone 0,1`, `nexium 40` | bare strength of an unlisted drug | strength 0.1mg / 40mg |
+   | `co-valsart 160+12,5 x 2` | combination tablet, old A x B | strength 160+12.5mg, x2 |
 
-   Known limits: a combination tablet («co-valsart 160+12,5 x 2») gets 12,5mg as its
-   strength; «2-3/ημέρα» and changes over time («x 1 και σε 3 ημέρες x2») stay in the note.
+   Known limits: «2-3/ημέρα» and changes over time («x 1 και σε 3 ημέρες x2») stay in the note.
    Change for new notes: a lone `x5` without another frequency now means 5 times a day,
    not 5 days (write «για 5 ημέρες»).
 4. **Long values** to the end of a line are accepted (no punctuation added).

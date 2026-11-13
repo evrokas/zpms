@@ -255,6 +255,7 @@ function zpms_notes_revert(PDO $db, string $backupFile, string $now, bool $apply
     foreach ($data['notes'] as $c) {
         $cur = zpms_note_current($db, $c['source'], (int)$c['id']);
         if ($cur === null) { $problems[] = "{$c['source']} {$c['id']}: not found or deleted"; $report['skipped']++; continue; }
+        if ($cur['text'] === $c['before']) { $problems[] = "{$c['source']} {$c['id']}: already restored"; $report['skipped']++; continue; }
         if ($cur['text'] !== $c['after']) { $problems[] = "{$c['source']} {$c['id']}: edited after the import -- left as it is"; $report['skipped']++; continue; }
         $report['to_restore']++;
         $todo[] = ['source' => $c['source'], 'id' => (int)$c['id'], 'patient_id' => $cur['patient_id'], 'patient_guid' => $cur['patient_guid'],
@@ -271,8 +272,8 @@ function zpms_notes_write(PDO $db, array $notes, string $now, array $spec, array
     try {
         foreach ($notes as $c) {
             $st = $c['source'] === 'appointment'
-                ? $db->prepare('UPDATE appointments SET anote = ? WHERE id = ? AND anote = ?')
-                : $db->prepare('UPDATE patients SET pnote = ? WHERE id = ? AND pnote = ?');
+                ? $db->prepare('UPDATE appointments SET anote = ? WHERE id = ? AND anote = ? COLLATE utf8mb4_bin')
+                : $db->prepare('UPDATE patients SET pnote = ? WHERE id = ? AND pnote = ? COLLATE utf8mb4_bin');
             $st->execute([$c['text'], $c['id'], $c['expect']]);
             if ($st->rowCount() !== 1) throw new RuntimeException("{$c['source']} {$c['id']} changed while writing -- nothing was written");
             if ($withFields) {

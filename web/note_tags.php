@@ -454,6 +454,8 @@ function zpms_note_parse_rx(string $value, array $drugs): array {
     // An amount of tablets: 1, 1,5, ½, 1/2, 1/4, 3/4. Units for a strength.
     $qty = '(?:[13]\/[24]|[0-9]+(?:[.,][0-9]+)?|½|¼)';
     $units = '(?:mg|mcg|μg|μγ|ug|gr|g|ml|iu)';
+    // A combination strength: «160+12,5», «160/12.5».
+    $combo = "[0-9]+(?:[.,][0-9]+)?(?:{$sp}*[+\\/]{$sp}*[0-9]+(?:[.,][0-9]+)?)+";
     $tablets = fn(float $v) => $v <= 4;   // larger bare numbers are milligrams, not tablets
     $dailyTablets = null;                 // tablets a day, when known (for the total)
     $axbStrength = null;                  // "300 x 1": 300 is the strength (the drug's unit)
@@ -470,10 +472,12 @@ function zpms_note_parse_rx(string $value, array $drugs): array {
             $dailyTablets = array_sum($given);
             $rx['per_dose'] = round($dailyTablets / count($given), 2);
         }
-    } elseif ($m = $find("/{$nb}({$qty}){$sp}*[xχ×]{$sp}*([0-9]+){$na}/u")) {
-        $a = $num($group($m, 1));
+    } elseif ($m = $find("/{$nb}((?:[13]\/[24](?![0-9.,])|{$combo}|{$qty})){$sp}*[xχ×]{$sp}*([0-9]+){$na}/u")) {
+        // A combination before the x ("co-valsart 160+12,5 x 2") is the strength.
+        $isCombo = (bool)preg_match('#[+/]#', $group($m, 1)) && !preg_match('#^[13]/[24]$#', $group($m, 1));
+        $a = $isCombo ? 0.0 : $num($group($m, 1));
         $b = (int)$group($m, 2);
-        if (!$tablets($a)) {
+        if ($isCombo || !$tablets($a)) {
             // "300 x 1": 300 (mg) once a day.
             $axbStrength = $group($m, 1);
             $rx['per_day_text'] = 'x' . $b;

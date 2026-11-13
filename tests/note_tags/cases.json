@@ -905,6 +905,23 @@
           "origin": 0
         }
       ]
+    },
+    {
+      "name": "prescription, old notation: a combination before the x is the strength",
+      "text": "@συν co-valsart 160+12,5 x 2",
+      "expect": [
+        {
+          "tag": "rx",
+          "rx": {
+            "drug": "co-valsart",
+            "strength": "160+12.5mg",
+            "per_day_text": "x2",
+            "per_dose": 1,
+            "per_day": 2,
+            "note": null
+          }
+        }
+      ]
     }
   ]
 }
