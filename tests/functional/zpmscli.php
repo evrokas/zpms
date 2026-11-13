@@ -66,6 +66,22 @@ function zpmscli_functional_tests(TestRunner $runner): void {
         assert_equal(['files', 'history'], zpmscli_split_list($options['only']), 'list option not split');
     });
 
+    $runner->add('argv parsing: a value option also takes "--name value"', function () {
+        [$command, $args, $options] = zpmscli_parse_argv(['zpmscli.php', 'notes:import', '--revert', 'var/b.json', '--yes']);
+        assert_equal('notes:import', $command);
+        assert_equal([], $args, 'the value must not become a positional argument');
+        assert_equal('var/b.json', $options['revert'], '--revert FILE not read');
+        assert_equal(true, $options['yes']);
+        [, $args, $options] = zpmscli_parse_argv(['zpmscli.php', 'patients:reassign', '--to', 'anna', '--from', 'bob', '--yes', '12']);
+        assert_equal('anna', $options['to']);
+        assert_equal('bob', $options['from']);
+        assert_equal(['12'], $args);
+        [, , $options] = zpmscli_parse_argv(['zpmscli.php', 'notes:import', '--revert', '--yes']);
+        assert_equal(true, $options['revert'], 'a following option is not taken as the value');
+        [, $args, $options] = zpmscli_parse_argv(['zpmscli.php', 'notes:import', 'f.txt', '--yes', '--allow-edits']);
+        assert_equal(['f.txt'], $args, 'a flag never takes the next word');
+    });
+
     $runner->add('reassign: a dry run writes nothing, --yes changes only the named user\'s rows', function () {
         TestSchema::assertSafeToMutate();
         $dir = zpms_cli_test_files_dir();

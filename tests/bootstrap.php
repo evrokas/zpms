@@ -17,6 +17,15 @@ error_reporting(E_ALL & ~E_DEPRECATED);
 
 define('ZPMS_TEST_APPDIR', dirname(__DIR__));
 
+// Same timezone as the app (Kernel reads `tz:` from config/settings.info.yaml), so a
+// test's date('Y-m-d') is the server's "today" even late in the evening UTC.
+(function () {
+    $tz = 'Europe/Athens';
+    $yaml = @file_get_contents(ZPMS_TEST_APPDIR . '/config/settings.info.yaml');
+    if (is_string($yaml) && preg_match('/^tz:\s*["\']?([A-Za-z0-9_\/+-]+)/m', $yaml, $m)) $tz = $m[1];
+    date_default_timezone_set(in_array($tz, timezone_identifiers_list(), true) ? $tz : 'Europe/Athens');
+})();
+
 function zpms_test_fatal(string $msg): never {
     fwrite(STDERR, "FATAL: $msg\n");
     exit(1);

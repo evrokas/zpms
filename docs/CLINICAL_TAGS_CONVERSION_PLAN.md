@@ -149,7 +149,7 @@ Code: `bin/lib/zpms_note_convert.php` (loaded by `bin/lib/zpms_cli.php`), comman
   then all notes and their `note_fields` rows are written in one transaction (a note that
   changed meanwhile aborts all). One audit row per note (`notes_tags_imported`, tag count
   only, never text).
-- `notes:import --revert=<backup.json> [--yes]` restores the originals of every note still
+- `notes:import --revert=<backup.json> [--yes]` (or `--revert <backup.json>`) restores the originals of every note still
   as the import left it (`notes_tags_reverted`).
 
 ### Checked

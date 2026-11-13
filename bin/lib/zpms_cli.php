@@ -24,18 +24,26 @@ require_once dirname(__DIR__, 2) . '/web/note_tags.php';
 // notes:export / notes:import (converting old notes to the tag notation).
 require_once __DIR__ . '/zpms_note_convert.php';
 
+/** Options that always take a value, so "--name value" works as well as "--name=value". */
+const ZPMSCLI_VALUE_OPTIONS = ['revert', 'out', 'from', 'to', 'patient', 'only', 'q', 'user', 'limit', 'older-than'];
+
 const ZPMSCLI_REASSIGN_SCOPES = ['patients', 'appointments', 'files', 'history'];
 
 /** Splits argv into [command, positional arguments, options] -- options may sit anywhere. */
 function zpmscli_parse_argv(array $argv): array {
     $options = [];
     $positional = [];
-    foreach (array_slice($argv, 1) as $arg) {
+    $args = array_slice($argv, 1);
+    for ($i = 0; $i < count($args); $i++) {
+        $arg = $args[$i];
         if (str_starts_with($arg, '--')) {
             $arg = substr($arg, 2);
             if (str_contains($arg, '=')) {
                 [$name, $value] = explode('=', $arg, 2);
                 $options[$name] = $value;
+            } elseif (in_array($arg, ZPMSCLI_VALUE_OPTIONS, true) && isset($args[$i + 1]) && !str_starts_with($args[$i + 1], '--')) {
+                // "--revert FILE" as well as "--revert=FILE".
+                $options[$arg] = $args[++$i];
             } else {
                 $options[$arg] = true;
             }
