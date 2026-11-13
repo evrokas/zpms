@@ -103,7 +103,7 @@ function zpms_system_update_tests(TestRunner $runner, string $baseUrl, string $s
     $runner->add('the page: refused to others, shown to an administrator with the real branches', function () use ($baseUrl, $stub) {
         $doctor = new TestHttpClient($baseUrl);
         TestFixtures::loginAsTestUser($doctor);
-        assert_contains('401', $doctor->get('/system/update')['body'], 'a doctor (no system-update) could open the page');
+        assert_401_page($doctor->get('/system/update')['body'], 'a doctor (no system-update) could open the page');
         assert_not_contains('/system/update', $doctor->get('/patients')['body'], 'the menu offers the page to someone who cannot open it');
         assert_equal(403, $doctor->get('/system/update/status')['status'], 'the status endpoint answered a doctor');
 

@@ -66,13 +66,13 @@ function zpms_functional_admin_crud(TestRunner $runner, string $baseUrl): void {
         $http->post('/login', ['csrf_token' => $token, 'username' => TestFixtures::USERNAME, 'password' => TestFixtures::PASSWORD]);
 
         $res = $http->get('/admin/users');
-        assert_contains('401', $res['body'], 'a plain doctor account was NOT refused /admin/users -- users-manage may have leaked into doctor\'s grants');
+        assert_401_page($res['body'], 'a plain doctor account was NOT refused /admin/users -- users-manage may have leaked into doctor\'s grants');
     });
 
     $runner->add('an unauthenticated request to /admin/* is refused', function () use ($baseUrl) {
         $http = new TestHttpClient($baseUrl);
         $res = $http->get('/admin/users');
-        assert_contains('401', $res['body'], '/admin/users did not show the 401 page when logged out');
+        assert_401_page($res['body'], '/admin/users did not show the 401 page when logged out');
     });
 
     $runner->add('create, edit, and delete a permission', function () {

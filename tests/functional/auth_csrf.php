@@ -25,7 +25,7 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
         // clinics management form directly. Now gated behind settings-manage.
         $http = new TestHttpClient($baseUrl);
         $res = $http->get('/apps/edit_clinics');
-        assert_contains('401', $res['body'], '/apps/edit_clinics did not show the 401/unauthorized page when logged out');
+        assert_401_page($res['body'], '/apps/edit_clinics did not show the 401/unauthorized page when logged out');
     });
 
     $runner->add('an unauthenticated POST to the webform processor is refused', function () use ($baseUrl) {
@@ -62,7 +62,7 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
         // Can view the patient list (patients-view-list, granted).
         $listPage = $http->get('/patients');
         assert_equal(200, $listPage['status'], 'secretary account could not view the patient list');
-        assert_not_contains('401', $listPage['body'], 'secretary account was refused a permission it does have');
+        assert_not_401_page($listPage['body'], 'secretary account was refused a permission it does have');
         // The "Add new patient" button and per-row delete forms are
         // patients-new-patient/patients-delete-patient gated -- neither is
         // granted to secretary, so neither control should even render
@@ -72,7 +72,7 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
 
         // Cannot reach clinics management (settings-manage, not granted).
         $settingsPage = $http->get('/apps/edit_clinics');
-        assert_contains('401', $settingsPage['body'], 'secretary account was NOT refused settings-manage -- the permission bypass bug is back');
+        assert_401_page($settingsPage['body'], 'secretary account was NOT refused settings-manage -- the permission bypass bug is back');
 
         // Set up a throwaway patient via a direct insert (not through this
         // account, which can't create one either) to exercise the
@@ -90,7 +90,7 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
         // and every field disabled.
         $editPage = $http->get('/patient/' . $p->getid() . '/edit');
         assert_equal(200, $editPage['status'], 'secretary account could not open the patient page read-only');
-        assert_not_contains('401', $editPage['body'], 'secretary account was refused patients-view-list on an individual patient page');
+        assert_not_401_page($editPage['body'], 'secretary account was refused patients-view-list on an individual patient page');
         assert_contains('Ασθενής Για Δικαιώματα', $editPage['body'], "the patient's name did not render on the read-only page");
         assert_contains('<fieldset disabled', $editPage['body'], 'the patient page did not render with a disabled fieldset for a view-only account');
         assert_not_contains('name="submit" value="Αποθήκευση"', $editPage['body'], 'secretary account saw a save button on the read-only patient page');
@@ -113,7 +113,7 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
             'patient-amka' => '44444444444',
             'patient-telephone' => '', 'patient-address' => '', 'patient-email' => '', 'patient-note' => '',
         ]);
-        assert_contains('401', $saveRes['body'], 'secretary account was NOT refused patients-edit-patient on a crafted POST -- the permission bypass bug is back');
+        assert_401_page($saveRes['body'], 'secretary account was NOT refused patients-edit-patient on a crafted POST -- the permission bypass bug is back');
         $unchanged = dbConnection::getConnection()
             ->query('SELECT pname FROM patients WHERE id = ' . $p->getid())
             ->fetch();
@@ -121,7 +121,7 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
 
         // Cannot delete a patient (patients-delete-patient, not granted).
         $delRes = $http->post('/patient/' . $p->getid() . '/delete', ['csrf_token' => $editToken]);
-        assert_contains('401', $delRes['body'], 'secretary account was NOT refused patients-delete-patient -- the permission bypass bug is back');
+        assert_401_page($delRes['body'], 'secretary account was NOT refused patients-delete-patient -- the permission bypass bug is back');
 
         $row = dbConnection::getConnection()
             ->query('SELECT deleted FROM patients WHERE id = ' . $p->getid())
@@ -179,7 +179,7 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
             'appointment-place' => '',
             'appointment-notes' => 'tampered by a view-only account',
         ]);
-        assert_contains('401', $res['body'], 'secretary account was NOT refused appointment-edit on a crafted POST');
+        assert_401_page($res['body'], 'secretary account was NOT refused appointment-edit on a crafted POST');
         $row = dbConnection::getConnection()
             ->query('SELECT anote FROM appointments WHERE id = ' . $ap->getid())
             ->fetch();
@@ -253,7 +253,7 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
 
         $settingsPage = $http->get('/apps/edit_clinics');
         assert_equal(200, $settingsPage['status'], 'administrator account did not get 200 from /apps/edit_clinics');
-        assert_not_contains('401', $settingsPage['body'], 'administrator (is_superuser) account was refused settings-manage');
+        assert_not_401_page($settingsPage['body'], 'administrator (is_superuser) account was refused settings-manage');
     });
 
     $runner->add('login with the wrong password is rejected', function () use ($baseUrl) {
@@ -322,7 +322,7 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
 
         $profile = $http->get('/patients');
         assert_equal(200, $profile['status'], 'GET /patients did not return 200 after login');
-        assert_not_contains('401', $profile['body'], '/patients still shows the 401 page after a successful login');
+        assert_not_401_page($profile['body'], '/patients still shows the 401 page after a successful login');
     });
 
     $runner->add('the topbar user block shows the account name and username', function () use ($baseUrl) {
@@ -355,7 +355,7 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
 
         $res = $http->get('/apps/edit_clinics');
         assert_equal(200, $res['status'], 'GET /apps/edit_clinics did not return 200 for a logged-in doctor');
-        assert_not_contains('401', $res['body'], '/apps/edit_clinics still shows the 401 page for a logged-in doctor');
+        assert_not_401_page($res['body'], '/apps/edit_clinics still shows the 401 page for a logged-in doctor');
     });
 
     $runner->add('a doctor (backup-access holder) can reach /apps/backup; a secretary (no backup-access) is refused', function () use ($baseUrl) {
@@ -370,13 +370,13 @@ function zpms_functional_auth_csrf(TestRunner $runner, string $baseUrl): void {
 
         $res = $http->get('/apps/backup');
         assert_equal(200, $res['status'], 'GET /apps/backup did not return 200 for a logged-in doctor');
-        assert_not_contains('401', $res['body'], '/apps/backup still shows the 401 page for a logged-in doctor');
+        assert_not_401_page($res['body'], '/apps/backup still shows the 401 page for a logged-in doctor');
 
         $http2 = new TestHttpClient($baseUrl);
         TestFixtures::loginAsSecretary($http2);
 
         $res2 = $http2->get('/apps/backup');
-        assert_contains('401', $res2['body'], 'a secretary account (no backup-access) should be refused /apps/backup');
+        assert_401_page($res2['body'], 'a secretary account (no backup-access) should be refused /apps/backup');
     });
 
     $runner->add('an is_superuser account sees nav items gated by roles it does not literally hold', function () use ($baseUrl) {

@@ -157,7 +157,7 @@ function zpms_functional_audit_log(TestRunner $runner, string $baseUrl): void {
         $doctor = new TestHttpClient($baseUrl);
         TestFixtures::loginAsTestUser($doctor);
         $refused = $doctor->get('/audit');
-        assert_contains('401', $refused['body'], 'a doctor (no audit-log-view) could open /audit');
+        assert_401_page($refused['body'], 'a doctor (no audit-log-view) could open /audit');
         assert_not_contains('href="/audit"', $doctor->get('/patients')['body'], 'the menu offers /audit to someone who cannot open it');
 
         zpms_audit_test_admin();

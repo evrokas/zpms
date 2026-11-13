@@ -43,6 +43,22 @@ function assert_not_contains(string $needle, ?string $haystack, string $message 
     }
 }
 
+/**
+ * The framework's 401 page (fw/core/templates/errors/401.zetem). Matched on its text,
+ * not on the digits "401": a page that loaded fine can hold "401" by chance in a
+ * random CSRF token or an asset ?timestamp, which made these checks fail at random
+ * (and would let a "must be refused" check pass by chance).
+ */
+const ZPMS_TEST_401_MARKER = "401 - You don't have the neccessery credentials";
+
+function assert_401_page(?string $body, string $message = 'expected the 401 page'): void {
+    if ($body === null || !str_contains($body, ZPMS_TEST_401_MARKER)) throw new TestFailure($message);
+}
+
+function assert_not_401_page(?string $body, string $message = 'got the 401 page'): void {
+    if ($body !== null && str_contains($body, ZPMS_TEST_401_MARKER)) throw new TestFailure($message);
+}
+
 function assert_null($value, string $message = 'expected null'): void {
     if ($value !== null) throw new TestFailure($message);
 }
