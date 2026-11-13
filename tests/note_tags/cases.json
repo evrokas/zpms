@@ -17,7 +17,7 @@
         {
           "tag": "lvl",
           "value": "Ο4-Ο5",
-          "normalized": "L4-L5",
+          "normalized": "Ο4-Ο5",
           "valid": true,
           "pos": 56,
           "origin": null
@@ -163,7 +163,7 @@
         {
           "tag": "lvl",
           "value": "Ο5-Ι1",
-          "normalized": "L5-S1"
+          "normalized": "Ο5-Ι1"
         }
       ]
     },
@@ -196,67 +196,67 @@
         {
           "tag": "lvl",
           "value": "Ο4-Ο5",
-          "normalized": "L4-L5",
+          "normalized": "Ο4-Ο5",
           "valid": true
         },
         {
           "tag": "lvl",
           "value": "ο4-5",
-          "normalized": "L4-L5",
+          "normalized": "Ο4-Ο5",
           "valid": true
         },
         {
           "tag": "lvl",
           "value": "Ο4/Ο5",
-          "normalized": "L4-L5",
+          "normalized": "Ο4-Ο5",
           "valid": true
         },
         {
           "tag": "lvl",
           "value": "L4-L5",
-          "normalized": "L4-L5",
+          "normalized": "Ο4-Ο5",
           "valid": true
         },
         {
           "tag": "lvl",
           "value": "l4-5",
-          "normalized": "L4-L5",
+          "normalized": "Ο4-Ο5",
           "valid": true
         },
         {
           "tag": "lvl",
           "value": "Ο5-Ι1",
-          "normalized": "L5-S1",
+          "normalized": "Ο5-Ι1",
           "valid": true
         },
         {
           "tag": "lvl",
           "value": "Α5-Α6",
-          "normalized": "C5-C6",
+          "normalized": "Α5-Α6",
           "valid": true
         },
         {
           "tag": "lvl",
           "value": "Θ12",
-          "normalized": "T12",
+          "normalized": "Θ12",
           "valid": true
         },
         {
           "tag": "lvl",
           "value": "Θ12-Ο1",
-          "normalized": "T12-L1",
+          "normalized": "Θ12-Ο1",
           "valid": true
         },
         {
           "tag": "lvl",
           "value": "O4-O5",
-          "normalized": "L4-L5",
+          "normalized": "Ο4-Ο5",
           "valid": true
         },
         {
           "tag": "lvl",
           "value": "c6-7",
-          "normalized": "C6-C7",
+          "normalized": "Α6-Α7",
           "valid": true
         }
       ]
@@ -268,13 +268,13 @@
         {
           "tag": "lvl",
           "value": "Ο4-Ο5 και Ο5-Ι1",
-          "normalized": "L4-L5, L5-S1",
+          "normalized": "Ο4-Ο5, Ο5-Ι1",
           "valid": true
         },
         {
           "tag": "lvl",
           "value": "C5-C6, C6-C7",
-          "normalized": "C5-C6, C6-C7",
+          "normalized": "Α5-Α6, Α6-Α7",
           "valid": true
         }
       ]
@@ -286,25 +286,25 @@
         {
           "tag": "lvl",
           "value": "Ο6",
-          "normalized": "L6",
+          "normalized": "Ο6",
           "valid": false
         },
         {
           "tag": "lvl",
           "value": "Α9",
-          "normalized": "C9",
+          "normalized": "Α9",
           "valid": false
         },
         {
           "tag": "lvl",
           "value": "Ο5-Ο4",
-          "normalized": "L5-L4",
+          "normalized": "Ο5-Ο4",
           "valid": false
         },
         {
           "tag": "lvl",
           "value": "Ο4-Ο5 και Ο6",
-          "normalized": "L4-L5, L6",
+          "normalized": "Ο4-Ο5, Ο6",
           "valid": false
         }
       ]
@@ -333,7 +333,7 @@
         {
           "tag": "lvl",
           "value": "Ο4-Ο5",
-          "normalized": "L4-L5",
+          "normalized": "Ο4-Ο5",
           "valid": true,
           "origin": 0,
           "pos": 22
@@ -345,7 +345,7 @@
         {
           "tag": "lvl",
           "value": "Ο5-Ι1 και L4-L5",
-          "normalized": "L5-S1, L4-L5",
+          "normalized": "Ο5-Ι1, Ο4-Ο5",
           "origin": 2
         },
         {
@@ -355,7 +355,7 @@
         {
           "tag": "lvl",
           "value": "Ο4-Ο5",
-          "normalized": "L4-L5",
+          "normalized": "Ο4-Ο5",
           "origin": 4
         }
       ],
@@ -901,7 +901,7 @@
         {
           "tag": "lvl",
           "value": "Ο4/5",
-          "normalized": "L4-L5",
+          "normalized": "Ο4-Ο5",
           "origin": 0
         }
       ]
@@ -919,6 +919,158 @@
             "per_dose": 1,
             "per_day": 2,
             "note": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "a chain of vertebrae is consecutive levels: «Ο2-3-4-5» = Ο2-Ο3, Ο3-Ο4, Ο4-Ο5; «Θ11/12/Ο1» crosses regions; «Ο2-Ο5» stays one range",
+      "text": "@επ Ο2-3-4-5\n@επ Ο3/4/5\n@επ Θ11/12/Ο1\n@επ Ο2-Ο5",
+      "expect": [
+        {
+          "tag": "lvl",
+          "value": "Ο2-3-4-5",
+          "normalized": "Ο2-Ο3, Ο3-Ο4, Ο4-Ο5",
+          "valid": true
+        },
+        {
+          "tag": "lvl",
+          "value": "Ο3/4/5",
+          "normalized": "Ο3-Ο4, Ο4-Ο5",
+          "valid": true
+        },
+        {
+          "tag": "lvl",
+          "value": "Θ11/12/Ο1",
+          "normalized": "Θ11-Θ12, Θ12-Ο1",
+          "valid": true
+        },
+        {
+          "tag": "lvl",
+          "value": "Ο2-Ο5",
+          "normalized": "Ο2-Ο5",
+          "valid": true
+        }
+      ]
+    },
+    {
+      "name": "after a comma or «και» a pair without a region letter continues the region: «Ο2/3,3/4,4/5», «Α3/4,4/5,5/6», «Ο4/5 και 5/Ι1»; a bare number is not a level",
+      "text": "@επ Ο2/3,3/4,4/5\n@επ Α3/4, 4/5, 5/6\n@επ Ο4/5 και 5/Ι1\n@επ Ο4, 5 ημέρες",
+      "expect": [
+        {
+          "tag": "lvl",
+          "value": "Ο2/3,3/4,4/5",
+          "normalized": "Ο2-Ο3, Ο3-Ο4, Ο4-Ο5",
+          "valid": true
+        },
+        {
+          "tag": "lvl",
+          "value": "Α3/4, 4/5, 5/6",
+          "normalized": "Α3-Α4, Α4-Α5, Α5-Α6",
+          "valid": true
+        },
+        {
+          "tag": "lvl",
+          "value": "Ο4/5 και 5/Ι1",
+          "normalized": "Ο4-Ο5, Ο5-Ι1",
+          "valid": true
+        },
+        {
+          "tag": "lvl",
+          "value": "Ο4",
+          "normalized": "Ο4",
+          "valid": true
+        }
+      ]
+    },
+    {
+      "name": "a chain inside a procedure gives each level: «@χειρ Σπονδυλοδεσία Ο2-3-4-5 άμφω»",
+      "text": "@χειρ Σπονδυλοδεσία Ο2-3-4-5 άμφω",
+      "expect": [
+        {
+          "tag": "proc",
+          "value": "Σπονδυλοδεσία Ο2-3-4-5 άμφω",
+          "origin": null
+        },
+        {
+          "tag": "lvl",
+          "value": "Ο2-3-4-5",
+          "normalized": "Ο2-Ο3, Ο3-Ο4, Ο4-Ο5",
+          "origin": 0
+        }
+      ]
+    },
+    {
+      "name": "old notation: «x» glued to the unit is times a day, whatever the number («7,5mgx2», «90mgx1», «5mgx8»); with a space «x 7» stays days",
+      "text": "@συν movatec 7,5mgx2\n@φα arcoxia 90mgx1\n@συν abc 5mgx8\n@συν Lyrica 75mg x 7",
+      "expect": [
+        {
+          "tag": "rx",
+          "rx": {
+            "drug": "movatec",
+            "strength": "7.5mg",
+            "per_day_text": "x2",
+            "per_dose": 1,
+            "per_day": 2
+          }
+        },
+        {
+          "tag": "cur",
+          "rx": {
+            "drug": "arcoxia",
+            "strength": "90mg",
+            "per_day_text": "x1",
+            "per_dose": 1,
+            "per_day": 1
+          }
+        },
+        {
+          "tag": "rx",
+          "rx": {
+            "drug": "abc",
+            "strength": "5mg",
+            "per_day_text": "x8",
+            "per_dose": 1,
+            "per_day": 8
+          }
+        },
+        {
+          "tag": "rx",
+          "rx": {
+            "drug": "Lyrica",
+            "strength": "75mg",
+            "per_day": null,
+            "days": 7
+          }
+        }
+      ]
+    },
+    {
+      "name": "old notation: «ugr», «υgr», «μgr» are micrograms, stored as ug",
+      "text": "@φα T4 50υgr\n@φα Τ4 62ugr\n@φα t4 25μgr x1",
+      "expect": [
+        {
+          "tag": "cur",
+          "rx": {
+            "drug": "T4",
+            "strength": "50ug"
+          }
+        },
+        {
+          "tag": "cur",
+          "rx": {
+            "drug": "Τ4",
+            "strength": "62ug"
+          }
+        },
+        {
+          "tag": "cur",
+          "rx": {
+            "drug": "t4",
+            "strength": "25ug",
+            "per_day_text": "x1",
+            "per_dose": 1,
+            "per_day": 1
           }
         }
       ]

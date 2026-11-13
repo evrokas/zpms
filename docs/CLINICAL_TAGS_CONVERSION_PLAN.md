@@ -1,7 +1,7 @@
 # Converting the existing notes to clinical tags -- plan
 
 Status (2026-11-13): tools built, notes exported, decisions of section 4 taken and built
-(new tag, levels in diagnoses, old dose notation in the parser); **tagging not started**. Companion to `docs/CLINICAL_TAGS_PLAN.md` (the tag notation itself).
+(new tag, levels in diagnoses, old dose notation in the parser); **tagging done 2026-11-14, awaiting review**. Companion to `docs/CLINICAL_TAGS_PLAN.md` (the tag notation itself).
 
 The notes written before the tags existed are plain prose. This plan adds the tags to them
 so the patient record summary, the allergy line and the patients-list filters cover the
@@ -92,10 +92,12 @@ after:   MRI: @δγ ΚΜΔ Ο4/5 αριστερά
    | `neurontin 1 x 300` | one dose of 300 a day | strength 300mg, once a day |
    | `Lyrica 75mg x 3` (lone `x N`, N ≤ 6, no other frequency) | times a day | 1 x 3 a day; `x 7` or more stays days, as before |
    | `lobivon 1/2`, `1/4 x 1`, `1/2 x2` | part of a tablet | per dose 0.5 / 0.25 |
-   | `t4 25ug` | micrograms | strength 25ug |
+   | `t4 25ug`, `T4 50υgr`, `62ugr`, `25μgr` | micrograms | strength 25ug (ugr/υgr/μgr stored as ug) |
    | `tb …`, `caps …` | the form | goes to the note, not the drug name |
    | `thyrohormone 0,1`, `nexium 40` | bare strength of an unlisted drug | strength 0.1mg / 40mg |
    | `co-valsart 160+12,5 x 2` | combination tablet, old A x B | strength 160+12.5mg, x2 |
+   | `movatec 7,5mgx2`, `arcoxia 90mgx1` | `x` glued to the unit | times a day, whatever the number |
+   | `Ο2-3-4-5`, `Α3/4/5/6`, `Ο2/3,3/4,4/5` | chain of vertebrae; pairs after a comma keep the region | each level: Ο2-Ο3, Ο3-Ο4, Ο4-Ο5 |
 
    Known limits: «2-3/ημέρα» and changes over time («x 1 και σε 3 ημέρες x2») stay in the note.
    Change for new notes: a lone `x5` without another frequency now means 5 times a day,
@@ -173,5 +175,6 @@ Code: `bin/lib/zpms_note_convert.php` (loaded by `bin/lib/zpms_cli.php`), comman
 5. User review of the tagged file.
 6. Fresh export check: if notes were edited meanwhile, the import skips them -- tag those
    few again from a new export.
-7. `notes:import … --yes`; check the patient record and filters; keep the backup.
+7. `notes:import … --allow-edits --yes` (one note was edited by hand at the user's request, see
+   `var/note-conversion/review-notes.txt`); check the patient record and filters; keep the backup.
 8. Delete the files in `var/note-conversion/` once satisfied (patient data).

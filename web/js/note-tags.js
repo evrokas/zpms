@@ -38,7 +38,9 @@
     function decimalComma(chars, k) { return k > 0 && isDigit(chars[k - 1]) && isDigit(chars[k + 1]); }
     /** A strength as stored: «160+12,5 mg» -> «160+12.5mg» -- zpms_note_normalize_strength() in PHP. */
     function normalizeStrength(numbers, unit) {
-        return numbers.replace(SPACES_RE, '').replace(/\//g, '+').replace(/,/g, '.') + unit.toLowerCase();
+        var u = unit.toLowerCase();
+        if (u === 'ugr' || u === 'υgr' || u === 'μgr') u = 'ug';   // micrograms in old notes
+        return numbers.replace(SPACES_RE, '').replace(/\//g, '+').replace(/,/g, '.') + u;
     }
     function normalizeText(s) { return trim(fold(s).replace(SPACES_RE, ' ')); }
 
@@ -51,6 +53,7 @@
         'ο': 'L', 'o': 'L', 'l': 'L', 'ι': 'S', 'i': 'S', 's': 'S' };
     var REGION_MAX = { C: 7, T: 12, L: 5, S: 1 };
     var REGION_BASE = { C: 0, T: 7, L: 19, S: 24 };
+    var REGION_GREEK = { C: 'Α', T: 'Θ', L: 'Ο', S: 'Ι' };   // the stored form: Ο4-Ο5, Ο5-Ι1
 
     function Parser(text, spec, drugs) {
         this.c = Array.from(text || '');
@@ -202,22 +205,29 @@
         return [parseInt(this.slice(p, k), 10), k];
     };
 
-    Parser.prototype.levelToken = function (p, lim) {
+    // One level, a chain of vertebrae (Ο2-3-4-5 = Ο2/3, Ο3/4, Ο4/5), or with `inherit`
+    // a pair without a region letter after a comma (the «4/5» of «Ο3/4,4/5») -- levelToken() in PHP.
+    Parser.prototype.levelToken = function (p, lim, inherit) {
         if (p >= lim || isWord(this.at(p - 1))) return null;
-        var r1 = REGION[this.f[p]] || null;
-        if (r1 === null) return null;
-        var n1 = this.number(p + 1, lim);
-        if (n1 === null) return null;
-        var tok = { r1: r1, n1: n1[0], r2: null, n2: null, end: n1[1] };
-        var q = n1[1];
-        if (q < lim && ['-', '/', '–', '—'].indexOf(this.c[q]) !== -1) {
-            var r = q + 1;
-            var r2 = r < lim ? (REGION[this.f[r]] || null) : null;
-            var n2 = this.number(r2 !== null ? r + 1 : r, lim);
-            if (n2 !== null) tok = { r1: r1, n1: n1[0], r2: r2 || r1, n2: n2[0], end: n2[1] };
+        var r1 = REGION[this.f[p]] || null, bare = false;
+        if (r1 === null) {
+            if (!inherit || !isDigit(this.c[p])) return null;
+            r1 = inherit; bare = true;
         }
-        if (isWord(this.at(tok.end))) return null;
-        return tok;
+        var n1 = this.number(bare ? p : p + 1, lim);
+        if (n1 === null) return null;
+        var pts = [[r1, n1[0]]], end = n1[1];
+        while (end < lim && ['-', '/', '–', '—'].indexOf(this.c[end]) !== -1) {
+            var r = end + 1;
+            var rn = r < lim ? (REGION[this.f[r]] || null) : null;
+            var nn = this.number(rn !== null ? r + 1 : r, lim);
+            if (nn === null) break;
+            pts.push([rn || pts[pts.length - 1][0], nn[0]]);
+            end = nn[1];
+        }
+        if (bare && pts.length < 2) return null;
+        if (isWord(this.at(end))) return null;
+        return { pts: pts, end: end };
     };
 
     function levelValid(r, n) { return n >= 1 && n <= REGION_MAX[r]; }
@@ -228,15 +238,18 @@
         var parts = [], valid = true, end = p;
         while (tok !== null) {
             end = tok.end;
-            if (tok.r2 === null) {
-                parts.push(tok.r1 + tok.n1);
-                valid = valid && levelValid(tok.r1, tok.n1);
-            } else {
-                parts.push(tok.r1 + tok.n1 + '-' + tok.r2 + tok.n2);
-                var ok = levelValid(tok.r1, tok.n1) && levelValid(tok.r2, tok.n2)
-                    && REGION_BASE[tok.r2] + tok.n2 > REGION_BASE[tok.r1] + tok.n1;
-                valid = valid && ok;
+            var pts = tok.pts;
+            if (pts.length === 1) {
+                parts.push(REGION_GREEK[pts[0][0]] + pts[0][1]);
+                valid = valid && levelValid(pts[0][0], pts[0][1]);
             }
+            for (var k = 0; k + 1 < pts.length; k++) {
+                var a = pts[k], b = pts[k + 1];
+                parts.push(REGION_GREEK[a[0]] + a[1] + '-' + REGION_GREEK[b[0]] + b[1]);
+                valid = valid && levelValid(a[0], a[1]) && levelValid(b[0], b[1])
+                    && REGION_BASE[b[0]] + b[1] > REGION_BASE[a[0]] + a[1];
+            }
+            var region = pts[pts.length - 1][0];
             var q = end;
             while (q < lim && isInlineSpace(this.c[q])) q++;
             if (q < lim && (this.c[q] === ',' || this.c[q] === '&')) {
@@ -248,7 +261,7 @@
                 break;
             }
             while (q < lim && isInlineSpace(this.c[q])) q++;
-            tok = this.levelToken(q, lim);
+            tok = this.levelToken(q, lim, region);
         }
         return { end: end, normalized: parts.join(', '), valid: valid };
     };
@@ -307,7 +320,7 @@
         var sp = SPACE, nb = '(?<![\\p{L}\\p{N}])', na = '(?![\\p{L}\\p{N}])', m;
         // An amount of tablets: 1, 1,5, ½, 1/2, 1/4, 3/4. Units for a strength.
         var qty = '(?:[13]/[24]|[0-9]+(?:[.,][0-9]+)?|½|¼)';
-        var units = '(?:mg|mcg|μg|μγ|ug|gr|g|ml|iu)';
+        var units = '(?:mg|mcg|ugr|υgr|μgr|μg|μγ|ug|gr|g|ml|iu)';   // ugr/υgr/μgr = micrograms
         // A combination strength: «160+12,5», «160/12.5».
         var combo = '[0-9]+(?:[.,][0-9]+)?(?:' + sp + '*[+/]' + sp + '*[0-9]+(?:[.,][0-9]+)?)+';
         var dailyTablets = null, axbStrength = null;
@@ -357,6 +370,14 @@
             rx.per_day_text = cut(m[0], m[1]);
             spans.per_day = [m[0], m[1]];
         }
+        // Old notation: "x" glued to the unit is times a day, whatever the number ("movatec 7,5mgx2").
+        if (rx.per_day === null && rx.per_day_text === null
+            && (m = find('(?<=[0-9]g|[0-9]mg|[0-9]mcg|[0-9]μg|[0-9]μγ|[0-9]ug|[0-9]gr|[0-9]ugr|[0-9]υgr|[0-9]μgr|[0-9]ml|[0-9]iu)[xχ×]([0-9]+)' + na))) {
+            rx.per_day_text = cut(m[0], m[1]);
+            spans.per_day = [m[0], m[1]];
+            rx.per_dose = 1;
+            rx.per_day = parseInt(group(m, 1), 10);
+        }
         // Old notation: a lone "x 3" (up to 6) after the strength is times a day; larger is days.
         if (rx.per_day === null && rx.per_day_text === null
             && (m = find('(?<![\\p{L}\\p{N}½¼\\/])[xχ×]' + sp + '*([1-6])' + na))) {
@@ -383,7 +404,7 @@
         }
         // A strength may combine several substances: «160+12,5 mg», «160/12.5mg».
         var numRe = '[0-9]+(?:[.,][0-9]+)?';
-        if ((m = find(nb + '(' + numRe + '(?:' + sp + '*[+/]' + sp + '*' + numRe + ')*)' + sp + '*(' + units + ')' + na))) {
+        if ((m = find(nb + '(' + numRe + '(?:' + sp + '*[+/]' + sp + '*' + numRe + ')*)' + sp + '*(' + units + ')(?:' + na + '|(?=[xχ×][0-9]))'))) {
             rx.strength = normalizeStrength(group(m, 1), group(m, 2));
             spans.strength = [m[0], m[1]];
         }

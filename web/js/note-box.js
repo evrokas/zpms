@@ -139,7 +139,8 @@
         return rows;
     })();
     var GREEK_REGION = { C: 'Α', T: 'Θ', L: 'Ο', S: 'Ι' };
-    function levelKey(cell) { return cell[0] + cell[1] + '-' + cell[2] + cell[3]; }
+    // The parser's normalised form (Greek letters): «Ο4-Ο5».
+    function levelKey(cell) { return GREEK_REGION[cell[0]] + cell[1] + '-' + GREEK_REGION[cell[2]] + cell[3]; }
     function levelText(cell, notation) {
         var r = notation === 'en' ? function (x) { return x; } : function (x) { return GREEK_REGION[x]; };
         return r(cell[0]) + cell[1] + '-' + r(cell[2]) + cell[3];

@@ -176,7 +176,10 @@ function zpms_note_decimal_comma(array $chars, int $k): bool {
 function zpms_note_normalize_strength(string $numbers, string $unit): string {
     $n = preg_replace('/' . ZPMS_NOTE_SPACE_CLASS . '+/u', '', $numbers);
     $n = str_replace(['/', ','], ['+', '.'], $n);
-    return $n . mb_strtolower($unit, 'UTF-8');
+    $unit = mb_strtolower($unit, 'UTF-8');
+    // «ugr», «υgr», «μgr» (old notes) are micrograms: stored as ug.
+    if (in_array($unit, ['ugr', 'υgr', 'μgr'], true)) $unit = 'ug';
+    return $n . $unit;
 }
 
 /** Normalised form of a text value: folded, whitespace collapsed. */
@@ -188,7 +191,7 @@ function zpms_note_normalize_text(string $s): string {
  * Parses a note. Returns one entry per tagged value, in order:
  *   tag        internal key (dx, lvl, ...)
  *   value      the value as typed
- *   normalized levels: English form ("L4-L5, L5-S1"); text: folded; null if none
+ *   normalized levels: Greek form ("Ο4-Ο5, Ο5-Ι1"); text: folded; null if none
  *   valid      false for an impossible level (kept, but left out of the summary)
  *   pos        character offset of the '@' (of the level itself for an inner level)
  *   start/end  character range of the value
@@ -329,6 +332,8 @@ final class ZpmsNoteParser {
         'ο' => 'L', 'o' => 'L', 'l' => 'L', 'ι' => 'S', 'i' => 'S', 's' => 'S'];
     private const REGION_MAX = ['C' => 7, 'T' => 12, 'L' => 5, 'S' => 1];
     private const REGION_BASE = ['C' => 0, 'T' => 7, 'L' => 19, 'S' => 24];
+    /** The stored (normalised) form uses the Greek region letters: Ο4-Ο5, Ο5-Ι1, Α5-Α6, Θ12-Ο1. */
+    private const REGION_GREEK = ['C' => 'Α', 'T' => 'Θ', 'L' => 'Ο', 'S' => 'Ι'];
 
     /** Digits at $p (1-2 of them, not followed by another digit): [number, end] or null. */
     private function number(int $p, int $lim): ?array {
@@ -338,23 +343,35 @@ final class ZpmsNoteParser {
         return [(int)$this->slice($p, $k), $k];
     }
 
-    /** One level (Ο4, Ο4-Ο5, ο4-5, L5/S1, Θ12-Ο1) starting at $p, ending before $lim. */
-    private function levelToken(int $p, int $lim): ?array {
+    /**
+     * One level starting at $p, ending before $lim: Ο4, Ο4-Ο5, ο4-5, L5/S1, Θ12-Ο1, or a
+     * chain of vertebrae Ο2-3-4-5 / Ο3/4/5 (= Ο2/3, Ο3/4, Ο4/5). With $inherit (a region,
+     * after a comma or «και») a pair without a region letter continues it: the «4/5» and
+     * «5/Ι1» of «Ο3/4,4/5,5/Ι1». Returns the vertebrae as 'pts' [[region, number], ...].
+     */
+    private function levelToken(int $p, int $lim, ?string $inherit = null): ?array {
         if ($p >= $lim || zpms_note_is_word($this->at($p - 1))) return null;
         $r1 = self::REGION[$this->f[$p]] ?? null;
-        if ($r1 === null) return null;
-        $n1 = $this->number($p + 1, $lim);
-        if ($n1 === null) return null;
-        $tok = ['r1' => $r1, 'n1' => $n1[0], 'r2' => null, 'n2' => null, 'end' => $n1[1]];
-        $q = $n1[1];
-        if ($q < $lim && in_array($this->c[$q], ['-', '/', "\u{2013}", "\u{2014}"], true)) {
-            $r = $q + 1;
-            $r2 = ($r < $lim) ? (self::REGION[$this->f[$r]] ?? null) : null;
-            $n2 = $this->number($r2 !== null ? $r + 1 : $r, $lim);
-            if ($n2 !== null) $tok = ['r1' => $r1, 'n1' => $n1[0], 'r2' => $r2 ?? $r1, 'n2' => $n2[0], 'end' => $n2[1]];
+        $bare = false;
+        if ($r1 === null) {
+            if ($inherit === null || !zpms_note_is_digit($this->c[$p])) return null;
+            [$r1, $bare] = [$inherit, true];
         }
-        if (zpms_note_is_word($this->at($tok['end']))) return null;
-        return $tok;
+        $n1 = $this->number($bare ? $p : $p + 1, $lim);
+        if ($n1 === null) return null;
+        $pts = [[$r1, $n1[0]]];
+        $end = $n1[1];
+        while ($end < $lim && in_array($this->c[$end], ['-', '/', "\u{2013}", "\u{2014}"], true)) {
+            $r = $end + 1;
+            $rn = ($r < $lim) ? (self::REGION[$this->f[$r]] ?? null) : null;
+            $nn = $this->number($rn !== null ? $r + 1 : $r, $lim);
+            if ($nn === null) break;
+            $pts[] = [$rn ?? $pts[count($pts) - 1][0], $nn[0]];
+            $end = $nn[1];
+        }
+        if ($bare && count($pts) < 2) return null;   // a bare number alone is not a level
+        if (zpms_note_is_word($this->at($end))) return null;
+        return ['pts' => $pts, 'end' => $end];
     }
 
     private static function levelValid(string $r, int $n): bool {
@@ -370,15 +387,19 @@ final class ZpmsNoteParser {
         $end = $p;
         while ($tok !== null) {
             $end = $tok['end'];
-            if ($tok['r2'] === null) {
-                $parts[] = $tok['r1'] . $tok['n1'];
-                $valid = $valid && self::levelValid($tok['r1'], $tok['n1']);
-            } else {
-                $parts[] = $tok['r1'] . $tok['n1'] . '-' . $tok['r2'] . $tok['n2'];
-                $ok = self::levelValid($tok['r1'], $tok['n1']) && self::levelValid($tok['r2'], $tok['n2'])
-                    && self::REGION_BASE[$tok['r2']] + $tok['n2'] > self::REGION_BASE[$tok['r1']] + $tok['n1'];
-                $valid = $valid && $ok;
+            $pts = $tok['pts'];
+            if (count($pts) === 1) {
+                $parts[] = self::REGION_GREEK[$pts[0][0]] . $pts[0][1];
+                $valid = $valid && self::levelValid($pts[0][0], $pts[0][1]);
             }
+            // Two vertebrae are one level (also a range, Ο2-Ο5); a chain is each neighbouring pair.
+            for ($k = 0; $k + 1 < count($pts); $k++) {
+                [[$ra, $na], [$rb, $nb]] = [$pts[$k], $pts[$k + 1]];
+                $parts[] = self::REGION_GREEK[$ra] . $na . '-' . self::REGION_GREEK[$rb] . $nb;
+                $valid = $valid && self::levelValid($ra, $na) && self::levelValid($rb, $nb)
+                    && self::REGION_BASE[$rb] + $nb > self::REGION_BASE[$ra] + $na;
+            }
+            $region = $pts[count($pts) - 1][0];
             $q = $end;
             while ($q < $lim && zpms_note_is_inline_space($this->c[$q])) $q++;
             if ($q < $lim && ($this->c[$q] === ',' || $this->c[$q] === '&')) {
@@ -390,7 +411,7 @@ final class ZpmsNoteParser {
                 break;
             }
             while ($q < $lim && zpms_note_is_inline_space($this->c[$q])) $q++;
-            $tok = $this->levelToken($q, $lim);
+            $tok = $this->levelToken($q, $lim, $region);
         }
         return ['end' => $end, 'normalized' => implode(', ', $parts), 'valid' => $valid];
     }
@@ -453,7 +474,7 @@ function zpms_note_parse_rx(string $value, array $drugs): array {
     $na = '(?![\p{L}\p{N}])';
     // An amount of tablets: 1, 1,5, ½, 1/2, 1/4, 3/4. Units for a strength.
     $qty = '(?:[13]\/[24]|[0-9]+(?:[.,][0-9]+)?|½|¼)';
-    $units = '(?:mg|mcg|μg|μγ|ug|gr|g|ml|iu)';
+    $units = '(?:mg|mcg|ugr|υgr|μgr|μg|μγ|ug|gr|g|ml|iu)';   // ugr/υgr/μgr = micrograms
     // A combination strength: «160+12,5», «160/12.5».
     $combo = "[0-9]+(?:[.,][0-9]+)?(?:{$sp}*[+\\/]{$sp}*[0-9]+(?:[.,][0-9]+)?)+";
     $tablets = fn(float $v) => $v <= 4;   // larger bare numbers are milligrams, not tablets
@@ -501,6 +522,13 @@ function zpms_note_parse_rx(string $value, array $drugs): array {
     } elseif ($m = $find("/{$nb}επι{$sp}+πονου{$na}/u")) {
         $rx['per_day_text'] = $cut($m[0], $m[1]);
     }
+    // Old notation: "x" glued to the unit is times a day, whatever the number ("movatec 7,5mgx2").
+    if ($rx['per_day'] === null && $rx['per_day_text'] === null
+        && ($m = $find("/(?<=[0-9]g|[0-9]mg|[0-9]mcg|[0-9]μg|[0-9]μγ|[0-9]ug|[0-9]gr|[0-9]ugr|[0-9]υgr|[0-9]μgr|[0-9]ml|[0-9]iu)[xχ×]([0-9]+){$na}/u"))) {
+        $rx['per_day_text'] = $cut($m[0], $m[1]);
+        $rx['per_dose'] = 1.0;
+        $rx['per_day'] = (int)$group($m, 1);
+    }
     // Old notation: a lone "x 3" (up to 6) after the strength is times a day; larger is days.
     if ($rx['per_day'] === null && $rx['per_day_text'] === null
         && ($m = $find("/(?<![\\p{L}\\p{N}½¼\\/])[xχ×]{$sp}*([1-6]){$na}/u"))) {
@@ -523,7 +551,7 @@ function zpms_note_parse_rx(string $value, array $drugs): array {
     }
     // A strength may combine several substances: «160+12,5 mg», «160/12.5mg».
     $numRe = '[0-9]+(?:[.,][0-9]+)?';
-    if ($m = $find("/{$nb}({$numRe}(?:{$sp}*[+\\/]{$sp}*{$numRe})*){$sp}*({$units}){$na}/u")) {
+    if ($m = $find("/{$nb}({$numRe}(?:{$sp}*[+\\/]{$sp}*{$numRe})*){$sp}*({$units})(?:{$na}|(?=[xχ×][0-9]))/u")) {
         $rx['strength'] = zpms_note_normalize_strength($group($m, 1), $group($m, 2));
     }
     if ($dailyTablets === null && $rx['per_dose'] !== null && $rx['per_day'] !== null) {

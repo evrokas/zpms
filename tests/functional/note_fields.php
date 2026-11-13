@@ -92,7 +92,7 @@ function zpms_functional_note_fields(TestRunner $runner, string $baseUrl): void 
         assert_equal([['alg', 'λάτεξ'], ['proc', 'πεταλεκτομή Ο4-Ο5 το 2019'], ['lvl', 'Ο4-Ο5']], zpms_nf_test_pairs($rows), 'rows after the edit');
         $ids = $db->query("SELECT id, tag_key, origin FROM note_fields WHERE patient_id = $pid ORDER BY id")->fetchAll(PDO::FETCH_ASSOC);
         assert_equal((int)$ids[1]['id'], (int)$ids[2]['origin'], 'the inner level does not point at its procedure row');
-        assert_equal('L4-L5', $rows[2]['normalized'], 'inner level not normalised');
+        assert_equal('Ο4-Ο5', $rows[2]['normalized'], 'inner level not normalised');
 
         // Same note, another field changed: the rows stay as they are (same ids).
         $form['patient-telephone'] = '2100000001';
@@ -140,7 +140,7 @@ function zpms_functional_note_fields(TestRunner $runner, string $baseUrl): void 
         assert_equal('μετά το φαγητό', $rx['rx_note'], 'note');
         assert_equal(60.0, (float)$rx['rx_total'], 'total tablets');
         assert_equal(0, (int)$rows[2]['valid'], 'an impossible level is stored as invalid');
-        assert_equal('L6', $rows[2]['normalized'], 'impossible level normalised anyway');
+        assert_equal('Ο6', $rows[2]['normalized'], 'impossible level normalised anyway');
         // The patient-note rows are untouched by an appointment save.
         assert_equal(3, count(zpms_nf_test_rows("source = 'patient' AND patient_id = ?", [$pid])), 'patient-note rows changed');
     });

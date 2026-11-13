@@ -36,7 +36,7 @@ table:
   # The value exactly as typed.
   - name: value_text
     type: text
-  # Levels: the English form ("L4-L5, L5-S1"); other values: lowercase,
+  # Levels: the Greek form ("Ο4-Ο5, Ο5-Ι1"); other values: lowercase,
   # accent-free text. For search and the summary.
   - name: normalized
     type: text

@@ -122,10 +122,15 @@ Greek and English notation both accepted, mixed, any case, `-` or `/`, short for
 Regions: Α = αυχενική = C (1-7), Θ = θωρακική = T (1-12), Ο = οσφυϊκή = L (1-5), Ι = ιερό = S (1).
 Watch Greek capital Ο/Α/Ι vs Latin O/A/I (treat Latin O/A/I as their Greek region letters too
 where unambiguous, e.g. `O4-O5`). Multiple: `Ο4-Ο5 και Ο5-Ι1`, `C5-C6, C6-C7`.
+A **chain of vertebrae** is the levels between neighbours: `Ο2-3-4-5` = Ο2-Ο3, Ο3-Ο4, Ο4-Ο5;
+`Ο3/4/5`, `Θ11/12/Ο1/Ο2` likewise (two vertebrae stay one level or range: `Ο2-Ο5`).
+After `,` / `και` a pair **without a region letter continues the region**: `Ο2/3,3/4,4/5`,
+`Α3/4, 4/5, 5/6`, `Ο4/5 και 5/Ι1`. A bare single number there is not a level («Ο4, 5 ημέρες»).
 
 - The note keeps exactly what was typed.
-- `note_fields.normalized` stores the English form (`L4-L5`; multiple joined with `, `) for
-  search and the summary.
+- `note_fields.normalized` stores the Greek form (`Ο4-Ο5`, `Ο5-Ι1`, `Α5-Α6`, `Θ12-Ο1`; multiple
+  joined with `, `) for search and the summary, whichever notation was typed (decided 2026-11-14;
+  it was the English form `L4-L5` before -- run `zpmscli note-fields:rebuild --yes` after updating).
 - Impossible levels (`Ο6`, `Α9`) are kept, marked invalid (`valid = 0`), shown with a quiet
   warning while editing, left out of the summary. A save is never refused.
 - The grid picker shows the region's segments; cells are written in the notation the user
@@ -396,6 +401,10 @@ Decided with the conversion plan (`docs/CLINICAL_TAGS_CONVERSION_PLAN.md` sectio
   a leading `tb`/`caps`); the table is in the conversion plan. An unlisted drug's name now ends
   before a word starting with a digit, so its bare strength is read («nexium 40» = 40mg).
   The total is the tablets a day x days (uneven schedules: their daily sum).
+- **Added while tagging the old notes (2026-11-14):** chains of vertebrae and region-less pairs
+  after a comma (section 4); an `x N` glued to the unit (`7,5mgx2`, `90mgx1`) is N times a day
+  whatever N (with a space, `75mg x 7`, the rule above still applies: 7 or more is days).
+  Levels are stored in the Greek form (`Ο4-Ο5`), no longer the English one (section 4).
 
 ## 16. Phase 1 as built (2026-11-13)
 
