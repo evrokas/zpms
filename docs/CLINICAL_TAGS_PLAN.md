@@ -4,8 +4,11 @@ Status: design approved by the user after several mockup rounds, 2026-11-13. Imp
 not started. This file is the complete specification: a new session should be able to build
 it from this file alone. Visual mockups (same content, drawn): the "ZPMS Tag Styles" page,
 https://claude.ai/artifact/46PGs1Y4w3avRscQd7ZYyy, and the plan page "ZPMS Clinical Tags",
-https://claude.ai/artifact/41Y52Wzz9m12Q42jZVetPk. Read them for the look; this file wins if
-the two ever disagree.
+https://claude.ai/artifact/41Y52Wzz9m12Q42jZVetPk. Both are also saved in this repository as
+SVG images, so they survive without the links: `docs/clinical-tags/mockup.svg` (the final
+mockup) and `docs/clinical-tags/plan.svg` (the plan page). Open them in a browser or GitHub's
+file view (they hold the page itself in a `<foreignObject>`, fonts embedded; text stays
+selectable). Read them for the look; this file wins if they ever disagree.
 
 Start with **phase 1** (section 14). Keep this file updated as phases land (mark them done,
 note deviations), like the other `docs/*_PLAN.md` files.
@@ -57,9 +60,9 @@ Two layers:
 1. **Value types** -- code, few: `text`, `levels`, `prescription`. Each owns its parser (end
    rule, normalisation), its picker and its tests. Possible later types: a period/date
    (`@επαν 3 μήνες` -> follow-up reminder), a score (`@vas 7/10`).
-2. **Tag definitions** -- one config file, no code. Recommended location:
-   `config/note_tags.yaml` (committed; a Settings page to edit tags can come later; the user
-   has not objected to the file). Everything (parser, menus, colours, summary, filters,
+2. **Tag definitions** -- one config file, no code: `config/note_tags.yaml`, committed and
+   changed through a normal update (decided by the user, 2026-11-13; a Settings page to edit
+   tags can come later if tags are added often). Everything (parser, menus, colours, summary, filters,
    Settings list page) reads only this.
 
 Rules that keep old notes valid:
