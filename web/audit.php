@@ -78,6 +78,8 @@ const ZPMS_AUDIT_EVENT_LABELS = [
     'note_fields_rebuilt' => 'Clinical tags re-read from the notes',
     'note_lists_seeded' => 'Clinical tag lists filled with the starter entries',
     'note_list_changed' => 'Clinical tag list changed (Settings)',
+    'notes_tags_imported' => 'Note converted to clinical tags (zpmscli)',
+    'notes_tags_reverted' => 'Note conversion to clinical tags undone (zpmscli)',
 ];
 
 const ZPMS_AUDIT_ACTOR_TYPES = ['staff', 'anonymous', 'api', 'cli'];

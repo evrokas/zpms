@@ -442,21 +442,73 @@ function zpms_note_parse_rx(string $value, array $drugs): array {
     };
     $cut = fn(int $s, int $e) => implode('', array_slice($mainChars, $s, $e - $s));
     $group = fn(array $m, int $gi) => $m[2][$gi] === null ? null : $cut($m[2][$gi][0], $m[2][$gi][0] + $m[2][$gi][1]);
-    $num = fn(string $s) => $s === '½' ? 0.5 : ($s === '¼' ? 0.25 : (float)str_replace(',', '.', $s));
+    $num = function (string $s): float {
+        if ($s === '½') return 0.5;
+        if ($s === '¼') return 0.25;
+        if (preg_match('#^([0-9]+)/([0-9]+)$#', $s, $f)) return (float)$f[1] / (float)$f[2];
+        return (float)str_replace(',', '.', $s);
+    };
     $sp = ZPMS_NOTE_SPACE_CLASS;
     $nb = '(?<![\p{L}\p{N}])';
     $na = '(?![\p{L}\p{N}])';
+    // An amount of tablets: 1, 1,5, ½, 1/2, 1/4, 3/4. Units for a strength.
+    $qty = '(?:[13]\/[24]|[0-9]+(?:[.,][0-9]+)?|½|¼)';
+    $units = '(?:mg|mcg|μg|μγ|ug|gr|g|ml|iu)';
+    $tablets = fn(float $v) => $v <= 4;   // larger bare numbers are milligrams, not tablets
+    $dailyTablets = null;                 // tablets a day, when known (for the total)
+    $axbStrength = null;                  // "300 x 1": 300 is the strength (the drug's unit)
 
-    if ($m = $find("/{$nb}([0-9]+(?:[.,][0-9]+)?|½|¼){$sp}*[xχ×]{$sp}*([0-9]+){$na}/u")) {
-        $rx['per_day_text'] = preg_replace('/' . ZPMS_NOTE_SPACE_CLASS . '+/u', '', $cut($m[0], $m[1]));
-        $rx['per_dose'] = $num($group($m, 1));
-        $rx['per_day'] = (int)$group($m, 2);
+    // Old notation, morning - noon - evening: "1 - 0 - 2", "x 1-1-1", "1 - 1/2 - 1/2", "150-0-300mg".
+    if ($m = $find("/{$nb}(?:[xχ×]{$sp}*)?({$qty})(?:{$sp}*{$units})?{$sp}*-{$sp}*({$qty})(?:{$sp}*{$units})?{$sp}*-{$sp}*({$qty})({$sp}*{$units})?{$na}/u")) {
+        $parts = [$num($group($m, 1)), $num($group($m, 2)), $num($group($m, 3))];
+        $text = preg_replace('/^[xχ×]/u', '', preg_replace('/' . ZPMS_NOTE_SPACE_CLASS . '+/u', '', $cut($m[0], $m[1])));
+        $given = array_values(array_filter($parts, fn($v) => $v > 0));
+        $rx['per_day_text'] = $text;
+        $rx['per_day'] = count($given) ?: null;
+        $inUnits = (bool)preg_match("/{$units}/u", zpms_note_fold($text)) || max($parts) > 4;
+        if ($given && !$inUnits) {
+            $dailyTablets = array_sum($given);
+            $rx['per_dose'] = round($dailyTablets / count($given), 2);
+        }
+    } elseif ($m = $find("/{$nb}({$qty}){$sp}*[xχ×]{$sp}*([0-9]+){$na}/u")) {
+        $a = $num($group($m, 1));
+        $b = (int)$group($m, 2);
+        if (!$tablets($a)) {
+            // "300 x 1": 300 (mg) once a day.
+            $axbStrength = $group($m, 1);
+            $rx['per_day_text'] = 'x' . $b;
+            $rx['per_dose'] = 1.0;
+            $rx['per_day'] = $b;
+        } elseif ($b > 6) {
+            // "1 x 300": once a day, 300 (mg).
+            $axbStrength = (string)$b;
+            $rx['per_day_text'] = 'x' . $group($m, 1);
+            $rx['per_dose'] = 1.0;
+            $rx['per_day'] = (int)$a;
+        } else {
+            $rx['per_day_text'] = preg_replace('/' . ZPMS_NOTE_SPACE_CLASS . '+/u', '', $cut($m[0], $m[1]));
+            $rx['per_dose'] = $a;
+            $rx['per_day'] = $b;
+        }
     } elseif ($m = $find("/{$nb}([0-9]+){$sp}*φορ(?:εσ|α){$na}/u")) {
         $rx['per_day_text'] = $cut($m[0], $m[1]);
         $rx['per_dose'] = 1.0;
         $rx['per_day'] = (int)$group($m, 1);
     } elseif ($m = $find("/{$nb}επι{$sp}+πονου{$na}/u")) {
         $rx['per_day_text'] = $cut($m[0], $m[1]);
+    }
+    // Old notation: a lone "x 3" (up to 6) after the strength is times a day; larger is days.
+    if ($rx['per_day'] === null && $rx['per_day_text'] === null
+        && ($m = $find("/(?<![\\p{L}\\p{N}½¼\\/])[xχ×]{$sp}*([1-6]){$na}/u"))) {
+        $rx['per_day_text'] = preg_replace('/' . ZPMS_NOTE_SPACE_CLASS . '+/u', '', $cut($m[0], $m[1]));
+        $rx['per_dose'] = 1.0;
+        $rx['per_day'] = (int)$group($m, 1);
+    }
+    // Old notation: a lone fraction is part of a tablet once a day ("lobivon 1/2").
+    if ($rx['per_day_text'] === null && ($m = $find("/{$nb}([13]\\/[24]|½|¼){$na}/u"))) {
+        $rx['per_day_text'] = $cut($m[0], $m[1]);
+        $rx['per_dose'] = $num($group($m, 1));
+        $rx['per_day'] = 1;
     }
     if ($m = $find("/{$nb}(?:για{$sp}+)?([0-9]+){$sp}*(?:ημερεσ|ημερα|ημ|μερεσ|days|day|d){$na}/u")) {
         $rx['days'] = (int)$group($m, 1);
@@ -466,10 +518,15 @@ function zpms_note_parse_rx(string $value, array $drugs): array {
         $find("/{$nb}συνεχωσ{$na}/u");   // continuously: no number of days, nothing to store
     }
     // A strength may combine several substances: «160+12,5 mg», «160/12.5mg».
-    $num = '[0-9]+(?:[.,][0-9]+)?';
-    if ($m = $find("/{$nb}({$num}(?:{$sp}*[+\\/]{$sp}*{$num})*){$sp}*(mg|mcg|μg|μγ|gr|g|ml|iu){$na}/u")) {
+    $numRe = '[0-9]+(?:[.,][0-9]+)?';
+    if ($m = $find("/{$nb}({$numRe}(?:{$sp}*[+\\/]{$sp}*{$numRe})*){$sp}*({$units}){$na}/u")) {
         $rx['strength'] = zpms_note_normalize_strength($group($m, 1), $group($m, 2));
     }
+    if ($dailyTablets === null && $rx['per_dose'] !== null && $rx['per_day'] !== null) {
+        $dailyTablets = $rx['per_dose'] * $rx['per_day'];
+    }
+    // A form word before the name (tb, caps, ...) is not part of the drug: it goes to the note.
+    $formEnd = preg_match("/^(?:tb|tab|tabs|caps|cap|amp|δισκ|καψ)\\.?{$sp}+/u", $folded, $fm) ? mb_strlen($fm[0], 'UTF-8') : 0;
 
     // The drug: a known name or Greek spelling at the start (longest wins),
     // else the words before the first recognised part.
@@ -480,24 +537,24 @@ function zpms_note_parse_rx(string $value, array $drugs): array {
         foreach (array_merge([$d['text']], $d['aliases']) as $name) {
             $fn = zpms_note_fold(zpms_note_trim($name));
             $l = mb_strlen($fn, 'UTF-8');
-            if ($l === 0 || mb_substr($folded, 0, $l, 'UTF-8') !== $fn || zpms_note_is_word($mainChars[$l] ?? null)) continue;
+            if ($l === 0 || mb_substr($folded, $formEnd, $l, 'UTF-8') !== $fn || zpms_note_is_word($mainChars[$formEnd + $l] ?? null)) continue;
             if ($best === null || $l > $best[1]) $best = [$d, $l];
         }
     }
     if ($best !== null) {
         $rx['drug'] = $best[0]['text'];
         $unit = $best[0]['unit'] ?: 'mg';
-        $drugEnd = $best[1];
+        $drugEnd = $formEnd + $best[1];
     } else {
-        // Up to the first recognised part, or the first word that is a number
-        // (a strength written without its unit).
-        $k = 0;
-        while ($k < $n && !$used[$k] && !($k > 0 && zpms_note_is_space($mainChars[$k - 1]) && zpms_note_is_digit($mainChars[$k]))) $k++;
-        $drug = zpms_note_trim($cut(0, $k));
+        // up to the first recognised part, or a word starting with a digit (a bare strength)
+        $k = $formEnd;
+        while ($k < $n && !$used[$k] && !($k > $formEnd && zpms_note_is_space($mainChars[$k - 1]) && zpms_note_is_digit($mainChars[$k]))) $k++;
+        $drug = zpms_note_trim($cut($formEnd, $k));
         $rx['drug'] = $drug !== '' ? $drug : null;
         $drugEnd = $k;
     }
-    for ($k = 0; $k < $drugEnd; $k++) $used[$k] = true;
+    for ($k = $formEnd; $k < $drugEnd; $k++) $used[$k] = true;
+    if ($rx['strength'] === null && $axbStrength !== null) $rx['strength'] = zpms_note_normalize_strength($axbStrength, $unit);
 
     // A bare number right after the drug is its strength, in the drug's unit
     // (also a combination: «160+12,5»).
@@ -519,8 +576,8 @@ function zpms_note_parse_rx(string $value, array $drugs): array {
     $notes = array_values(array_filter([$left, $tail], fn($s) => $s !== ''));
     $rx['note'] = $notes ? implode(', ', $notes) : null;
 
-    if ($rx['per_dose'] !== null && $rx['per_day'] !== null && $rx['days'] !== null) {
-        $rx['total'] = round($rx['per_dose'] * $rx['per_day'] * $rx['days'], 2);
+    if ($dailyTablets !== null && $rx['days'] !== null) {
+        $rx['total'] = round($dailyTablets * $rx['days'], 2);
     }
     return $rx;
 }

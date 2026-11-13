@@ -46,6 +46,8 @@ const ZPMSCLI_COMMANDS = [
     'cleanup:orphans'         => '[--yes]                         remove attachment/history rows whose appointment is gone; report stray files',
     'note-fields:rebuild'     => '[--patient=<id>] [--yes]        re-read the clinical tags of every note (after changing config/note_tags.yaml)',
     'note-lists:seed'         => '[--yes]                         fill the clinical-tag lists from config/note_tags.yaml (only empty lists)',
+    'notes:export'            => '[--out=<file>]                  write every live note to a text file with markers (changes no data)',
+    'notes:import'            => '<file> [--allow-edits] [--yes]  write back a tagged export (only "@tag " insertions); --revert=<backup.json> undoes one',
     'cache:clean'             => '[--yes]                         delete web/cache/*.php (compiled templates)',
     'help'                    => '',
 ];
@@ -284,6 +286,40 @@ try {
             if (!$report) zpmscli_say('  every list already has entries -- nothing to add');
             $auditRows[] = ['note_lists_seeded', ['detail' => 'zpmscli note-lists:seed ' . zpmscli_counts($report)]];
             zpmscli_print_report($report);
+            break;
+
+        case 'notes:export':
+            $out = is_string($options['out'] ?? null) ? $options['out'] : __APPDIR__ . '/var/note-conversion/notes-' . date('Ymd-His') . '.txt';
+            $notes = zpms_notes_for_export($db);
+            zpms_notes_private_dir(dirname($out));
+            if (file_exists($out)) zpmscli_fail("$out exists already -- choose another --out");
+            if (@file_put_contents($out, zpms_notes_export_text($notes, $now)) === false) zpmscli_fail("Could not write $out");
+            @chmod($out, 0600);
+            $byType = array_count_values(array_column($notes, 'source'));
+            zpmscli_say(sprintf('Wrote %d notes (%d appointment, %d patient) to %s', count($notes), $byType['appointment'] ?? 0, $byType['patient'] ?? 0, $out));
+            zpmscli_say('It holds patient data: keep it under var/, never commit or send it. No data was changed.');
+            exit(0);
+
+        case 'notes:import':
+            $revert = is_string($options['revert'] ?? null) ? $options['revert'] : null;
+            zpmscli_say($apply ? ($revert ? '=== Restoring the notes from the backup ===' : '=== Writing the tagged notes ===') : '=== DRY RUN -- nothing will be written ===');
+            if ($revert !== null) {
+                $res = zpms_notes_revert($db, $revert, $now, $apply);
+            } else {
+                $file = $args[0] ?? null;
+                if ($file === null || !is_file($file)) zpmscli_fail('Usage: notes:import <tagged file> [--allow-edits] [--yes]');
+                $backup = __APPDIR__ . '/var/note-conversion/backup-' . date('Ymd-His') . '.json';
+                $res = zpms_notes_import($db, zpms_notes_parse_file((string)file_get_contents($file)), isset($options['allow-edits']), $now, $apply, $backup);
+                foreach ($res['warnings'] as $w) zpmscli_say("  warning: $w");
+            }
+            foreach ($res['problems'] as $p) zpmscli_say("  skipped: $p");
+            zpmscli_print_report($res['report']);
+            foreach ($res['changed'] as $c) {
+                $auditRows[] = [$revert ? 'notes_tags_reverted' : 'notes_tags_imported', ['patient_id' => $c['patient_id'], 'patient_guid' => $c['patient_guid'],
+                    'appointment_id' => $c['source'] === 'appointment' ? $c['id'] : null,
+                    'detail' => "zpmscli notes:import {$c['source']} note" . (isset($c['tags_added']) ? " tags_added={$c['tags_added']}" : '')]];
+            }
+            if ($apply && !$revert && $res['changed']) zpmscli_say("Originals saved to $backup -- undo with: notes:import --revert=$backup --yes");
             break;
 
         case 'cleanup:orphans':

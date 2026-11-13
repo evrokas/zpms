@@ -39,15 +39,15 @@ function zpms_static_note_tags(TestRunner $runner): void {
     $root = ZPMS_TEST_APPDIR;
     $cases = json_decode((string)file_get_contents($root . '/tests/note_tags/cases.json'), true)['cases'] ?? null;
 
-    $runner->add('config/note_tags.yaml: nine tags, valid value types, colours from the palette, names unique', function () {
+    $runner->add('config/note_tags.yaml: ten tags, valid value types, colours from the palette, names unique', function () {
         $cfg = zpms_note_tags_config();
-        assert_equal(['dx', 'lvl', 'alg', 'exam', 'proc', 'thx', 'pt', 'med', 'rx'], array_keys($cfg['tags']), 'tag keys');
+        assert_equal(['dx', 'lvl', 'alg', 'exam', 'proc', 'thx', 'pt', 'med', 'rx', 'cur'], array_keys($cfg['tags']), 'tag keys');
         foreach ($cfg['tags'] as $key => $tag) {
             foreach (['tint', 'mark', 'ink'] as $part) {
                 assert_true((bool)preg_match('/^#[0-9a-f]{6}$/', $cfg['palette'][$tag['colour']][$part] ?? ''), "$key: palette $part");
             }
         }
-        assert_true(!empty($cfg['tags']['proc']['inner_levels']) && !empty($cfg['tags']['thx']['inner_levels']), 'inner_levels on proc and thx');
+        foreach (['dx', 'proc', 'thx'] as $key) assert_true(!empty($cfg['tags'][$key]['inner_levels']), "inner_levels on $key");
         assert_equal(6, count(zpms_note_rx_drugs_from_config()), 'starter drug list');
     });
 

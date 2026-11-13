@@ -383,6 +383,8 @@ return [
     'The entry was saved.' => 'Το λήμμα αποθηκεύτηκε.',
     'Unknown action.' => 'Άγνωστη ενέργεια.',
     'Clinical tags re-read from the notes' => 'Επανανάγνωση κλινικών ετικετών από τις σημειώσεις',
+    'Note converted to clinical tags (zpmscli)' => 'Μετατροπή σημείωσης σε κλινικές ετικέτες (zpmscli)',
+    'Note conversion to clinical tags undone (zpmscli)' => 'Αναίρεση μετατροπής σημείωσης σε κλινικές ετικέτες (zpmscli)',
     'Clinical tag lists filled with the starter entries' => 'Συμπλήρωση λιστών κλινικών ετικετών με τις αρχικές τιμές',
     'Staff' => 'Προσωπικό',
     'Not signed in' => 'Χωρίς σύνδεση',
