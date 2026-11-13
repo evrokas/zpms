@@ -411,10 +411,29 @@ function zpmscli_functional_tests(TestRunner $runner): void {
         $head = "=== NOTE patient 7 | patient 7 | eol=lf | sha=0123456789abcdef ===\n";
         foreach (["$head" . "text\n" => 'missing', "$head" . "text\n$head" => 'missing',
                   "$head" . "a\n=== END patient 7 ===\n$head" . "b\n=== END patient 7 ===\n" => 'twice',
-                  "=== NOTE garbage ===\n" => 'not a NOTE header'] as $content => $why) {
+                  "=== NOTE garbage ===\n" => 'not a NOTE header', '' => 'no notes', "# only a comment\n" => 'no notes',
+                  "{\n  \"notes\": []\n}\n" => 'text outside a note',
+                  "$head" . "a\n=== END patient 7 ===\nmoved line\n" => 'text outside a note'] as $content => $why) {
             try { zpms_notes_parse_file($content); throw new RuntimeException("accepted a bad file ($why)"); }
             catch (InvalidArgumentException $e) { assert_contains($why, $e->getMessage(), 'wrong reason'); }
         }
         assert_equal("a\n\nb ", zpms_notes_parse_file("# c\n$head" . "a\n\nb \n=== END patient 7 ===\n")[0]['text'], 'body kept exactly');
+        assert_equal('x', zpms_notes_parse_file(rtrim($head) . "  \nx\n=== END patient 7 ===  \n")[0]['text'], 'spaces after a === line are tolerated');
+    });
+
+    $runner->add('notes:import tag matching: names as the parser reads them, a tag before an existing @', function () {
+        $spec = zpms_note_tags_spec();
+        // [original, tagged file text, text stored]
+        $ok = [['ΚΜΔ', '@ΔΓ ΚΜΔ', '@ΔΓ ΚΜΔ'], ['depon', '@φαρμακα depon', '@φαρμακα depon'], ['x @ y', 'x @αλ @ y', 'x @αλ @ y'],
+               ['@δγ ΚΜΔ Ο4/5', '@δγ ΚΜΔ @επ Ο4/5', '@δγ ΚΜΔ @επ Ο4/5'], ['mail a@b.gr', '@αλ mail a@b.gr', '@αλ mail a@b.gr'],
+               ["ΚΜΔ \t\nβ", "@δγ ΚΜΔ\n@επ β", "@δγ ΚΜΔ \t\n@επ β"]];   // trailing blanks stripped by an editor are kept
+        foreach ($ok as [$orig, $tagged, $stored]) {
+            [$ins, $err] = zpms_note_tag_insertions($orig, $tagged, $spec);
+            assert_equal(null, $err, "refused: $tagged");
+            assert_equal($stored, zpms_note_apply_insertions($orig, $ins, $spec, [])[0], "stored text for $tagged");
+        }
+        foreach (['ΚΜΔ' => ['@δγΚΜΔ', '@xyz ΚΜΔ', ' ΚΜΔ', ''], 'ΚΜΔ.' => ['@δγ ΚΜΔ']] as $orig => $bad) {
+            foreach ($bad as $tagged) assert_true(zpms_note_tag_insertions($orig, $tagged, $spec)[1] !== null, "accepted: $tagged");
+        }
     });
 }

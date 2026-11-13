@@ -301,6 +301,7 @@ try {
             exit(0);
 
         case 'notes:import':
+            if (isset($options['revert']) && (!is_string($options['revert']) || $options['revert'] === '')) zpmscli_fail('Usage: notes:import --revert=<backup.json> [--yes]');
             $revert = is_string($options['revert'] ?? null) ? $options['revert'] : null;
             zpmscli_say($apply ? ($revert ? '=== Restoring the notes from the backup ===' : '=== Writing the tagged notes ===') : '=== DRY RUN -- nothing will be written ===');
             if ($revert !== null) {

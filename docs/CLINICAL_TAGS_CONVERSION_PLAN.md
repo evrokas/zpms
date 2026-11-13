@@ -140,7 +140,11 @@ Code: `bin/lib/zpms_note_convert.php` (loaded by `bin/lib/zpms_cli.php`), comman
   (fingerprint), and the tagged text is the original **plus `@<known tag name> ` insertions
   only**. An editor that stripped trailing spaces or saved the file with CRLF is tolerated:
   the insertions are applied to the stored text, so its exact characters and line endings
-  are kept.
+  are kept. Tag names are matched as the parser reads them (case and accents ignored:
+  `@ΔΓ`, `@φαρμακα`), and a tag in front of an `@` already in the note is understood.
+- The file itself is refused when it has no notes (e.g. the backup JSON given by
+  mistake) or a line of text outside every note (a line moved out of its note would
+  otherwise be lost silently). Spaces after a `===` line are tolerated.
 - Warnings (written anyway): a tag glued to the word before it (not a tag), a tag with no
   value, an impossible level.
 - Notes with a problem are skipped and listed; the rest are written. `--allow-edits`
@@ -150,7 +154,7 @@ Code: `bin/lib/zpms_note_convert.php` (loaded by `bin/lib/zpms_cli.php`), comman
   changed meanwhile aborts all). One audit row per note (`notes_tags_imported`, tag count
   only, never text).
 - `notes:import --revert=<backup.json> [--yes]` (or `--revert <backup.json>`) restores the originals of every note still
-  as the import left it (`notes_tags_reverted`).
+  as the import left it (`notes_tags_reverted`). A bare `--revert` is refused; a backup is never overwritten.
 
 ### Checked
 

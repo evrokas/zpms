@@ -82,8 +82,11 @@ function zpms_notes_parse_file(string $content): array {
     $notes = [];
     $seen = [];
     for ($i = 0, $n = count($lines); $i < $n; $i++) {
-        $line = $lines[$i];
-        if (!str_starts_with($line, '=== ')) continue;   // comments, blank lines between notes
+        $line = rtrim($lines[$i], " \t");
+        if ($line === '' || str_starts_with($line, '#')) continue;   // blank lines and comments between notes
+        if (!str_starts_with($line, '=== ')) {
+            throw new InvalidArgumentException('line ' . ($i + 1) . ': text outside a note (moved out of its note?): ' . mb_strimwidth($line, 0, 80, '...'));
+        }
         if (!preg_match('/^=== NOTE (appointment|patient) (\d+) \| patient (\d+)(?: \| [^|]*)*? \| eol=(crlf|lf) \| sha=([0-9a-f]{16}) ===$/', $line, $m)) {
             throw new InvalidArgumentException('line ' . ($i + 1) . ': not a NOTE header: ' . mb_strimwidth($line, 0, 80, '...'));
         }
@@ -91,7 +94,7 @@ function zpms_notes_parse_file(string $content): array {
         $end = "=== END $source $id ===";
         $body = [];
         $start = $i + 1;
-        for ($i++; $i < $n && $lines[$i] !== $end; $i++) {
+        for ($i++; $i < $n && rtrim($lines[$i], " \t") !== $end; $i++) {
             if (str_starts_with($lines[$i], '=== ')) throw new InvalidArgumentException('line ' . ($i + 1) . ": \"$end\" missing before this line");
             $body[] = $lines[$i];
         }
@@ -102,6 +105,7 @@ function zpms_notes_parse_file(string $content): array {
         $notes[] = ['source' => $source, 'id' => (int)$id, 'patient_id' => (int)$patientId, 'eol' => $eol, 'sha' => $sha,
             'text' => $eol === 'crlf' ? str_replace("\n", "\r\n", $text) : $text, 'line' => $start];
     }
+    if (!$notes) throw new InvalidArgumentException('no notes in the file (not a notes:export file?)');
     return $notes;
 }
 
@@ -113,30 +117,37 @@ function zpms_notes_parse_file(string $content): array {
  * @return array{0:?list<array{0:int,1:string}>,1:?string} [insertions (original char offset, "@name "), error]
  */
 function zpms_note_tag_insertions(string $original, string $tagged, array $spec): array {
+    // Names folded (case and accents), as the parser reads them: «@ΔΓ», «@φαρμακα» are tags too.
     $names = [];
-    foreach ($spec['tags'] as $tag) foreach ($tag['names'] as $name) $names[] = $name;
-    usort($names, fn($a, $b) => mb_strlen($b) <=> mb_strlen($a));   // longest first
+    foreach ($spec['tags'] as $tag) foreach ($tag['names'] as $name) $names[zpms_note_fold($name)] = mb_strlen($name);
+    uksort($names, fn($a, $b) => mb_strlen($b) <=> mb_strlen($a));   // longest first
 
     $o = zpms_note_chars($original);
     $t = zpms_note_chars($tagged);
     $no = count($o);
     $nt = count($t);
+    // Length of the "@name " tag word starting at $k in $chars, or 0.
+    $tagAt = function (array $chars, int $k) use ($names): int {
+        if (($chars[$k] ?? '') !== '@') return 0;
+        $rest = zpms_note_fold(implode('', array_slice($chars, $k + 1, 40)));
+        foreach ($names as $name => $_) {
+            $len = mb_strlen($name);
+            if (mb_substr($rest, 0, $len + 1) === $name . ' ') return $len + 2;
+        }
+        return 0;
+    };
     $i = $j = 0;
     $ins = [];
     while ($i < $no || $j < $nt) {
-        if ($i < $no && $j < $nt && $o[$i] === $t[$j]) { $i++; $j++; continue; }
-        // an inserted tag word
-        if ($j < $nt && $t[$j] === '@') {
-            $rest = implode('', array_slice($t, $j + 1, 40));
-            foreach ($names as $name) {
-                $len = mb_strlen($name);
-                if (mb_substr($rest, 0, $len + 1) === $name . ' ') {
-                    $ins[] = [$i, '@' . $name . ' '];
-                    $j += $len + 2;
-                    continue 2;
-                }
-            }
+        // An inserted tag word, kept as the tagger wrote it. Checked before equal characters,
+        // so a tag put in front of an «@» already in the note is not mistaken for it.
+        $len = $j < $nt ? $tagAt($t, $j) : 0;
+        if ($len > 0) {
+            $word = implode('', array_slice($t, $j, $len));
+            $same = $i + $len <= $no && implode('', array_slice($o, $i, $len)) === $word;
+            if (!$same) { $ins[] = [$i, $word]; $j += $len; continue; }
         }
+        if ($i < $no && $j < $nt && $o[$i] === $t[$j]) { $i++; $j++; continue; }
         // trailing spaces of a line of the original, dropped by an editor
         if ($i < $no && ($o[$i] === ' ' || $o[$i] === "\t")) {
             $k = $i;
@@ -253,6 +264,9 @@ function zpms_notes_revert(PDO $db, string $backupFile, string $now, bool $apply
     $report = ['notes_in_backup' => count($data['notes']), 'to_restore' => 0, 'skipped' => 0];
     $problems = $todo = [];
     foreach ($data['notes'] as $c) {
+        if (!is_array($c) || !in_array($c['source'] ?? null, ['appointment', 'patient'], true) || !is_string($c['before'] ?? null) || !is_string($c['after'] ?? null)) {
+            throw new InvalidArgumentException("Not a notes:import backup (bad entry): $backupFile");
+        }
         $cur = zpms_note_current($db, $c['source'], (int)$c['id']);
         if ($cur === null) { $problems[] = "{$c['source']} {$c['id']}: not found or deleted"; $report['skipped']++; continue; }
         if ($cur['text'] === $c['before']) { $problems[] = "{$c['source']} {$c['id']}: already restored"; $report['skipped']++; continue; }
@@ -291,6 +305,7 @@ function zpms_notes_write(PDO $db, array $notes, string $now, array $spec, array
 function zpms_notes_write_backup(?string $file, array $changed, string $now): void {
     if ($file === null) throw new InvalidArgumentException('no backup file given');
     zpms_notes_private_dir(dirname($file));
+    if (file_exists($file)) throw new RuntimeException("The backup $file exists already -- nothing was imported, run it again");
     $json = json_encode(['written' => $now, 'notes' => array_map(fn($c) => [
         'source' => $c['source'], 'id' => $c['id'], 'before' => $c['before'], 'after' => $c['after']], $changed)],
         JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
