@@ -322,7 +322,7 @@
       ]
     },
     {
-      "name": "levels inside a procedure or a therapy value are also stored (origin = the outer row)",
+      "name": "levels inside a procedure, a therapy or a diagnosis value are also stored (origin = the outer row)",
       "text": "@χειρ μικροδισκεκτομή Ο4-Ο5. @θερ επισκληρίδιος έγχυση στο Ο5-Ι1 και L4-L5. @δγ κήλη Ο4-Ο5",
       "expect": [
         {
@@ -351,6 +351,12 @@
         {
           "tag": "dx",
           "value": "κήλη Ο4-Ο5"
+        },
+        {
+          "tag": "lvl",
+          "value": "Ο4-Ο5",
+          "normalized": "L4-L5",
+          "origin": 4
         }
       ],
       "plain": "μικροδισκεκτομή Ο4-Ο5. επισκληρίδιος έγχυση στο Ο5-Ι1 και L4-L5. κήλη Ο4-Ο5"
@@ -560,6 +566,273 @@
       "name": "empty note",
       "text": "",
       "expect": []
+    },
+    {
+      "name": "old notation: morning-noon-evening tablets «2 - 2 - 2», total from the daily sum",
+      "text": "@φα Lyrica 50mg 2 - 2 - 2 για 10 ημέρες",
+      "expect": [
+        {
+          "tag": "cur",
+          "rx": {
+            "drug": "Lyrica",
+            "strength": "50mg",
+            "per_day_text": "2-2-2",
+            "per_dose": 2,
+            "per_day": 3,
+            "days": 10,
+            "note": null,
+            "total": 60
+          }
+        }
+      ]
+    },
+    {
+      "name": "old notation: «1 - 1 - 2» uneven doses, «0 - 2 - 0» once, fractions «1 - 1/2 - 1/2», «1,5 - 1 - 1,5»",
+      "text": "@φα Neurontin 400mg 1 - 1 - 2 x30\n@φα Cymbalta 30mg 0 - 2 - 0\n@φα Xanax 1 - 1/2 - 1/2\n@φα Tegretol 200 1,5 - 1 - 1,5",
+      "expect": [
+        {
+          "tag": "cur",
+          "rx": {
+            "drug": "Neurontin",
+            "strength": "400mg",
+            "per_day_text": "1-1-2",
+            "per_dose": 1.33,
+            "per_day": 3,
+            "days": 30,
+            "total": 120
+          }
+        },
+        {
+          "tag": "cur",
+          "rx": {
+            "drug": "Cymbalta",
+            "strength": "30mg",
+            "per_day_text": "0-2-0",
+            "per_dose": 2,
+            "per_day": 1,
+            "days": null
+          }
+        },
+        {
+          "tag": "cur",
+          "rx": {
+            "drug": "Xanax",
+            "strength": null,
+            "per_day_text": "1-1/2-1/2",
+            "per_dose": 0.67,
+            "per_day": 3
+          }
+        },
+        {
+          "tag": "cur",
+          "rx": {
+            "drug": "Tegretol",
+            "strength": "200mg",
+            "per_day_text": "1,5-1-1,5",
+            "per_dose": 1.33,
+            "per_day": 3
+          }
+        }
+      ]
+    },
+    {
+      "name": "old notation: milligrams per time of day «150-0-300mg» -- no tablet count, no total",
+      "text": "@φα brieca 150-0-300mg x30",
+      "expect": [
+        {
+          "tag": "cur",
+          "rx": {
+            "drug": "brieca",
+            "strength": null,
+            "per_day_text": "150-0-300mg",
+            "per_dose": null,
+            "per_day": 2,
+            "days": 30,
+            "total": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "old notation: «300 x 1» is the strength once a day, «1 x 300» too; «x 1-1-1» before a schedule",
+      "text": "@φα neurontin 300 x 1\n@φα neurontin 1 x 300\n@συν Neurontin 400mg x 1-1-1 για 14 ημέρες",
+      "expect": [
+        {
+          "tag": "cur",
+          "rx": {
+            "drug": "Neurontin",
+            "strength": "300mg",
+            "per_day_text": "x1",
+            "per_dose": 1,
+            "per_day": 1
+          }
+        },
+        {
+          "tag": "cur",
+          "rx": {
+            "drug": "Neurontin",
+            "strength": "300mg",
+            "per_day_text": "x1",
+            "per_dose": 1,
+            "per_day": 1
+          }
+        },
+        {
+          "tag": "rx",
+          "rx": {
+            "drug": "Neurontin",
+            "strength": "400mg",
+            "per_day_text": "1-1-1",
+            "per_dose": 1,
+            "per_day": 3,
+            "days": 14,
+            "total": 42
+          }
+        }
+      ]
+    },
+    {
+      "name": "old notation: a lone «x 3» after the strength is times a day (up to 6); «x 7» and more stay days",
+      "text": "@συν Lyrica 75mg x 3 για 10 ημέρες\n@συν Tramal 50mg x3\n@συν Depon 500mg 1x2 x7",
+      "expect": [
+        {
+          "tag": "rx",
+          "rx": {
+            "drug": "Lyrica",
+            "strength": "75mg",
+            "per_day_text": "x3",
+            "per_dose": 1,
+            "per_day": 3,
+            "days": 10,
+            "total": 30
+          }
+        },
+        {
+          "tag": "rx",
+          "rx": {
+            "drug": "Tramal",
+            "strength": "50mg",
+            "per_day_text": "x3",
+            "per_dose": 1,
+            "per_day": 3,
+            "days": null
+          }
+        },
+        {
+          "tag": "rx",
+          "rx": {
+            "drug": "Depon",
+            "per_day_text": "1x2",
+            "per_day": 2,
+            "days": 7,
+            "total": 14
+          }
+        }
+      ]
+    },
+    {
+      "name": "old notation: fractions «1/2», «1/4 x 1», «1/2 x2»; micrograms «ug»; a form word «tb»/«caps» goes to the note",
+      "text": "@φα lobivon 1/2\n@φα Blokatens 1/4 x 1\n@φα lopressor 100mg 1/2 x2\n@φα t4 25ug\n@φα tb Sirdalud 2mg x 2\n@φα caps lyrica 150mg 2 - 1 - 1",
+      "expect": [
+        {
+          "tag": "cur",
+          "rx": {
+            "drug": "lobivon",
+            "per_day_text": "1/2",
+            "per_dose": 0.5,
+            "per_day": 1
+          }
+        },
+        {
+          "tag": "cur",
+          "rx": {
+            "drug": "Blokatens",
+            "per_day_text": "1/4x1",
+            "per_dose": 0.25,
+            "per_day": 1
+          }
+        },
+        {
+          "tag": "cur",
+          "rx": {
+            "drug": "lopressor",
+            "strength": "100mg",
+            "per_day_text": "1/2x2",
+            "per_dose": 0.5,
+            "per_day": 2
+          }
+        },
+        {
+          "tag": "cur",
+          "rx": {
+            "drug": "t4",
+            "strength": "25ug",
+            "per_day_text": null
+          }
+        },
+        {
+          "tag": "cur",
+          "rx": {
+            "drug": "Sirdalud",
+            "strength": "2mg",
+            "per_day_text": "x2",
+            "per_day": 2,
+            "note": "tb"
+          }
+        },
+        {
+          "tag": "cur",
+          "rx": {
+            "drug": "Lyrica",
+            "strength": "150mg",
+            "per_day_text": "2-1-1",
+            "per_dose": 1.33,
+            "per_day": 3,
+            "note": "caps"
+          }
+        }
+      ]
+    },
+    {
+      "name": "old notation: a bare strength with a decimal comma «0,1», a note in brackets",
+      "text": "@φα thyrohormone 0,1\n@φα cymbalta 30 x 1 (μεσημ)",
+      "expect": [
+        {
+          "tag": "cur",
+          "rx": {
+            "drug": "thyrohormone",
+            "strength": "0,1mg",
+            "per_day_text": null
+          }
+        },
+        {
+          "tag": "cur",
+          "rx": {
+            "drug": "cymbalta",
+            "strength": "30mg",
+            "per_day_text": "x1",
+            "per_day": 1,
+            "note": "(μεσημ)"
+          }
+        }
+      ]
+    },
+    {
+      "name": "a level inside a diagnosis is also a level row (inner_levels on dx)",
+      "text": "MRI: @δγ ΚΜΔ Ο4/5 αριστερά",
+      "expect": [
+        {
+          "tag": "dx",
+          "value": "ΚΜΔ Ο4/5 αριστερά",
+          "origin": null
+        },
+        {
+          "tag": "lvl",
+          "value": "Ο4/5",
+          "normalized": "L4-L5",
+          "origin": 0
+        }
+      ]
     }
   ]
 }

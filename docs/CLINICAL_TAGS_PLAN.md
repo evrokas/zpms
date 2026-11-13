@@ -380,6 +380,22 @@ Each phase is usable on its own and adds tests to `bin/run_tests.sh`.
 - Tag definitions in a Settings page instead of the config file (only if tags are added often).
 - New value types: follow-up period (`@επαν`) with reminders, scores (`@vas`).
 - ICD-10 codes for diagnoses.
+- Tagging the notes written before the tags existed: see `docs/CLINICAL_TAGS_CONVERSION_PLAN.md`.
+
+## 21. After phase 5 (2026-11-13, for converting the old notes)
+
+Decided with the conversion plan (`docs/CLINICAL_TAGS_CONVERSION_PLAN.md` section 4):
+- **A tenth tag, `cur` «Τρέχουσα αγωγή»** (`@φα`, `@φάρμακα`): medication the patient already
+  takes. Value type `prescription`, colour `plum` (tint #f5eaf2, mark #dbb3d0, ink #7a3a6c),
+  family medication, in the summary. `@αγ` stays the recommended treatment, `@συν` a drug
+  prescribed today. No starter list (suggestions come from previous entries; drugs from the rx list).
+- **`inner_levels` on `dx` too** (section 4 said proc/thx only): «@δγ κήλη Ο4-Ο5» also stores an
+  `lvl` row.
+- **The prescription parser reads the old dose notation** (morning-noon-evening `1-0-2`,
+  `200 x 3` = strength x times a day, lone `x 3` = times a day up to 6, fractions `1/2`, `ug`,
+  a leading `tb`/`caps`); the table is in the conversion plan. An unlisted drug's name now ends
+  before a word starting with a digit, so its bare strength is read («nexium 40» = 40mg).
+  The total is the tablets a day x days (uneven schedules: their daily sum).
 
 ## 16. Phase 1 as built (2026-11-13)
 

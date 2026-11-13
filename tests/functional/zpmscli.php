@@ -317,4 +317,88 @@ function zpmscli_functional_tests(TestRunner $runner): void {
         [$code, $out] = $run('help');
         assert_equal(0, $code, 'help should exit 0'); assert_contains('patients:purge', $out, 'help does not list commands');
     });
+
+    $runner->add('notes:export / notes:import: tags only, exact text and line endings kept, refusals, revert', function () {
+        TestSchema::assertSafeToMutate();
+        $db = zpms_cli_test_db();
+        zpms_cli_test_user('cli_notes');
+        $pguid = guid();
+        $pnote = "Αλλεργία στην ασπιρίνη\nόχι άλλο";
+        $db->prepare('INSERT INTO patients (guid, cdate, cuser, pname, pnote) VALUES (?,?,?,?,?)')->execute([$pguid, getDBtime(), 'cli_notes', 'Notes Test', $pnote]);
+        $pid = (int)$db->lastInsertId();
+        $anote = "ΚΜΔ Ο4/5 αριστερά  \r\nRx/\r\nMRI ΟΜΣΣ\r\n";   // CRLF, trailing spaces
+        $ins = $db->prepare('INSERT INTO appointments (guid, cdate, cuser, pguid, adate, aplace, anote, atype) VALUES (?,?,?,?,?,?,?,?)');
+        $ins->execute([guid(), getDBtime(), 'cli_notes', $pguid, '2024-03-04 10:00:00', 'Athens', $anote, 'appointment']);
+        $aid = (int)$db->lastInsertId();
+        $ins->execute([guid(), getDBtime(), 'cli_notes', $pguid, '2024-03-05 10:00:00', 'Athens', 'σβησμένο', 'appointment']);
+        $deletedId = (int)$db->lastInsertId();
+        $db->prepare('UPDATE appointments SET deleted = ? WHERE id = ?')->execute([getDBtime(), $deletedId]);
+
+        $file = zpms_notes_export_text(zpms_notes_for_export($db), '2026-01-01 00:00:00');
+        assert_contains("=== NOTE appointment $aid | patient $pid | 2024-03-04 | eol=crlf | sha=", $file, 'appointment header');
+        assert_true(!str_contains($file, "appointment $deletedId "), 'a soft-deleted note was exported');
+        assert_true(!str_contains($file, "\r"), 'the file should use \n only');
+        $mine = fn(array $notes) => array_values(array_filter($notes, fn($n) => $n['patient_id'] === $pid));
+        $parsed = $mine(zpms_notes_parse_file($file));
+        assert_equal(2, count($parsed), 'both notes read back');
+        assert_equal($anote, $parsed[1]['text'], 'the exported text did not round-trip exactly');
+
+        // Tag it the way an editor might save it: CRLF file, trailing spaces stripped.
+        $tagged = str_replace(["Αλλεργία στην ασπιρίνη", "ΚΜΔ Ο4/5 αριστερά  \n", "MRI ΟΜΣΣ"],
+                              ["Αλλεργία στην @αλ ασπιρίνη", "@δγ ΚΜΔ @επ Ο4/5 αριστερά\n", "@εξ MRI ΟΜΣΣ"], $file);
+        $tagged = str_replace("\n", "\r\n", $tagged);
+        $notes = $mine(zpms_notes_parse_file($tagged));
+        $dry = zpms_notes_import($db, $notes, false, '2026-01-01 00:00:00', false, null);
+        assert_equal([], $dry['problems'], 'unexpected problems');
+        assert_equal(2, $dry['report']['to_write'], 'notes to write');
+        assert_equal(4, $dry['report']['tags_added'], 'tags counted');
+        assert_equal($anote, $db->query("SELECT anote FROM appointments WHERE id = $aid")->fetchColumn(), 'a dry run wrote');
+
+        $backup = sys_get_temp_dir() . '/zpms_notes_backup_' . getmypid() . '.json';
+        zpms_notes_import($db, $notes, false, '2026-01-01 00:00:00', true, $backup);
+        assert_equal("@δγ ΚΜΔ @επ Ο4/5 αριστερά  \r\nRx/\r\n@εξ MRI ΟΜΣΣ\r\n", $db->query("SELECT anote FROM appointments WHERE id = $aid")->fetchColumn(),
+            'stored text must be the original plus the tags, CRLF and trailing spaces kept');
+        assert_equal("Αλλεργία στην @αλ ασπιρίνη\nόχι άλλο", $db->query("SELECT pnote FROM patients WHERE id = $pid")->fetchColumn(), 'patient note');
+        $tags = $db->query("SELECT tag_key FROM note_fields WHERE patient_id = $pid AND origin IS NULL ORDER BY source, pos")->fetchAll(PDO::FETCH_COLUMN);
+        assert_equal(['dx', 'lvl', 'exam', 'alg'], $tags, 'note_fields rows');
+        assert_true(is_file($backup), 'no backup written');
+
+        // Importing the same file again: refused, the notes changed since that export.
+        $again = zpms_notes_import($db, $notes, false, '2026-01-01 00:00:00', false, null);
+        assert_equal(2, $again['report']['skipped'], 'a second import of a stale file should be refused');
+        assert_contains('edited after the export', $again['problems'][0], 'refusal reason');
+
+        // Revert puts the originals back and clears the rows.
+        $rev = zpms_notes_revert($db, $backup, '2026-01-01 00:00:00', true);
+        assert_equal(2, $rev['report']['to_restore'], 'notes restored');
+        assert_equal($anote, $db->query("SELECT anote FROM appointments WHERE id = $aid")->fetchColumn(), 'revert');
+        assert_equal(0, zpms_cli_test_count("SELECT COUNT(*) FROM note_fields WHERE patient_id = $pid"), 'rows left after revert');
+        @unlink($backup);
+
+        // A changed word is refused (unless --allow-edits); a tag glued to a word is warned about.
+        $fresh = $mine(zpms_notes_parse_file(zpms_notes_export_text(zpms_notes_for_export($db), 'x')));
+        $bad = $fresh;
+        $bad[0]['text'] = "Αλλεργία στην @αλ ασπιρινη\nόχι άλλο";
+        $bad[1]['text'] = str_replace('ΚΜΔ', 'ΚΜ@δγ Δ', $bad[1]['text']);
+        $r = zpms_notes_import($db, $bad, false, 'x', false, null);
+        assert_equal(1, $r['report']['skipped'], 'a changed word should be refused');
+        assert_contains('text changed at line 1', $r['problems'][0], 'refusal reason');
+        assert_contains('glued', implode(' ', $r['warnings']), 'glued tag not reported');
+        $r = zpms_notes_import($db, $bad, true, 'x', false, null);
+        assert_equal(2, $r['report']['to_write'], '--allow-edits should accept the edit');
+
+        $db->prepare('DELETE FROM appointments WHERE pguid = ?')->execute([$pguid]);
+        $db->prepare('DELETE FROM patients WHERE id = ?')->execute([$pid]);
+    });
+
+    $runner->add('notes:import file format: a missing END line or a duplicate note is refused', function () {
+        $head = "=== NOTE patient 7 | patient 7 | eol=lf | sha=0123456789abcdef ===\n";
+        foreach (["$head" . "text\n" => 'missing', "$head" . "text\n$head" => 'missing',
+                  "$head" . "a\n=== END patient 7 ===\n$head" . "b\n=== END patient 7 ===\n" => 'twice',
+                  "=== NOTE garbage ===\n" => 'not a NOTE header'] as $content => $why) {
+            try { zpms_notes_parse_file($content); throw new RuntimeException("accepted a bad file ($why)"); }
+            catch (InvalidArgumentException $e) { assert_contains($why, $e->getMessage(), 'wrong reason'); }
+        }
+        assert_equal("a\n\nb ", zpms_notes_parse_file("# c\n$head" . "a\n\nb \n=== END patient 7 ===\n")[0]['text'], 'body kept exactly');
+    });
 }

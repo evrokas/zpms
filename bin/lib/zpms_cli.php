@@ -21,6 +21,8 @@
 // The clinical-tag rows of the notes (note_fields) are hidden, purged and
 // rebuilt with the notes they come from (web/note_tags.php, plain PDO too).
 require_once dirname(__DIR__, 2) . '/web/note_tags.php';
+// notes:export / notes:import (converting old notes to the tag notation).
+require_once __DIR__ . '/zpms_note_convert.php';
 
 const ZPMSCLI_REASSIGN_SCOPES = ['patients', 'appointments', 'files', 'history'];
 

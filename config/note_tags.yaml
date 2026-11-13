@@ -23,7 +23,7 @@
 #   next_words    the picker offers a next-word strip (phase 3)
 #   inner_levels  levels written inside this value are also stored as lvl rows
 tags:
-  dx:   { label: Διάγνωση,       names: [δγ, διάγνωση, dx, diagnosis],     colour: rose,     family: findings,   value: text,         picker: list,      summary: true, search: true }
+  dx:   { label: Διάγνωση,       names: [δγ, διάγνωση, dx, diagnosis],     colour: rose,     family: findings,   value: text,         picker: list,      summary: true, search: true, inner_levels: true }
   lvl:  { label: Επίπεδα,        names: [επ, επίπεδα, lvl, levels],        colour: lavender, family: findings,   value: levels,       picker: grid,      summary: true, search: true }
   alg:  { label: Αλλεργία,       names: [αλ, αλλεργία, alg, allergy],      colour: orange,   family: warning,    value: text,         picker: list,      summary: true, header_alert: true }
   exam: { label: Εξέταση,        names: [εξ, εξέταση, exam],               colour: sky,      family: plan,       value: text,         picker: checklist, summary: true, next_words: true }
@@ -32,6 +32,7 @@ tags:
   pt:   { label: Φυσικοθεραπεία, names: [φθ, φυσικοθεραπεία, pt],          colour: sage,     family: plan,       value: text,         picker: list,      summary: true, next_words: true }
   med:  { label: Αγωγή,          names: [αγ, αγωγή, med],                  colour: sand,     family: medication, value: text,         picker: list,      summary: true }
   rx:   { label: Συνταγή,        names: [συν, συνταγή, rx, prescription],  colour: amber,    family: medication, value: prescription, picker: blanks,    summary: true }
+  cur:  { label: Τρέχουσα αγωγή, names: [φα, φάρμακα, cur, current],      colour: plum,     family: medication, value: prescription, picker: blanks,    summary: true }
 
 # Light theme. tint = the wash on the sentence being written, mark = the pale
 # underline / dashed frame, ink = the value's colour in the reading look.
@@ -45,6 +46,7 @@ palette:
   sage:     { tint: '#eef3dd', mark: '#c5d58f', ink: '#57661e' }
   sand:     { tint: '#f8f0df', mark: '#e0c88f', ink: '#7c5b1a' }
   amber:    { tint: '#fbecd6', mark: '#e8bf7f', ink: '#855212' }
+  plum:     { tint: '#f5eaf2', mark: '#dbb3d0', ink: '#7a3a6c' }
 
 # The fixed lists the note_list_entries table starts with
 # (php bin/zpmscli.php note-lists:seed --yes). A tag's list is seeded only while

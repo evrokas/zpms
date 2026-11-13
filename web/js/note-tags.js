@@ -293,14 +293,53 @@
         }
         function cut(s, e) { return mainChars.slice(s, e).join(''); }
         function group(m, gi) { return m[2][gi] === null ? null : cut(m[2][gi][0], m[2][gi][0] + m[2][gi][1]); }
-        function num(s) { return s === '½' ? 0.5 : (s === '¼' ? 0.25 : parseFloat(s.replace(',', '.'))); }
+        function num(s) {
+            if (s === '½') return 0.5;
+            if (s === '¼') return 0.25;
+            var f = /^([0-9]+)\/([0-9]+)$/.exec(s);
+            if (f) return parseFloat(f[1]) / parseFloat(f[2]);
+            return parseFloat(s.replace(',', '.'));
+        }
         var sp = SPACE, nb = '(?<![\\p{L}\\p{N}])', na = '(?![\\p{L}\\p{N}])', m;
+        // An amount of tablets: 1, 1,5, ½, 1/2, 1/4, 3/4. Units for a strength.
+        var qty = '(?:[13]/[24]|[0-9]+(?:[.,][0-9]+)?|½|¼)';
+        var units = '(?:mg|mcg|μg|μγ|ug|gr|g|ml|iu)';
+        var dailyTablets = null, axbStrength = null;
 
-        if ((m = find(nb + '([0-9]+(?:[.,][0-9]+)?|½|¼)' + sp + '*[xχ×]' + sp + '*([0-9]+)' + na))) {
-            rx.per_day_text = cut(m[0], m[1]).replace(SPACES_RE, '');
+        // Old notation, morning - noon - evening: "1 - 0 - 2", "x 1-1-1", "1 - 1/2 - 1/2", "150-0-300mg".
+        if ((m = find(nb + '(?:[xχ×]' + sp + '*)?(' + qty + ')(?:' + sp + '*' + units + ')?' + sp + '*-' + sp + '*(' + qty + ')(?:' + sp + '*' + units + ')?'
+                + sp + '*-' + sp + '*(' + qty + ')(' + sp + '*' + units + ')?' + na))) {
+            var parts = [num(group(m, 1)), num(group(m, 2)), num(group(m, 3))];
+            var text = cut(m[0], m[1]).replace(SPACES_RE, '').replace(/^[xχ×]/u, '');
+            var given = parts.filter(function (v) { return v > 0; });
+            rx.per_day_text = text;
             spans.per_day = [m[0], m[1]];
-            rx.per_dose = num(group(m, 1));
-            rx.per_day = parseInt(group(m, 2), 10);
+            rx.per_day = given.length || null;
+            var inUnits = new RegExp(units, 'u').test(fold(text)) || Math.max.apply(null, parts) > 4;
+            if (given.length && !inUnits) {
+                dailyTablets = given.reduce(function (x, y) { return x + y; }, 0);
+                rx.per_dose = Math.round(dailyTablets / given.length * 100) / 100;
+            }
+        } else if ((m = find(nb + '(' + qty + ')' + sp + '*[xχ×]' + sp + '*([0-9]+)' + na))) {
+            var qa = num(group(m, 1)), qb = parseInt(group(m, 2), 10);
+            spans.per_day = [m[0], m[1]];
+            if (qa > 4) {
+                // "300 x 1": 300 (mg) once a day.
+                axbStrength = group(m, 1);
+                rx.per_day_text = 'x' + qb;
+                rx.per_dose = 1;
+                rx.per_day = qb;
+            } else if (qb > 6) {
+                // "1 x 300": once a day, 300 (mg).
+                axbStrength = String(qb);
+                rx.per_day_text = 'x' + group(m, 1);
+                rx.per_dose = 1;
+                rx.per_day = qa;
+            } else {
+                rx.per_day_text = cut(m[0], m[1]).replace(SPACES_RE, '');
+                rx.per_dose = qa;
+                rx.per_day = qb;
+            }
         } else if ((m = find(nb + '([0-9]+)' + sp + '*φορ(?:εσ|α)' + na))) {
             rx.per_day_text = cut(m[0], m[1]);
             spans.per_day = [m[0], m[1]];
@@ -309,6 +348,21 @@
         } else if ((m = find(nb + 'επι' + sp + '+πονου' + na))) {
             rx.per_day_text = cut(m[0], m[1]);
             spans.per_day = [m[0], m[1]];
+        }
+        // Old notation: a lone "x 3" (up to 6) after the strength is times a day; larger is days.
+        if (rx.per_day === null && rx.per_day_text === null
+            && (m = find('(?<![\\p{L}\\p{N}½¼\\/])[xχ×]' + sp + '*([1-6])' + na))) {
+            rx.per_day_text = cut(m[0], m[1]).replace(SPACES_RE, '');
+            spans.per_day = [m[0], m[1]];
+            rx.per_dose = 1;
+            rx.per_day = parseInt(group(m, 1), 10);
+        }
+        // Old notation: a lone fraction is part of a tablet once a day ("lobivon 1/2").
+        if (rx.per_day_text === null && (m = find(nb + '([13]\\/[24]|½|¼)' + na))) {
+            rx.per_day_text = cut(m[0], m[1]);
+            spans.per_day = [m[0], m[1]];
+            rx.per_dose = num(group(m, 1));
+            rx.per_day = 1;
         }
         if ((m = find(nb + '(?:για' + sp + '+)?([0-9]+)' + sp + '*(?:ημερεσ|ημερα|ημ|μερεσ|days|day|d)' + na))) {
             rx.days = parseInt(group(m, 1), 10);
@@ -319,32 +373,38 @@
         } else if ((m = find(nb + 'συνεχωσ' + na))) {
             spans.days = [m[0], m[1]];   // continuously: no number of days, nothing to store
         }
-        if ((m = find(nb + '([0-9]+(?:[.,][0-9]+)?)' + sp + '*(mg|mcg|μg|μγ|gr|g|ml|iu)' + na))) {
+        if ((m = find(nb + '([0-9]+(?:[.,][0-9]+)?)' + sp + '*(' + units + ')' + na))) {
             rx.strength = group(m, 1) + group(m, 2);
             spans.strength = [m[0], m[1]];
         }
+        if (dailyTablets === null && rx.per_dose !== null && rx.per_day !== null) dailyTablets = rx.per_dose * rx.per_day;
+        // A form word before the name (tb, caps, ...) is not part of the drug: it goes to the note.
+        var fm = new RegExp('^(?:tb|tab|tabs|caps|cap|amp|δισκ|καψ)\\.?' + sp + '+', 'u').exec(folded);
+        var formEnd = fm ? cpLen(fm[0]) : 0;
 
         var drugEnd = 0, unit = 'mg', best = null;
         drugs.forEach(function (d) {
             [d.text].concat(d.aliases || []).forEach(function (name) {
                 var fn = fold(trim(String(name))), l = cpLen(fn);
-                if (l === 0 || Array.from(folded).slice(0, l).join('') !== fn || isWord(mainChars[l])) return;
+                if (l === 0 || Array.from(folded).slice(formEnd, formEnd + l).join('') !== fn || isWord(mainChars[formEnd + l])) return;
                 if (best === null || l > best[1]) best = [d, l];
             });
         });
         if (best !== null) {
             rx.drug = best[0].text;
             unit = best[0].unit || 'mg';
-            drugEnd = best[1];
+            drugEnd = formEnd + best[1];
         } else {
-            k = 0;
-            while (k < n && !used[k]) k++;
-            var drug = trim(cut(0, k));
+            // up to the first recognised part, or a word starting with a digit (a bare strength)
+            k = formEnd;
+            while (k < n && !used[k] && !(k > formEnd && isSpace(mainChars[k - 1]) && /[0-9]/.test(mainChars[k]))) k++;
+            var drug = trim(cut(formEnd, k));
             rx.drug = drug !== '' ? drug : null;
             drugEnd = k;
         }
-        for (k = 0; k < drugEnd; k++) used[k] = true;
-        if (drugEnd > 0) spans.drug = [0, drugEnd];
+        for (k = formEnd; k < drugEnd; k++) used[k] = true;
+        if (drugEnd > formEnd) spans.drug = [formEnd, drugEnd];
+        if (rx.strength === null && axbStrength !== null) rx.strength = axbStrength + unit;
 
         if (rx.strength === null) {
             k = drugEnd;
@@ -365,8 +425,8 @@
         var notes = [left, tail].filter(function (s) { return s !== ''; });
         rx.note = notes.length ? notes.join(', ') : null;
 
-        if (rx.per_dose !== null && rx.per_day !== null && rx.days !== null) {
-            rx.total = Math.round(rx.per_dose * rx.per_day * rx.days * 100) / 100;
+        if (dailyTablets !== null && rx.days !== null) {
+            rx.total = Math.round(dailyTablets * rx.days * 100) / 100;
         }
         if (comma !== -1) {
             var ns = comma + 1;
