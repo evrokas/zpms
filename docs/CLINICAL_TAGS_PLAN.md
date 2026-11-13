@@ -144,7 +144,7 @@ One readable phrase with up to five parts:
 | Part | Picker list | Read from free typing |
 |---|---|---|
 | drug | drug list (written as on the box: Lyrica), found by Greek spelling (`λυρ`) | first word(s), matched to the list or kept as typed |
-| strength | that drug's strengths (Lyrica: 25, 75, 150, 300mg) | number + unit (mg, μγ, mcg, g, ml); `0.5` and `0,5`; a **bare number right after the drug** is its strength in that drug's unit (default mg): «λυρικα 150 1χ2» = 150mg |
+| strength | that drug's strengths (Lyrica: 25, 75, 150, 300mg) | number + unit (mg, μγ, mcg, g, ml); `0.5` and `0,5`; a **combination** of substances with `+` or `/` («co-valsart 160+12,5», «160/12.5 mg»); a **bare number right after the drug** is its strength in that drug's unit (default mg): «λυρικα 150 1χ2» = 150mg. Stored normalised: decimal point, parts joined with `+`, no spaces, lowercase unit (`160+12,5` -> `160+12.5mg`, `0,5 mg` -> `0.5mg`) |
 | per_day | 1x1, 1x2, 1x3, ½x2, επί πόνου | `1x2`, `1χ2` (Greek χ = x), `½x2`, `0,5x2`, `2 φορές`, `επί πόνου`. In `AxB`, A = amount per dose (tablets), B = doses per day |
 | days | 7, 14, 30, 60, συνεχώς | `για 30 ημέρες`, `30 ημ`, `x30` |
 | note (optional) | μετά το φαγητό, πριν το φαγητό, πριν τον ύπνο, με σταδιακή αύξηση + own | text after the comma; anything not placed elsewhere |
@@ -413,7 +413,12 @@ Decisions taken while building (section 2 and 10 did not settle them):
   value ends at the semicolon, as section 2 says.
 - **Prescription parts**: the note is "after the first comma" plus every word not placed elsewhere
   (`με σταδιακή αύξηση`), joined with `, `. «2 φορές» = 1 per dose x 2; «συνεχώς» = no days.
-  Strengths are stored as typed without the space (`0,5mg`, `150mg`).
+  Strengths are stored normalised (decided 2026-11-13, see the strength row in section 5):
+  decimal point, combination parts joined with `+`, no spaces, lowercase unit
+  (`0,5 mg` -> `0.5mg`, `160+12,5` -> `160+12.5mg`). An unknown drug's name stops at the first
+  word that is a number, so «co-valsart 160+12,5 1x1» is drug «co-valsart», strength
+  `160+12.5mg`. In Settings → «Λίστες σημειώσεων» a comma between two digits is a decimal comma,
+  not a separator, and strengths are stored the same way.
 - **When rows are written**: an appointment edit re-reads the note only when the note itself
   changed (autosave posts the whole card on every pause). `ajax_update_patient_info()` was not
   hooked: it does not save anything (its `update()` is commented out). `consultation_new_post()`

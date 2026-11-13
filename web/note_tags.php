@@ -169,6 +169,16 @@ function zpms_note_decimal_comma(array $chars, int $k): bool {
     return $k > 0 && zpms_note_is_digit($chars[$k - 1] ?? null) && zpms_note_is_digit($chars[$k + 1] ?? null);
 }
 
+/**
+ * A strength as stored: «160+12,5 mg» -> «160+12.5mg». Decimal point, parts of
+ * a combination joined with +, no spaces, unit in lowercase.
+ */
+function zpms_note_normalize_strength(string $numbers, string $unit): string {
+    $n = preg_replace('/' . ZPMS_NOTE_SPACE_CLASS . '+/u', '', $numbers);
+    $n = str_replace(['/', ','], ['+', '.'], $n);
+    return $n . mb_strtolower($unit, 'UTF-8');
+}
+
 /** Normalised form of a text value: folded, whitespace collapsed. */
 function zpms_note_normalize_text(string $s): string {
     return zpms_note_trim(preg_replace('/' . ZPMS_NOTE_SPACE_CLASS . '+/u', ' ', zpms_note_fold($s)));
@@ -455,8 +465,10 @@ function zpms_note_parse_rx(string $value, array $drugs): array {
     } else {
         $find("/{$nb}συνεχωσ{$na}/u");   // continuously: no number of days, nothing to store
     }
-    if ($m = $find("/{$nb}([0-9]+(?:[.,][0-9]+)?){$sp}*(mg|mcg|μg|μγ|gr|g|ml|iu){$na}/u")) {
-        $rx['strength'] = $group($m, 1) . $group($m, 2);
+    // A strength may combine several substances: «160+12,5 mg», «160/12.5mg».
+    $num = '[0-9]+(?:[.,][0-9]+)?';
+    if ($m = $find("/{$nb}({$num}(?:{$sp}*[+\\/]{$sp}*{$num})*){$sp}*(mg|mcg|μg|μγ|gr|g|ml|iu){$na}/u")) {
+        $rx['strength'] = zpms_note_normalize_strength($group($m, 1), $group($m, 2));
     }
 
     // The drug: a known name or Greek spelling at the start (longest wins),
@@ -477,23 +489,26 @@ function zpms_note_parse_rx(string $value, array $drugs): array {
         $unit = $best[0]['unit'] ?: 'mg';
         $drugEnd = $best[1];
     } else {
+        // Up to the first recognised part, or the first word that is a number
+        // (a strength written without its unit).
         $k = 0;
-        while ($k < $n && !$used[$k]) $k++;
+        while ($k < $n && !$used[$k] && !($k > 0 && zpms_note_is_space($mainChars[$k - 1]) && zpms_note_is_digit($mainChars[$k]))) $k++;
         $drug = zpms_note_trim($cut(0, $k));
         $rx['drug'] = $drug !== '' ? $drug : null;
         $drugEnd = $k;
     }
     for ($k = 0; $k < $drugEnd; $k++) $used[$k] = true;
 
-    // A bare number right after the drug is its strength, in the drug's unit.
+    // A bare number right after the drug is its strength, in the drug's unit
+    // (also a combination: «160+12,5»).
     if ($rx['strength'] === null) {
         $k = $drugEnd;
         while ($k < $n && zpms_note_is_space($mainChars[$k])) $k++;
         $e = $k;
         while ($e < $n && !zpms_note_is_space($mainChars[$e]) && !$used[$e]) $e++;
         $tok = $cut($k, $e);
-        if ($e > $k && preg_match('/^[0-9]+(?:[.,][0-9]+)?$/', $tok) && ($e >= $n || zpms_note_is_space($mainChars[$e]))) {
-            $rx['strength'] = $tok . $unit;
+        if ($e > $k && preg_match('/^[0-9]+(?:[.,][0-9]+)?(?:[+\/][0-9]+(?:[.,][0-9]+)?)*$/', $tok) && ($e >= $n || zpms_note_is_space($mainChars[$e]))) {
+            $rx['strength'] = zpms_note_normalize_strength($tok, $unit);
             for ($q = $k; $q < $e; $q++) $used[$q] = true;
         }
     }

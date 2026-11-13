@@ -2575,3 +2575,11 @@ Last phase of `docs/CLINICAL_TAGS_PLAN.md` (details in its section 20).
 **After pulling:** `php bin/import_dictionary.php` (new labels), empty `web/cache/`. No database change.
 
 Tests: `tests/functional/note_fields.php` (filters: folding, Greek/English levels, a level inside a procedure, combined filters, a literal `%`, deleted patients left out, appointment notes only for those who may read them; lists: add with tidying, duplicates, reorder, deactivate (and gone from the suggestions), another tag's entry untouched, promote, CSRF, audit without text, refused to a secretary).
+
+## Clinical tags: combination strengths in prescriptions
+
+A prescription strength can combine substances: «@συν co-valsart 160+12,5 1x1» (or «160/12.5 mg», with or without spaces) is read as drug «co-valsart», strength `160+12.5mg`. Every strength is now stored the same way: decimal point, parts joined with `+`, no spaces, lowercase unit, so `0,5 mg` is stored as `0.5mg`. An unknown drug's name stops at the first word that is a number («Tramal 50 1x2» is Tramal, 50mg). In Settings → «Λίστες σημειώσεων» a comma between digits no longer splits a strength («160+12,5mg, 80+12,5mg» is two strengths).
+
+**After pulling:** `php bin/zpmscli.php note-fields:rebuild --yes`, so prescriptions already saved get the normalised strengths.
+
+Tests: new shared parser cases (both parsers), the blank span of a combination strength, and the lists page plus a real note save in `tests/functional/note_fields.php`.

@@ -381,6 +381,32 @@ function zpms_functional_note_fields(TestRunner $runner, string $baseUrl): void 
         $db->exec("DELETE FROM note_list_entries WHERE text IN ('Υπερηχογράφημα κοιλίας', 'πυελογραφία')");
     });
 
+    $runner->add('combination strengths: «160+12,5» is stored as 160+12.5, in the lists page and in note_fields', function () use ($http, $db, &$state) {
+        TestSchema::assertSafeToMutate();
+        $token = TestHttpClient::extractCsrfToken($http->get('/settings/note-lists?tag=rx')['body']);
+        $http->post('/settings/note-lists', ['csrf_token' => $token, 'tag' => 'rx', 'action' => 'add',
+            'text' => 'Co-Valsartan', 'aliases' => 'κο-βαλσαρταν', 'strengths' => '160+12,5mg, 80/12,5 mg, 160+25']);
+        $row = $db->query("SELECT id, rx_strengths FROM note_list_entries WHERE tag_key = 'rx' AND text = 'Co-Valsartan'")->fetch(PDO::FETCH_ASSOC);
+        assert_not_null($row ?: null, 'drug not added');
+        assert_equal(['160+12.5mg', '80+12.5mg', '160+25'], json_decode($row['rx_strengths'], true), 'strengths split at a decimal comma or not normalised');
+
+        $a = new appointmentsClass(['guid' => guid(), 'cuser' => 'test', 'cdate' => getDBtime(), 'adate' => '2027-02-01 10:00:00', 'aplace' => '',
+            'anote' => "@συν co-valsart 160+12,5 1x1 για 30 ημέρες
+@συν κο-βαλσαρταν 160/12,5 mg 1x1", 'atype' => 'appointment', 'pguid' => $state['guid']]);
+        $a->insert();
+        zpms_note_fields_sync_appointment($a);
+        $rows = $db->query("SELECT rx_drug, rx_strength, rx_total FROM note_fields WHERE appointment_id = {$a->getid()} ORDER BY pos")->fetchAll(PDO::FETCH_ASSOC);
+        assert_equal('co-valsart', $rows[0]['rx_drug'], 'unknown drug name swallowed the strength');
+        assert_equal('160+12.5mg', $rows[0]['rx_strength'], 'bare combination strength');
+        assert_equal(30.0, (float)$rows[0]['rx_total'], 'total');
+        assert_equal('Co-Valsartan', $rows[1]['rx_drug'], 'drug not found by its Greek spelling');
+        assert_equal('160+12.5mg', $rows[1]['rx_strength'], 'combination strength with its unit');
+
+        $db->prepare('DELETE FROM note_fields WHERE appointment_id = ?')->execute([$a->getid()]);
+        $db->prepare('DELETE FROM appointments WHERE id = ?')->execute([$a->getid()]);
+        $db->prepare('DELETE FROM note_list_entries WHERE id = ?')->execute([$row['id']]);
+    });
+
     $runner->add('a pending appointment turned into a patient record: its notes are parsed then', function () use ($http, $db, &$state) {
         TestSchema::assertSafeToMutate();
         $pending = new pendingAppointmentsClass([

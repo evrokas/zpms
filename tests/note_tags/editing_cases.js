@@ -35,6 +35,8 @@ const full = T.parseRxFull('Lyrica 75mg 1x2 για 30 ημέρες, μετά τ�
 eq('rx spans', { drug: [0, 6], strength: [7, 11], per_day: [12, 15], days: [16, 29], note: [31, 45] }, full.spans);
 eq('rx parts unchanged', 60, full.rx.total);
 eq('bare strength span', [7, 10], T.parseRxFull('λυρικα 150 1χ2 x30', drugs).spans.strength);
+eq('combination strength is one blank', [11, 19], T.parseRxFull('co-valsart 160+12,5 1x1', drugs).spans.strength);
+eq('combination strength with its unit is one blank', [13, 24], T.parseRxFull('Co-Valsartan 160/12.5 mg 1x1', drugs).spans.strength);
 eq('συνεχώς is the days blank', [16, 23], T.parseRxFull('Lyrica 75mg 1x2 συνεχώς', drugs).spans.days);
 eq('empty note after ", "', [31, 31], T.parseRxFull('Lyrica 75mg 1x2 για 30 ημέρες, ', drugs).spans.note);
 eq('parseRx() still returns only the parts', false, 'spans' in T.parseRx('Lyrica 75mg', drugs));

@@ -424,14 +424,14 @@
       ]
     },
     {
-      "name": "prescription: 0,5x2 with a decimal comma, strength 0,5 mg",
+      "name": "prescription: 0,5x2 with a decimal comma; the strength is stored with a decimal point (0,5 mg -> 0.5mg)",
       "text": "@συν Medrol 0,5 mg 0,5x2 για 10 μέρες",
       "expect": [
         {
           "tag": "rx",
           "rx": {
             "drug": "Medrol",
-            "strength": "0,5mg",
+            "strength": "0.5mg",
             "per_day_text": "0,5x2",
             "per_dose": 0.5,
             "per_day": 2,
@@ -515,6 +515,78 @@
             "days": 30,
             "note": "με σταδιακή αύξηση, πριν τον ύπνο",
             "total": 90
+          }
+        }
+      ]
+    },
+    {
+      "name": "prescription: a combination strength, unknown drug, decimal comma -> 160+12.5 in the drug's unit",
+      "text": "@συν co-valsart 160+12,5 1x1 για 30 ημέρες, πρωί",
+      "expect": [
+        {
+          "tag": "rx",
+          "value": "co-valsart 160+12,5 1x1 για 30 ημέρες, πρωί",
+          "rx": {
+            "drug": "co-valsart",
+            "strength": "160+12.5mg",
+            "per_day_text": "1x1",
+            "per_dose": 1,
+            "per_day": 1,
+            "days": 30,
+            "note": "πρωί",
+            "total": 30
+          }
+        }
+      ]
+    },
+    {
+      "name": "prescription: a combination strength with its unit, written with / or + and spaces",
+      "text": "@συν Co-Valsartan 160/12.5 MG 1x1· @συν Co-Valsartan 160 + 12,5mg x14",
+      "expect": [
+        {
+          "tag": "rx",
+          "rx": {
+            "drug": "Co-Valsartan",
+            "strength": "160+12.5mg",
+            "per_day": 1,
+            "days": null
+          }
+        },
+        {
+          "tag": "rx",
+          "rx": {
+            "drug": "Co-Valsartan",
+            "strength": "160+12.5mg",
+            "days": 14
+          }
+        }
+      ]
+    },
+    {
+      "name": "prescription: an unknown drug followed by a bare number: the number is the strength, not part of the name",
+      "text": "@συν Tramal 50 1x2 για 7 ημέρες",
+      "expect": [
+        {
+          "tag": "rx",
+          "rx": {
+            "drug": "Tramal",
+            "strength": "50mg",
+            "per_day": 2,
+            "days": 7,
+            "total": 14
+          }
+        }
+      ]
+    },
+    {
+      "name": "prescription: a drug name with a digit inside it is kept whole",
+      "text": "@συν Vit B12 1000mcg 1x1",
+      "expect": [
+        {
+          "tag": "rx",
+          "rx": {
+            "drug": "Vit B12",
+            "strength": "1000mcg"
           }
         }
       ]

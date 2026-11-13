@@ -23,14 +23,31 @@ function zpms_note_list_tags(): array {
     return $out;
 }
 
-/** "a, b , c" -> ['a', 'b', 'c'] (empty parts dropped, each at most 64 characters). */
+/**
+ * "a, b , c" -> ['a', 'b', 'c'] (empty parts dropped, each at most 64
+ * characters). A comma between two digits is a decimal comma, not a
+ * separator: "160+12,5mg, 80+12,5mg" is two strengths.
+ */
 function zpms_note_list_split(?string $s): array {
     $out = [];
-    foreach (explode(',', (string)$s) as $part) {
+    foreach (preg_split('/(?<![0-9]),|,(?![0-9])/u', (string)$s) as $part) {
         $part = trim(preg_replace('/\s+/u', ' ', $part));
         if ($part !== '') $out[] = mb_substr($part, 0, 64);
     }
     return array_values(array_unique($out));
+}
+
+/**
+ * A strength as stored, the same way the parser stores one: «160+12,5 mg» ->
+ * «160+12.5mg», «150» -> «150» (the unit then defaults to mg). Anything else
+ * is kept as typed.
+ */
+function zpms_note_list_strength(string $s): string {
+    $num = '[0-9]+(?:[.,][0-9]+)?';
+    if (preg_match('/^(' . $num . '(?:\s*[+\/]\s*' . $num . ')*)\s*([^\d\s.,+\/]*)$/u', trim($s), $m)) {
+        return zpms_note_normalize_strength($m[1], $m[2]);
+    }
+    return $s;
 }
 
 /** The entry fields from a posted form, checked. Returns [fields, error message or null]. */
@@ -40,7 +57,7 @@ function zpms_note_list_fields_from_post(string $tag, array $post): array {
     if (mb_strlen($text) > 255) return [null, t('The entry text is too long.')];
     $aliases = zpms_note_list_split($post['aliases'] ?? '');
     $next = zpms_note_list_split($post['next_words'] ?? '');
-    $strengths = $tag === 'rx' ? zpms_note_list_split($post['strengths'] ?? '') : [];
+    $strengths = $tag === 'rx' ? array_values(array_unique(array_map('zpms_note_list_strength', zpms_note_list_split($post['strengths'] ?? '')))) : [];
     return [[
         'text' => $text,
         'aliases' => $aliases ? mb_substr(implode(',', $aliases), 0, 255) : null,

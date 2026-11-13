@@ -36,6 +36,10 @@
     function isDigit(c) { return c != null && c.length === 1 && c >= '0' && c <= '9'; }
     function trim(s) { return s.replace(TRIM_RE, ''); }
     function decimalComma(chars, k) { return k > 0 && isDigit(chars[k - 1]) && isDigit(chars[k + 1]); }
+    /** A strength as stored: «160+12,5 mg» -> «160+12.5mg» -- zpms_note_normalize_strength() in PHP. */
+    function normalizeStrength(numbers, unit) {
+        return numbers.replace(SPACES_RE, '').replace(/\//g, '+').replace(/,/g, '.') + unit.toLowerCase();
+    }
     function normalizeText(s) { return trim(fold(s).replace(SPACES_RE, ' ')); }
 
     // A closing bracket or quote with no opener inside the value ends it;
@@ -319,8 +323,10 @@
         } else if ((m = find(nb + 'συνεχωσ' + na))) {
             spans.days = [m[0], m[1]];   // continuously: no number of days, nothing to store
         }
-        if ((m = find(nb + '([0-9]+(?:[.,][0-9]+)?)' + sp + '*(mg|mcg|μg|μγ|gr|g|ml|iu)' + na))) {
-            rx.strength = group(m, 1) + group(m, 2);
+        // A strength may combine several substances: «160+12,5 mg», «160/12.5mg».
+        var numRe = '[0-9]+(?:[.,][0-9]+)?';
+        if ((m = find(nb + '(' + numRe + '(?:' + sp + '*[+/]' + sp + '*' + numRe + ')*)' + sp + '*(mg|mcg|μg|μγ|gr|g|ml|iu)' + na))) {
+            rx.strength = normalizeStrength(group(m, 1), group(m, 2));
             spans.strength = [m[0], m[1]];
         }
 
@@ -338,7 +344,9 @@
             drugEnd = best[1];
         } else {
             k = 0;
-            while (k < n && !used[k]) k++;
+            // Up to the first recognised part, or the first word that is a number
+            // (a strength written without its unit).
+            while (k < n && !used[k] && !(k > 0 && isSpace(mainChars[k - 1]) && isDigit(mainChars[k]))) k++;
             var drug = trim(cut(0, k));
             rx.drug = drug !== '' ? drug : null;
             drugEnd = k;
@@ -352,8 +360,8 @@
             var e = k;
             while (e < n && !isSpace(mainChars[e]) && !used[e]) e++;
             var tok = cut(k, e);
-            if (e > k && /^[0-9]+(?:[.,][0-9]+)?$/.test(tok) && (e >= n || isSpace(mainChars[e]))) {
-                rx.strength = tok + unit;
+            if (e > k && /^[0-9]+(?:[.,][0-9]+)?(?:[+/][0-9]+(?:[.,][0-9]+)?)*$/.test(tok) && (e >= n || isSpace(mainChars[e]))) {
+                rx.strength = normalizeStrength(tok, unit);
                 spans.strength = [k, e];
                 for (q = k; q < e; q++) used[q] = true;
             }
