@@ -285,9 +285,10 @@ function zpms_notes_write(PDO $db, array $notes, string $now, array $spec, array
     $db->beginTransaction();
     try {
         foreach ($notes as $c) {
+            // Byte comparison: utf8mb4_bin pads with spaces, so "a" = "a  " under it.
             $st = $c['source'] === 'appointment'
-                ? $db->prepare('UPDATE appointments SET anote = ? WHERE id = ? AND anote = ? COLLATE utf8mb4_bin')
-                : $db->prepare('UPDATE patients SET pnote = ? WHERE id = ? AND pnote = ? COLLATE utf8mb4_bin');
+                ? $db->prepare('UPDATE appointments SET anote = ? WHERE id = ? AND CAST(anote AS BINARY) = CAST(? AS BINARY)')
+                : $db->prepare('UPDATE patients SET pnote = ? WHERE id = ? AND CAST(pnote AS BINARY) = CAST(? AS BINARY)');
             $st->execute([$c['text'], $c['id'], $c['expect']]);
             if ($st->rowCount() !== 1) throw new RuntimeException("{$c['source']} {$c['id']} changed while writing -- nothing was written");
             if ($withFields) {

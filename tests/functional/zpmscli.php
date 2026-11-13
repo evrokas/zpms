@@ -403,6 +403,20 @@ function zpmscli_functional_tests(TestRunner $runner): void {
         $r = zpms_notes_import($db, $bad, true, 'x', false, null);
         assert_equal(2, $r['report']['to_write'], '--allow-edits should accept the edit');
 
+        // The write itself compares bytes: a note that differs only in trailing spaces or
+        // in case from what was checked is not overwritten, and nothing is written.
+        $now = $db->query("SELECT anote FROM appointments WHERE id = $aid")->fetchColumn();
+        foreach (["$now  ", mb_strtolower($now)] as $expect) {
+            try {
+                zpms_notes_write($db, [['source' => 'appointment', 'id' => $aid, 'patient_id' => $pid, 'patient_guid' => $pguid,
+                    'expect' => $expect, 'text' => "@δγ $now"]], 'x', zpms_note_tags_spec(), []);
+                throw new LogicException('wrote over a note that differs from the one checked: ' . json_encode($expect));
+            } catch (RuntimeException $e) {
+                assert_contains('changed while writing', $e->getMessage(), 'write guard reason');
+            }
+            assert_equal($now, $db->query("SELECT anote FROM appointments WHERE id = $aid")->fetchColumn(), 'the guard let a write through');
+        }
+
         $db->prepare('DELETE FROM appointments WHERE pguid = ?')->execute([$pguid]);
         $db->prepare('DELETE FROM patients WHERE id = ?')->execute([$pid]);
     });
