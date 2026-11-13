@@ -75,6 +75,8 @@ const ZPMS_AUDIT_EVENT_LABELS = [
     'admin_user_roles_changed' => 'User management: roles changed',
     'cleanup_deleted' => 'Deleted records purged',
     'cleanup_orphans' => 'Orphaned rows removed',
+    'note_fields_rebuilt' => 'Clinical tags re-read from the notes',
+    'note_lists_seeded' => 'Clinical tag lists filled with the starter entries',
 ];
 
 const ZPMS_AUDIT_ACTOR_TYPES = ['staff', 'anonymous', 'api', 'cli'];

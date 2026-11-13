@@ -22,6 +22,7 @@ if ($mode !== 'functional') {
     require_once __DIR__ . '/static/css_consistency.php';
     require_once __DIR__ . '/static/template_consistency.php';
     require_once __DIR__ . '/static/dictionary_terms.php';
+    require_once __DIR__ . '/static/note_tags.php';
 
     $phpRunner = new TestRunner('PHP syntax');
     zpms_static_php_lint($phpRunner);
@@ -42,6 +43,10 @@ if ($mode !== 'functional') {
     $dictionaryRunner = new TestRunner('Dictionary terms');
     zpms_static_dictionary_terms($dictionaryRunner);
     $ok = $dictionaryRunner->run() && $ok;
+
+    $noteTagsRunner = new TestRunner('Clinical tags parser (PHP + JS, shared cases)');
+    zpms_static_note_tags($noteTagsRunner);
+    $ok = $noteTagsRunner->run() && $ok;
 }
 
 if ($mode === 'static') {
@@ -72,6 +77,7 @@ require_once __DIR__ . '/functional/update_scripts.php';
 require_once __DIR__ . '/functional/system_update.php';
 require_once __DIR__ . '/functional/config_files.php';
 require_once __DIR__ . '/functional/session_policy.php';
+require_once __DIR__ . '/functional/note_fields.php';
 
 // Fresh database + a login-capable test account, every run -- see
 // TestSchema::reset()'s own docblock for why this matters.
@@ -193,6 +199,14 @@ try {
     $sessRunner = new TestRunner('Session lifetime (idle logout, cap, remember me)');
     zpms_session_policy_tests($sessRunner, $server->baseUrl());
     $ok = $sessRunner->run() && $ok;
+
+    // Clinical tags in the notes (web/note_tags.php) -- its own fresh server.
+    $server->stop();
+    $server = new TestServer();
+    $server->start();
+    $noteFieldsRunner = new TestRunner('Clinical tags (note_fields: save, delete, purge, rebuild)');
+    zpms_functional_note_fields($noteFieldsRunner, $server->baseUrl());
+    $ok = $noteFieldsRunner->run() && $ok;
 
     $suRunner = new TestRunner('Update from git page');
     zpms_system_update_tests($suRunner, $server->baseUrl(), $suStub);

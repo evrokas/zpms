@@ -2183,7 +2183,9 @@ A command-line tool in the style of zeusfw's `maker.php` (`area:action` commands
 | `patients:purge <id\|guid ...>` | Hard delete: the patient, appointments, attachment rows, files and thumbnails on disk (and the folders left empty), edit history; clears the "converted to" links on pending appointments. |
 | `appointments:delete` / `appointments:purge <id\|guid ...>` | The same, for single appointments (the patient stays). |
 | `cleanup:deleted --older-than=<days> \| --all` | Purge everything already soft-deleted (patients with their appointments, and appointments deleted on their own). |
-| `cleanup:orphans` | Remove attachment and history rows whose appointment no longer exists. Appointments without a patient and files on disk that no row points at are only reported. |
+| `cleanup:orphans` | Remove attachment and history rows whose appointment no longer exists, and clinical-tag rows whose note is gone. Appointments without a patient and files on disk that no row points at are only reported. |
+| `note-fields:rebuild [--patient=<id>]` | Re-read the clinical tags of every note (or one patient's) into `note_fields`. Run it after changing `config/note_tags.yaml`. See "Clinical tags in the notes" below. |
+| `note-lists:seed` | Fill the clinical-tag suggestion lists (`note_list_entries`) from `config/note_tags.yaml`. Only a tag with no entries yet is filled. |
 | `cache:clean` | Delete `web/cache/*.php` (compiled templates; rebuilt on the next request). Needs no database. |
 
 Details worth knowing: each database change runs in one transaction (the schema has no foreign keys, so the cascades are written out by hand), and files are removed only after it commits. A file path is deleted only if it resolves inside the attachment folder, so a damaged row cannot point a purge at another file. Timestamps use the app's configured time zone (`tz` in `settings.info.yaml`). The logic is in `bin/lib/zpms_cli.php`, shared with the tests.
@@ -2490,3 +2492,25 @@ Tests: `tests/functional/profile_notes.php` covers:
 - another account neither sees nor overwrites the notes (a forged `user_id` is ignored), and a signed-out post is refused;
 - a missing or wrong CSRF token, and oversized notes, refused with nothing changed;
 - exactly one audit row per change, without the text.
+
+## Clinical tags in the notes -- phase 1: rules and storage
+
+The full design is in `docs/CLINICAL_TAGS_PLAN.md`. While writing an appointment note or the patient note, the doctor can mark facts with a short Greek tag and keep writing: «Η μαγνητική δείχνει @δγ κήλη μεσοσπονδυλίου δίσκου, στο @επ Ο4-Ο5 με πίεση της ρίζας.» The note is saved exactly as typed. ZPMS also copies every tagged value into its own table, `note_fields`, so later phases can show diagnoses, levels, allergies, the plan and medication on the patient record and filter the patients list by them.
+
+Phase 1 adds the rules and the storage only. **Nothing changes on screen yet:** the note boxes look and behave as before.
+
+**What is there:**
+- `config/note_tags.yaml`: the nine tags (`@δγ` diagnosis, `@επ` levels, `@αλ` allergy, `@εξ` examination, `@χειρ` procedure, `@θερ` therapy, `@φθ` physiotherapy, `@αγ` medication, `@συν` prescription), their other names, colours, and the starter lists. This file is the only place tags are defined. Names may be added but never removed, because old notes keep the old names.
+- The parser, twice: `web/note_tags.php` (server) and `web/js/note-tags.js` (browser, used from phase 2). Both run the same test cases, `tests/note_tags/cases.json`, and must give identical results.
+- Two tables: `note_fields` (one row per tagged value: tag key, value as typed, normalised value, validity, position, and for prescriptions drug / strength / doses / days / note / total tablets) and `note_list_entries` (the suggestion lists).
+- Saving a note rewrites that note's rows: a new or edited patient, a new appointment, an edited appointment note (only when the note itself changed), and a pending appointment turned into a patient record. Deleting an appointment or a patient (web, Google Calendar cancellation, `zpmscli`) hides the rows (`deleted` set). Purging removes them.
+- If writing the rows fails, the note is still saved. The failure goes to the PHP error log (without the note text), and `note-fields:rebuild` repairs it.
+- Tagged values are patient data. They never go into the audit log.
+
+**After pulling:**
+1. Run `bin/update.sh` and create the missing web tables (`note_fields`, `note_list_entries`).
+2. `php bin/zpmscli.php note-lists:seed --yes`: fills the lists (Greek starter entries and the six drugs).
+3. `php bin/zpmscli.php note-fields:rebuild --yes`: reads the tags already in existing notes.
+4. `php bin/import_dictionary.php`: two new audit-log labels.
+
+Tests: `tests/static/note_tags.php` (the tag file, and every shared case through both parsers, comparing their results field by field) and `tests/functional/note_fields.php` (saves through the real forms, autosave, the pending-appointment conversion, soft delete, purge, orphans, rebuild, seeding, and the two commands).

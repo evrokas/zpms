@@ -1,6 +1,7 @@
-# Clinical tags in the note boxes -- plan (approved design, nothing built yet)
+# Clinical tags in the note boxes -- plan (approved design; phase 1 built)
 
-Status: design approved by the user after several mockup rounds, 2026-11-13. Implementation
+Status: design approved by the user after several mockup rounds, 2026-11-13. **Phase 1 (rules
+and storage) is built** -- see section 16 for what was decided while building it. Phases 2-5
 not started. This file is the complete specification: a new session should be able to build
 it from this file alone. Visual mockups (same content, drawn): the "ZPMS Tag Styles" page,
 https://claude.ai/artifact/46PGs1Y4w3avRscQd7ZYyy, and the plan page "ZPMS Clinical Tags",
@@ -352,7 +353,7 @@ from the Settings page.
 
 Each phase is usable on its own and adds tests to `bin/run_tests.sh`.
 
-1. **Rules and storage.** `config/note_tags.yaml`; the parser in PHP and in JS with one shared
+1. **Rules and storage.** *(Done 2026-11-13; see section 16.)* `config/note_tags.yaml`; the parser in PHP and in JS with one shared
    JSON file of test cases run by both (syntax rules, Greek/English levels, prescriptions,
    e-mail addresses not tags, Greek `·`, longest-name matching, levels inside proc/thx, bare
    strengths, ½ doses); `note_fields` + `note_list_entries` with the starter lists; sync on
@@ -378,3 +379,51 @@ Each phase is usable on its own and adds tests to `bin/run_tests.sh`.
 - Tag definitions in a Settings page instead of the config file (only if tags are added often).
 - New value types: follow-up period (`@επαν`) with reminders, scores (`@vas`).
 - ICD-10 codes for diagnoses.
+
+## 16. Phase 1 as built (2026-11-13)
+
+Files: `config/note_tags.yaml`; `web/note_tags.php` (parser, sync, hide/purge, rebuild, seed;
+plain PDO so `bin/zpmscli.php` runs the same code); `web/js/note-tags.js` (the same parser,
+`window.ZpmsNoteTags.parse(text, spec, drugs)`, also loadable from node);
+`web/classes/yaml/note_fields.yaml`, `note_list_entries.yaml`; `tests/note_tags/cases.json`
+(shared cases), `tests/static/note_tags.php`, `tests/functional/note_fields.php`.
+
+Decisions taken while building (section 2 and 10 did not settle them):
+- **Starter lists live in `config/note_tags.yaml`** under `starter_lists:`, next to the tags.
+  `zpmscli note-lists:seed` copies a tag's list into `note_list_entries` only while that tag has
+  no rows, so later edits and deactivations (phase 5) are never undone. `next_words` given for a
+  tag is copied to every entry. Drugs: `strengths` -> `rx_strengths` JSON; the unit of the first
+  strength is the drug's unit (for a bare number). `rx_defaults` stays empty for now.
+- **The parser takes the drug list as an argument** (`zpms_note_rx_drugs($db)`: the active `rx`
+  entries; the config's starter list before the table exists). The browser will need it sent
+  along with the tag spec (`zpms_note_tags_spec()`) from phase 2 on.
+- Extra syntax rules (in the shared test cases, both parsers):
+  - a `:` right after the tag name is skipped (`@εξ: μαγνητική`);
+  - a comma between two digits is a decimal comma and ends nothing (`0,5 mg`), in every value
+    type, matching the full-stop rule;
+  - an unmatched closing bracket or quote `)`, `]`, `»` ends a value (`(@εξ ακτινογραφία)`), and
+    an opening one left at the end of a value is dropped;
+  - a levels tag whose value is no level at all (`@επ δεξιά`) is kept as text, `valid = 0`,
+    `normalized` empty; a row with several levels is invalid if any one of them is;
+  - a two-level span must go downwards (`Ο4-Ο5`, `Θ12-Ο1`; `Ο5-Ο4` is invalid). `Ι`/S allows 1 only.
+- **One row per value; positions** (`pos`) are characters (code points) at the `@`; a level found
+  inside a `proc`/`thx` value has `pos` at the level and `origin` = the id of the outer row.
+- **Two drugs in one sentence** need two tags (`@συν Lyrica … · @συν Mydocalm …`): the prescription
+  value ends at the semicolon, as section 2 says.
+- **Prescription parts**: the note is "after the first comma" plus every word not placed elsewhere
+  (`με σταδιακή αύξηση`), joined with `, `. «2 φορές» = 1 per dose x 2; «συνεχώς» = no days.
+  Strengths are stored as typed without the space (`0,5mg`, `150mg`).
+- **When rows are written**: an appointment edit re-reads the note only when the note itself
+  changed (autosave posts the whole card on every pause). `ajax_update_patient_info()` was not
+  hooked: it does not save anything (its `update()` is commented out). `consultation_new_post()`
+  creates a pending appointment, whose notes are read when it is converted (section 1).
+- **Soft delete** is also hooked in `bin/sync_google_calendar.php` (a cancellation in Calendar
+  deletes the appointment) and in `zpmscli patients:delete` / `appointments:delete`.
+  `cleanup:orphans` also removes rows whose note is gone.
+- `note_fields.cdate` is when the row was written (a rebuild resets it). Later phases should date
+  summary entries by the appointment date, not by `cdate`.
+- The schema generator has no secondary indexes, so `note_fields` has none yet; fine at this size.
+- Audit: `zpmscli` writes `note_fields_rebuilt` / `note_lists_seeded` rows (counts only).
+
+After deploying: `bin/update.sh` (new tables), `zpmscli note-lists:seed --yes`,
+`zpmscli note-fields:rebuild --yes`, `php bin/import_dictionary.php`.

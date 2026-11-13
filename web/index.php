@@ -29,6 +29,7 @@ require_once(__DIR__ . '/api_patients.php');
 require_once(__DIR__ . '/appointment_files.php');
 require_once(__DIR__ . '/appointment_history.php');
 require_once(__DIR__ . '/audit.php');
+require_once(__DIR__ . '/note_tags.php');
 require_once(__DIR__ . '/apyweb_client.php');
 require_once(__DIR__ . '/google_calendar_client.php');
 require_once(__DIR__ . '/rbac.php');
@@ -811,6 +812,10 @@ require_once(__DIR__ . '/zpms_mailer.php');
         if ($res && $changed) {
             zpms_audit('patient_updated', ['patient' => $pat, 'detail' => zpms_audit_fields($changed)]);
         }
+        // Tagged values in the patient note (web/note_tags.php).
+        if ($res && in_array('pnote', $changed, true)) {
+            zpms_note_fields_sync_patient($pat);
+        }
 
         if(isset($_POST['use_ajax'])) {
             if($res) {
@@ -903,6 +908,8 @@ require_once(__DIR__ . '/zpms_mailer.php');
 
         $pat->setdeleted( $dtime );
         $pat->update();
+        // The tagged values of the patient's notes are hidden with it (web/note_tags.php).
+        zpms_note_fields_hide_for(null, $pat->getguid(), $dtime);
         zpms_audit('patient_deleted', ['patient' => $pat, 'detail' => 'appointments=' . count($app_list)]);
 
         // $pat->delete();
@@ -954,6 +961,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
 
         $pc->insert();
         zpms_audit('patient_created', ['patient' => $pc]);
+        zpms_note_fields_sync_patient($pc);
 
         $kernel->addStatus('notice', t('A new record was created for patient @name', ['name' => zpms_bold($pc->getpname())]));
 
@@ -1118,6 +1126,11 @@ require_once(__DIR__ . '/zpms_mailer.php');
 
         $ap->update();
         zpms_sched_set_note_for_ref(dbConnection::getConnection(), $ap->getguid(), (string)$newNote);
+        // Tagged values in the note (web/note_tags.php) -- only when the note
+        // itself changed: autosave posts the whole card on every pause.
+        if (in_array('appointment-notes', $changedFields, true)) {
+            zpms_note_fields_sync_appointment($ap);
+        }
         if (in_array('appointment-date', $changedFields, true) || in_array('appointment-place', $changedFields, true)) {
             // No longer the time that was booked: the slot is given up (kept as history).
             zpms_sched_release_slot($ap->getguid(), 'appointment_id=' . (int)$ap->getid(), 'edited');
@@ -1157,6 +1170,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
         $app = $ap->getById($id);
         $app->setdeleted( getDBtime() );
         $app->update();
+        zpms_note_fields_hide_for((int)$app->getid(), null, (string)$app->getdeleted());
         zpms_sched_release_slot($app->getguid(), 'appointment_id=' . (int)$app->getid(), 'deleted');
         zpms_appointment_calendar_delete($app);
         zpms_audit_appointment('appointment_deleted', $app);
@@ -1330,6 +1344,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
 
         $app->insert();
         zpms_audit('appointment_created', ['patient' => $pat, 'appointment_id' => $app->getid(), 'detail' => 'type=' . $app->getatype()]);
+        zpms_note_fields_sync_appointment($app);
         // Appointments and operations go to Google Calendar too (not free time).
         zpms_appointment_sync_to_calendar($app);
 
@@ -1889,6 +1904,8 @@ require_once(__DIR__ . '/zpms_mailer.php');
             'google_synced_at' => $pending->getgoogle_event_id() !== null ? getDBtime() : null,
         ]);
         $app->insert();
+        // The pending appointment's notes became this note: its tags are read now (web/note_tags.php).
+        zpms_note_fields_sync_appointment($app);
         // The booked slot now belongs to the appointment made from the pending one.
         zpms_sched_reassign_ref(dbConnection::getConnection(), $pending->getguid(), $app->getguid());
 

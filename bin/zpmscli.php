@@ -44,6 +44,8 @@ const ZPMSCLI_COMMANDS = [
     'appointments:purge'      => '<id|guid ...> [--yes]           hard delete appointments, attachments and files',
     'cleanup:deleted'         => '--older-than=<days> | --all [--yes]   purge everything already soft-deleted',
     'cleanup:orphans'         => '[--yes]                         remove attachment/history rows whose appointment is gone; report stray files',
+    'note-fields:rebuild'     => '[--patient=<id>] [--yes]        re-read the clinical tags of every note (after changing config/note_tags.yaml)',
+    'note-lists:seed'         => '[--yes]                         fill the clinical-tag lists from config/note_tags.yaml (only empty lists)',
     'cache:clean'             => '[--yes]                         delete web/cache/*.php (compiled templates)',
     'help'                    => '',
 ];
@@ -254,6 +256,33 @@ try {
                 $auditRows[] = ['appointment_purged', ['appointment_id' => $a['id'], 'patient_guid' => $a['pguid'], 'detail' => 'zpmscli cleanup:deleted']];
             }
             zpmscli_say('Purging cannot be undone -- have you backed up the database and web/files?');
+            zpmscli_print_report($report);
+            break;
+
+        case 'note-fields:rebuild':
+            if (!zpmscli_table_exists($db, 'note_fields')) zpmscli_fail('The note_fields table does not exist yet -- run bin/update.sh (create the missing tables) first.');
+            $patientId = null;
+            if (isset($options['patient'])) {
+                $found = zpmscli_find_patients($db, [(string)$options['patient']]);
+                if (count($found) !== 1) zpmscli_fail('No such patient.');
+                $patientId = (int)$found[0]['id'];
+            }
+            zpmscli_say($apply ? '=== Re-reading the clinical tags of the notes ===' : '=== DRY RUN -- nothing will be written ===');
+            $report = zpms_note_fields_rebuild($db, $patientId, $now, $apply);
+            $auditRows[] = ['note_fields_rebuilt', ($patientId !== null ? ['patient_id' => $patientId, 'patient_guid' => $found[0]['guid']] : [])
+                + ['detail' => 'zpmscli note-fields:rebuild ' . zpmscli_counts($report)]];
+            zpmscli_say(($apply ? 'Rows replaced' : 'Rows now') . ": {$report['removed']}; tagged values " . ($apply ? 'written' : 'that would be written') . ':');
+            unset($report['removed']);
+            zpmscli_print_report($report);
+            break;
+
+        case 'note-lists:seed':
+            if (!zpmscli_table_exists($db, 'note_list_entries')) zpmscli_fail('The note_list_entries table does not exist yet -- run bin/update.sh (create the missing tables) first.');
+            zpmscli_say($apply ? '=== Filling the clinical-tag lists ===' : '=== DRY RUN -- nothing will be written ===');
+            $who = function_exists('posix_getpwuid') ? (posix_getpwuid(posix_geteuid())['name'] ?? 'cli') : 'cli';
+            $report = zpms_note_lists_seed($db, (string)$who, $now, $apply);
+            if (!$report) zpmscli_say('  every list already has entries -- nothing to add');
+            $auditRows[] = ['note_lists_seeded', ['detail' => 'zpmscli note-lists:seed ' . zpmscli_counts($report)]];
             zpmscli_print_report($report);
             break;
 

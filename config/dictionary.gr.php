@@ -340,6 +340,8 @@ return [
     'User management: roles changed' => 'Διαχείριση χρηστών: αλλαγή ρόλων',
     'Deleted records purged' => 'Οριστική αφαίρεση διαγραμμένων εγγραφών',
     'Orphaned rows removed' => 'Αφαίρεση ορφανών εγγραφών',
+    'Clinical tags re-read from the notes' => 'Επανανάγνωση κλινικών ετικετών από τις σημειώσεις',
+    'Clinical tag lists filled with the starter entries' => 'Συμπλήρωση λιστών κλινικών ετικετών με τις αρχικές τιμές',
     'Staff' => 'Προσωπικό',
     'Not signed in' => 'Χωρίς σύνδεση',
     'Another application' => 'Άλλη εφαρμογή',

@@ -18,6 +18,10 @@
  * text); bin/zpmscli.php turns them into GDPR audit-log rows.
  */
 
+// The clinical-tag rows of the notes (note_fields) are hidden, purged and
+// rebuilt with the notes they come from (web/note_tags.php, plain PDO too).
+require_once dirname(__DIR__, 2) . '/web/note_tags.php';
+
 const ZPMSCLI_REASSIGN_SCOPES = ['patients', 'appointments', 'files', 'history'];
 
 /** Splits argv into [command, positional arguments, options] -- options may sit anywhere. */
@@ -285,6 +289,7 @@ function zpmscli_soft_delete_patients(PDO $db, array $patients, string $now, boo
             $in = zpmscli_in($guids);
             $db->prepare("UPDATE appointments SET deleted = ? WHERE deleted IS NULL AND pguid IN ($in)")->execute(array_merge([$now], $guids));
             $db->prepare("UPDATE patients SET deleted = ? WHERE deleted IS NULL AND guid IN ($in)")->execute(array_merge([$now], $guids));
+            zpms_note_fields_hide_patients($db, $guids, $now);
             $db->commit();
         } catch (Throwable $e) {
             $db->rollBack();
@@ -302,6 +307,7 @@ function zpmscli_soft_delete_appointments(PDO $db, array $appointments, string $
     }
     if ($apply && $ids) {
         $db->prepare('UPDATE appointments SET deleted = ? WHERE id IN (' . zpmscli_in($ids) . ')')->execute(array_merge([$now], $ids));
+        zpms_note_fields_hide_appointments($db, $ids, $now);
     }
     return ['appointments' => count($ids)];
 }
@@ -405,6 +411,15 @@ function zpmscli_purge(PDO $db, array $patientIds, array $appointments, string $
     if ($apIds) {
         $report['pending_unlinked'] += $count("SELECT COUNT(*) FROM pending_appointments WHERE converted_appointment_id IN ($apIn) AND converted_patient_id IS NULL", $apIds);
     }
+    // Tagged values of these notes (web/note_tags.php).
+    $report['note_fields'] = 0;
+    if (zpmscli_table_exists($db, 'note_fields')) {
+        $report['note_fields'] += $count("SELECT COUNT(*) FROM note_fields WHERE source = 'appointment' AND appointment_id IN ($apIn)", $apIds);
+        if ($patientIds) {
+            $report['note_fields'] += $count('SELECT COUNT(*) FROM note_fields WHERE patient_id IN (' . zpmscli_in($patientIds) . ')'
+                . ($apIds ? " AND NOT (source = 'appointment' AND appointment_id IN ($apIn))" : ''), array_merge($patientIds, $apIds));
+        }
+    }
 
     if ($apply) {
         $db->beginTransaction();
@@ -413,6 +428,7 @@ function zpmscli_purge(PDO $db, array $patientIds, array $appointments, string $
                 // Their booked slots on the schedule, released ones (history) included, go with them.
                 $db->prepare("DELETE FROM slot_reservations WHERE ref_guid IN (SELECT guid FROM appointments WHERE id IN ($apIn))")->execute($apIds);
             }
+            zpms_note_fields_purge($db, $apIds, $patientIds);
             if ($apIds) {
                 $db->prepare("DELETE FROM appointment_files WHERE appointment_id IN ($apIn)")->execute($apIds);
                 $db->prepare("DELETE FROM appointment_history WHERE appointment_id IN ($apIn)")->execute($apIds);
@@ -474,16 +490,21 @@ function zpmscli_cleanup_deleted(PDO $db, ?int $olderThanDays, string $now, stri
 
 /**
  * Rows left behind by earlier hard deletes (or by hand): attachment and
- * history rows whose appointment no longer exists are removed (with $apply);
+ * history rows whose appointment no longer exists, and clinical-tag rows
+ * (note_fields) whose note is gone, are removed (with $apply);
  * appointments whose patient is gone, and files on disk that no row points
  * at, are only reported -- those are for a person to look at.
  *
- * @return array{orphan_attachments:int, orphan_history:int, appointments_without_patient:int, unreferenced_files:int, unreferenced_bytes:int, files:int, missing:int, bytes:int}
+ * @return array{orphan_attachments:int, orphan_history:int, orphan_note_fields:int, appointments_without_patient:int, unreferenced_files:int, unreferenced_bytes:int, files:int, missing:int, bytes:int}
  */
 function zpmscli_cleanup_orphans(PDO $db, string $filesDir, bool $apply): array {
     $files = $db->query('SELECT f.id, f.appointment_id, f.cuser, f.file_path, f.thumbnail_path, f.file_size FROM appointment_files f LEFT JOIN appointments a ON a.id = f.appointment_id WHERE a.id IS NULL')->fetchAll(PDO::FETCH_ASSOC);
     $historyIds = $db->query('SELECT h.id FROM appointment_history h LEFT JOIN appointments a ON a.id = h.appointment_id WHERE a.id IS NULL')->fetchAll(PDO::FETCH_COLUMN);
     $withoutPatient = (int)$db->query('SELECT COUNT(*) FROM appointments a LEFT JOIN patients p ON p.guid = a.pguid WHERE p.id IS NULL')->fetchColumn();
+    // Tagged-value rows whose note is gone (its appointment or patient no longer exists).
+    $noteFieldIds = !zpmscli_table_exists($db, 'note_fields') ? [] : $db->query(
+        "SELECT n.id FROM note_fields n LEFT JOIN patients p ON p.id = n.patient_id LEFT JOIN appointments a ON a.id = n.appointment_id
+         WHERE p.id IS NULL OR (n.source = 'appointment' AND a.id IS NULL)")->fetchAll(PDO::FETCH_COLUMN);
 
     // Files on disk that no attachment row (or thumbnail) refers to.
     $known = [];
@@ -517,6 +538,9 @@ function zpmscli_cleanup_orphans(PDO $db, string $filesDir, bool $apply): array 
             if ($historyIds) {
                 $db->prepare('DELETE FROM appointment_history WHERE id IN (' . zpmscli_in($historyIds) . ')')->execute($historyIds);
             }
+            if ($noteFieldIds) {
+                $db->prepare('DELETE FROM note_fields WHERE id IN (' . zpmscli_in($noteFieldIds) . ')')->execute($noteFieldIds);
+            }
             $db->commit();
         } catch (Throwable $e) {
             $db->rollBack();
@@ -527,6 +551,7 @@ function zpmscli_cleanup_orphans(PDO $db, string $filesDir, bool $apply): array 
     return [
         'orphan_attachments' => count($files),
         'orphan_history' => count($historyIds),
+        'orphan_note_fields' => count($noteFieldIds),
         'appointments_without_patient' => $withoutPatient,
         'unreferenced_files' => $unreferenced,
         'unreferenced_bytes' => $unreferencedBytes,

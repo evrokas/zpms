@@ -1,0 +1,95 @@
+---
+# Clinical tags (docs/CLINICAL_TAGS_PLAN.md): one row per tagged value found
+# in a note -- an appointment note (appointments.anote) or the patient note
+# (patients.pnote). The note text stays the single source of truth: the rows
+# of a note are deleted and written again on every save of that note
+# (zpms_note_fields_sync(), web/note_tags.php), and
+# `php bin/zpmscli.php note-fields:rebuild --yes` rebuilds all of them (run it
+# after changing config/note_tags.yaml).
+#
+# Patient data: never copied into the audit log. Soft-deleting the
+# appointment or patient copies the time into `deleted` (the summary, filters
+# and suggestions ignore those rows); purging removes them.
+table:
+  name: note_fields
+  class: noteFieldsClass
+  fields:
+  - name: patient_id
+    type: int(11)
+    required: true
+  - name: patient_guid
+    type: char(36)
+    required: true
+
+  # 'appointment' (appointment_id set) or 'patient' (the patient note).
+  - name: source
+    type: varchar(16)
+    required: true
+  - name: appointment_id
+    type: int(11)
+    default: null
+
+  # The internal key from config/note_tags.yaml (dx, lvl, ...), never the typed name.
+  - name: tag_key
+    type: varchar(16)
+    required: true
+  # The value exactly as typed.
+  - name: value_text
+    type: text
+  # Levels: the English form ("L4-L5, L5-S1"); other values: lowercase,
+  # accent-free text. For search and the summary.
+  - name: normalized
+    type: text
+    default: null
+  # 0 for an impossible level (kept, left out of the summary).
+  - name: valid
+    type: tinyint(1)
+    default: 1
+  # Character offset of the tag in the note (of the level itself for a level
+  # found inside another value).
+  - name: pos
+    type: int(11)
+    default: null
+  # A level found inside a proc/thx value: the id of that outer row.
+  - name: origin
+    type: int(11)
+    default: null
+
+  # Prescriptions (value type `prescription`).
+  - name: rx_drug
+    type: varchar(128)
+    default: null
+  - name: rx_strength
+    type: varchar(32)
+    default: null
+  # As written: «1x2», «½x2», «επί πόνου».
+  - name: rx_per_day_text
+    type: varchar(32)
+    default: null
+  # Amount per dose (tablets; ½ = 0.5).
+  - name: rx_per_dose
+    type: decimal(6,2)
+    default: null
+  # Doses per day; null for «επί πόνου».
+  - name: rx_per_day
+    type: int(11)
+    default: null
+  # null = συνεχώς / not given.
+  - name: rx_days
+    type: int(11)
+    default: null
+  - name: rx_note
+    type: varchar(255)
+    default: null
+  # Tablets in total (per dose x per day x days), null when not computable.
+  - name: rx_total
+    type: decimal(8,2)
+    default: null
+
+  - name: deleted
+    type: datetime
+    default: null
+  - name: cdate
+    type: datetime
+    default: null
+...

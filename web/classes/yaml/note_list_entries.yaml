@@ -1,0 +1,45 @@
+---
+# Clinical tags (docs/CLINICAL_TAGS_PLAN.md): the fixed suggestion lists, one
+# row per entry. Started from `starter_lists:` in config/note_tags.yaml
+# (`php bin/zpmscli.php note-lists:seed --yes`, which only fills a tag that has
+# no rows yet), edited in Settings later (phase 5). Entries are deactivated
+# (active = 0), not deleted, so a list never comes back on the next seed.
+table:
+  name: note_list_entries
+  class: noteListEntriesClass
+  fields:
+  - name: tag_key
+    type: varchar(16)
+    required: true
+  - name: text
+    type: varchar(255)
+    required: true
+  # Other spellings it is found by (Greek for a drug: λυρικα), comma-separated.
+  - name: aliases
+    type: varchar(255)
+    default: null
+  # JSON array of words offered after this entry («ΟΜΣΣ», «με σκιαγραφικό»).
+  - name: next_words
+    type: text
+    default: null
+  # Prescriptions only: JSON array of strengths (["25mg","75mg"]), and JSON
+  # defaults for the other blanks.
+  - name: rx_strengths
+    type: text
+    default: null
+  - name: rx_defaults
+    type: text
+    default: null
+  - name: sort
+    type: int(11)
+    default: 0
+  - name: active
+    type: tinyint(1)
+    default: 1
+  - name: cdate
+    type: datetime
+    default: null
+  - name: cuser
+    type: varchar(64)
+    default: null
+...

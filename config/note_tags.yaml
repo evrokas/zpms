@@ -1,0 +1,82 @@
+# Clinical tags in the note boxes (docs/CLINICAL_TAGS_PLAN.md).
+#
+# The ONLY place the tags are defined: the parser (web/note_tags.php and
+# web/js/note-tags.js), the menus, the colours, the summary and the filters all
+# read this file. Committed, changed through a normal update.
+#
+# Rules that keep old notes valid:
+#   - note_fields stores the internal key (dx, lvl, ...), never the typed name;
+#   - names are only ever ADDED, never removed (old notes contain «@δγ» forever);
+#   - after any change here run:  php bin/zpmscli.php note-fields:rebuild --yes
+#
+# tags.<key>:
+#   label         shown in menus and the summary
+#   names         typed after @ (the first is the main short Greek tag); matched
+#                 ignoring case and Greek accents, the longest name wins
+#   colour        a key of `palette:` below
+#   family        findings | warning | plan | medication (grouping only)
+#   value         text | levels | prescription (the value type: its parser)
+#   picker        list | grid | checklist | blanks (phase 3)
+#   summary       shown in «Κλινική εικόνα» (phase 4)
+#   search        offered as a patients-list filter (phase 5)
+#   header_alert  shown on the patient header (allergies)
+#   next_words    the picker offers a next-word strip (phase 3)
+#   inner_levels  levels written inside this value are also stored as lvl rows
+tags:
+  dx:   { label: Διάγνωση,       names: [δγ, διάγνωση, dx, diagnosis],     colour: rose,     family: findings,   value: text,         picker: list,      summary: true, search: true }
+  lvl:  { label: Επίπεδα,        names: [επ, επίπεδα, lvl, levels],        colour: lavender, family: findings,   value: levels,       picker: grid,      summary: true, search: true }
+  alg:  { label: Αλλεργία,       names: [αλ, αλλεργία, alg, allergy],      colour: orange,   family: warning,    value: text,         picker: list,      summary: true, header_alert: true }
+  exam: { label: Εξέταση,        names: [εξ, εξέταση, exam],               colour: sky,      family: plan,       value: text,         picker: checklist, summary: true, next_words: true }
+  proc: { label: Επέμβαση,       names: [χειρ, επέμβαση, proc, procedure], colour: mint,     family: plan,       value: text,         picker: list,      summary: true, search: true, inner_levels: true }
+  thx:  { label: Θεραπεία,       names: [θερ, θεραπεία, thx, therapy],     colour: teal,     family: plan,       value: text,         picker: list,      summary: true, next_words: true, inner_levels: true }
+  pt:   { label: Φυσικοθεραπεία, names: [φθ, φυσικοθεραπεία, pt],          colour: sage,     family: plan,       value: text,         picker: list,      summary: true, next_words: true }
+  med:  { label: Αγωγή,          names: [αγ, αγωγή, med],                  colour: sand,     family: medication, value: text,         picker: list,      summary: true }
+  rx:   { label: Συνταγή,        names: [συν, συνταγή, rx, prescription],  colour: amber,    family: medication, value: prescription, picker: blanks,    summary: true }
+
+# Light theme. tint = the wash on the sentence being written, mark = the pale
+# underline / dashed frame, ink = the value's colour in the reading look.
+palette:
+  rose:     { tint: '#fbebea', mark: '#e6b2ac', ink: '#8c3b34' }
+  lavender: { tint: '#efebfa', mark: '#c4b6ea', ink: '#594796' }
+  orange:   { tint: '#fde8dc', mark: '#efb08a', ink: '#9a4a17' }
+  sky:      { tint: '#e6f0fb', mark: '#a9c6ea', ink: '#2f5e8f' }
+  mint:     { tint: '#e5f4ec', mark: '#a6d8bd', ink: '#2b6a4e' }
+  teal:     { tint: '#e2f3f3', mark: '#9fd3d3', ink: '#22686a' }
+  sage:     { tint: '#eef3dd', mark: '#c5d58f', ink: '#57661e' }
+  sand:     { tint: '#f8f0df', mark: '#e0c88f', ink: '#7c5b1a' }
+  amber:    { tint: '#fbecd6', mark: '#e8bf7f', ink: '#855212' }
+
+# The fixed lists the note_list_entries table starts with
+# (php bin/zpmscli.php note-lists:seed --yes). A tag's list is seeded only while
+# it has no rows at all, so entries edited or deactivated later in Settings are
+# never brought back. `next_words` under a tag is given to every entry of it.
+# Levels (lvl) have no list: the grid picker is built in.
+starter_lists:
+  dx:
+    entries: [Κήλη μεσοσπονδυλίου δίσκου, Δισκοπάθεια, Σπονδυλική στένωση, Σπονδυλολίσθηση, Ριζοπάθεια, Αυχενική μυελοπάθεια, Μηνιγγίωμα, Γλοίωμα, Υδροκέφαλος, Σύνδρομο καρπιαίου σωλήνα]
+  alg:
+    entries: [Πενικιλλίνη, ΜΣΑΦ, Ασπιρίνη, Ιωδιούχα σκιαγραφικά, Λάτεξ, Καμία γνωστή αλλεργία]
+  exam:
+    entries: [Μαγνητική τομογραφία, Αξονική τομογραφία, Ηλεκτρομυογράφημα, Ακτινογραφία, Δυναμική ακτινογραφία, Σπινθηρογράφημα οστών, Αιματολογικός έλεγχος]
+    next_words: [ΟΜΣΣ, ΑΜΣΣ, ΘΜΣΣ, εγκεφάλου, με σκιαγραφικό, άνω άκρων, κάτω άκρων]
+  proc:
+    entries: [Μικροδισκεκτομή, Πεταλεκτομή, Αποσυμπίεση, Σπονδυλοδεσία, Πρόσθια αυχενική δισκεκτομή και σπονδυλοδεσία, Τρηματοτομή, Απελευθέρωση καρπιαίου σωλήνα, Κρανιοτομία]
+  thx:
+    entries: [Επισκληρίδιος έγχυση, Ριζική διήθηση, Διήθηση facet, Ραδιοσυχνότητες, Κηδεμόνας, Αυχενικό κολάρο]
+    next_words: [δεξιά, αριστερά, αμφοτερόπλευρα]
+  pt:
+    entries: [Φυσικοθεραπεία ΟΜΣΣ, Φυσικοθεραπεία ΑΜΣΣ, Ασκήσεις σταθεροποίησης κορμού, Κινησιοθεραπεία, Υδροθεραπεία]
+    next_words: [10 συνεδρίες, 15 συνεδρίες, 3 φορές την εβδομάδα]
+  med:
+    entries: [ΜΣΑΦ επί πόνου, Παρακεταμόλη επί πόνου, Μυοχαλαρωτικό, Πρεγκαμπαλίνη, Γκαμπαπεντίνη, Κορτικοστεροειδή σε σχήμα, Γαστροπροστασία]
+  rx:
+    # text = the name as on the box; aliases = Greek spellings for the lookup;
+    # strengths = what the strength blank offers (the unit of the first one is
+    # the drug's unit: a bare number after the drug is read in it).
+    entries:
+      - { text: Lyrica,    aliases: [λυρικα],   strengths: [25mg, 75mg, 150mg, 300mg] }
+      - { text: Neurontin, aliases: [νευροντιν], strengths: [300mg, 400mg] }
+      - { text: Depon,     aliases: [ντεπον],    strengths: [500mg] }
+      - { text: Apotel,    aliases: [αποτελ],    strengths: [500mg] }
+      - { text: Mydocalm,  aliases: [μυντοκαλμ], strengths: [150mg] }
+      - { text: Medrol,    aliases: [μεντρολ],   strengths: [16mg] }

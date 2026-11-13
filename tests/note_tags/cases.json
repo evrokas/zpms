@@ -1,0 +1,560 @@
+{
+  "_comment": "Test cases for the clinical-tag parser, run by BOTH web/note_tags.php and web/js/note-tags.js (tests/static/note_tags.php). Tags and drugs come from config/note_tags.yaml. `expect` lists every row the note must produce, in order; only the keys given are compared (rx: only its keys given). Positions are characters.",
+  "cases": [
+    {
+      "name": "the plan's example: diagnosis and levels in prose",
+      "text": "Η μαγνητική δείχνει @δγ κήλη μεσοσπονδυλίου δίσκου, στο @επ Ο4-Ο5 με πίεση της ρίζας.",
+      "expect": [
+        {
+          "tag": "dx",
+          "value": "κήλη μεσοσπονδυλίου δίσκου",
+          "normalized": "κηλη μεσοσπονδυλιου δισκου",
+          "valid": true,
+          "pos": 20,
+          "start": 24,
+          "end": 50
+        },
+        {
+          "tag": "lvl",
+          "value": "Ο4-Ο5",
+          "normalized": "L4-L5",
+          "valid": true,
+          "pos": 56,
+          "origin": null
+        }
+      ]
+    },
+    {
+      "name": "tag names ignore case and Greek accents",
+      "text": "@ΔΙΑΓΝΩΣΗ σπονδυλολίσθηση. @διαγνωση ριζοπάθεια. @Δγ στένωση. @Diagnosis stenosis",
+      "expect": [
+        {
+          "tag": "dx",
+          "value": "σπονδυλολίσθηση"
+        },
+        {
+          "tag": "dx",
+          "value": "ριζοπάθεια"
+        },
+        {
+          "tag": "dx",
+          "value": "στένωση"
+        },
+        {
+          "tag": "dx",
+          "value": "stenosis"
+        }
+      ]
+    },
+    {
+      "name": "longest name wins: @επέμβαση is a procedure, not @επ",
+      "text": "@επέμβαση μικροδισκεκτομή",
+      "expect": [
+        {
+          "tag": "proc",
+          "value": "μικροδισκεκτομή"
+        }
+      ]
+    },
+    {
+      "name": "longest name wins: @αλλεργία, @συνταγή, @θεραπεία",
+      "text": "@αλλεργία πενικιλλίνη· @θεραπεία ριζική διήθηση· @συνταγή Depon 500mg",
+      "expect": [
+        {
+          "tag": "alg",
+          "value": "πενικιλλίνη"
+        },
+        {
+          "tag": "thx",
+          "value": "ριζική διήθηση"
+        },
+        {
+          "tag": "rx",
+          "value": "Depon 500mg",
+          "rx": {
+            "drug": "Depon",
+            "strength": "500mg"
+          }
+        }
+      ]
+    },
+    {
+      "name": "a name must be followed by whitespace, punctuation or the end: @επίπεδο is no tag",
+      "text": "@επίπεδο Ο4 @εξα άλλο @δγ",
+      "expect": []
+    },
+    {
+      "name": "e-mail addresses, a lone @ and unknown names are plain text",
+      "text": "Στείλτε στο doctor@δγ.gr ή στο a@b.gr @ @abc κάτι",
+      "expect": []
+    },
+    {
+      "name": "a value ends at a comma, a semicolon (Greek ano teleia, ;), a full stop + space, a line break",
+      "text": "@δγ ένα, δύο @αλ ΜΣΑΦ· τρία @εξ ακτινογραφία; τέσσερα @φθ κινησιοθεραπεία. πέντε @αγ ΜΣΑΦ\nέξι @δγ τέλος",
+      "expect": [
+        {
+          "tag": "dx",
+          "value": "ένα"
+        },
+        {
+          "tag": "alg",
+          "value": "ΜΣΑΦ"
+        },
+        {
+          "tag": "exam",
+          "value": "ακτινογραφία"
+        },
+        {
+          "tag": "pt",
+          "value": "κινησιοθεραπεία"
+        },
+        {
+          "tag": "med",
+          "value": "ΜΣΑΦ"
+        },
+        {
+          "tag": "dx",
+          "value": "τέλος"
+        }
+      ]
+    },
+    {
+      "name": "the Greek ano teleia (U+0387) and the Greek question mark (U+037E) end a value too",
+      "text": "@δγ ένα· δύο @δγ τρία; τέσσερα @δγ πέντε· έξι",
+      "expect": [
+        {
+          "tag": "dx",
+          "value": "ένα"
+        },
+        {
+          "tag": "dx",
+          "value": "τρία"
+        },
+        {
+          "tag": "dx",
+          "value": "πέντε"
+        }
+      ]
+    },
+    {
+      "name": "a full stop inside a number ends nothing; a decimal comma neither",
+      "text": "@αγ μυοχαλαρωτικό 0.5mg το βράδυ. @αγ κορτιζόνη 0,5 mg πρωί",
+      "expect": [
+        {
+          "tag": "med",
+          "value": "μυοχαλαρωτικό 0.5mg το βράδυ"
+        },
+        {
+          "tag": "med",
+          "value": "κορτιζόνη 0,5 mg πρωί"
+        }
+      ]
+    },
+    {
+      "name": "a value ends at the next tag",
+      "text": "@δγ δισκοπάθεια @επ Ο5-Ι1",
+      "expect": [
+        {
+          "tag": "dx",
+          "value": "δισκοπάθεια"
+        },
+        {
+          "tag": "lvl",
+          "value": "Ο5-Ι1",
+          "normalized": "L5-S1"
+        }
+      ]
+    },
+    {
+      "name": "empty values are ignored; a colon after the name is skipped",
+      "text": "@δγ, @αλ. @εξ: μαγνητική τομογραφία ΟΜΣΣ @θερ\n",
+      "expect": [
+        {
+          "tag": "exam",
+          "value": "μαγνητική τομογραφία ΟΜΣΣ"
+        }
+      ]
+    },
+    {
+      "name": "text values are normalised: folded, whitespace collapsed",
+      "text": "@δγ   Κήλη   ΜΕΣΟΣΠΟΝΔΥΛΊΟΥ δίσκου ",
+      "expect": [
+        {
+          "tag": "dx",
+          "value": "Κήλη   ΜΕΣΟΣΠΟΝΔΥΛΊΟΥ δίσκου",
+          "normalized": "κηλη μεσοσπονδυλιου δισκου"
+        }
+      ]
+    },
+    {
+      "name": "levels: Greek and English, short forms, slash, any case",
+      "text": "@επ Ο4-Ο5. @επ ο4-5. @επ Ο4/Ο5. @επ L4-L5. @επ l4-5. @επ Ο5-Ι1. @επ Α5-Α6. @επ Θ12. @επ Θ12-Ο1. @επ O4-O5. @επ c6-7",
+      "expect": [
+        {
+          "tag": "lvl",
+          "value": "Ο4-Ο5",
+          "normalized": "L4-L5",
+          "valid": true
+        },
+        {
+          "tag": "lvl",
+          "value": "ο4-5",
+          "normalized": "L4-L5",
+          "valid": true
+        },
+        {
+          "tag": "lvl",
+          "value": "Ο4/Ο5",
+          "normalized": "L4-L5",
+          "valid": true
+        },
+        {
+          "tag": "lvl",
+          "value": "L4-L5",
+          "normalized": "L4-L5",
+          "valid": true
+        },
+        {
+          "tag": "lvl",
+          "value": "l4-5",
+          "normalized": "L4-L5",
+          "valid": true
+        },
+        {
+          "tag": "lvl",
+          "value": "Ο5-Ι1",
+          "normalized": "L5-S1",
+          "valid": true
+        },
+        {
+          "tag": "lvl",
+          "value": "Α5-Α6",
+          "normalized": "C5-C6",
+          "valid": true
+        },
+        {
+          "tag": "lvl",
+          "value": "Θ12",
+          "normalized": "T12",
+          "valid": true
+        },
+        {
+          "tag": "lvl",
+          "value": "Θ12-Ο1",
+          "normalized": "T12-L1",
+          "valid": true
+        },
+        {
+          "tag": "lvl",
+          "value": "O4-O5",
+          "normalized": "L4-L5",
+          "valid": true
+        },
+        {
+          "tag": "lvl",
+          "value": "c6-7",
+          "normalized": "C6-C7",
+          "valid": true
+        }
+      ]
+    },
+    {
+      "name": "levels: several, joined by και or commas; the value stops after the last level",
+      "text": "στο @επ Ο4-Ο5 και Ο5-Ι1 με πίεση, και @επ C5-C6, C6-C7, χωρίς άλλα",
+      "expect": [
+        {
+          "tag": "lvl",
+          "value": "Ο4-Ο5 και Ο5-Ι1",
+          "normalized": "L4-L5, L5-S1",
+          "valid": true
+        },
+        {
+          "tag": "lvl",
+          "value": "C5-C6, C6-C7",
+          "normalized": "C5-C6, C6-C7",
+          "valid": true
+        }
+      ]
+    },
+    {
+      "name": "levels: impossible ones are kept and marked invalid",
+      "text": "@επ Ο6 @επ Α9 @επ Ο5-Ο4 @επ Ο4-Ο5 και Ο6",
+      "expect": [
+        {
+          "tag": "lvl",
+          "value": "Ο6",
+          "normalized": "L6",
+          "valid": false
+        },
+        {
+          "tag": "lvl",
+          "value": "Α9",
+          "normalized": "C9",
+          "valid": false
+        },
+        {
+          "tag": "lvl",
+          "value": "Ο5-Ο4",
+          "normalized": "L5-L4",
+          "valid": false
+        },
+        {
+          "tag": "lvl",
+          "value": "Ο4-Ο5 και Ο6",
+          "normalized": "L4-L5, L6",
+          "valid": false
+        }
+      ]
+    },
+    {
+      "name": "levels: a value that is no level at all is kept, invalid",
+      "text": "@επ δεξιά πλευρά, τίποτα",
+      "expect": [
+        {
+          "tag": "lvl",
+          "value": "δεξιά πλευρά",
+          "normalized": null,
+          "valid": false
+        }
+      ]
+    },
+    {
+      "name": "levels inside a procedure or a therapy value are also stored (origin = the outer row)",
+      "text": "@χειρ μικροδισκεκτομή Ο4-Ο5. @θερ επισκληρίδιος έγχυση στο Ο5-Ι1 και L4-L5. @δγ κήλη Ο4-Ο5",
+      "expect": [
+        {
+          "tag": "proc",
+          "value": "μικροδισκεκτομή Ο4-Ο5",
+          "pos": 0
+        },
+        {
+          "tag": "lvl",
+          "value": "Ο4-Ο5",
+          "normalized": "L4-L5",
+          "valid": true,
+          "origin": 0,
+          "pos": 22
+        },
+        {
+          "tag": "thx",
+          "value": "επισκληρίδιος έγχυση στο Ο5-Ι1 και L4-L5"
+        },
+        {
+          "tag": "lvl",
+          "value": "Ο5-Ι1 και L4-L5",
+          "normalized": "L5-S1, L4-L5",
+          "origin": 2
+        },
+        {
+          "tag": "dx",
+          "value": "κήλη Ο4-Ο5"
+        }
+      ]
+    },
+    {
+      "name": "levels inside words are not levels",
+      "text": "@χειρ σπονδυλοδεσία Ο4Ο5 και σο4-5",
+      "expect": [
+        {
+          "tag": "proc",
+          "value": "σπονδυλοδεσία Ο4Ο5 και σο4-5"
+        }
+      ]
+    },
+    {
+      "name": "prescription: all five parts; commas allowed inside",
+      "text": "@συν Lyrica 75mg 1x2 για 30 ημέρες, μετά το φαγητό. Επανέλεγχος",
+      "expect": [
+        {
+          "tag": "rx",
+          "value": "Lyrica 75mg 1x2 για 30 ημέρες, μετά το φαγητό",
+          "rx": {
+            "drug": "Lyrica",
+            "strength": "75mg",
+            "per_day_text": "1x2",
+            "per_dose": 1,
+            "per_day": 2,
+            "days": 30,
+            "note": "μετά το φαγητό",
+            "total": 60
+          }
+        }
+      ]
+    },
+    {
+      "name": "prescription: Greek spelling of the drug, bare strength in the drug's unit, Greek χ, x30",
+      "text": "@συν λυρικα 150 1χ2 x30",
+      "expect": [
+        {
+          "tag": "rx",
+          "rx": {
+            "drug": "Lyrica",
+            "strength": "150mg",
+            "per_day_text": "1χ2",
+            "per_dose": 1,
+            "per_day": 2,
+            "days": 30,
+            "note": null,
+            "total": 60
+          }
+        }
+      ]
+    },
+    {
+      "name": "prescription: half a tablet twice a day for 30 days is 30 tablets",
+      "text": "@συν Depon ½x2 30 ημ μετά το φαγητό",
+      "expect": [
+        {
+          "tag": "rx",
+          "rx": {
+            "drug": "Depon",
+            "strength": null,
+            "per_day_text": "½x2",
+            "per_dose": 0.5,
+            "per_day": 2,
+            "days": 30,
+            "note": "μετά το φαγητό",
+            "total": 30
+          }
+        }
+      ]
+    },
+    {
+      "name": "prescription: 0,5x2 with a decimal comma, strength 0,5 mg",
+      "text": "@συν Medrol 0,5 mg 0,5x2 για 10 μέρες",
+      "expect": [
+        {
+          "tag": "rx",
+          "rx": {
+            "drug": "Medrol",
+            "strength": "0,5mg",
+            "per_day_text": "0,5x2",
+            "per_dose": 0.5,
+            "per_day": 2,
+            "days": 10,
+            "note": null,
+            "total": 10
+          }
+        }
+      ]
+    },
+    {
+      "name": "prescription: «2 φορές», continuously, unknown drug kept as typed",
+      "text": "@συν Tramal 50mg 2 φορές συνεχώς· @συν Ponstan επί πόνου",
+      "expect": [
+        {
+          "tag": "rx",
+          "value": "Tramal 50mg 2 φορές συνεχώς",
+          "rx": {
+            "drug": "Tramal",
+            "strength": "50mg",
+            "per_day_text": "2 φορές",
+            "per_dose": 1,
+            "per_day": 2,
+            "days": null,
+            "note": null,
+            "total": null
+          }
+        },
+        {
+          "tag": "rx",
+          "value": "Ponstan επί πόνου",
+          "rx": {
+            "drug": "Ponstan",
+            "strength": null,
+            "per_day_text": "επί πόνου",
+            "per_dose": null,
+            "per_day": null,
+            "days": null,
+            "note": null,
+            "total": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "prescription: two drugs in one sentence are separated with a semicolon",
+      "text": "Χορηγήθηκαν @συν Lyrica 75 1x2 για 14 ημέρες· @συν Mydocalm 150mg 1x3 x7",
+      "expect": [
+        {
+          "tag": "rx",
+          "rx": {
+            "drug": "Lyrica",
+            "strength": "75mg",
+            "per_day": 2,
+            "days": 14,
+            "total": 28
+          }
+        },
+        {
+          "tag": "rx",
+          "rx": {
+            "drug": "Mydocalm",
+            "strength": "150mg",
+            "per_day": 3,
+            "days": 7,
+            "total": 21
+          }
+        }
+      ]
+    },
+    {
+      "name": "prescription: words not placed elsewhere go to the note",
+      "text": "@ΣΥΝΤΑΓΗ Neurontin 300mg 1x3 με σταδιακή αύξηση για 30 ημέρες, πριν τον ύπνο",
+      "expect": [
+        {
+          "tag": "rx",
+          "rx": {
+            "drug": "Neurontin",
+            "strength": "300mg",
+            "per_day": 3,
+            "days": 30,
+            "note": "με σταδιακή αύξηση, πριν τον ύπνο",
+            "total": 90
+          }
+        }
+      ]
+    },
+    {
+      "name": "a tag at the very start, after punctuation or inside brackets/quotes: an unmatched closing bracket ends the value, a trailing opener is dropped",
+      "text": "@αλ λάτεξ (@εξ ακτινογραφία) «@δγ υδροκέφαλος» @αγ ΜΣΑΦ (όχι ασπιρίνη) τώρα",
+      "expect": [
+        {
+          "tag": "alg",
+          "value": "λάτεξ",
+          "pos": 0
+        },
+        {
+          "tag": "exam",
+          "value": "ακτινογραφία"
+        },
+        {
+          "tag": "dx",
+          "value": "υδροκέφαλος"
+        },
+        {
+          "tag": "med",
+          "value": "ΜΣΑΦ (όχι ασπιρίνη) τώρα"
+        }
+      ]
+    },
+    {
+      "name": "positions are characters, also after characters outside the BMP",
+      "text": "😀 @δγ ριζοπάθεια",
+      "expect": [
+        {
+          "tag": "dx",
+          "value": "ριζοπάθεια",
+          "pos": 2,
+          "start": 6,
+          "end": 16
+        }
+      ]
+    },
+    {
+      "name": "empty note",
+      "text": "",
+      "expect": []
+    }
+  ]
+}
