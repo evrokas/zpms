@@ -33,13 +33,18 @@ Design principles the user insisted on:
 
 Where tags work: **appointment notes** (`appointments.anote`) and **the patient note**
 (`patients.pnote`). Not the home-page personal notes (`user_notes`): those are not about one
-patient.
+patient. Not pending-appointment notes either (`pending_appointments.notes`): their text becomes
+the appointment note when the pending appointment is converted, and is parsed then.
 
 ## 2. Syntax
 
 - A tag is `@` + a known tag name, at the start of the text or after whitespace/punctuation.
   An e-mail address (`a@b.gr`) or a lone `@` is never a tag.
 - Tag names are matched ignoring case and Greek accents (`@ΔΙΑΓΝΩΣΗ` = `@διαγνωση` = `@δγ`).
+- A tag name must be followed by whitespace, punctuation or end of text, and the **longest
+  matching name wins**. Several short names are prefixes of long ones (`επ`/`επέμβαση`,
+  `αλ`/`αλλεργία`, `συν`/`συνταγή`, `θερ`/`θεραπεία`): `@επέμβαση μικροδισκεκτομή` is a
+  procedure, never `@επ` + «έμβαση…». Unknown names (`@abc`) are plain text.
 - The value starts after the tag name and following spaces, and ends at the first of:
   - `,` (except for `prescription`, see below)
   - semicolon: Greek `·` (U+0387 / U+00B7) or `;`
@@ -52,6 +57,8 @@ patient.
 - Value type `prescription` may contain commas; it ends at a semicolon, a full stop + space,
   a line break, the next tag, or end of text.
 - An empty value (tag followed directly by punctuation) is ignored.
+- A **sentence** (for the writing wash, section 7) ends at the same marks: a full stop
+  followed by whitespace, `·`, `;` (also the Greek question mark), a line break.
 
 ## 3. Tag definitions (not ad hoc)
 
@@ -70,7 +77,9 @@ Rules that keep old notes valid:
 - Names are only ever **added**, never removed (old notes contain «@δγ» forever).
 - After any definition change, the rebuild command re-parses every note.
 
-The nine tags (`names`: the first is the main short Greek tag shown in menus; all accepted):
+The nine tags (`names`: the first is the main short Greek tag shown in menus; all accepted).
+`colour` names a palette entry defined in the same file (`palette:` with `tint`, `mark`, `ink`
+hex values, table below), so the file is the only source for colours too:
 
 ```yaml
 tags:
@@ -88,7 +97,9 @@ tags:
 `@αγ` (recommended treatment, general) is deliberately separate from `@συν` (a specific drug
 prescribed today).
 
-Pale colours (light theme; tint = wash, mark = underline, ink = reading text):
+Palette (light theme; tint = wash, mark = underline, ink = reading text), written in
+`config/note_tags.yaml` under `palette:` keyed by colour name (rose = dx row, lavender = lvl,
+orange = alg, sky = exam, mint = proc, teal = thx, sage = pt, sand = med, amber = rx):
 
 | key | tint | mark | ink |
 |---|---|---|---|
@@ -117,6 +128,11 @@ where unambiguous, e.g. `O4-O5`). Multiple: `Ο4-Ο5 και Ο5-Ι1`, `C5-C6, C6
   warning while editing, left out of the summary. A save is never refused.
 - The grid picker shows the region's segments; cells are written in the notation the user
   last typed (default Greek).
+- **Levels inside other values are recorded too** (decided 2026-11-13): a level written
+  inside a `proc` or `thx` value («@θερ επισκληρίδιος έγχυση στο Ο5-Ι1», «@χειρ μικροδισκεκτομή
+  Ο4-Ο5») stays part of that value and is *also* stored as an `lvl` row (`origin` column =
+  the outer row), so it appears in the level summary and the level filter. Which tags are
+  scanned this way is a flag in the tag file (`inner_levels: true` on `proc` and `thx`).
 
 ## 5. Prescriptions (value type `prescription`)
 
@@ -126,15 +142,16 @@ One readable phrase with up to five parts:
 | Part | Picker list | Read from free typing |
 |---|---|---|
 | drug | drug list (written as on the box: Lyrica), found by Greek spelling (`λυρ`) | first word(s), matched to the list or kept as typed |
-| strength | that drug's strengths (Lyrica: 25, 75, 150, 300mg) | number + unit (mg, μγ, mcg, g, ml); `0.5` and `0,5` |
-| per_day | 1x1, 1x2, 1x3, ½x2, επί πόνου | `1x2`, `1χ2` (Greek χ = x), `2 φορές`, `επί πόνου` |
+| strength | that drug's strengths (Lyrica: 25, 75, 150, 300mg) | number + unit (mg, μγ, mcg, g, ml); `0.5` and `0,5`; a **bare number right after the drug** is its strength in that drug's unit (default mg): «λυρικα 150 1χ2» = 150mg |
+| per_day | 1x1, 1x2, 1x3, ½x2, επί πόνου | `1x2`, `1χ2` (Greek χ = x), `½x2`, `0,5x2`, `2 φορές`, `επί πόνου`. In `AxB`, A = amount per dose (tablets), B = doses per day |
 | days | 7, 14, 30, 60, συνεχώς | `για 30 ημέρες`, `30 ημ`, `x30` |
 | note (optional) | μετά το φαγητό, πριν το φαγητό, πριν τον ύπνο, με σταδιακή αύξηση + own | text after the comma; anything not placed elsewhere |
 
 - Picking a drug writes the phrase with blanks; Tab / Shift+Tab move between blanks; each blank
   has its own short list; any value can be typed. An empty note blank disappears.
-- Total doses = doses per day x days (2 x 30 = 60), shown in the bar while writing and in the
-  summary when computable.
+- Total = amount per dose x doses per day x days, in tablets (1x2 for 30 days = 60; ½x2 for
+  30 days = 30), shown in the bar while writing and in the summary when computable (not for
+  «επί πόνου» or «συνεχώς»).
 - Two drugs in one sentence: separate with `·` (or `;`).
 - Record only; no connection to e-prescribing.
 
@@ -157,8 +174,11 @@ Interaction:
   **Tab takes the next word only** (never the whole suggestion by default); **→ (at end of
   text) takes the rest**; typing anything else ignores it.
 - **↓** opens the full list (fixed first, then previous).
-- **Checklist** (exams) and **grid** (levels): several at once; written into the sentence as
-  text («μαγνητική τομογραφία ΟΜΣΣ, ηλεκτρομυογράφημα κάτω άκρων», «Ο3-Ο4 και Ο4-Ο5»).
+- **Checklist** (exams): several at once; each pick is written **with its own tag**, because a
+  comma ends a text value: «@εξ μαγνητική τομογραφία ΟΜΣΣ, @εξ ηλεκτρομυογράφημα κάτω
+  άκρων». (The mockup image still shows the picks under one tag; this file wins.)
+- **Grid** (levels): several at once under one tag («Ο3-Ο4 και Ο4-Ο5»); the `levels` type
+  accepts «και» and commas between levels.
 - **Blanks** for prescriptions (section 5).
 - **Next-word strip** under the line after exam / physiotherapy / therapy entries; a number
   key or click inserts the word.
@@ -174,6 +194,9 @@ Keyboard, same everywhere:
 | Tab | take next word of the suggestion | accept | next blank (Shift+Tab back) |
 | Esc | close, no change | close, nothing written | leave blanks as they are |
 
+Tab, ←/→ and ↑/↓ are taken over **only while a suggestion, menu or blank is showing**;
+otherwise every key keeps its normal behaviour (Tab moves to the next field, ↓ moves the caret).
+
 Highlighted row: pale teal background; grid: teal ring on the current cell, ticked cells lilac.
 Mouse clicks / taps = Space (tick) or Enter (pick).
 
@@ -183,6 +206,15 @@ grey ghost text does the same. Lists, checklists and blanks use the same bar, wi
 «επόμενο ›» instead of Tab.
 
 ## 7. Writing look
+
+**When which look is shown** (decided 2026-11-13): a note box **without the caret shows the
+reading look** (section 9: tag words hidden, values in tinted ink), also for staff who can edit.
+Clicking or tapping into it switches that box to the writing look, with the caret on the
+clicked word (the tag words reappear, so the line may shift a little; the caret stays on the
+word). Leaving the box (blur) switches it back. Accounts that cannot edit always see the
+reading look.
+
+In the writing look:
 
 - The tag word (`@δγ`) is always faint grey (`#a7b4b7` light theme).
 - **The sentence holding the caret**: each value gets its pale wash (tint), drawn with
@@ -195,7 +227,10 @@ Implementation: the note box **stays a plain `<textarea>`** (autosave via `web/j
 copy/paste and phone keyboards unchanged). A "mirror" div with identical font, size,
 line-height, padding, width and wrapping sits exactly behind it and renders the coloured
 copy; the textarea text is made transparent with a visible `caret-color`. Nothing in the
-mirror may take extra space (no padding, no inline marks with width). Ghost text, menus,
+mirror may take extra space (no padding, no inline marks with width). The note boxes size
+themselves to their content today (`field-sizing: content; min-block-size: 5lh`,
+`web/css/styles.css`), so the mirror must follow the textarea's size and scroll position on
+every input and resize, or the colours drift off the words. Ghost text, menus,
 checklist, grid and blanks are small hand-written scripts (no library), same family as the
 patient-name search in `web/js/scripts.js`.
 
@@ -218,14 +253,15 @@ Actions:
    field and colour change (the tag word is rewritten).
 6. Remove tag, keep words: one Backspace right after a tag word deletes the whole tag word;
    or «αφαίρεση ετικέτας» from the bar.
-7. From the reading view: a click opens the card for writing with the caret on the clicked
-   word (tag words reappear; the caret stays on the same word). Read-only accounts: no change.
+7. From the reading look (any box without the caret): a click switches the box to writing with
+   the caret on the clicked word (section 7). Accounts that cannot edit: no change.
 
 ## 9. Reading look and the patient record
 
-- Read-only notes (closed cards, accounts without edit permission, printouts): rendered by PHP
-  with the tag words removed and each value in its ink colour. Everything escaped with the
-  usual template escaping.
+- The reading look (every note box without the caret, and always for accounts that cannot
+  edit; section 7): rendered by PHP on page load with the tag words removed and each value in
+  its ink colour, everything escaped with the usual template escaping; the JS redraws it after
+  an edit. (Should a print view be added later, it uses the same rendering.)
 - **Patient header**: an allergy line (pale orange) with every `alg` value, newest first, each
   linked to its source note.
 - **«Κλινική εικόνα» panel** under the identity header: one small box per tag with
@@ -243,9 +279,12 @@ New tables (yaml under `web/classes/yaml/`, generated like the others):
 - `source` (`appointment` | `patient`), `appointment_id` (null for the patient note)
 - `tag_key` (`dx`, `lvl`, ...), `value_text` (as typed), `normalized` (levels; lowercase
   accent-free text for others), `valid` (tinyint)
-- `pos` (character offset in the note)
-- prescription parts: `rx_drug`, `rx_strength`, `rx_per_day_text`, `rx_per_day` (decimal,
-  null for "επί πόνου"), `rx_days` (null = συνεχώς/unknown), `rx_note`, `rx_total`
+- `pos` (character offset in the note); `origin` (id of the outer `proc`/`thx` row for a level
+  found inside it, otherwise null)
+- prescription parts: `rx_drug`, `rx_strength`, `rx_per_day_text` (as written, «1x2»),
+  `rx_per_dose` (decimal, ½ = 0.5), `rx_per_day` (doses per day; null for «επί πόνου»),
+  `rx_days` (null = συνεχώς/unknown), `rx_note`, `rx_total` (tablets, null when not computable)
+- `deleted` (datetime, copied when the source appointment or patient is soft-deleted)
 - `cdate`
 
 `note_list_entries` -- the fixed lists.
@@ -267,8 +306,12 @@ The note text (`anote`, `pnote`) remains the single source of truth.
   `edit_appointment.zetem`, `new_consultation.zetem`.
 - After each successful save of a note: `zpms_note_fields_sync(source, id, patient, text)`
   (delete that note's rows, insert parsed ones, in one transaction).
-- Deleting/purging: `bin/zpmscli.php` (`patients:purge`, `appointments:purge`,
-  `cleanup:deleted`) and the web delete paths must delete matching `note_fields` rows.
+- Deleting in the web app is a **soft delete** (`appointment_perform_delete()` and
+  `patient_delete()` call `setdeleted()`, `web/index.php`): set `note_fields.deleted` for that
+  appointment's rows (and for all the patient's rows on a patient delete). The summary, the
+  filters and the suggestions always ignore rows with `deleted` set.
+- Purging (`bin/zpmscli.php` `patients:purge`, `appointments:purge`, `cleanup:deleted`)
+  removes the matching `note_fields` rows for good.
 - Rebuild: `bin/zpmscli.php note-fields:rebuild [--patient=<id>]`.
 - JS strings go through `zpms_js_text()`; every visible term through `t()` with Greek in
   `config/dictionary.gr.php`.
@@ -277,7 +320,7 @@ The note text (`anote`, `pnote`) remains the single source of truth.
 
 - Values are patient data: never in `audit_log.detail` or `logs/audit.log` (only event and
   field names, e.g. `fields=anote`), same rule as the notes (see README "GDPR audit log").
-- Deleted with the patient/appointment on purge.
+- Hidden when the patient/appointment is soft-deleted; removed for good on purge.
 - Suggestions and the summary only use notes the signed-in user is allowed to read
   (respect the existing RBAC permissions for viewing patients).
 
@@ -311,18 +354,21 @@ Each phase is usable on its own and adds tests to `bin/run_tests.sh`.
 
 1. **Rules and storage.** `config/note_tags.yaml`; the parser in PHP and in JS with one shared
    JSON file of test cases run by both (syntax rules, Greek/English levels, prescriptions,
-   e-mail addresses not tags, Greek `·`); `note_fields` + `note_list_entries` with the starter
-   lists; sync on every note save (section 11); purge paths; `note-fields:rebuild`.
-   Done when: saving an appointment or patient note produces the right rows; purge removes
-   them; rebuild reproduces them.
-2. **Writing look.** Mirror behind the textarea: wash on the current sentence, pale underline
-   elsewhere, grey tag words; the `@` tag menu. Done when typing never shifts letters
-   (check in a real browser at desktop and phone widths).
+   e-mail addresses not tags, Greek `·`, longest-name matching, levels inside proc/thx, bare
+   strengths, ½ doses); `note_fields` + `note_list_entries` with the starter lists; sync on
+   every note save (section 11); soft-delete and purge paths; `note-fields:rebuild`.
+   Done when: saving an appointment or patient note produces the right rows; a soft delete
+   hides them, purge removes them; rebuild reproduces them.
+2. **Writing and reading looks in the box.** Reading look when the box has no caret, writing
+   look when it has; mirror behind the textarea (following its auto-size): wash on the current
+   sentence, pale underline elsewhere, grey tag words; the `@` tag menu. Done when typing never
+   shifts letters and the mirror stays aligned while the box grows (check in a real browser at
+   desktop and phone widths).
 3. **Suggestions and editing.** Ghost completion (Tab word by word, → rest), ↓ list,
    checklist, grid, prescription blanks, next-word strip, keyboard table, phone word bar,
    value frame + field bar, change field, remove tag. Suggestion endpoint returns only data
    the user may read.
-4. **Reading.** Clean read-only rendering, allergy line on the header, «Κλινική εικόνα» panel.
+4. **Patient record.** Allergy line on the header, «Κλινική εικόνα» panel.
 5. **Lists and search.** Settings page «Λίστες σημειώσεων» (per tag: add, edit, reorder,
    deactivate entries; next words; prescription strengths/defaults; "promote frequent
    free-text entries"); patients-list filters.
