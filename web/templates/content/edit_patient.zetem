@@ -88,8 +88,9 @@
        zpms_note_clinical_picture(). #}
     {% if(!empty($clinical['tags'])): %}
     <section class="clinical-picture" aria-label="{{{t('Clinical picture')}}}">
-        <h3 class="cp-title"><i class="bx bx-clipboard"></i> {{{t('Clinical picture')}}}</h3>
-        <div class="cp-grid">
+        {# Collapsed on every load; the heading is the toggle. #}
+        <h3 class="cp-title"><button type="button" class="cp-toggle" id="cp-toggle" aria-expanded="false" aria-controls="cp-grid"><i class="bx bx-clipboard"></i> {{{t('Clinical picture')}}} <i class="bx bx-chevron-down cp-chevron"></i></button></h3>
+        <div class="cp-grid" id="cp-grid" hidden>
             {% foreach($clinical['tags'] as $__key => $__box): %}
             <div class="cp-box zt-c-{{{$__box['colour']}}}" data-tag="{{{$__key}}}">
                 <h4 class="cp-label">{{{$__box['label']}}}</h4>
@@ -614,6 +615,15 @@
                     b.addEventListener('click', function() { setDetails(false); toggle.focus(); });
                 });
             }
+
+            /* ---- «Κλινική εικόνα»: the heading shows/hides the boxes ---- */
+            var cpToggle = document.getElementById('cp-toggle');
+            var cpGrid = document.getElementById('cp-grid');
+            if (cpToggle && cpGrid) cpToggle.addEventListener('click', function() {
+                var open = cpToggle.getAttribute('aria-expanded') !== 'true';
+                cpToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+                cpGrid.hidden = !open;
+            });
 
             /* ---- appointment rows: open/close the card in place ---- */
             function setRow(row, open) {

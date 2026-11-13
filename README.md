@@ -2559,7 +2559,7 @@ Fourth phase of `docs/CLINICAL_TAGS_PLAN.md` (details in its section 19). The pa
 - **«Κλινική εικόνα»** under the header: one small box per tag (diagnoses, levels, allergies, examinations, procedures, therapy, physiotherapy, medication, prescriptions). Values from the patient note come first, then appointment notes newest first, each with its date (or «σημείωση ασθενή») and a link that opens the note. A value repeated across visits is listed once with «×N». Prescriptions show the total tablets.
 - Values from appointment notes appear only for accounts that may see the appointment cards. Deleted appointments and impossible levels are left out.
 
-The blocks are built when the page loads, so a value just typed appears after a reload.
+The blocks are built when the page loads, so a value just typed appears after a reload. «Κλινική εικόνα» starts collapsed: click its heading to show or hide the boxes.
 
 **After pulling:** `php bin/import_dictionary.php` (three new labels), empty `web/cache/`.
 

@@ -533,6 +533,9 @@ to `edit_patient.zetem` as `clinical`; styles in `web/css/note-tags.css`.
   from the allergy tag's palette entry (`header_alert: true`).
 - Prescription entries show their total («Σύνολο: 60 δισκία»).
 - The blocks are drawn when the page loads; a value typed in a note shows in them after a reload.
+- **«Κλινική εικόνα» starts collapsed** (decided by the user after phase 4, 2026-11-13: not needed
+  day to day for now). Its heading is a button that shows/hides the boxes; it collapses again on
+  every page load. The allergy line on the header is unaffected.
 
 ## 20. Phase 5 as built (2026-11-13)
 

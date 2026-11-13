@@ -342,11 +342,29 @@ form .input-div.input-notes .zt-box { grid-column: 1; grid-row: 2; }
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    margin: 0 0 0.7rem;
+    margin: 0;
     font-size: 0.95rem;
     font-weight: 600;
     color: var(--text, #182427);
 }
+/* The heading is a button: collapsed by default (edit_patient.zetem). */
+.cp-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 0;
+    border: 0;
+    background: none;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+}
+.cp-toggle:focus-visible { outline: 2px solid var(--primary, #036379); outline-offset: 3px; border-radius: 3px; }
+.cp-chevron { transition: transform 0.15s; color: #8a9a9d; }
+.cp-toggle[aria-expanded="true"] .cp-chevron { transform: rotate(180deg); }
+.clinical-picture { padding-bottom: 0.85rem; }
+.cp-grid { margin-top: 0.7rem; }
+.cp-grid[hidden] { display: none; }
 .cp-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr));

@@ -234,6 +234,8 @@ function zpms_functional_note_fields(TestRunner $runner, string $baseUrl): void 
         assert_contains('<a href="#patient-note">λάτεξ</a>', $m[1], 'allergy not linked to the patient note');
         assert_true((bool)preg_match('~<section class="clinical-picture"(.*?)</section>~su', $body, $cp), 'no «Κλινική εικόνα» panel');
         $panel = $cp[1];
+        assert_contains('id="cp-toggle" aria-expanded="false" aria-controls="cp-grid"', $panel, 'the panel heading is not a collapsed toggle');
+        assert_contains('<div class="cp-grid" id="cp-grid" hidden>', $panel, 'the panel does not start collapsed');
         foreach (['data-tag="alg"', 'data-tag="dx"', 'data-tag="rx"', 'data-tag="proc"', 'data-tag="lvl"'] as $needle) {
             assert_contains($needle, $panel, "panel box missing: $needle");
         }
