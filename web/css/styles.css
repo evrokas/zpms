@@ -1358,8 +1358,10 @@ form .input-div {
 /* user profile page */
 
 .user-profile {
-    max-width: 640px;
-    margin: 0 auto var(--spacing-lg);
+    /* Full width of the content area, like every other page (it used to be
+       capped at 640px, narrower than the header above it). */
+    max-width: none;
+    margin: 0 0 var(--spacing-lg);
     padding: var(--spacing-md);
     background-color: white;
     border-radius: var(--border-radius-md);

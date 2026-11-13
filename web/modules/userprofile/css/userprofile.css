@@ -1,5 +1,6 @@
 .user-profile {
-    margin: 1rem;
+    /* No side margin: the card lines up with the header (see styles.css). */
+    margin: 0 0 1rem;
     padding: 1rem;
 }
 
