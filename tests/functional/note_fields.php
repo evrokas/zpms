@@ -177,6 +177,55 @@ function zpms_functional_note_fields(TestRunner $runner, string $baseUrl): void 
         assert_contains('id="zt-spec"', $form['body'], 'the new-appointment form has no tag definitions');
     });
 
+    $runner->add('suggestions: lists and previous entries (most used first), never deleted or invalid rows; refused to accounts that write no notes', function () use ($http, $baseUrl, $db, &$state) {
+        TestSchema::assertSafeToMutate();
+        $get = function (TestHttpClient $c) {
+            $r = $c->get('/notes/suggestions');
+            $i = strpos($r['body'], '{"tags"');
+            return [$r['status'], $i === false ? null : json_decode(substr($r['body'], $i), true)];
+        };
+        // Two more notes saying «ριζοπάθεια», one soft-deleted, one with an invalid level.
+        $mk = function (string $note, ?string $deleted = null) use ($state) {
+            $a = new appointmentsClass(['guid' => guid(), 'cuser' => 'test', 'cdate' => getDBtime(), 'adate' => '2026-12-01 10:00:00', 'aplace' => '',
+                'anote' => $note, 'atype' => 'appointment', 'pguid' => $state['guid']]);
+            $a->insert();
+            zpms_note_fields_sync_appointment($a);
+            if ($deleted) zpms_note_fields_hide_appointments(dbConnection::getConnection(), [(int)$a->getid()], $deleted);
+            return (int)$a->getid();
+        };
+        $ids = [$mk('@δγ Ριζοπάθεια'), $mk('@δγ ριζοπάθεια @επ Ο9'), $mk('@δγ μυστική διάγνωση', '2026-01-01 00:00:00')];
+
+        [$status, $data] = $get($http);
+        assert_equal(200, $status, 'suggestions refused to a doctor');
+        $dx = $data['tags']['dx'] ?? null;
+        assert_not_null($dx, 'no dx suggestions');
+        assert_equal('Κήλη μεσοσπονδυλίου δίσκου', $dx['list'][0]['text'], 'fixed list not in order');
+        $prev = array_column($dx['previous'], 'count', 'text');
+        $rizo = array_values(array_filter($dx['previous'], fn($p) => zpms_note_fold($p['text']) === 'ριζοπαθεια'));
+        assert_equal(3, $rizo[0]['count'] ?? null, 'previous entries not counted across spellings');
+        assert_equal('ριζοπαθεια', zpms_note_fold($dx['previous'][0]['text']), 'most used not first');
+        assert_true(!isset($prev['μυστική διάγνωση']), 'a soft-deleted note leaked into the suggestions');
+        assert_true(!in_array('Ο9', array_column($data['tags']['lvl']['previous'], 'text'), true), 'an invalid level is suggested');
+        $rx = array_column($data['tags']['rx']['list'], null, 'text');
+        assert_equal(['λυρικα'], $rx['Lyrica']['aliases'] ?? null, 'drug aliases missing');
+        assert_equal(['25mg', '75mg', '150mg', '300mg'], $rx['Lyrica']['strengths'] ?? null, 'drug strengths missing');
+
+        $sec = new TestHttpClient($baseUrl);
+        if (!(int)$db->query("SELECT COUNT(*) FROM users WHERE uname = '" . TestFixtures::SECRETARY_USERNAME . "'")->fetchColumn()) TestFixtures::createSecretaryUser();
+        TestFixtures::loginAsSecretary($sec);
+        [$status, $data] = $get($sec);
+        assert_equal(403, $status, 'an account that writes no notes got suggestions');
+        assert_equal([], (array)($data['tags'] ?? []), 'a refused request still carried data');
+        $anon = new TestHttpClient($baseUrl);
+        $r = $anon->get('/notes/suggestions');
+        assert_not_contains('Ριζοπάθεια', $r['body'], 'suggestions reachable without signing in');
+
+        foreach ($ids as $id) {
+            $db->prepare('DELETE FROM note_fields WHERE appointment_id = ?')->execute([$id]);
+            $db->prepare('DELETE FROM appointments WHERE id = ?')->execute([$id]);
+        }
+    });
+
     $runner->add('a pending appointment turned into a patient record: its notes are parsed then', function () use ($http, $db, &$state) {
         TestSchema::assertSafeToMutate();
         $pending = new pendingAppointmentsClass([

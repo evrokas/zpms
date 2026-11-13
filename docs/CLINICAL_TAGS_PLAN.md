@@ -1,8 +1,8 @@
-# Clinical tags in the note boxes -- plan (approved design; phases 1-2 built)
+# Clinical tags in the note boxes -- plan (approved design; phases 1-3 built)
 
 Status: design approved by the user after several mockup rounds, 2026-11-13. **Phases 1 (rules
-and storage) and 2 (writing and reading looks) are built** -- see sections 16 and 17 for what
-was decided while building them. Phases 3-5 not started. This file is the complete specification: a new session should be able to build
+and storage), 2 (writing and reading looks) and 3 (suggestions and editing) are built** -- see
+sections 16-18 for what was decided while building them. Phases 4-5 not started. This file is the complete specification: a new session should be able to build
 it from this file alone. Visual mockups (same content, drawn): the "ZPMS Tag Styles" page,
 https://claude.ai/artifact/46PGs1Y4w3avRscQd7ZYyy, and the plan page "ZPMS Clinical Tags",
 https://claude.ai/artifact/41Y52Wzz9m12Q42jZVetPk. Both are also saved in this repository as
@@ -365,7 +365,7 @@ Each phase is usable on its own and adds tests to `bin/run_tests.sh`.
    sentence, pale underline elsewhere, grey tag words; the `@` tag menu. Done when typing never
    shifts letters and the mirror stays aligned while the box grows (check in a real browser at
    desktop and phone widths).
-3. **Suggestions and editing.** Ghost completion (Tab word by word, → rest), ↓ list,
+3. **Suggestions and editing.** *(Done 2026-11-13; see section 18.)* Ghost completion (Tab word by word, → rest), ↓ list,
    checklist, grid, prescription blanks, next-word strip, keyboard table, phone word bar,
    value frame + field bar, change field, remove tag. Suggestion endpoint returns only data
    the user may read.
@@ -469,3 +469,45 @@ text / tag word / value runs -- the same function in note-tags.js, in the shared
   `{{ }}` (`view_appointment.zetem`, `edit_appointment.zetem`) -- a note containing
   `</textarea><script>` would have run as script. Now escaped, covered by a test. The patient name
   on the new-appointment page had the same problem.
+
+## 18. Phase 3 as built (2026-11-13)
+
+Files: `web/js/note-box.js` (all aids), `web/js/note-tags.js` (`context()` -- the field under
+the caret -- and `parseRxFull()` -- a prescription's parts with their character spans, used for
+the blanks; both browser-only, tested by `tests/note_tags/editing_cases.js`),
+`note_tags_suggestions()` / `zpms_note_suggestions()` in `web/note_tags.php` (route
+`/notes/suggestions`), CSS in `web/css/note-tags.css`, strings in `zpms_js_text()` (`zt*`).
+
+- **Suggestion data**: one request per page, on the first focus of a note box. Per tag: the
+  active list entries in order (with aliases, next words, strengths, defaults) and up to 40
+  previous entries, grouped by `normalized`, most used first, with a count; rows that are
+  soft-deleted, invalid, or levels found inside another value are left out. Refused (403) to an
+  account that can edit neither patients nor appointments; patient-note values need
+  `patients-view-list`, appointment-note values `appointment-view` or `appointment-edit`. The
+  spelling shown for a previous entry is one of the spellings used (`MAX(value_text)`), not
+  necessarily the most frequent one.
+- **Ghost completion** shows only when nothing follows the caret on its line (it is drawn over
+  the box, so it would otherwise cover text). A Greek spelling of a drug (`λυρ`) shows
+  «→ Lyrica»; taking it writes the drug name. Not offered for levels (the grid is for those).
+- **Picking a drug** (list, ghost) writes `<drug> <first strength> 1x2 για 30 ημέρες` --
+  `rx_defaults` (`{"strength","per_day","days"}`) overrides these per drug -- and selects the
+  strength blank. Blanks are re-derived from the text every time (`parseRxFull()`), so they also
+  come back when the caret enters an existing prescription with a known drug (section 8.4). The
+  days blank's options are whole phrases («για 30 ημέρες», «συνεχώς»). A blank's list shows only
+  while the blank is selected or the caret is inside it -- not at its end, where Enter must stay a
+  line break. Tab from the last blank leaves the blanks. The note blank adds «, » when visited and
+  removes it again if left empty.
+- **↓ inside a value** opens its picker (list / exam checklist / level grid), as the plan says;
+  so inside a value ↓ does not move the caret down a line. Outside a value ↓ is untouched.
+- **Level grid**: disc levels as cells (Α2-Α3 … Α7-Θ1, Θ1-Θ2 … Θ12-Ο1, Ο1-Ο2 … Ο5-Ι1); a single
+  vertebra (Θ12) is not in the grid but can still be typed. The notation (Greek/English) follows
+  the field's current value, else the last one used (browser storage), default Greek.
+- **Next-word strip: Alt+1 … Alt+9, not plain digits** (a deviation from section 6). Plain digits
+  would make it impossible to type a number right after an entry, and some next words are numbers
+  themselves («10 συνεδρίες»). Clicks/taps work as planned.
+- **Field bar** sits just above the box's top-right corner (left on a phone), shows the
+  prescription total («Σύνολο: 42 δισκία») or «Ελέγξτε το επίπεδο» for an impossible level.
+  Remove tag puts the caret at the start of the value.
+- **Phone**: the word bar is fixed to the bottom of the visual viewport (above the on-screen
+  keyboard); checked with Chromium's iPhone 13 emulation, not on a real phone.
+- Programmatic edits (`setRangeText`) are not in the browser's undo history (Ctrl+Z).

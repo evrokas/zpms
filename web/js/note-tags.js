@@ -155,6 +155,42 @@
         return out;
     };
 
+    /**
+     * The tagged field the caret (character offset) is in, for the editing
+     * aids: {tag, pos, nameEnd, start, end, stop, value} -- pos..nameEnd is the
+     * @name, start..end the value (trailing spaces left out), stop where the
+     * value would end if typing went on. inTag is true while the caret is on
+     * the @name itself. null when the caret is in plain text.
+     */
+    Parser.prototype.contextAt = function (caret) {
+        var i = 0;
+        while (i < this.n) {
+            var t = this.tagAt(i);
+            if (t === null) { i++; continue; }
+            var key = t[0], nameEnd = t[1], j = nameEnd;
+            while (isInlineSpace(this.at(j))) j++;
+            if (this.at(j) === ':') { j++; while (isInlineSpace(this.at(j))) j++; }
+            var type = this.tags[key].value;
+            var r = this.valueEnd(j, type !== 'text');
+            var e = r[0], stop = r[1];
+            if (type === 'levels') {
+                var seq = this.levelSequence(j, e);
+                if (seq === null) { var r2 = this.valueEnd(j, false); e = r2[0]; stop = r2[1]; }
+            }
+            if (caret > i && caret <= stop && caret >= nameEnd) {
+                if (caret < j) caret = j;
+                return { tag: key, pos: i, nameEnd: nameEnd, start: j, end: Math.max(j, e), stop: stop,
+                    value: this.slice(j, Math.max(j, e)), inTag: false };
+            }
+            if (caret > i && caret < nameEnd) {
+                return { tag: key, pos: i, nameEnd: nameEnd, start: j, end: Math.max(j, e), stop: stop,
+                    value: this.slice(j, Math.max(j, e)), inTag: true };
+            }
+            i = Math.max(nameEnd, stop);
+        }
+        return null;
+    };
+
     Parser.prototype.number = function (p, lim) {
         var k = p;
         while (k < lim && k - p < 2 && isDigit(this.c[k])) k++;
@@ -215,7 +251,15 @@
 
     function cpLen(s) { return Array.from(s).length; }
 
-    function parseRx(value, drugs) {
+    function parseRx(value, drugs) { return parseRxFull(value, drugs).rx; }
+
+    /**
+     * parseRx() plus where each part sits in the value (character ranges), for
+     * the prescription blanks: {rx, spans: {drug, strength, per_day, days, note}, comma}.
+     * Browser only (not part of the shared PHP/JS contract).
+     */
+    function parseRxFull(value, drugs) {
+        var spans = { drug: null, strength: null, per_day: null, days: null, note: null };
         var rx = { drug: null, strength: null, per_day_text: null, per_dose: null,
             per_day: null, days: null, note: null, total: null };
         var chars = Array.from(value), comma = -1, k, q;
@@ -254,24 +298,30 @@
 
         if ((m = find(nb + '([0-9]+(?:[.,][0-9]+)?|½|¼)' + sp + '*[xχ×]' + sp + '*([0-9]+)' + na))) {
             rx.per_day_text = cut(m[0], m[1]).replace(SPACES_RE, '');
+            spans.per_day = [m[0], m[1]];
             rx.per_dose = num(group(m, 1));
             rx.per_day = parseInt(group(m, 2), 10);
         } else if ((m = find(nb + '([0-9]+)' + sp + '*φορ(?:εσ|α)' + na))) {
             rx.per_day_text = cut(m[0], m[1]);
+            spans.per_day = [m[0], m[1]];
             rx.per_dose = 1;
             rx.per_day = parseInt(group(m, 1), 10);
         } else if ((m = find(nb + 'επι' + sp + '+πονου' + na))) {
             rx.per_day_text = cut(m[0], m[1]);
+            spans.per_day = [m[0], m[1]];
         }
         if ((m = find(nb + '(?:για' + sp + '+)?([0-9]+)' + sp + '*(?:ημερεσ|ημερα|ημ|μερεσ|days|day|d)' + na))) {
             rx.days = parseInt(group(m, 1), 10);
+            spans.days = [m[0], m[1]];
         } else if ((m = find('(?<![\\p{L}\\p{N}½¼])[xχ×]' + sp + '*([0-9]+)' + na))) {
             rx.days = parseInt(group(m, 1), 10);
-        } else {
-            find(nb + 'συνεχωσ' + na);   // continuously: no number of days, nothing to store
+            spans.days = [m[0], m[1]];
+        } else if ((m = find(nb + 'συνεχωσ' + na))) {
+            spans.days = [m[0], m[1]];   // continuously: no number of days, nothing to store
         }
         if ((m = find(nb + '([0-9]+(?:[.,][0-9]+)?)' + sp + '*(mg|mcg|μg|μγ|gr|g|ml|iu)' + na))) {
             rx.strength = group(m, 1) + group(m, 2);
+            spans.strength = [m[0], m[1]];
         }
 
         var drugEnd = 0, unit = 'mg', best = null;
@@ -294,6 +344,7 @@
             drugEnd = k;
         }
         for (k = 0; k < drugEnd; k++) used[k] = true;
+        if (drugEnd > 0) spans.drug = [0, drugEnd];
 
         if (rx.strength === null) {
             k = drugEnd;
@@ -303,6 +354,7 @@
             var tok = cut(k, e);
             if (e > k && /^[0-9]+(?:[.,][0-9]+)?$/.test(tok) && (e >= n || isSpace(mainChars[e]))) {
                 rx.strength = tok + unit;
+                spans.strength = [k, e];
                 for (q = k; q < e; q++) used[q] = true;
             }
         }
@@ -316,7 +368,12 @@
         if (rx.per_dose !== null && rx.per_day !== null && rx.days !== null) {
             rx.total = Math.round(rx.per_dose * rx.per_day * rx.days * 100) / 100;
         }
-        return rx;
+        if (comma !== -1) {
+            var ns = comma + 1;
+            while (ns < chars.length && isSpace(chars[ns])) ns++;
+            spans.note = [ns, chars.length];
+        }
+        return { rx: rx, spans: spans, comma: comma };
     }
 
     /** The note cut into runs: {text, offset, kind: 'text'|'tag'|'value', row} -- zpms_note_runs() in PHP. */
@@ -351,7 +408,10 @@
         normalizeText: normalizeText,
         /** One entry per tagged value -- see zpms_note_parse() in web/note_tags.php. */
         parse: function (text, spec, drugs) { return new Parser(String(text || ''), spec, drugs).parse(); },
-        parseRx: parseRx
+        parseRx: parseRx,
+        parseRxFull: parseRxFull,
+        /** The tagged field at a caret position (characters) -- see Parser.contextAt(). */
+        context: function (text, caret, spec) { return new Parser(String(text || ''), spec, []).contextAt(caret); }
     };
 
     if (typeof module === 'object' && module.exports) {

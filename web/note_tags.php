@@ -606,7 +606,7 @@ function zpms_note_tags_assets(): string {
         }
         $css .= ".zt-c-$name{" . implode(';', $v) . "}\n";
     }
-    $json = json_encode(['tags' => $spec['tags']], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
+    $json = json_encode(['tags' => $spec['tags'], 'suggestUrl' => (function_exists('rel_url') && !empty($GLOBALS['kernel'])) ? rel_url('/notes/suggestions') : '/notes/suggestions'], JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
     return "<style>\n$css</style>\n<script type=\"application/json\" id=\"zt-spec\">$json</script>\n";
 }
 
@@ -829,6 +829,73 @@ function zpms_note_fields_sync_patient($pat): void {
     } catch (Throwable $e) {
         error_log('note_fields: patient #' . ($pat ? (int)$pat->getid() : 0) . ' not synced: ' . get_class($e));
     }
+}
+
+/**
+ * The suggestion data for the note boxes (docs/CLINICAL_TAGS_PLAN.md section 6),
+ * per tag: the fixed list (active entries, in order) and the previous entries
+ * (from note_fields, most used first, with a count; soft-deleted and invalid
+ * rows left out). Previous entries come only from notes the account may read:
+ * patient notes need patients-view-list, appointment notes appointment-view
+ * or appointment-edit. They are aggregated values with no patient attached.
+ */
+function zpms_note_suggestions(PDO $db, bool $patientNotes, bool $appointmentNotes, int $perTag = 40): array {
+    $spec = zpms_note_tags_spec();
+    $out = [];
+    foreach ($spec['tags'] as $key => $tag) $out[$key] = ['list' => [], 'previous' => []];
+    if (zpms_note_table_exists($db, 'note_list_entries')) {
+        foreach ($db->query('SELECT tag_key, text, aliases, next_words, rx_strengths, rx_defaults FROM note_list_entries WHERE active = 1 ORDER BY tag_key, sort, id') as $r) {
+            if (!isset($out[$r['tag_key']])) continue;
+            $nw = json_decode((string)$r['next_words'], true);
+            $st = json_decode((string)$r['rx_strengths'], true);
+            $df = json_decode((string)$r['rx_defaults'], true);
+            $out[$r['tag_key']]['list'][] = [
+                'text' => (string)$r['text'],
+                'aliases' => array_values(array_filter(array_map('trim', explode(',', (string)$r['aliases'])), 'strlen')),
+                'next_words' => is_array($nw) ? array_values(array_map('strval', $nw)) : [],
+                'strengths' => is_array($st) ? array_values(array_map('strval', $st)) : [],
+                'defaults' => is_array($df) ? $df : null,
+            ];
+        }
+    }
+    $sources = [];
+    if ($patientNotes) $sources[] = "'patient'";
+    if ($appointmentNotes) $sources[] = "'appointment'";
+    if ($sources && zpms_note_table_exists($db, 'note_fields')) {
+        $st = $db->prepare('SELECT normalized, COUNT(*) AS c, MAX(value_text) AS t, MAX(id) AS last FROM note_fields
+            WHERE tag_key = ? AND deleted IS NULL AND valid = 1 AND origin IS NULL AND normalized IS NOT NULL AND normalized <> \'\'
+              AND source IN (' . implode(',', $sources) . ')
+            GROUP BY normalized ORDER BY c DESC, last DESC LIMIT ' . (int)$perTag);
+        foreach (array_keys($out) as $key) {
+            $st->execute([$key]);
+            foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) {
+                $out[$key]['previous'][] = ['text' => (string)$r['t'], 'count' => (int)$r['c']];
+            }
+        }
+    }
+    return $out;
+}
+
+/** GET /notes/suggestions -- JSON for web/js/note-box.js. Only for accounts that write notes. */
+function note_tags_suggestions($params) {
+    header('Content-Type: application/json; charset=utf-8');
+    header('Cache-Control: no-store');
+    $writes = rbacClass::isPermitted(ZPMS_PERM_PATIENTS_EDIT_PATIENT) || rbacClass::isPermitted(ZPMS_PERM_APPOINTMENT_EDIT);
+    if (!$writes) {
+        http_response_code(403);
+        echo json_encode(['tags' => (object)[]]);
+        exit();
+    }
+    try {
+        $data = zpms_note_suggestions(dbConnection::getConnection(),
+            rbacClass::isPermitted(ZPMS_PERM_PATIENTS_VIEW_LIST),
+            rbacClass::isPermitted(ZPMS_PERM_APPOINTMENT_VIEW) || rbacClass::isPermitted(ZPMS_PERM_APPOINTMENT_EDIT));
+    } catch (Throwable $e) {
+        error_log('note suggestions: ' . get_class($e));
+        $data = [];
+    }
+    echo json_encode(['tags' => (object)$data], JSON_UNESCAPED_UNICODE);
+    exit();
 }
 
 /** Soft delete in the web app: hides the rows. Never throws. */

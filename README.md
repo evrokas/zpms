@@ -2529,3 +2529,24 @@ Also fixed: an appointment note (and the patient name on the new-appointment pag
 **After pulling:** empty `web/cache/` (changed templates). No database change.
 
 Tests: the shared parser cases now also check how a note is cut into text, tag words and values (both parsers); `tests/functional/note_fields.php` checks the page markup, the escaping, and the previews. The look itself was checked in Chromium at desktop and phone widths (alignment of the coloured copy while the box grows, click-to-caret, the menu, keyboard paths); not yet in Firefox or Safari.
+
+## Clinical tags in the notes -- phase 3: suggestions and editing
+
+Third phase of `docs/CLINICAL_TAGS_PLAN.md` (details in its section 18). While writing inside a tagged value:
+
+- **Ghost completion**: the best match appears in faint grey after the caret. **Tab** takes the next word, **→** (at the end of the note) takes the rest, typing anything else ignores it. Greek spellings find drugs («λυρ» → Lyrica).
+- **↓** opens the field's list: the current value first, then the fixed list, then your previous entries with how often they were used. **Enter** replaces the whole value.
+- **Exams (`@εξ`)**: ↓ opens a checklist. **Space** ticks, **Enter** writes all ticked, each with its own `@εξ`.
+- **Levels (`@επ`)**: ↓ opens a grid of disc levels. Arrows move, **Space** ticks, **Enter** writes them (e.g. «Ο4-Ο5 και Ο5-Ι1»).
+- **Prescriptions (`@συν`)**: picking a drug writes «Lyrica 25mg 1x2 για 30 ημέρες» with blanks. **Tab** / **Shift+Tab** move between strength, doses, days and note, each with its own short list. The field bar shows the total tablets.
+- **Next words** after an exam, physiotherapy or therapy entry (e.g. ΟΜΣΣ, ΑΜΣΣ): **Alt+1…9** or a click.
+- **Field bar** above the box while the caret is in a value: list, change field (or click the grey tag word), remove tag (or one Backspace right after the tag word).
+- **Phone**: the suggestion's words appear as buttons above the keyboard («✓ όλο» takes all of it); blanks get «επόμενο ›».
+
+Tab, the arrows and Enter are taken over only while one of these is showing; otherwise they behave as always.
+
+The lists come from `GET /notes/suggestions`: refused to accounts that write no notes, and the previous entries only come from notes the account may read (never from deleted records).
+
+**After pulling:** `php bin/import_dictionary.php` (new labels), empty `web/cache/`.
+
+Tests: `tests/note_tags/editing_cases.js` (the field under the caret, prescription blank positions, in the static suite) and the suggestion endpoint in `tests/functional/note_fields.php` (order, counts, deleted and invalid rows left out, refused to a secretary and to signed-out visitors). The aids themselves were checked in Chromium (desktop, and iPhone emulation for the word bar).

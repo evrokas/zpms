@@ -483,6 +483,12 @@ routes:
     url: /patient/new/namecheck
     handler: patient_new_check_name
     method: post
+  # Clinical tags: suggestion lists for the note boxes (web/note_tags.php).
+  note_tags_suggestions:
+    title: "Note tag suggestions"
+    url: "/notes/suggestions"
+    handler: note_tags_suggestions
+    access: authenticated
   patient_delete:
     title: "Patient delete"
     url: "/patient/{id}/delete"

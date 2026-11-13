@@ -518,6 +518,18 @@ require_once(__DIR__ . '/zpms_mailer.php');
             'schedPatStranded' => t('The pattern was not saved: these future bookings would end up outside it. Move them first:'),
             'schedFromTo' => t('From \\ To'),
             'schedTravelInvalid' => t('Check the travel times: each must be a whole number from 0 to 600.'),
+            // Clinical tags in the note boxes (web/js/note-box.js)
+            'ztList' => t('List'),
+            'ztChangeField' => t('Change field'),
+            'ztRemoveTag' => t('Remove tag'),
+            'ztTakeAll' => t('All of it'),
+            'ztNextBlank' => t('Next blank'),
+            'ztWrite' => t('Write'),
+            'ztFromList' => t('list'),
+            'ztCurrent' => t('current'),
+            'ztTimes' => t('@n times'),
+            'ztTotal' => t('Total: @n tablets'),
+            'ztCheckLevel' => t('Check the level'),
             'confirmLoad' => t('A patient with this name already exists. Do you want to load the existing patient record? The details you entered will not be saved.'),
         ];
     }

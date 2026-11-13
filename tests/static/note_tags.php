@@ -63,6 +63,11 @@ function zpms_static_note_tags(TestRunner $runner): void {
         assert_equal('', zpms_note_tags_assets(), 'assets emitted twice on one page');
     });
 
+    $runner->add('JS editing helpers: the field under the caret, prescription blank spans (tests/note_tags/editing_cases.js)', function () {
+        exec('node ' . escapeshellarg(ZPMS_TEST_APPDIR . '/tests/note_tags/editing_cases.js') . ' 2>&1', $out, $code);
+        assert_equal(0, $code, implode("\n", $out));
+    });
+
     $runner->add('a malformed tag file is refused, not half-read', function () {
         $tmp = tempnam(sys_get_temp_dir(), 'zpmstags') . '.yaml';
         file_put_contents($tmp, "tags:\n  dx: { names: [δγ], colour: nope, value: text }\npalette:\n  rose: { tint: '#ffffff', mark: '#ffffff', ink: '#ffffff' }\n");
