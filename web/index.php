@@ -30,6 +30,7 @@ require_once(__DIR__ . '/appointment_files.php');
 require_once(__DIR__ . '/appointment_history.php');
 require_once(__DIR__ . '/audit.php');
 require_once(__DIR__ . '/note_tags.php');
+require_once(__DIR__ . '/note_lists.php');
 require_once(__DIR__ . '/apyweb_client.php');
 require_once(__DIR__ . '/google_calendar_client.php');
 require_once(__DIR__ . '/rbac.php');
@@ -182,6 +183,10 @@ require_once(__DIR__ . '/zpms_mailer.php');
         foreach (['q', 'area'] as $k) {
             if (($state[$k] ?? '') !== '') $query[$k] = $state[$k];
         }
+        // Clinical-tag filters: tag_<key>=value (web/note_tags.php).
+        foreach (($state['tags'] ?? []) as $k => $v) {
+            if ($v !== '') $query['tag_' . $k] = $v;
+        }
         if (($state['sort'] ?? 'last') !== 'last' || ($state['dir'] ?? 'desc') !== 'desc') {
             $query['sort'] = $state['sort'];
             $query['dir'] = $state['dir'];
@@ -218,11 +223,24 @@ require_once(__DIR__ . '/zpms_mailer.php');
             'per_page' => in_array($str('per_page', 4), zpms_list_per_page_choices(), true) ? $str('per_page', 4) : '25',
             'page' => max(1, (int)$str('page', 6)),
         ];
+        // Clinical-tag filters (diagnosis, level, procedure: `search: true` in
+        // config/note_tags.yaml) -- tag_<key>=value.
+        $state['tags'] = [];
+        foreach (zpms_note_search_tags() as $k => $tdef) {
+            $state['tags'][$k] = $str('tag_' . $k, 100);
+        }
         // Names read A-Z first, appointments newest first -- as the list always did.
         $dirIn = strtolower($str('dir', 4));
         $state['dir'] = in_array($dirIn, ['asc', 'desc'], true) ? $dirIn : (($state['sort'] === 'name') ? 'asc' : 'desc');
 
+        $tagBind = [];
+        $tagWhere = array_filter($state['tags'], 'strlen') && zpms_note_table_exists(dbConnection::getConnection(), 'note_fields')
+            ? zpms_note_patient_filter_where($state['tags'], true,
+                rbacClass::isPermitted(ZPMS_PERM_APPOINTMENT_VIEW) || rbacClass::isPermitted(ZPMS_PERM_APPOINTMENT_EDIT), 'p.id', $tagBind)
+            : [];
         $result = patientsClassEx::getPatientList([
+            'where' => $tagWhere,
+            'bind' => $tagBind,
             'q' => $state['q'],
             'area' => $state['area'],
             'sort' => $state['sort'],
@@ -318,7 +336,8 @@ require_once(__DIR__ . '/zpms_mailer.php');
             'areas' => patientsClassEx::appointmentPlaces($lang),
             'summary' => patientsClassEx::listSummary($today),
             'per_page_choices' => zpms_list_per_page_choices(),
-            'searching' => ($state['q'] !== '' || $state['area'] !== ''),
+            'searching' => ($state['q'] !== '' || $state['area'] !== '' || array_filter($state['tags'], 'strlen')),
+            'clinical_filters' => zpms_note_filter_fields($state['tags']),
             'can_create_patient' => rbacClass::isPermitted(ZPMS_PERM_PATIENTS_NEW_PATIENT),
             'can_edit_appointment' => rbacClass::isPermitted(ZPMS_PERM_APPOINTMENT_EDIT),
         ]);

@@ -940,6 +940,84 @@ function zpms_note_clinical_picture(PDO $db, int $patientId, bool $withAppointme
     return $out;
 }
 
+/** The tags offered as patients-list filters (`search: true`), in file order. */
+function zpms_note_search_tags(): array {
+    try {
+        return array_filter(zpms_note_tags_spec()['tags'], fn($t) => !empty($t['search']));
+    } catch (Throwable $e) {
+        return [];
+    }
+}
+
+/**
+ * SQL conditions for the patients list (section 9, phase 5): a patient matches
+ * a filter when one of their notes holds that tag with a matching value. Text
+ * values match the folded words anywhere in the value («στένωση» finds
+ * «Σπονδυλική στένωση»); levels are read like a typed level, in Greek or
+ * English («Ο4-Ο5», «l4-5»), and every one given must be there. Only notes the
+ * viewer may read count, never soft-deleted or invalid rows. $patientId is the
+ * SQL expression of the patient's id. Placeholders are added to $bind.
+ */
+function zpms_note_patient_filter_where(array $filters, bool $patientNotes, bool $appointmentNotes, string $patientId, array &$bind): array {
+    $where = [];
+    $sources = [];
+    if ($patientNotes) $sources[] = "'patient'";
+    if ($appointmentNotes) $sources[] = "'appointment'";
+    $tags = zpms_note_search_tags();
+    $i = 0;
+    foreach ($filters as $key => $value) {
+        $value = trim((string)$value);
+        if ($value === '' || !isset($tags[$key])) continue;
+        if (!$sources) { $where[] = '0 = 1'; continue; }
+        $i++;
+        $base = "SELECT 1 FROM note_fields nf$i WHERE nf$i.patient_id = $patientId AND nf$i.tag_key = :ntag$i"
+              . " AND nf$i.deleted IS NULL AND nf$i.valid = 1 AND nf$i.source IN (" . implode(',', $sources) . ')';
+        $bind[":ntag$i"] = $key;
+        $conds = [];
+        if ($tags[$key]['value'] === 'levels') {
+            $rows = zpms_note_parse('@' . $tags[$key]['names'][0] . ' ' . $value, zpms_note_tags_spec());
+            $levels = ($rows && $rows[0]['normalized']) ? explode(', ', $rows[0]['normalized']) : [];
+            foreach ($levels as $j => $lv) {
+                $conds[] = "CONCAT(', ', nf$i.normalized, ', ') LIKE :nlv{$i}_$j";
+                $bind[":nlv{$i}_$j"] = '%, ' . addcslashes($lv, '\\%_') . ', %';
+            }
+        }
+        if (!$conds) {
+            $conds[] = "nf$i.normalized LIKE :ntx$i";
+            $bind[":ntx$i"] = '%' . addcslashes(zpms_note_normalize_text($value), '\\%_') . '%';
+        }
+        foreach ($conds as $c) $where[] = "EXISTS ($base AND $c)";
+    }
+    return $where;
+}
+
+/**
+ * The filter fields for patients_list.zetem: per searchable tag its label,
+ * current value, a placeholder and the active list entries (offered as a
+ * <datalist>; list wording, not patient data).
+ */
+function zpms_note_filter_fields(array $values): array {
+    $out = [];
+    $lists = [];
+    try {
+        $db = dbConnection::getConnection();
+        if (zpms_note_table_exists($db, 'note_list_entries')) {
+            foreach ($db->query('SELECT tag_key, text FROM note_list_entries WHERE active = 1 ORDER BY sort, id') as $r) $lists[$r['tag_key']][] = $r['text'];
+        }
+    } catch (Throwable $e) { /* the filters still work without the lists */ }
+    foreach (zpms_note_search_tags() as $k => $tag) {
+        $out[] = [
+            'key' => $k,
+            'label' => (string)$tag['label'],
+            'colour' => (string)$tag['colour'],
+            'value' => (string)($values[$k] ?? ''),
+            'levels' => $tag['value'] === 'levels',
+            'options' => $lists[$k] ?? [],
+        ];
+    }
+    return $out;
+}
+
 /** GET /notes/suggestions -- JSON for web/js/note-box.js. Only for accounts that write notes. */
 function note_tags_suggestions($params) {
     header('Content-Type: application/json; charset=utf-8');

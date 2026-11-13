@@ -537,3 +537,57 @@
         border-radius: var(--border-radius-lg);
     }
 }
+
+/* Clinical-tag filters (diagnosis, level, procedure from the notes). */
+.pt-clinical { position: relative; }
+.pt-clinical summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.5rem 0.8rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    background: white;
+    cursor: pointer;
+    font-size: 0.9rem;
+    list-style: none;
+}
+.pt-clinical summary::-webkit-details-marker { display: none; }
+.pt-clinical[open] summary { border-color: var(--primary); color: var(--primary); }
+.pt-clinical-on { color: var(--primary); }
+.pt-clinical-fields {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0.6rem;
+    margin-top: 0.5rem;
+    padding: 0.75rem;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+}
+.pt-clinical-field { display: flex; flex-direction: column; gap: 0.2rem; font-size: 0.8rem; color: var(--zt-ink, var(--dark-gray)); }
+.pt-clinical-field input {
+    min-width: 11rem;
+    padding: 0.45rem 0.6rem;
+    border: 1px solid var(--zt-mark, var(--border-color));
+    border-radius: 6px;
+    background: var(--zt-tint, white);
+    font: inherit;
+    font-size: 0.9rem;
+    color: var(--text);
+}
+.pt-clinical-apply {
+    padding: 0.5rem 0.9rem;
+    border: 0;
+    border-radius: 6px;
+    background: var(--primary);
+    color: white;
+    font: inherit;
+    cursor: pointer;
+}
+.pt-clinical-clear { font-size: 0.85rem; align-self: center; }
+@media screen and (max-width: 470px) {
+    .pt-clinical, .pt-clinical summary { width: 100%; }
+    .pt-clinical-field, .pt-clinical-field input { width: 100%; min-width: 0; }
+}

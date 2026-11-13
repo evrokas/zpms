@@ -348,6 +348,10 @@ class patientsClassEx extends patientsClass {
             }
             $where[] = 'la.aplace IN (' . implode(',', $in) . ')';
         }
+        // Extra conditions from the caller (the clinical-tag filters,
+        // zpms_note_patient_filter_where()), with their own placeholders.
+        foreach ((array)($opts['where'] ?? []) as $w) $where[] = $w;
+        foreach ((array)($opts['bind'] ?? []) as $k => $v) $bind[$k] = $v;
         $whereSql = ' WHERE ' . implode(' AND ', $where);
 
         $db = dbConnection::getConnection();

@@ -1,5 +1,6 @@
 {% attach_library('boxicons') %}
 {% attach_library('patients-list') %}
+{{ zpms_note_tags_assets() }}
 {#
   patients_list.zetem -- the patient list (/patients).
 
@@ -50,6 +51,30 @@
             {% endforeach %}
         </select>
     </label>
+    {% endif %}
+
+    {# Clinical-tag filters (docs/CLINICAL_TAGS_PLAN.md phase 5): patients whose
+       notes hold a matching diagnosis / level / procedure. #}
+    {% if(count($clinical_filters) > 0): %}
+    {% $__clinicalOn = count(array_filter(array_column($clinical_filters, 'value'), 'strlen')) > 0; %}
+    <details class="pt-clinical" {% if($__clinicalOn): %}open{% endif %}>
+        <summary><i class="bx bx-filter-alt"></i> {{{t('Clinical filters')}}}{% if($__clinicalOn): %} <span class="pt-clinical-on">&bull;</span>{% endif %}</summary>
+        <div class="pt-clinical-fields">
+            {% foreach($clinical_filters as $__f): %}
+            <label class="pt-clinical-field zt-c-{{{$__f['colour']}}}">
+                <span>{{{$__f['label']}}}</span>
+                <input type="text" name="tag_{{{$__f['key']}}}" value="{{{$__f['value']}}}" autocomplete="off" maxlength="100"
+                    {% if($__f['levels']): %}placeholder="{{{t('e.g. L4-L5')}}}"{% endif %}
+                    {% if(count($__f['options']) > 0): %}list="pt-dl-{{{$__f['key']}}}"{% endif %}>
+                {% if(count($__f['options']) > 0): %}
+                <datalist id="pt-dl-{{{$__f['key']}}}">{% foreach($__f['options'] as $__o): %}<option value="{{{$__o}}}">{% endforeach %}</datalist>
+                {% endif %}
+            </label>
+            {% endforeach %}
+            <button type="submit" class="pt-clinical-apply">{{{t('Apply')}}}</button>
+            {% if($__clinicalOn): %}<a class="pt-clinical-clear" href="{{rel_url('/patients')}}">{{{t('Clear')}}}</a>{% endif %}
+        </div>
+    </details>
     {% endif %}
 
     <span class="pt-density" role="group" aria-label="{{{t('Display density')}}}">
@@ -167,7 +192,7 @@
 
         /* Leave empty filters out of the address (?q=&area= is just noise). */
         form.addEventListener('submit', function() {
-            form.querySelectorAll('input[name="q"], select[name="area"]').forEach(function(el) {
+            form.querySelectorAll('input[name="q"], select[name="area"], input[name^="tag_"]').forEach(function(el) {
                 if (el.value === '') el.disabled = true;
             });
         });

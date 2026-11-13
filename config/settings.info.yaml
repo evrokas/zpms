@@ -386,6 +386,21 @@ routes:
     handler: settings_schedule_locations_save
     method: post
     access: authenticated
+  # Settings -> «Λίστες σημειώσεων» (web/note_lists.php).
+  note_lists:
+    title:
+      gr: "Λίστες σημειώσεων"
+      en: "Note lists"
+    url: "/settings/note-lists"
+    handler: note_lists_page
+    method: get
+    access: authenticated
+  note_lists_save:
+    title: "Save a note list entry"
+    url: "/settings/note-lists"
+    handler: note_lists_save
+    method: post
+    access: authenticated
   settings_mail_save:
     title: "Save email settings"
     url: "/settings/mail"

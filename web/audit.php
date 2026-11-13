@@ -77,6 +77,7 @@ const ZPMS_AUDIT_EVENT_LABELS = [
     'cleanup_orphans' => 'Orphaned rows removed',
     'note_fields_rebuilt' => 'Clinical tags re-read from the notes',
     'note_lists_seeded' => 'Clinical tag lists filled with the starter entries',
+    'note_list_changed' => 'Clinical tag list changed (Settings)',
 ];
 
 const ZPMS_AUDIT_ACTOR_TYPES = ['staff', 'anonymous', 'api', 'cli'];

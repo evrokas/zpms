@@ -272,6 +272,113 @@ function zpms_functional_note_fields(TestRunner $runner, string $baseUrl): void 
         }
     });
 
+    $runner->add('patients list: clinical filters by diagnosis (accents ignored), level (Greek or English), procedure; combined; only readable notes', function () use ($http, $db, &$state) {
+        TestSchema::assertSafeToMutate();
+        $mkp = function (string $name, string $note) {
+            $p = new patientsClass(['guid' => guid(), 'cuser' => 'test', 'cdate' => getDBtime(), 'pname' => $name, 'pdob' => '1970-01-01 00:00:00',
+                'pamka' => '', 'ptel' => '', 'paddr' => '', 'pemail' => '', 'pnote' => $note]);
+            $p->insert();
+            zpms_note_fields_sync_patient($p);
+            return $p;
+        };
+        $a = $mkp('Φίλτρο Άλφα', '@δγ Σπονδυλική στένωση @επ Ο3-Ο4');
+        $b = $mkp('Φίλτρο Βήτα', '@δγ σπονδυλική στένωση. @χειρ πεταλεκτομή L4-L5');
+        $c = $mkp('Φίλτρο Γάμμα', '@δγ στένωση χωρίς σημασία');
+        $c->setdeleted(getDBtime()); $c->update();
+        zpms_note_fields_hide_patients($db, [$c->getguid()], getDBtime());
+        $names = function (string $query) use ($http) {
+            $body = $http->get('/patients?' . $query)['body'];
+            preg_match_all('~Φίλτρο (Άλφα|Βήτα|Γάμμα)~u', $body, $m);
+            $found = array_values(array_unique($m[1]));
+            sort($found);
+            return $found;
+        };
+        assert_equal(['Άλφα', 'Βήτα'], $names('tag_dx=' . rawurlencode('ΣΤΕΝΩΣΗ')), 'diagnosis filter (accents/case ignored, deleted patient left out)');
+        assert_equal(['Βήτα'], $names('tag_lvl=' . rawurlencode('ο4-5')), 'level filter, Greek short form, level inside a procedure');
+        assert_equal(['Άλφα'], $names('tag_lvl=' . rawurlencode('L3-L4')), 'level filter, English');
+        assert_equal([], $names('tag_lvl=' . rawurlencode('Ο3')), 'a single vertebra is not the disc level');
+        assert_equal(['Βήτα'], $names('tag_proc=' . rawurlencode('πεταλ') . '&tag_dx=' . rawurlencode('στένωση')), 'two filters combined');
+        assert_equal([], $names('tag_dx=' . rawurlencode('%')), 'a % in the filter must be literal');
+        $page = $http->get('/patients?tag_dx=' . rawurlencode('στένωση'))['body'];
+        assert_contains('name="tag_dx" value="στένωση"', $page, 'the filter value is not kept in the form');
+        assert_contains('tag_dx=', $page, 'the pager/sort links lose the filter');
+
+        // Appointment notes count only for viewers who may read them.
+        $bind = [];
+        $w = zpms_note_patient_filter_where(['dx' => 'κήλη'], true, false, 'p.id', $bind);
+        assert_contains("'patient'", $w[0], 'filter not limited to patient notes');
+        assert_not_contains("'appointment'", $w[0], 'appointment notes searched for a viewer who may not read them');
+        foreach ([$a, $b, $c] as $p) {
+            $db->prepare('DELETE FROM note_fields WHERE patient_id = ?')->execute([$p->getid()]);
+            $db->prepare('DELETE FROM patients WHERE id = ?')->execute([$p->getid()]);
+        }
+    });
+
+    $runner->add('Settings «Λίστες σημειώσεων»: add, edit, reorder, deactivate, promote; CSRF; audited without text; refused without settings-manage', function () use ($http, $baseUrl, $db) {
+        TestSchema::assertSafeToMutate();
+        $page = $http->get('/settings/note-lists?tag=exam');
+        assert_equal(200, $page['status'], 'lists page did not load');
+        assert_contains('Μαγνητική τομογραφία', $page['body'], 'the exam list is not shown');
+        $token = TestHttpClient::extractCsrfToken($page['body']);
+        $post = fn(array $f) => $http->post('/settings/note-lists', $f + ['csrf_token' => $token, 'tag' => 'exam']);
+
+        $count = fn() => (int)$db->query("SELECT COUNT(*) FROM note_list_entries WHERE tag_key = 'exam'")->fetchColumn();
+        $n = $count();
+        $http->post('/settings/note-lists', ['tag' => 'exam', 'action' => 'add', 'text' => 'Χωρίς token']);
+        assert_equal($n, $count(), 'an add without a CSRF token was accepted');
+
+        $res = $post(['action' => 'add', 'text' => '  Υπερηχογράφημα   κοιλίας ', 'aliases' => 'υπερηχο, US', 'next_words' => 'άνω, κάτω, άνω']);
+        assert_equal(302, $res['status'], 'add did not redirect');
+        $row = $db->query("SELECT * FROM note_list_entries WHERE tag_key = 'exam' AND text = 'Υπερηχογράφημα κοιλίας'")->fetch(PDO::FETCH_ASSOC);
+        assert_not_null($row ?: null, 'entry not added (spaces not tidied?)');
+        assert_equal('υπερηχο,US', $row['aliases'], 'aliases');
+        assert_equal(['άνω', 'κάτω'], json_decode($row['next_words'], true), 'next words (duplicates dropped)');
+        $post(['action' => 'add', 'text' => 'Υπερηχογράφημα κοιλίας']);
+        assert_equal($n + 1, $count(), 'a duplicate entry was added');
+
+        // Move it to the top, then deactivate it.
+        for ($i = 0; $i < $n; $i++) $post(['action' => 'move', 'id' => $row['id'], 'dir' => 'up']);
+        $first = $db->query("SELECT id FROM note_list_entries WHERE tag_key = 'exam' ORDER BY sort, id LIMIT 1")->fetchColumn();
+        assert_equal((int)$row['id'], (int)$first, 'move up did not reach the top');
+        $post(['action' => 'update', 'id' => $row['id'], 'text' => 'Υπερηχογράφημα κοιλίας', 'aliases' => '', 'next_words' => 'άνω']);
+        assert_equal(0, (int)$db->query("SELECT active FROM note_list_entries WHERE id = {$row['id']}")->fetchColumn(), 'unticked entry still active');
+        $sugg = $http->get('/notes/suggestions')['body'];
+        assert_not_contains('Υπερηχογράφημα κοιλίας', $sugg, 'an inactive entry is still suggested');
+        // An entry of another tag cannot be changed through this tag.
+        $other = (int)$db->query("SELECT id FROM note_list_entries WHERE tag_key = 'dx' LIMIT 1")->fetchColumn();
+        $post(['action' => 'update', 'id' => $other, 'text' => 'Αλλαγμένο']);
+        assert_equal(0, (int)$db->query("SELECT COUNT(*) FROM note_list_entries WHERE text = 'Αλλαγμένο'")->fetchColumn(), 'an entry of another tag was changed');
+
+        // Promote a frequent free-text entry (shown on the page first).
+        foreach (['Φ1', 'Φ2'] as $nm) {
+            $p = new patientsClass(['guid' => guid(), 'cuser' => 'test', 'cdate' => getDBtime(), 'pname' => $nm, 'pdob' => '1970-01-01 00:00:00',
+                'pamka' => '', 'ptel' => '', 'paddr' => '', 'pemail' => '', 'pnote' => '@εξ πυελογραφία']);
+            $p->insert();
+            zpms_note_fields_sync_patient($p);
+            $tmp[] = $p;
+        }
+        $page = $http->get('/settings/note-lists?tag=exam')['body'];
+        assert_true((bool)preg_match('~class="nl-ftext">πυελογραφία<~u', $page), 'a value used twice is not offered for the list');
+        $post(['action' => 'promote', 'text' => 'πυελογραφία']);
+        assert_equal(1, (int)$db->query("SELECT COUNT(*) FROM note_list_entries WHERE tag_key = 'exam' AND text = 'πυελογραφία'")->fetchColumn(), 'promote did not add the entry');
+
+        $details = (string)$db->query("SELECT GROUP_CONCAT(detail SEPARATOR '|') FROM audit_log WHERE event_type = 'note_list_changed'")->fetchColumn();
+        assert_contains('tag=exam action=add', $details, 'list change not audited');
+        assert_not_contains('Υπερηχογράφημα', $details, 'entry text reached the audit log');
+        assert_not_contains('πυελογραφία', $details, 'promoted text reached the audit log');
+
+        $sec = new TestHttpClient($baseUrl);
+        TestFixtures::loginAsSecretary($sec);
+        $r = $sec->get('/settings/note-lists');
+        assert_not_contains('nl-edit', $r['body'], 'a secretary (no settings-manage) can see the lists page');
+
+        foreach ($tmp as $p) {
+            $db->prepare('DELETE FROM note_fields WHERE patient_id = ?')->execute([$p->getid()]);
+            $db->prepare('DELETE FROM patients WHERE id = ?')->execute([$p->getid()]);
+        }
+        $db->exec("DELETE FROM note_list_entries WHERE text IN ('Υπερηχογράφημα κοιλίας', 'πυελογραφία')");
+    });
+
     $runner->add('a pending appointment turned into a patient record: its notes are parsed then', function () use ($http, $db, &$state) {
         TestSchema::assertSafeToMutate();
         $pending = new pendingAppointmentsClass([

@@ -1,8 +1,9 @@
-# Clinical tags in the note boxes -- plan (approved design; phases 1-4 built)
+# Clinical tags in the note boxes -- plan (approved design; all five phases built)
 
 Status: design approved by the user after several mockup rounds, 2026-11-13. **Phases 1 (rules
-and storage), 2 (writing and reading looks) and 3 (suggestions and editing) and 4 (patient record) are
-built** -- see sections 16-19 for what was decided while building them. Phase 5 not started. This file is the complete specification: a new session should be able to build
+and storage), 2 (writing and reading looks) and 3 (suggestions and editing), 4 (patient record) and 5 (lists
+and search) are built** -- see sections 16-20 for what was decided while building them. What is
+left for later is in section 15. This file is the complete specification: a new session should be able to build
 it from this file alone. Visual mockups (same content, drawn): the "ZPMS Tag Styles" page,
 https://claude.ai/artifact/46PGs1Y4w3avRscQd7ZYyy, and the plan page "ZPMS Clinical Tags",
 https://claude.ai/artifact/41Y52Wzz9m12Q42jZVetPk. Both are also saved in this repository as
@@ -370,7 +371,7 @@ Each phase is usable on its own and adds tests to `bin/run_tests.sh`.
    value frame + field bar, change field, remove tag. Suggestion endpoint returns only data
    the user may read.
 4. **Patient record.** *(Done 2026-11-13; see section 19.)* Allergy line on the header, «Κλινική εικόνα» panel.
-5. **Lists and search.** Settings page «Λίστες σημειώσεων» (per tag: add, edit, reorder,
+5. **Lists and search.** *(Done 2026-11-13; see section 20.)* Settings page «Λίστες σημειώσεων» (per tag: add, edit, reorder,
    deactivate entries; next words; prescription strengths/defaults; "promote frequent
    free-text entries"); patients-list filters.
 
@@ -532,3 +533,32 @@ to `edit_patient.zetem` as `clinical`; styles in `web/css/note-tags.css`.
   from the allergy tag's palette entry (`header_alert: true`).
 - Prescription entries show their total («Σύνολο: 60 δισκία»).
 - The blocks are drawn when the page loads; a value typed in a note shows in them after a reload.
+
+## 20. Phase 5 as built (2026-11-13)
+
+**Settings → «Λίστες σημειώσεων»** (`/settings/note-lists`, `web/note_lists.php`,
+`note_lists.zetem`; linked from the Settings page's section bar):
+- Gated on `settings-manage`, like the rest of Settings. One tag at a time (tabs); levels have no
+  list (the grid is built in).
+- Per entry: text, other spellings (aliases), next words (tags with `next_words`), strengths
+  (prescriptions), active, ↑/↓. Comma-separated fields; duplicates and extra spaces are tidied.
+  Entries are **deactivated, never deleted** (an inactive entry is no longer suggested; notes that
+  use it are unaffected; `note-lists:seed` never brings it back). `rx_defaults` has no form yet --
+  set it in the table if a drug needs other default blanks.
+- «Συχνές καταχωρίσεις από τις σημειώσεις»: values typed in notes at least twice and not in the
+  list, most used first, each with «Προσθήκη στη λίστα». These come from patients' notes, so they
+  are shown only to an account that may read notes (same rule as the suggestions) -- the
+  `maintenance` role, which holds `settings-manage` but no patient permission, sees the lists but
+  not this block.
+- Audit event `note_list_changed` with tag, action and entry id -- never the entry text.
+
+**Patients-list filters** (`/patients`, «Κλινικά φίλτρα»; `zpms_note_patient_filter_where()`):
+- One field per tag with `search: true` (diagnosis, levels, procedure), `tag_<key>=` in the
+  address, kept by the pager and sort links, combinable with the name search and area. Diagnosis
+  and procedure offer their list as a `<datalist>`.
+- Text: the folded words anywhere in a value («στενωση» finds «Σπονδυλική στένωση»). Levels: read
+  like a typed level, Greek or English, short forms («ο4-5», «L3-L4»); every level given must be
+  present (a single vertebra «Ο3» does not match the disc level «Ο3-Ο4»). Levels inside a
+  procedure/therapy count.
+- Only notes the viewer may read: patient notes always (the list needs `patients-view-list`),
+  appointment notes with `appointment-view`/`-edit`. Soft-deleted and invalid rows never match.

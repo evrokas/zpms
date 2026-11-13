@@ -25,6 +25,7 @@ function zpms_static_dictionary_terms(TestRunner $runner): void {
         'web/templates/content/pending_appointment_edit.zetem',
         'web/templates/content/pending_appointments_list.zetem',
         'web/templates/content/settings.zetem',
+        'web/templates/content/note_lists.zetem',
         'web/templates/content/view_appointment.zetem',
         'web/templates/blocks/user_profile.zetem',
         'web/templates/apps/genqr/genqr.zetem',

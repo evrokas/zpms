@@ -2564,3 +2564,14 @@ The blocks are built when the page loads, so a value just typed appears after a 
 **After pulling:** `php bin/import_dictionary.php` (three new labels), empty `web/cache/`.
 
 Tests: `tests/functional/note_fields.php` (the header line and its link, the boxes, totals, links to the cards, an invalid level and a deleted appointment left out, repeats counted, newest first, and a viewer without appointment access seeing the patient note only).
+
+## Clinical tags in the notes -- phase 5: lists and search
+
+Last phase of `docs/CLINICAL_TAGS_PLAN.md` (details in its section 20).
+
+- **Settings → «Λίστες σημειώσεων»** (`/settings/note-lists`): the suggestion lists, one tag at a time. Add entries, edit them, change their order, set other spellings (e.g. Greek spellings of a drug), next words, and for prescriptions the strengths. Entries are switched off rather than deleted. Below, the values typed in notes at least twice that are not yet in the list can be added with one click (shown only to accounts that may read notes).
+- **Patients list → «Κλινικά φίλτρα»**: find patients by diagnosis, level or procedure found in their notes. Accents and case are ignored; levels can be typed in Greek or English («Ο4-Ο5», «l4-5»). Filters combine with each other and with the name search.
+
+**After pulling:** `php bin/import_dictionary.php` (new labels), empty `web/cache/`. No database change.
+
+Tests: `tests/functional/note_fields.php` (filters: folding, Greek/English levels, a level inside a procedure, combined filters, a literal `%`, deleted patients left out, appointment notes only for those who may read them; lists: add with tidying, duplicates, reorder, deactivate (and gone from the suggestions), another tag's entry untouched, promote, CSRF, audit without text, refused to a secretary).

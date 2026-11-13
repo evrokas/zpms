@@ -1,0 +1,111 @@
+{% attach_library('note-tags') %}
+{#
+  note_lists.zetem -- Settings -> «Λίστες σημειώσεων»: the fixed suggestion
+  lists of the clinical tags (web/note_lists.php, docs/CLINICAL_TAGS_PLAN.md
+  phase 5). One tag at a time (?tag=dx). Entries are deactivated, never
+  deleted. The frequent free-text entries come from the notes and are shown
+  only to accounts that may read them.
+#}
+{{ zpms_note_tags_assets() }}
+<div class="settings-page note-lists-page">
+    <div class="patients-header">
+        <h2 class="page-title sr-only">{{{t('Note lists')}}}</h2>
+    </div>
+
+    <nav class="settings-jump note-lists-tabs" aria-label="{{{t('Note lists')}}}">
+        <a href="{{rel_url('/settings')}}"><i class="bx bx-arrow-back"></i> {{{t('Settings')}}}</a>
+        {% foreach($tags as $__k => $__t): %}
+        <a href="{{rel_url('/settings/note-lists')}}?tag={{{$__k}}}" class="zt-c-{{{$__t['colour']}}}{{($__k === $tag) ? ' is-current' : ''}}" {% if($__k === $tag): %}aria-current="page"{% endif %}><span class="zt-menu-dot"></span> {{{$__t['label']}}} <span class="nl-name">@{{{$__t['names'][0]}}}</span></a>
+        {% endforeach %}
+    </nav>
+
+    <section class="settings-section zt-c-{{{$tag_def['colour']}}}" id="note-list">
+        <header class="settings-section-header">
+            <span class="settings-section-icon"><i class="bx bx-list-check"></i></span>
+            <div>
+                <h3>{{{$tag_def['label']}}} <span class="nl-name">@{{{$tag_def['names'][0]}}}</span></h3>
+                <p>{{{t('The fixed list offered while writing this tag in a note. Previous entries are offered after it automatically.')}}}</p>
+            </div>
+        </header>
+
+        {% if(!$ready): %}
+        <p class="settings-notice">{{{t('The list tables do not exist yet -- run bin/update.sh, then php bin/zpmscli.php note-lists:seed --yes.')}}}</p>
+        {% else: %}
+        <div class="nl-list">
+            <div class="nl-row nl-head" aria-hidden="true">
+                <span>{{{t('Order')}}}</span>
+                <span>{{{t('Entry')}}}</span>
+                <span>{{{t('Other spellings')}}}</span>
+                {% if(!empty($tag_def['next_words'])): %}<span>{{{t('Next words')}}}</span>{% endif %}
+                {% if($tag === 'rx'): %}<span>{{{t('Strengths')}}}</span>{% endif %}
+                <span>{{{t('Active')}}}</span>
+                <span></span>
+            </div>
+            {% foreach($entries as $__i => $__e): %}
+            <div class="nl-row{{($__e['active']) ? '' : ' is-inactive'}}">
+                <form method="post" action="{{{$action}}}" class="nl-move">
+                    {{ csrf_field() }}
+                    <input type="hidden" name="tag" value="{{{$tag}}}">
+                    <input type="hidden" name="action" value="move">
+                    <input type="hidden" name="id" value="{{$__e['id']}}">
+                    <button type="submit" name="dir" value="up" title="{{{t('Move up')}}}" aria-label="{{{t('Move up')}}}" {% if($__i === 0): %}disabled{% endif %}><i class="bx bx-chevron-up"></i></button>
+                    <button type="submit" name="dir" value="down" title="{{{t('Move down')}}}" aria-label="{{{t('Move down')}}}" {% if($__i === count($entries) - 1): %}disabled{% endif %}><i class="bx bx-chevron-down"></i></button>
+                </form>
+                <form method="post" action="{{{$action}}}" class="nl-edit">
+                    {{ csrf_field() }}
+                    <input type="hidden" name="tag" value="{{{$tag}}}">
+                    <input type="hidden" name="action" value="update">
+                    <input type="hidden" name="id" value="{{$__e['id']}}">
+                    <input type="text" name="text" value="{{{$__e['text']}}}" maxlength="255" required aria-label="{{{t('Entry')}}}">
+                    <input type="text" name="aliases" value="{{{$__e['aliases']}}}" placeholder="{{{t('Other spellings')}}}" aria-label="{{{t('Other spellings')}}}">
+                    {% if(!empty($tag_def['next_words'])): %}<input type="text" name="next_words" value="{{{$__e['next_words']}}}" placeholder="{{{t('Next words')}}}" aria-label="{{{t('Next words')}}}">{% endif %}
+                    {% if($tag === 'rx'): %}<input type="text" name="strengths" value="{{{$__e['strengths']}}}" placeholder="{{{t('Strengths')}}}" aria-label="{{{t('Strengths')}}}">{% endif %}
+                    <label class="nl-active"><input type="checkbox" name="active" value="1" {% if($__e['active']): %}checked{% endif %}> <span class="sr-only">{{{t('Active')}}}</span></label>
+                    <button type="submit" class="nl-save">{{{t('Save')}}}</button>
+                </form>
+            </div>
+            {% endforeach %}
+        </div>
+        <p class="nl-hint">{{{t('Separate several spellings, next words or strengths with commas. An entry that is no longer active is not offered, but stays in the notes that use it.')}}}</p>
+
+        <div class="settings-add">
+            <h4>{{{t('New entry')}}}</h4>
+            <form method="post" action="{{{$action}}}" class="nl-add">
+                {{ csrf_field() }}
+                <input type="hidden" name="tag" value="{{{$tag}}}">
+                <input type="hidden" name="action" value="add">
+                <input type="text" name="text" maxlength="255" required placeholder="{{{t('Entry')}}}" aria-label="{{{t('Entry')}}}">
+                <input type="text" name="aliases" placeholder="{{{t('Other spellings')}}}" aria-label="{{{t('Other spellings')}}}">
+                {% if(!empty($tag_def['next_words'])): %}<input type="text" name="next_words" placeholder="{{{t('Next words')}}}" aria-label="{{{t('Next words')}}}">{% endif %}
+                {% if($tag === 'rx'): %}<input type="text" name="strengths" placeholder="{{{t('Strengths')}}}" aria-label="{{{t('Strengths')}}}">{% endif %}
+                <button type="submit">{{{t('Add')}}}</button>
+            </form>
+        </div>
+
+        {% if($can_read_notes): %}
+        <div class="settings-add nl-frequent">
+            <h4>{{{t('Frequent entries typed in the notes')}}}</h4>
+            {% if(count($frequent) === 0): %}
+            <p class="nl-hint">{{{t('No free-text entry has been used twice yet.')}}}</p>
+            {% else: %}
+            <ul>
+                {% foreach($frequent as $__f): %}
+                <li>
+                    <span class="nl-ftext">{{{$__f['text']}}}</span>
+                    <span class="nl-fcount">{{{t('@n times', ['n' => $__f['count']])}}}</span>
+                    <form method="post" action="{{{$action}}}">
+                        {{ csrf_field() }}
+                        <input type="hidden" name="tag" value="{{{$tag}}}">
+                        <input type="hidden" name="action" value="promote">
+                        <input type="hidden" name="text" value="{{{$__f['text']}}}">
+                        <button type="submit">{{{t('Add to the list')}}}</button>
+                    </form>
+                </li>
+                {% endforeach %}
+            </ul>
+            {% endif %}
+        </div>
+        {% endif %}
+        {% endif %}
+    </section>
+</div>

@@ -24,6 +24,7 @@
         <a href="#settings-schedule"><i class="bx bx-calendar"></i> {{{t('Appointment schedule')}}}</a>
         {% endif %}
         <a href="#settings-email"><i class="bx bx-envelope"></i> {{{t('Email')}}}</a>
+        <a href="{{rel_url('/settings/note-lists')}}"><i class="bx bx-list-check"></i> {{{t('Note lists')}}}</a>
         {% if($show_user_management): %}
         <a href="#settings-users"><i class="bx bx-group"></i> {{{t('Users & roles')}}}</a>
         {% endif %}

@@ -381,3 +381,61 @@ a.cp-value { text-decoration: none; }
 a.cp-value:hover { text-decoration: underline; text-decoration-color: var(--zt-mark); }
 .cp-count, .cp-total { color: var(--zt-ink); font-size: 0.8rem; }
 .cp-when { margin-left: auto; color: #8a9a9d; font-size: 0.78rem; white-space: nowrap; }
+
+/* ---- phase 5: Settings -> «Λίστες σημειώσεων» ---- */
+
+.note-lists-tabs a.is-current { background: var(--zt-tint); border-color: var(--zt-mark); color: var(--zt-ink); font-weight: 600; }
+.note-lists-tabs .zt-menu-dot { display: inline-block; vertical-align: middle; }
+.nl-name { color: #8a9a9d; font-weight: 400; font-size: 0.85em; }
+.nl-list { display: flex; flex-direction: column; gap: 4px; }
+.nl-row {
+    display: grid;
+    grid-template-columns: 4.2rem 1fr;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 4px 0;
+    border-bottom: 1px solid #edf2f3;
+}
+.nl-row.nl-head { display: none; }
+.nl-row.is-inactive .nl-edit input[type="text"] { color: #8a9a9d; text-decoration: line-through; text-decoration-color: #c5d0d2; }
+.nl-move { display: flex; gap: 2px; }
+.nl-move button {
+    width: 2rem; height: 2rem;
+    border: 1px solid #d6e1e3; border-radius: 5px; background: white; cursor: pointer;
+}
+.nl-move button:disabled { opacity: 0.35; cursor: default; }
+.nl-edit, .nl-add {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+}
+.nl-edit input[type="text"], .nl-add input[type="text"] {
+    flex: 1 1 10rem;
+    min-width: 0;
+    padding: 0.4rem 0.55rem;
+    border: 1px solid #d6e1e3;
+    border-radius: 5px;
+    font: inherit;
+    font-size: 0.9rem;
+}
+.nl-edit input[name="text"], .nl-add input[name="text"] { flex: 2 1 14rem; }
+.nl-active { display: inline-flex; align-items: center; }
+.nl-save, .nl-add button, .nl-frequent button {
+    padding: 0.4rem 0.8rem;
+    border: 1px solid var(--primary, #036379);
+    border-radius: 5px;
+    background: white;
+    color: var(--primary, #036379);
+    font: inherit;
+    font-size: 0.88rem;
+    cursor: pointer;
+}
+.nl-add button { background: var(--primary, #036379); color: white; }
+.nl-hint { color: #6b7c80; font-size: 0.85rem; margin: 0.5rem 0; }
+.nl-frequent ul { margin: 0; padding: 0; list-style: none; }
+.nl-frequent li { display: flex; align-items: center; gap: 0.6rem; padding: 0.3rem 0; border-bottom: 1px dashed #e3eaec; }
+.nl-ftext { flex: 1; }
+.nl-fcount { color: #8a9a9d; font-size: 0.82rem; }
+.nl-frequent form { margin: 0; }
