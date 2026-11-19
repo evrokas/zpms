@@ -1,0 +1,28 @@
+---
+cmd: ../../fw/maker/maker.php --name locations.feeder.yaml --dir ../classes/yaml/
+  feed:gen:yaml
+createdate: 12-05-2024 16:15:06
+schema: ../classes/yaml/locations.yaml
+key:
+  name: lang
+  value:
+  - en
+  - gr
+data:
+  en:
+    guid: 8490fdcc-d133-11f1-8c26-00163ee13daa
+    lang: en
+    cdate: "2026-10-26 17:40:02"
+    cuser: guest
+    name: Euroclinic Athens
+    machinename: euroclinic
+    address: Athanasiadou 9, Str., Ampelokipoi, Athens
+  gr:
+    guid: 84917496-d133-11f1-8387-00163ee13daa
+    lang: gr
+    cdate: "2026-10-26 17:40:02"
+    cuser: guest
+    name: Ευρωκλινική Αθηνών
+    machinename: euroclinic
+    address: Αθανασιάδου 9, Αμπελόκηποι, Αθήνα
+...
