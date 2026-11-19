@@ -610,4 +610,16 @@ return [
     'Confirmation missing.' => 'Λείπει η επιβεβαίωση.',
     'Application update from git started' => 'Ξεκίνησε ενημέρωση της εφαρμογής από git',
     'Looked for' => 'Αναζητήθηκε',
+    // Patients list: search dropdown, stat cards, card view.
+    'Search results' => 'Αποτελέσματα αναζήτησης',
+    '1 result' => '1 αποτέλεσμα',
+    '@count results' => '@count αποτελέσματα',
+    'View all results…' => 'Προβολή όλων των αποτελεσμάτων…',
+    'Searching…' => 'Αναζήτηση…',
+    'The search failed. Try again.' => 'Η αναζήτηση απέτυχε. Δοκιμάστε ξανά.',
+    'No appointments yet' => 'Χωρίς ραντεβού',
+    'Clear search' => 'Καθαρισμός αναζήτησης',
+    'new in the last 30 days' => 'νέοι τις τελευταίες 30 ημέρες',
+    'appointments today' => 'ραντεβού σήμερα',
+    'Card view' => 'Προβολή καρτών',
 ];

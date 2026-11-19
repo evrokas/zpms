@@ -115,6 +115,97 @@ function zpms_functional_patient_crud(TestRunner $runner, TestHttpClient $http):
         assert_not_contains('Δοκιμαστική Ασθενής Ενημερωμένη', $list['body'], 'deleted patient still appears on /patients');
     });
 
+    $runner->add('a deleted patient cannot be opened, edited or given a new appointment', function () use ($http) {
+        // A soft-deleted record used to open in the editor (and could be
+        // saved) when its /patient/{id}/edit URL was typed directly. It
+        // now behaves like a missing record: back to /patients.
+        TestSchema::assertSafeToMutate();
+        $id = $GLOBALS['zpms_test_patient_id'] ?? null;
+        assert_not_null($id, 'previous test did not record a patient id');
+        $db = dbConnection::getConnection();
+
+        $page = $http->get("/patient/$id/edit");
+        assert_equal(302, $page['status'], "GET /patient/$id/edit of a deleted patient did not redirect (got {$page['status']})");
+        assert_equal('/patients', (string)$page['location'], 'deleted patient page did not redirect to /patients');
+        $http->get('/patients');    // consume the flash message
+
+        $token = TestHttpClient::extractCsrfToken($http->get('/patient/new')['body']);
+        assert_not_null($token, 'no csrf_token field on the new-patient form');
+        $before = $db->query("SELECT pname, ptel FROM patients WHERE id = $id")->fetch();
+
+        $res = $http->post("/patient/$id/edit", [
+            'csrf_token' => $token, 'submit' => '1',
+            'patient-name' => 'Αλλαγή Σε Διαγραμμένο', 'patient-dob' => '1990-01-01',
+            'patient-amka' => '11111111111', 'patient-telephone' => '2100000000',
+            'patient-address' => '', 'patient-email' => '', 'patient-note' => '',
+        ]);
+        assert_equal(302, $res['status'], "edit POST of a deleted patient did not redirect (got {$res['status']})");
+        $after = $db->query("SELECT pname, ptel FROM patients WHERE id = $id")->fetch();
+        assert_equal($before, $after, 'a deleted patient was changed by an edit POST');
+
+        $ajax = $http->post("/patient/$id/edit", [
+            'csrf_token' => $token, 'use_ajax' => '1',
+            'patient-name' => 'Αλλαγή Σε Διαγραμμένο', 'patient-dob' => '1990-01-01',
+            'patient-amka' => '11111111111', 'patient-telephone' => '2100000000',
+            'patient-address' => '', 'patient-email' => '', 'patient-note' => '',
+        ]);
+        assert_equal('FAILED', trim($ajax['body']), 'autosave of a deleted patient did not answer FAILED');
+
+        $count = fn() => (int)$db->query("SELECT COUNT(*) FROM appointments a JOIN patients p ON p.guid = a.pguid WHERE p.id = $id")->fetchColumn();
+        $n = $count();
+        $form = $http->get("/appointment/$id/newappointment");
+        assert_equal(302, $form['status'], "new-appointment form for a deleted patient did not redirect (got {$form['status']})");
+        $http->post("/appointment/$id/newappointment", [
+            'csrf_token' => $token, 'submit' => '1',
+            'appointment-date' => '2026-09-01T10:30', 'appointment-place' => 'test-clinic',
+        ]);
+        assert_equal($n, $count(), 'an appointment was added to a deleted patient');
+        $http->get('/patients');    // consume the flash message
+    });
+
+    $runner->add('the search dropdown returns live patients only, with count, last appointment and a link to all results', function () use ($http) {
+        // /patients/searchajax/term feeds web/js/patient-search.js. It used to
+        // list deleted patients too (patientsClassEx::search() appended
+        // "AND deleted IS NULL" after an unparenthesised OR chain).
+        TestSchema::assertSafeToMutate();
+        $deletedId = $GLOBALS['zpms_test_patient_id'] ?? null;
+        assert_not_null($deletedId, 'previous test did not record a patient id');
+
+        $p = new patientsClass([
+            'guid' => guid(), 'cuser' => 'test-fixture', 'cdate' => getDBtime(),
+            'pname' => 'Δοκιμαστική Αναζήτηση', 'pdob' => '1980-05-05 00:00:00',
+            'pamka' => '05058012345', 'ptel' => '2105550000', 'paddr' => '', 'pemail' => '', 'pnote' => '',
+        ]);
+        $p->insert();
+
+        $res = $http->post('/patients/searchajax/term', ['sterm' => 'Δοκιμαστική']);
+        assert_equal(200, $res['status'], "search dropdown did not return 200 (got {$res['status']})");
+        $data = json_decode($res['body'], true);
+        assert_true(is_array($data) && isset($data['list'], $data['total'], $data['all_url']), 'search dropdown did not return list/total/all_url');
+
+        $ids = array_column($data['list'], 'id');
+        assert_true(in_array((int)$p->getid(), $ids, true), 'a live patient is missing from the search dropdown');
+        assert_true(!in_array((int)$deletedId, $ids, true), 'a deleted patient is listed in the search dropdown');
+        assert_equal(count($ids), (int)$data['total'], 'the dropdown count does not match its results');
+        assert_contains('q=', (string)$data['all_url'], '"view all results" link does not carry the search');
+
+        $row = $data['list'][array_search((int)$p->getid(), $ids, true)];
+        foreach (['name', 'initials', 'tone', 'amka', 'tel', 'last', 'link'] as $k) {
+            assert_true(array_key_exists($k, $row), "dropdown row has no '$k'");
+        }
+        assert_equal('ΔΑ', $row['initials'], 'dropdown row has the wrong initials');
+
+        $empty = json_decode($http->post('/patients/searchajax/term', ['sterm' => '  '])['body'], true);
+        assert_equal(0, (int)($empty['total'] ?? -1), 'an empty search term returned results');
+    });
+
+    $runner->add('a patient id that does not exist redirects instead of failing', function () use ($http) {
+        $res = $http->get('/patient/987654321/edit');
+        assert_equal(302, $res['status'], "GET of a missing patient id did not redirect (got {$res['status']})");
+        assert_equal('/patients', (string)$res['location'], 'missing patient id did not redirect to /patients');
+        $http->get('/patients');    // consume the flash message
+    });
+
     $runner->add('patient deletion is a per-record control, not a per-row action on the patient list', function () use ($http) {
         // The delete button used to be a per-row action on /patients
         // itself; it now lives inside the patient's own record

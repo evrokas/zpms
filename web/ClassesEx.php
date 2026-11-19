@@ -92,14 +92,16 @@ class patientsClassEx extends patientsClass {
 
         $reqs = implode(' OR ', $req);
 
-        $sql = "SELECT * FROM patients WHERE " . $reqs;
+        // OR-group parenthesised so it cannot swallow the deleted test
+        // (without it, "a OR b OR c AND deleted IS NULL" let deleted patients
+        // through on every column but the last).
+        $sql = "SELECT * FROM patients WHERE (" . $reqs . ")";
         if ($excludeDeleted) {
             $sql .= " AND deleted IS NULL";
         }
         if ($limit !== null) {
             $sql .= " LIMIT :limit";
         }
-        error_log("\nSQL request: " . $sql . "\n");
         /* (pname LIKE :term) OR (pname LIKE :term2)"; */
         $st = dbConnection::getConnection()->prepare( $sql );
         $st->bindValue(":term", $srch, PDO::PARAM_STR);

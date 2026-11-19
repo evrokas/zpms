@@ -19,9 +19,12 @@
            ασθενών"; kept as the page's heading for screen readers. #}
         <h2 class="page-title sr-only">{{t("Patients")}}</h2>
         <ul class="patients-summary" aria-label="{{{t('Summary')}}}">
-            <li>{{t('@count patients', ['count' => '<b>' . (int)$summary['total'] . '</b>'])}}</li>
-            <li>{{t('@count new in the last 30 days', ['count' => '<b>' . (int)$summary['new'] . '</b>'])}}</li>
-            <li>{{t('@count appointments today', ['count' => '<b>' . (int)$summary['today'] . '</b>'])}}</li>
+            <li class="ps-stat"><span class="ps-stat-icon" aria-hidden="true"><i class="bx bxs-group"></i></span>
+                <span class="ps-stat-text"><b>{{(int)$summary['total']}}</b><span>{{{t('Patients')}}}</span></span></li>
+            <li class="ps-stat"><span class="ps-stat-icon" aria-hidden="true"><i class="bx bx-calendar-plus"></i></span>
+                <span class="ps-stat-text"><b>{{(int)$summary['new']}}</b><span>{{{t('new in the last 30 days')}}}</span></span></li>
+            <li class="ps-stat"><span class="ps-stat-icon" aria-hidden="true"><i class="bx bx-time-five"></i></span>
+                <span class="ps-stat-text"><b>{{(int)$summary['today']}}</b><span>{{{t('appointments today')}}}</span></span></li>
         </ul>
     </div>
     {% if($can_create_patient): %}
@@ -32,14 +35,16 @@
 </div>
 
 <form class="patients-toolbar" id="patients-form" method="get" action="{{rel_url('/patients')}}" role="search">
-    <div class="search">
+    {# Search-as-you-type dropdown: web/js/patient-search.js fills #ps-panel
+       from /patients/searchajax/term. Without JavaScript the box is a plain
+       search field of the form. #}
+    <div class="search ps-search">
         <div class="input-div">
-            <i class="bx bx-search search-icon"></i>
-            <input type="text" class="select2 focus-primary" name="q" id="patients-q" autocomplete="off" aria-label="{{t('Search')}}" placeholder="{{{t('Search by name, AMKA or telephone...')}}}" value="{{{$state['q']}}}">
+            <i class="bx bx-search search-icon" aria-hidden="true"></i>
+            <input type="text" class="focus-primary" name="q" id="patients-q" autocomplete="off" spellcheck="false" aria-label="{{t('Search')}}" placeholder="{{{t('Search by name, AMKA or telephone...')}}}" value="{{{$state['q']}}}">
+            <button type="button" class="ps-clear" id="ps-clear" hidden data-active="{{($state['q'] !== '') ? '1' : '0'}}" title="{{{t('Clear search')}}}" aria-label="{{{t('Clear search')}}}"><i class="bx bx-x"></i></button>
         </div>
-        <div class="select-container">
-            <ul class="select-box" id="select-box"></ul>
-        </div>
+        <div class="ps-panel" id="ps-panel" hidden aria-live="polite" data-url="{{{rel_url('/patients/searchajax/term')}}}"></div>
     </div>
 
     {% if(count($areas) > 0): %}
@@ -80,6 +85,7 @@
     <span class="pt-density" role="group" aria-label="{{{t('Display density')}}}">
         <button type="button" id="density-comfy" aria-pressed="true" title="{{{t('Comfortable view')}}}" aria-label="{{{t('Comfortable view')}}}"><i class="bx bx-list-ul"></i></button>
         <button type="button" id="density-compact" aria-pressed="false" title="{{{t('Compact view')}}}" aria-label="{{{t('Compact view')}}}"><i class="bx bx-menu"></i></button>
+        <button type="button" id="density-cards" aria-pressed="false" title="{{{t('Card view')}}}" aria-label="{{{t('Card view')}}}"><i class="bx bx-grid-alt"></i></button>
     </span>
 
     <input type="hidden" name="sort" value="{{{$state['sort']}}}">
@@ -197,18 +203,31 @@
             });
         });
 
-        /* Compact mode: one line per patient. Remembered in this browser only. */
-        var comfy = document.getElementById('density-comfy');
-        var compact = document.getElementById('density-compact');
-        function setCompact(on) {
-            wrap.classList.toggle('is-compact', on);
-            compact.setAttribute('aria-pressed', on ? 'true' : 'false');
-            comfy.setAttribute('aria-pressed', on ? 'false' : 'true');
-            try { localStorage.setItem('zpms_patients_compact', on ? '1' : '0'); } catch (e) {}
+        /* View: comfortable rows, compact (one line per patient) or cards.
+           Remembered in this browser only (the older compact-only setting
+           is still read). */
+        var views = {
+            comfy: document.getElementById('density-comfy'),
+            compact: document.getElementById('density-compact'),
+            cards: document.getElementById('density-cards')
+        };
+        function setView(v, save) {
+            if (!views[v]) v = 'comfy';
+            wrap.classList.toggle('is-compact', v === 'compact');
+            wrap.classList.toggle('is-cards', v === 'cards');
+            Object.keys(views).forEach(function(k) {
+                if (views[k]) views[k].setAttribute('aria-pressed', k === v ? 'true' : 'false');
+            });
+            if (save) { try { localStorage.setItem('zpms_patients_view', v); } catch (e) {} }
         }
-        comfy.addEventListener('click', function() { setCompact(false); });
-        compact.addEventListener('click', function() { setCompact(true); });
-        try { if (localStorage.getItem('zpms_patients_compact') === '1') setCompact(true); } catch (e) {}
+        Object.keys(views).forEach(function(k) {
+            if (views[k]) views[k].addEventListener('click', function() { setView(k, true); });
+        });
+        try {
+            var saved = localStorage.getItem('zpms_patients_view');
+            if (!saved && localStorage.getItem('zpms_patients_compact') === '1') saved = 'compact';
+            if (saved) setView(saved, false);
+        } catch (e) {}
 
         /* Clicking anywhere on a row opens the record, except on a link,
            button, copy icon or selected text, which keep their own action. */

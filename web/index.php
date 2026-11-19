@@ -197,6 +197,50 @@ require_once(__DIR__ . '/zpms_mailer.php');
     }
 
     /**
+     * One patient as the list and the search dropdown show it, from a row of
+     * patientsClassEx::getPatientList(): initials and avatar tone, age, AMKA,
+     * contact, the latest appointment (date, place in the current language,
+     * operation or not, upcoming or not) and the record's address.
+     */
+    function zpms_patient_list_row(array $r, array $placeLabels, string $today): array {
+        $palette = 6;
+        $name = trim((string)$r['pname']);
+        $words = preg_split('/\s+/u', $name, -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        $initials = '';
+        foreach (array_slice($words, 0, 2) as $w) $initials .= mb_strtoupper(mb_substr($w, 0, 1));
+
+        $age = null;
+        $dob = $r['pdob'] ? date_create((string)$r['pdob']) : false;
+        if ($dob && $dob <= new DateTime('now')) $age = $dob->diff(new DateTime('now'))->y;
+
+        $last = null;
+        if ($r['last_adate']) {
+            $day = substr((string)$r['last_adate'], 0, 10);
+            $last = [
+                'date' => formatDate($r['last_adate']),
+                'is_operation' => ($r['last_atype'] === 'operation'),
+                'place' => $placeLabels[(string)$r['last_aplace']] ?? (string)$r['last_aplace'],
+                'upcoming' => ($day > $today),
+            ];
+        }
+
+        return [
+            'id' => (int)$r['id'],
+            'name' => $name,
+            'initials' => $initials,
+            'tone' => (mb_ord(mb_substr($name, 0, 1) ?: 'A') + count($words)) % $palette,
+            'age' => $age,
+            'gender' => zpms_normalize_gender($r['pgender']),
+            'amka' => (string)$r['pamka'],
+            'tel' => (string)$r['ptel'],
+            'email' => (string)$r['pemail'],
+            'last' => $last,
+            'operated' => !empty($r['has_operation']),
+            'url' => rel_url('/patient/' . $r['id'] . '/edit'),
+        ];
+    }
+
+    /**
      * /patients -- the patient list. Everything it can be asked is in the
      * address, read from the real query string (zeusfw's RequestClass::
      * getParams()): q (search), area, sort=name|last, dir=asc|desc, page,
@@ -251,47 +295,13 @@ require_once(__DIR__ . '/zpms_mailer.php');
         $state['page'] = $result['page'];
 
         $today = date('Y-m-d');
-        $palette = 6;
         // A place is stored under the name it had in the language active when
         // the appointment was saved; show it in the current language.
         $lang = $kernel->getCurrentLanguage();
         $placeLabels = patientsClassEx::placeLabels($lang);
         $rows = [];
         foreach ($result['rows'] as $r) {
-            $name = trim((string)$r['pname']);
-            $words = preg_split('/\s+/u', $name, -1, PREG_SPLIT_NO_EMPTY) ?: [];
-            $initials = '';
-            foreach (array_slice($words, 0, 2) as $w) $initials .= mb_strtoupper(mb_substr($w, 0, 1));
-
-            $age = null;
-            $dob = $r['pdob'] ? date_create((string)$r['pdob']) : false;
-            if ($dob && $dob <= new DateTime('now')) $age = $dob->diff(new DateTime('now'))->y;
-
-            $last = null;
-            if ($r['last_adate']) {
-                $day = substr((string)$r['last_adate'], 0, 10);
-                $last = [
-                    'date' => formatDate($r['last_adate']),
-                    'is_operation' => ($r['last_atype'] === 'operation'),
-                    'place' => $placeLabels[(string)$r['last_aplace']] ?? (string)$r['last_aplace'],
-                    'upcoming' => ($day > $today),
-                ];
-            }
-
-            $rows[] = [
-                'id' => $r['id'],
-                'name' => $name,
-                'initials' => $initials,
-                'tone' => (mb_ord(mb_substr($name, 0, 1) ?: 'A') + count($words)) % $palette,
-                'age' => $age,
-                'gender' => zpms_normalize_gender($r['pgender']),
-                'amka' => (string)$r['pamka'],
-                'tel' => (string)$r['ptel'],
-                'email' => (string)$r['pemail'],
-                'last' => $last,
-                'operated' => !empty($r['has_operation']),
-                'url' => rel_url('/patient/' . $r['id'] . '/edit'),
-            ];
+            $rows[] = zpms_patient_list_row($r, $placeLabels, $today);
         }
 
         // Pager: first, last, and a window around the current page.
@@ -373,41 +383,51 @@ require_once(__DIR__ . '/zpms_mailer.php');
     function patients_list_search_ajax($params) {
         if(($errmsg = rbacClass::require(ZPMS_PERM_PATIENTS_VIEW_LIST)))return $errmsg;
 
-        $arg = $_POST['sterm'];
-        // error_log("\nAjax request: ". print_r($arg, 1) . "\n");;
-        // error_log("\nurldecode: " . urldecode($arg));
-        $pat = patientsClassEx::search($arg);   //, ['pname', 'pamka', 'ptel']);
+        // The search-as-you-type dropdown on /patients (web/js/patient-search.js).
+        // Same matching, deleted-patient exclusion and area filter as the list
+        // itself (patientsClassEx::getPatientList()), so "view all results"
+        // shows exactly the patients counted here. POST keeps the typed text
+        // out of the access log; nothing about the search is logged.
+        global $kernel;
+        $limit = 6;
+        $term = mb_substr(trim((string)($_POST['sterm'] ?? '')), 0, 100);
+        $area = mb_substr(trim((string)($_POST['area'] ?? '')), 0, 64);
 
-        error_log("\nSearch response: " . print_r($pat, 1));
-
-        $list = array();
-        foreach($pat as $p) {
-            // error_log('dob ->' . $p->getpdob());
-            $list[] = [
-                    'id' => $p->getid(),
-                    'name' => $p->getpname(),
-                    'amka' => $p->getpamka(),
-                    // 'age' => DateTime::createFromFormat('Y-m-d h:m:s', $p->getpdob())->diff(new DateTime('now'))->y,
-                    'tel' => $p->getptel(),
-                    'link' => rel_url('/patient/' . $p->getid() . '/edit')
-                    // date('Y', date_diff(date(), time($p->getpdob)))
+        $list = [];
+        $total = 0;
+        if ($term !== '') {
+            $result = patientsClassEx::getPatientList([
+                'q' => $term, 'area' => $area,
+                'sort' => 'last', 'dir' => 'desc', 'page' => 1, 'per_page' => $limit,
+            ]);
+            $total = $result['total'];
+            $placeLabels = patientsClassEx::placeLabels($kernel->getCurrentLanguage());
+            $today = date('Y-m-d');
+            foreach ($result['rows'] as $r) {
+                $row = zpms_patient_list_row($r, $placeLabels, $today);
+                $list[] = [
+                    'id' => $row['id'],
+                    'name' => $row['name'],
+                    'initials' => $row['initials'],
+                    'tone' => $row['tone'],
+                    'age' => $row['age'],
+                    'amka' => $row['amka'],
+                    'tel' => $row['tel'],
+                    'operated' => $row['operated'],
+                    'last' => $row['last'],
+                    'link' => $row['url'],
                 ];
+            }
         }
 
-        $base = explode('index.php', $_SERVER['PHP_SELF'])[0];
-        $response = [
-            'base' => $base,
-            'referer' => explode($base, $_SERVER['HTTP_REFERER'])[0],
-            'list' => $list
-        ];
-        // error_log("\nSearch response: " . print_r($list, 1));
-
-        // $json = json_encode($list);
-        $json = json_encode($response);
-        // echopre("ajax search: " . $json);
-        echo $json;
+        header('Content-Type: application/json; charset=utf-8');
+        header('Cache-Control: no-store');
+        echo json_encode([
+            'list' => $list,
+            'total' => $total,
+            'all_url' => zpms_patients_url(['q' => $term, 'area' => $area]),
+        ], JSON_UNESCAPED_UNICODE);
         exit();
-
     }
     /**
      * The patient form's gender radio ('patient-gender'): "M", "F" or "" for
@@ -550,6 +570,18 @@ require_once(__DIR__ . '/zpms_mailer.php');
             'ztTotal' => t('Total: @n tablets'),
             'ztCheckLevel' => t('Check the level'),
             'confirmLoad' => t('A patient with this name already exists. Do you want to load the existing patient record? The details you entered will not be saved.'),
+            // Search dropdown on /patients (web/js/patient-search.js).
+            'psResults' => t('Search results'),
+            'psOne' => t('1 result'),
+            'psMany' => t('@count results'),
+            'psAll' => t('View all results…'),
+            'psSearching' => t('Searching…'),
+            'psNone' => t('No patient matches your search.'),
+            'psFailed' => t('The search failed. Try again.'),
+            'psNoAppointments' => t('No appointments yet'),
+            'psAppointment' => t('Appointment'),
+            'psOperation' => t('Operation'),
+            'psUpcoming' => t('Upcoming'),
         ];
     }
 
@@ -565,6 +597,39 @@ require_once(__DIR__ . '/zpms_mailer.php');
      */
     function zpms_bold($text): string {
         return '<b>' . htmlspecialchars((string)$text, ENT_QUOTES, 'UTF-8') . '</b>';
+    }
+
+    /**
+     * The patient with this id, or null when it does not exist or is
+     * soft-deleted. Every handler that opens, edits or adds to a patient
+     * by its URL id goes through this, so a deleted record behaves like a
+     * missing one (it can only come back through a database restore).
+     */
+    function zpms_live_patient($id): ?patientsClass {
+        if ($id === null || $id === '' || !ctype_digit((string)$id)) return null;
+        $pat = patientsClass::sgetById((int)$id);
+        return ($pat && $pat->getdeleted() === null) ? $pat : null;
+    }
+
+    /** Same for an appointment: null when missing, deleted, or its patient is deleted. */
+    function zpms_live_appointment($id): ?appointmentsClass {
+        if ($id === null || $id === '' || !ctype_digit((string)$id)) return null;
+        $ap = appointmentsClass::sgetById((int)$id);
+        if (!$ap || $ap->getdeleted() !== null) return null;
+        $pat = patientsClassEx::sgetByGuid($ap->getpguid());
+        return ($pat && $pat->getdeleted() === null) ? $ap : null;
+    }
+
+    /** Flash "record not found" and go back to the patients list (or answer FAILED to an autosave). */
+    function zpms_patient_not_found(): void {
+        global $kernel;
+        if (isset($_POST['use_ajax'])) {
+            echo "FAILED";
+            exit();
+        }
+        $kernel->addStatus('error', t('The patient record was not found!'));
+        header('location: '.rel_url('/patients'));
+        exit();
     }
 
     /**
@@ -654,10 +719,11 @@ require_once(__DIR__ . '/zpms_mailer.php');
         // $pc = new patientsClass();
         // $pat = $pc->getById($params['id']);
         // error_log("\n$params: " .print_r($params, 1)."\n");
-        $pat = patientsClass::sgetById( $params['id'] );
-        if ($pat) {
-            zpms_audit('patient_viewed', ['patient' => $pat]);
+        $pat = zpms_live_patient($params['id']);
+        if (!$pat) {
+            zpms_patient_not_found();
         }
+        zpms_audit('patient_viewed', ['patient' => $pat]);
 
         // Read-only financial-info block (APYweb integration) -- silent
         // no-op (null) when unconfigured/unreachable/no match, see
@@ -811,8 +877,10 @@ require_once(__DIR__ . '/zpms_mailer.php');
 
         // error_log("Get patient: " . print_r($params, 1 ));
         // echo "this is the post version<br/>";
-        $pat = patientsClass::sgetById($params['id']);
-        // error_log("Patient: " . print_r($pat, 1)."\n");
+        $pat = zpms_live_patient($params['id']);
+        if (!$pat) {
+            zpms_patient_not_found();
+        }
 
         // Which fields this save actually changes (names only) -- for the
         // audit log. Autosave posts the whole form on every keystroke
@@ -930,7 +998,10 @@ require_once(__DIR__ . '/zpms_mailer.php');
             exit();
         }
 
-        $pat = patientsClass::sgetById($params['id']);
+        $pat = zpms_live_patient($params['id']);
+        if (!$pat) {
+            zpms_patient_not_found();
+        }
 
         $dtime = getDBtime();    // make delete time same for patient and appointments
                             // so to be able to recover them later
@@ -1092,8 +1163,10 @@ require_once(__DIR__ . '/zpms_mailer.php');
             return ("patients doesn't exist");
         }
 
-        $ap = appointmentsClass::sgetById($params['id']);
-        // error_log("\bFound appointment: " . print_r($ap, 1) . "\n");
+        $ap = zpms_live_appointment($params['id']);
+        if (!$ap) {
+            zpms_patient_not_found();
+        }
 
         // Captured before any of the setters below run, so each field can
         // be diffed against what was actually already stored -- this is
@@ -1283,8 +1356,10 @@ require_once(__DIR__ . '/zpms_mailer.php');
         }
 
         // error_log("\npatient_appointment_new: ".print_r($params, 1)."\n");
-        $p = patientsClass::sgetById( $params['id'] );
-        // echo "<pre>" . print_r( $p ) . "</pre>";
+        $p = zpms_live_patient($params['id']);
+        if (!$p) {
+            zpms_patient_not_found();
+        }
 
         $loc = locationsClassEx::sgetAll( $kernel->getCurrentLanguage() );
         // $loc = locationsClass::sgetAll();
@@ -1342,10 +1417,9 @@ require_once(__DIR__ . '/zpms_mailer.php');
 
         }
              
-        $pat = patientsClass::sgetById( $params['id'] );
+        $pat = zpms_live_patient($params['id']);
         if(!$pat) {
-            echo "User " . $params['id'] . "cannot be found!\n";
-            exit();
+            zpms_patient_not_found();
         }
 
         // Carried through as a hidden field from patient_appointment_new()
@@ -1886,7 +1960,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
             // the page's own auto-selected match -- see
             // pending_appointment_convert() above) via the hidden
             // existing-patient-id field.
-            $pat = patientsClass::sgetById((int)$existingPatientId);
+            $pat = zpms_live_patient($existingPatientId);
             if (!$pat) {
                 $kernel->addStatus('error', t('The selected patient was not found.'));
                 header('location: '.rel_url('/consultation/pending/'.$pending->getid().'/convert'));
@@ -2095,7 +2169,10 @@ require_once(__DIR__ . '/zpms_mailer.php');
 
         if(($errmsg = rbacClass::require(ZPMS_PERM_PATIENTS_EDIT_PATIENT)))return $errmsg;
 
-        $pat = patientsClass::sgetById($params['id']);
+        $pat = zpms_live_patient($params['id']);
+        if (!$pat) {
+            zpms_patient_not_found();
+        }
 
         $pat->loadFields([
             'cuser' => $kernel->getUserName(),

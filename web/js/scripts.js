@@ -98,61 +98,8 @@ document.addEventListener('DOMContentLoaded', markCurrentNavItem);
 
 
 
-search = document.querySelectorAll('.select2');
-
-var xhr = new XMLHttpRequest(),
-    box2 = document.getElementById('select-box');
-var timeout;
-var basepath = '';
-
-if(search.length > 0) {
-    var el = search[0];
-    el.addEventListener('keyup', (ev) => {
-        if(ev.key == "Escape") {
-            box2.style.display = 'none';
-            return;
-        }
-        if(el.value.length>0) {
-            box2.style.display = 'block';
-
-            xhr.onreadystatechange = function() {
-                if((this.readyState == 4) && (this.status == 200)) {
-                    var response = JSON.parse(this.responseText);
-                    var list = response['list'];
-
-                    console.log("AJAX response: ");
-                    console.log( response );
-                    box2.innerHTML = '';
-                    basepath = response['referer'];
-
-                    list.forEach(el => {
-                        box2.innerHTML += "<li onclick=\"selectclick(this)\" data-url=\""+el['link']+"\"data-id=\""+el['id']+"\" data-name=\""+el['name']+"\">"+
-                        "<span class=\"name\">"+el['name']+"</span>"+
-                        "<span class=\"tel\">"+"{"+zpmsText.telShort+":"+el['tel']+"}"+"</span>"+
-                        "<span class=\"amka\">"+zpmsText.amka+": "+el['amka']+"</span>"+
-                        "</li>";
-                    })
-                }
-            }
-
-            clearTimeout(timeout);
-            timeout = setTimeout(function () {
-                xhr.open("POST", 'patients/searchajax/term');
-                xhr.setRequestHeader("Content-type", "application/x-www-form-urlencoded");
-                xhr.send("sterm=" + el.value);
-            }, (el.value.length<2)?0:200);  /* if length is less than 2 send request immediately */
-        } else {
-            box2.style.display = 'none';
-        }
-    });
-}
-
-function selectclick(e){
-    search[0].value = e.dataset.name;
-    box2.style.display = 'none';
-
-    window.location.replace( basepath + e.dataset.url );
-}
+/* The patients-list search dropdown lives in web/js/patient-search.js
+   (attached with the patients-list library). */
 
 
 /* add confirmation dialog to every trash icon */

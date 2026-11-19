@@ -95,12 +95,17 @@ libraries:
   # from edit_patient.zetem. A library (not styles.css) so it loads after
   # the leaky ".edit-patient form"/appointment rules it has to override.
   # Patients list (patients_list.zetem): columns, avatars, sortable headers,
-  # pager, compact mode.
+  # pager, compact/card views, stat cards and the search dropdown.
   patients-list:
     css:
       - patients_list:
         type: 'text/css'
         src: 'css/patients-list.css'
+    foot_script:
+      - patient_search:
+        type: 'text/javascript'
+        src: 'js/patient-search.js'
+        defer:
   patient-record:
     css:
       - patient_record:
