@@ -1,7 +1,8 @@
 # CLAUDE.md — ZPMS
 
 Patient management system for a neurosurgery/spine practice, on the ZeusFW framework (`fw -> ../zeusfw`).
-Load the `zeusfw` skill for framework questions (YAML entities, maker, routes, templates, RBAC, update.sh).
+Load the `zpms` skill for the map of this app (tables, features -> files, permissions, clinical tags, tests) and
+the `zeusfw` skill for framework questions (YAML entities, maker, routes, templates, RBAC, update.sh).
 
 ## Patient data — always
 
