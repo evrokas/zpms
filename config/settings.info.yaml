@@ -106,6 +106,18 @@ libraries:
         type: 'text/javascript'
         src: 'js/patient-search.js'
         defer:
+  # "Create patient record" from a pending booking: possible existing
+  # patients and the confirmation dialog (pending_appointment_convert.zetem).
+  pending-convert:
+    css:
+      - pending_convert:
+        type: 'text/css'
+        src: 'css/pending-convert.css'
+    foot_script:
+      - pending_convert:
+        type: 'text/javascript'
+        src: 'js/pending-convert.js'
+        defer:
   patient-record:
     css:
       - patient_record:
@@ -664,6 +676,14 @@ routes:
     url: "/consultation/pending/{id}/convert/namecheck"
     handler: patient_new_check_name
     method: post
+  # Possible existing patients for the convert page, re-checked as the
+  # name/AMKA/phone fields change (web/js/pending-convert.js).
+  pending_appointment_convert_candidates:
+    title: "Convert-to-patient: possible existing patients"
+    url: "/consultation/pending/{id}/convert/candidates"
+    handler: pending_appointment_convert_candidates
+    method: post
+    access: authenticated
   qrgenerator:
     title:
       gr: "Δημιουργία κωδικού QR"

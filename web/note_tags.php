@@ -990,14 +990,20 @@ function zpms_note_suggestions(PDO $db, bool $patientNotes, bool $appointmentNot
  * cards ($withAppointments); $anchors maps an appointment id to its card's
  * anchor on the page (#app-N). Never throws: an empty summary on any failure.
  *
- * @return array{tags: array<string, array{label:string, colour:string, entries:array}>, allergies: array}
+ * 'groups' is the same values per note instead of per tag, so what was found
+ * at one visit reads together: the patient note first, then each appointment
+ * newest first (date, place, type, link), its tags in the order of the tag
+ * file, each tag with that note's values (a value written twice in one note
+ * once). Unlike 'tags', a value repeated at several visits shows at each.
+ *
+ * @return array{tags: array<string, array{label:string, colour:string, entries:array}>, groups: array, allergies: array}
  */
 function zpms_note_clinical_picture(PDO $db, int $patientId, bool $withAppointments, array $anchors = []): array {
-    $out = ['tags' => [], 'allergies' => []];
+    $out = ['tags' => [], 'groups' => [], 'allergies' => []];
     try {
         if (!zpms_note_table_exists($db, 'note_fields')) return $out;
         $spec = zpms_note_tags_spec();
-        $sql = "SELECT n.tag_key, n.value_text, n.normalized, n.source, n.appointment_id, n.rx_total, a.adate
+        $sql = "SELECT n.tag_key, n.value_text, n.normalized, n.source, n.appointment_id, n.rx_total, a.adate, a.aplace, a.atype
                 FROM note_fields n LEFT JOIN appointments a ON a.id = n.appointment_id
                 WHERE n.patient_id = ? AND n.deleted IS NULL AND n.valid = 1
                   AND (n.source = 'patient' OR (a.id IS NOT NULL AND a.deleted IS NULL))"
@@ -1006,10 +1012,37 @@ function zpms_note_clinical_picture(PDO $db, int $patientId, bool $withAppointme
         $st = $db->prepare($sql);
         $st->execute([$patientId]);
         $seen = [];
+        $groups = [];
         foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $r) {
             $tag = $spec['tags'][$r['tag_key']] ?? null;
             if (!$tag || empty($tag['summary'])) continue;
-            $key = $r['tag_key'] . '|' . ($r['normalized'] !== null && $r['normalized'] !== '' ? $r['normalized'] : zpms_note_normalize_text((string)$r['value_text']));
+            $norm = ($r['normalized'] !== null && $r['normalized'] !== '' ? $r['normalized'] : zpms_note_normalize_text((string)$r['value_text']));
+
+            // Per note: rows come patient note first, then newest appointment first.
+            $gk = $r['source'] === 'patient' ? 'patient' : 'a' . (int)$r['appointment_id'];
+            if (!isset($groups[$gk])) {
+                $groups[$gk] = [
+                    'source' => $r['source'],
+                    'date' => $r['source'] === 'patient' ? null : (string)$r['adate'],
+                    'place' => $r['source'] === 'patient' ? '' : (string)$r['aplace'],
+                    'is_operation' => $r['atype'] === 'operation',
+                    'link' => $r['source'] === 'patient' ? '#patient-note' : ($anchors[(int)$r['appointment_id']] ?? null),
+                    'tags' => [],
+                    'seen' => [],
+                ];
+            }
+            if (!isset($groups[$gk]['seen'][$r['tag_key'] . '|' . $norm])) {
+                $groups[$gk]['seen'][$r['tag_key'] . '|' . $norm] = true;
+                if (!isset($groups[$gk]['tags'][$r['tag_key']])) {
+                    $groups[$gk]['tags'][$r['tag_key']] = ['label' => (string)$tag['label'], 'colour' => (string)$tag['colour'], 'values' => []];
+                }
+                $groups[$gk]['tags'][$r['tag_key']]['values'][] = [
+                    'text' => (string)$r['value_text'],
+                    'total' => $r['rx_total'] !== null ? (float)$r['rx_total'] : null,
+                ];
+            }
+
+            $key = $r['tag_key'] . '|' . $norm;
             if (isset($seen[$key])) {
                 [$t, $i] = $seen[$key];
                 $out['tags'][$t]['entries'][$i]['count']++;
@@ -1033,13 +1066,20 @@ function zpms_note_clinical_picture(PDO $db, int $patientId, bool $withAppointme
             $seen[$key] = [$r['tag_key'], count($out['tags'][$r['tag_key']]['entries']) - 1];
             if (!empty($tag['header_alert'])) $out['allergies'][] = $entry;
         }
-        // Panel boxes in the order of the tag file.
+        // Panel boxes in the order of the tag file; the same inside each note.
         $ordered = [];
         foreach (array_keys($spec['tags']) as $k) if (isset($out['tags'][$k])) $ordered[$k] = $out['tags'][$k];
         $out['tags'] = $ordered;
+        foreach ($groups as $g) {
+            $tags = [];
+            foreach (array_keys($spec['tags']) as $k) if (isset($g['tags'][$k])) $tags[$k] = $g['tags'][$k];
+            $g['tags'] = $tags;
+            unset($g['seen']);
+            $out['groups'][] = $g;
+        }
     } catch (Throwable $e) {
         error_log('note summary: ' . get_class($e));
-        return ['tags' => [], 'allergies' => []];
+        return ['tags' => [], 'groups' => [], 'allergies' => []];
     }
     return $out;
 }

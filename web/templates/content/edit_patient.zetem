@@ -82,15 +82,48 @@
         </div>
     </section>
 
-    {# «Κλινική εικόνα»: one box per tag with summary: true, values newest first
-       (a value repeated in several notes once, with a count), each with its date
-       -- or "patient note" -- and a link to the note. web/note_tags.php,
-       zpms_note_clinical_picture(). #}
+    {# «Κλινική εικόνα» (web/note_tags.php, zpms_note_clinical_picture()), two views:
+       - by visit (default): one card per note -- the patient note, then each
+         appointment newest first -- with everything tagged in it, so what was
+         found at one visit reads together;
+       - by tag: one box per tag with summary: true, values newest first (a
+         value repeated in several notes once, with a count), each with its date
+         -- or "patient note" -- and a link to the note.
+       The choice is remembered in this browser. #}
     {% if(!empty($clinical['tags'])): %}
     <section class="clinical-picture" aria-label="{{{t('Clinical picture')}}}">
         {# Collapsed on every load; the heading is the toggle. #}
         <h3 class="cp-title"><button type="button" class="cp-toggle" id="cp-toggle" aria-expanded="false" aria-controls="cp-grid"><i class="bx bx-clipboard"></i> {{{t('Clinical picture')}}} <i class="bx bx-chevron-down cp-chevron"></i></button></h3>
-        <div class="cp-grid" id="cp-grid" hidden>
+        <div class="cp-body" id="cp-grid" hidden>
+        <div class="cp-views" role="group" aria-label="{{{t('Group the clinical picture')}}}">
+            <button type="button" data-cp-view="visits" aria-pressed="true"><i class="bx bx-calendar"></i> {{{t('By visit')}}}</button>
+            <button type="button" data-cp-view="tags" aria-pressed="false"><i class="bx bx-category"></i> {{{t('By category')}}}</button>
+        </div>
+
+        <ol class="cp-visits" data-cp-pane="visits">
+            {% foreach($clinical['groups'] as $__g): %}
+            <li class="cp-visit{{($__g['source'] === 'patient') ? ' is-patient-note' : ''}}">
+                <div class="cp-visit-head">
+                    <i class="bx {{($__g['source'] === 'patient') ? 'bx-note' : (($__g['is_operation']) ? 'bx-plus-medical' : 'bx-calendar')}}" aria-hidden="true"></i>
+                    {% if($__g['link']): %}<a class="cp-visit-date" href="{{{$__g['link']}}}">{% else: %}<span class="cp-visit-date">{% endif %}{% if($__g['date']): %}{{$__g['date'] | date('d-m-Y')}}{% else: %}{{{t('patient note')}}}{% endif %}{% if($__g['link']): %}</a>{% else: %}</span>{% endif %}
+                    {% if($__g['source'] !== 'patient'): %}
+                    <span class="cp-visit-type{{($__g['is_operation']) ? ' is-operation' : ''}}">{{($__g['is_operation']) ? t('Operation') : t('Appointment')}}</span>
+                    {% if($__g['place'] !== ''): %}<span class="cp-visit-place">{{{$__g['place']}}}</span>{% endif %}
+                    {% endif %}
+                </div>
+                <dl class="cp-visit-tags">
+                    {% foreach($__g['tags'] as $__vk => $__vt): %}
+                    <div class="cp-vrow zt-c-{{{$__vt['colour']}}}" data-tag="{{{$__vk}}}">
+                        <dt>{{{$__vt['label']}}}</dt>
+                        <dd>{% foreach($__vt['values'] as $__vi => $__vv): %}<span class="cp-vval">{{{$__vv['text']}}}{% if($__vv['total'] !== null): %} <span class="cp-total">({{{t('Total: @n tablets', ['n' => str_replace('.', ',', (string)(0 + $__vv['total']))])}}})</span>{% endif %}</span>{% endforeach %}</dd>
+                    </div>
+                    {% endforeach %}
+                </dl>
+            </li>
+            {% endforeach %}
+        </ol>
+
+        <div class="cp-grid" data-cp-pane="tags" hidden>
             {% foreach($clinical['tags'] as $__key => $__box): %}
             <div class="cp-box zt-c-{{{$__box['colour']}}}" data-tag="{{{$__key}}}">
                 <h4 class="cp-label">{{{$__box['label']}}}</h4>
@@ -106,6 +139,7 @@
                 </ul>
             </div>
             {% endforeach %}
+        </div>
         </div>
     </section>
     {% endif %}
@@ -624,6 +658,20 @@
                 cpToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
                 cpGrid.hidden = !open;
             });
+            /* By visit (default) or by category; remembered in this browser only. */
+            function setCpView(v, save) {
+                if (!cpGrid) return;
+                if (v !== 'tags') v = 'visits';
+                cpGrid.querySelectorAll('[data-cp-pane]').forEach(function(p) { p.hidden = p.dataset.cpPane !== v; });
+                cpGrid.querySelectorAll('[data-cp-view]').forEach(function(b) { b.setAttribute('aria-pressed', b.dataset.cpView === v ? 'true' : 'false'); });
+                if (save) { try { localStorage.setItem('zpms_cp_view', v); } catch (e) {} }
+            }
+            if (cpGrid) {
+                cpGrid.querySelectorAll('[data-cp-view]').forEach(function(b) {
+                    b.addEventListener('click', function() { setCpView(b.dataset.cpView, true); });
+                });
+                try { setCpView(localStorage.getItem('zpms_cp_view') || 'visits', false); } catch (e) { setCpView('visits', false); }
+            }
 
             /* ---- appointment rows: open/close the card in place ---- */
             function setRow(row, open) {

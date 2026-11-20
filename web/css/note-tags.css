@@ -400,6 +400,104 @@ a.cp-value:hover { text-decoration: underline; text-decoration-color: var(--zt-m
 .cp-count, .cp-total { color: var(--zt-ink); font-size: 0.8rem; }
 .cp-when { margin-left: auto; color: #8a9a9d; font-size: 0.78rem; white-space: nowrap; }
 
+/* «Κλινική εικόνα» by visit (the default view): one card per note, newest
+   first, everything tagged at that visit together. */
+.cp-body[hidden] { display: none; }
+.cp-body { margin-top: 0.7rem; }
+.cp-body .cp-grid { margin-top: 0; }
+.cp-views {
+    display: inline-flex;
+    margin: 0 0 0.6rem;
+    border: 1px solid var(--border-color, #d6e1e3);
+    border-radius: var(--border-radius-md, 0.5rem);
+    overflow: hidden;
+}
+.cp-views button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.3rem 0.7rem;
+    border: 0;
+    background: white;
+    font: inherit;
+    font-size: 0.82rem;
+    color: var(--dark-gray, #47585c);
+    cursor: pointer;
+}
+.cp-views button + button { border-left: 1px solid var(--border-color, #d6e1e3); }
+.cp-views button[aria-pressed="true"] {
+    background: rgba(var(--primary-rgb, 3, 99, 121), 0.1);
+    color: var(--primary-dark, #024a5c);
+    font-weight: 600;
+}
+.cp-views button:focus-visible { outline: 2px solid var(--primary, #036379); outline-offset: -2px; }
+.cp-visits[hidden], .cp-grid[hidden] { display: none; }
+.cp-visits {
+    display: flex;
+    flex-direction: column;
+    gap: 0.55rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+.cp-visit {
+    padding: 0.55rem 0.75rem 0.6rem;
+    border: 1px solid var(--border-color, #d6e1e3);
+    border-left: 3px solid var(--primary, #036379);
+    border-radius: 6px;
+    background: white;
+}
+.cp-visit.is-patient-note { border-left-color: #8a9a9d; background: #fafcfc; }
+.cp-visit-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.2rem 0.5rem;
+    margin-bottom: 0.35rem;
+    font-size: 0.85rem;
+    color: var(--dark-gray, #47585c);
+}
+.cp-visit-head > .bx { color: var(--primary, #036379); }
+.cp-visit.is-patient-note .cp-visit-head > .bx { color: #8a9a9d; }
+.cp-visit-date { font-weight: 600; color: var(--text, #182427); text-decoration: none; font-variant-numeric: tabular-nums; }
+a.cp-visit-date:hover { text-decoration: underline; }
+.cp-visit-type {
+    padding: 0 0.5rem;
+    border-radius: 999px;
+    background: rgba(var(--primary-rgb, 3, 99, 121), 0.1);
+    color: var(--primary-dark, #024a5c);
+    font-size: 0.74rem;
+    font-weight: 600;
+}
+.cp-visit-type.is-operation { background: #fde8ea; color: #a3202c; }
+.cp-visit-tags { margin: 0; display: flex; flex-direction: column; gap: 0.2rem; }
+.cp-vrow {
+    display: grid;
+    grid-template-columns: minmax(6.5rem, 9rem) minmax(0, 1fr);
+    gap: 0.6rem;
+    align-items: baseline;
+    font-size: 0.88rem;
+    line-height: 1.35;
+}
+.cp-vrow dt {
+    color: var(--zt-ink);
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+.cp-vrow dd { margin: 0; min-width: 0; overflow-wrap: anywhere; color: var(--text, #182427); }
+.cp-vval {
+    display: inline;
+    padding: 0 0.3rem;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--zt-tint) 55%, white);
+    box-decoration-break: clone;
+    -webkit-box-decoration-break: clone;
+}
+.cp-vval + .cp-vval { margin-left: 0.35rem; }
+@media screen and (max-width: 560px) {
+    .cp-vrow { grid-template-columns: 1fr; gap: 0; }
+}
+
 /* ---- phase 5: Settings -> «Λίστες σημειώσεων» ---- */
 
 .note-lists-tabs a.is-current { background: var(--zt-tint); border-color: var(--zt-mark); color: var(--zt-ink); font-weight: 600; }

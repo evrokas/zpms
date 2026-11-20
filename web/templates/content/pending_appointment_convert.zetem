@@ -1,173 +1,107 @@
 {% attach_library('loader-library'); %}
+{% attach_library('boxicons') %}
+{% attach_library('pending-convert') %}
+{#
+  pending_appointment_convert.zetem -- /consultation/pending/{id}/convert:
+  the patient of a pending booking has arrived; make the appointment, on an
+  existing record or a new one.
 
-<div class="edit-patient">
-    {# Visually hidden: the breadcrumb above already names this page. Kept as the
-       page heading for screen readers. #}
+  From pending_appointment_convert() in web/index.php: $pending, $candidates
+  (possible existing patients, best first: see
+  patientsClassEx::findConversionCandidates()), $candidates_json, $selected
+  (the strong match picked to start with, or null), $booking_when.
+
+  web/js/pending-convert.js re-checks the candidates as the details change
+  and asks before saving: "add to this existing record?" or "is it one of
+  these patients, or a new one?". The server refuses to create a new record
+  while candidates exist without that answer (confirm-new=1).
+#}
+
+<div class="edit-patient pc-page" id="pc-page"
+     data-candidates="{{{$candidates_json}}}"
+     data-candidates-url="{{{rel_url('/consultation/pending/'.$pending->getid().'/convert/candidates')}}}"
+     data-booking-name="{{{$pending->getpatient_name()}}}"
+     data-booking-when="{{{$booking_when}}}"
+     data-booking-place="{{{(string)$pending->getlocation()}}}">
     <h2 class="sr-only">{{{t('Create patient record')}}}</h2>
 
-    <p class="muted page-intro">
-        {{{t('Appointment')}}}: {{$pending->getappointment_datetime() | date('d-m-Y H:i')}}
-        {% if($pending->getlocation()): %} &middot; {{{$pending->getlocation()}}}{% endif %}
-    </p>
+    <div class="pc-booking">
+        <span class="pc-booking-icon" aria-hidden="true"><i class="bx bx-calendar-check"></i></span>
+        <div>
+            <div class="pc-booking-title">{{{t('Appointment')}}}: <b>{{{$booking_when}}}</b>{% if($pending->getlocation()): %} &middot; {{{$pending->getlocation()}}}{% endif %}</div>
+            <div class="pc-booking-sub">{{{t('Name on the booking')}}}: <b>{{{$pending->getpatient_name()}}}</b>{% if($pending->getpatient_phone()): %} &middot; {{{$pending->getpatient_phone()}}}{% endif %}</div>
+        </div>
+    </div>
 
-    <form action="{{rel_url('/consultation/pending/'.$pending->getid().'/convert')}}" method="post">
+    <section class="pc-candidates" id="pc-candidates" aria-live="polite" {% if(count($candidates) == 0): %}hidden{% endif %}>
+        <h3><i class="bx bx-user-check" aria-hidden="true"></i> {{{t('Possible existing patients')}}}</h3>
+        <p class="pc-hint">{{{t('If the patient is already on file, choose the record so the appointment is added there instead of creating a second record.')}}}</p>
+        <ul class="pc-list" id="pc-list">
+            {% foreach($candidates as $c): %}
+            <li class="pc-card{{($selected && $selected['id'] === $c['id']) ? ' is-selected' : ''}}" data-id="{{$c['id']}}">
+                <div class="pc-who">
+                    <a class="pc-name" href="{{{$c['url']}}}" target="_blank" rel="noopener">{{{$c['name']}}}</a>
+                    <div class="pc-sub">
+                        {% if($c['amka'] !== ''): %}<span>{{{t('AMKA')}}} {{{$c['amka']}}}</span>{% endif %}
+                        {% if($c['phone'] !== ''): %}<span>{{{$c['phone']}}}</span>{% endif %}
+                        {% if($c['dob'] !== ''): %}<span>{{{$c['dob']}}} ({{t('@age years old', ['age' => (int)$c['age']])}})</span>{% endif %}
+                    </div>
+                    <div class="pc-sub">
+                        {% if($c['last']): %}<span><i class="bx bx-calendar" aria-hidden="true"></i> {{{t('Last appointment')}}}: {{{$c['last']['date']}}}{% if($c['last']['place'] !== ''): %} &middot; {{{$c['last']['place']}}}{% endif %} ({{(int)$c['appointments']}})</span>
+                        {% else: %}<span>{{{t('No appointments yet')}}}</span>{% endif %}
+                    </div>
+                    <div class="pc-reasons">
+                        {% foreach($c['reason_labels'] as $why => $label): %}<span class="pc-reason is-{{{$why}}}">{{{$label}}}</span>{% endforeach %}
+                    </div>
+                </div>
+                <button type="button" class="pc-use" data-id="{{$c['id']}}">{{{t('This is the patient')}}}</button>
+            </li>
+            {% endforeach %}
+        </ul>
+    </section>
+
+    <form action="{{rel_url('/consultation/pending/'.$pending->getid().'/convert')}}" method="post" id="pc-form">
         {{ csrf_field() }}
-        <input type="hidden" name="existing-patient-id" id="existing-patient-id" value="{{{$matched_patient ? $matched_patient->getid() : ''}}}">
+        <input type="hidden" name="existing-patient-id" id="existing-patient-id" value="{{{$selected ? $selected['id'] : ''}}}">
+        <input type="hidden" name="confirm-new" id="confirm-new" value="">
+
+        <div class="pc-selected" id="pc-selected" hidden>
+            <i class="bx bx-link" aria-hidden="true"></i>
+            <span id="pc-selected-text"></span>
+            <button type="button" id="pc-unselect">{{{t('Cancel (new patient)')}}}</button>
+        </div>
 
         <div class="input-div">
-            <label for="patient-name">{{{t('Patient name')}}}</label>
+            <label for="convert-patient-name">{{{t('Patient name')}}}</label>
             <input type="text" name="patient-name" id="convert-patient-name"
-                value="{{{$matched_patient ? $matched_patient->getpname() : $pending->getpatient_name()}}}"
-                autocomplete="off" required {% if($matched_patient): %}readonly{% endif %}>
-        </div>
-
-        <div class="duplicate-warning" id="convert-duplicate-warning" {% if(!$matched_patient): %}style="display:none;"{% endif %}></div>
-
-        <div class="input-div">
-            <label for="patient-telephone">{{{t('Telephone')}}}</label>
-            <input type="text" name="patient-telephone" id="convert-patient-telephone"
-                value="{{{$matched_patient ? $matched_patient->getptel() : $pending->getpatient_phone()}}}"
-                {% if($matched_patient): %}readonly{% endif %}>
+                value="{{{$pending->getpatient_name()}}}" autocomplete="off" required>
         </div>
 
         <div class="input-div">
-            <label for="patient-amka">{{{t('AMKA')}}}</label>
-            <input type="text" name="patient-amka" id="convert-patient-amka"
-                value="{{{$matched_patient ? $matched_patient->getpamka() : $pending->getpatient_amka()}}}"
-                {% if($matched_patient): %}readonly{% endif %}>
+            <label for="convert-patient-telephone">{{{t('Telephone')}}}</label>
+            <input type="text" name="patient-telephone" id="convert-patient-telephone" value="{{{$pending->getpatient_phone()}}}" autocomplete="off">
         </div>
 
         <div class="input-div">
-            <label for="patient-email">{{{t('Email')}}}</label>
-            <input type="text" name="patient-email" id="convert-patient-email"
-                value="{{{$matched_patient ? $matched_patient->getpemail() : $pending->getpatient_email()}}}"
-                {% if($matched_patient): %}readonly{% endif %}>
+            <label for="convert-patient-amka">{{{t('AMKA')}}}</label>
+            <input type="text" name="patient-amka" id="convert-patient-amka" value="{{{$pending->getpatient_amka()}}}" autocomplete="off">
+        </div>
+
+        <div class="input-div">
+            <label for="convert-patient-email">{{{t('Email')}}}</label>
+            <input type="text" name="patient-email" id="convert-patient-email" value="{{{$pending->getpatient_email()}}}" autocomplete="off">
         </div>
 
         <div class="buttons">
-            <input type="submit" value="{{{t('Create record & appointment')}}}">
+            <input type="submit" id="pc-submit" value="{{{t('Create record & appointment')}}}">
         </div>
     </form>
+
+    <dialog class="pc-dialog" id="pc-dialog" aria-labelledby="pc-dialog-title">
+        <form method="dialog" class="pc-dialog-inner">
+            <h3 id="pc-dialog-title"></h3>
+            <div id="pc-dialog-body"></div>
+            <div class="pc-dialog-buttons" id="pc-dialog-buttons"></div>
+        </form>
+    </dialog>
 </div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        var nameInput = document.getElementById('convert-patient-name');
-        var phoneInput = document.getElementById('convert-patient-telephone');
-        var amkaInput = document.getElementById('convert-patient-amka');
-        var emailInput = document.getElementById('convert-patient-email');
-        var warningBox = document.getElementById('convert-duplicate-warning');
-        var existingIdInput = document.getElementById('existing-patient-id');
-        /* Interface text comes from the dictionary (rendered here, not typed in the script). */
-        var I18N = {{ json_encode(['found' => t('A patient record with these details already exists -- '), 'addTo' => t('The appointment will be added to the existing record:'), 'clear' => t('Cancel (new patient)'), 'similar' => t('Patients with a similar name were found -- choose if this is the same person:'), 'amka' => t('AMKA'), 'use' => t('Use this one')], JSON_HEX_TAG + JSON_HEX_AMP + JSON_UNESCAPED_UNICODE) }};
-        var timeout;
-
-        function escapeHtml(str) {
-            return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-        }
-
-        function setLinkedFieldsReadonly(readonly) {
-            nameInput.readOnly = readonly;
-            phoneInput.readOnly = readonly;
-            amkaInput.readOnly = readonly;
-            emailInput.readOnly = readonly;
-        }
-
-        function clearExisting() {
-            existingIdInput.value = '';
-            setLinkedFieldsReadonly(false);
-            warningBox.style.display = 'none';
-            warningBox.innerHTML = '';
-        }
-
-        /* Used both for the server's own auto-match on page load (name,
-         * then AMKA, then phone -- see patientsClassEx::findMatchingPatient()
-         * in web/ClassesEx.php) and for a match the doctor picks by hand
-         * from the live name-search suggestions below -- same end state
-         * either way: existing-patient-id is set, and every field mirrors
-         * that patient's own stored data (not whatever was typed on the
-         * phone-booking screen) since that's what will actually be saved. */
-        function useExisting(id, name, amka, phone, email, auto) {
-            existingIdInput.value = id;
-            nameInput.value = name;
-            amkaInput.value = amka || '';
-            phoneInput.value = phone || '';
-            emailInput.value = email || '';
-            setLinkedFieldsReadonly(true);
-
-            warningBox.innerHTML = '<p>'
-                + (auto ? escapeHtml(I18N.found) : '')
-                + escapeHtml(I18N.addTo) + ' <b>' + escapeHtml(name) + '</b> '
-                + '&mdash; <button type="button" id="clear-existing">' + escapeHtml(I18N.clear) + '</button></p>';
-            warningBox.style.display = 'block';
-            document.getElementById('clear-existing').addEventListener('click', clearExisting);
-        }
-
-        function renderSuggestions(matches) {
-            // A match is already selected (auto or manual) -- a fresh
-            // keystroke's suggestion list must never silently replace it.
-            if (existingIdInput.value !== '') return;
-
-            if (!matches || matches.length === 0) {
-                warningBox.style.display = 'none';
-                warningBox.innerHTML = '';
-                return;
-            }
-            var html = '<p>' + escapeHtml(I18N.similar) + '</p><ul>';
-            matches.forEach(function(m) {
-                html += '<li>'
-                    + '<span class="name">' + escapeHtml(m.name) + '</span>'
-                    + '<span class="amka">' + escapeHtml(I18N.amka) + ': ' + escapeHtml(m.amka || '—') + '</span>'
-                    + '<button type="button" class="use-existing" data-id="' + escapeHtml(m.id)
-                    + '" data-name="' + escapeHtml(m.name) + '" data-amka="' + escapeHtml(m.amka || '')
-                    + '" data-phone="' + escapeHtml(m.phone || '') + '" data-email="' + escapeHtml(m.email || '')
-                    + '">' + escapeHtml(I18N.use) + '</button>'
-                    + '</li>';
-            });
-            html += '</ul>';
-            warningBox.innerHTML = html;
-            warningBox.style.display = 'block';
-
-            warningBox.querySelectorAll('.use-existing').forEach(function(btn) {
-                btn.addEventListener('click', function() {
-                    useExisting(btn.dataset.id, btn.dataset.name, btn.dataset.amka, btn.dataset.phone, btn.dataset.email, false);
-                });
-            });
-        }
-
-        {% if($matched_patient): %}
-        // Pre-selected server-side (see pending_appointment_convert() in
-        // web/index.php) -- rendered directly rather than re-fetched here,
-        // so the page shows the correct linked-record state even before
-        // this script has a chance to run.
-        useExisting(
-            {{ json_encode($matched_patient->getid()) }},
-            {{ json_encode($matched_patient->getpname()) }},
-            {{ json_encode($matched_patient->getpamka()) }},
-            {{ json_encode($matched_patient->getptel()) }},
-            {{ json_encode($matched_patient->getpemail()) }},
-            true
-        );
-        {% endif %}
-
-        nameInput.addEventListener('input', function(ev) {
-            if (existingIdInput.value !== '') return;
-            clearTimeout(timeout);
-            var term = ev.target.value.trim();
-            if (term.length < 2) {
-                renderSuggestions([]);
-                return;
-            }
-            timeout = setTimeout(function() {
-                fetch(window.location.pathname.replace(/\/?$/, '/') + 'namecheck', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: 'pname=' + encodeURIComponent(term)
-                })
-                    .then(r => r.json())
-                    .then(data => renderSuggestions(data.matches))
-                    .catch(() => {});
-            }, 300);
-        });
-    });
-</script>

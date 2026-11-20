@@ -582,6 +582,21 @@ require_once(__DIR__ . '/zpms_mailer.php');
             'psAppointment' => t('Appointment'),
             'psOperation' => t('Operation'),
             'psUpcoming' => t('Upcoming'),
+            // Pending booking -> patient record (web/js/pending-convert.js).
+            'pcLast' => t('Last appointment'),
+            'pcNoAppointments' => t('No appointments yet'),
+            'pcUseThis' => t('This is the patient'),
+            'pcLinked' => t('The appointment will be added to the existing record:'),
+            'pcSubmitExisting' => t('Add appointment to this record'),
+            'pcSubmitNew' => t('Create record & appointment'),
+            'pcBookingName' => t('Name on the booking'),
+            'pcAddTitle' => t('Add to the existing record?'),
+            'pcAddText' => t('The appointment will be added to the record of this patient. Is this the same person?'),
+            'pcAddYes' => t('Yes, it is the same patient'),
+            'pcBack' => t('Back'),
+            'pcWhichTitle' => t('Is the patient already on file?'),
+            'pcWhichText' => t('These patients on file may be the same person as the booking. Choose the record, or create a new one.'),
+            'pcNew' => t('No, create a new patient record'),
         ];
     }
 
@@ -684,6 +699,24 @@ require_once(__DIR__ . '/zpms_mailer.php');
             'last' => $last,
             'next' => $next,
         ];
+    }
+
+    /**
+     * zpms_note_clinical_picture() for the record page, with each visit's
+     * place shown in the current language (a place is stored under the name
+     * it had when the appointment was saved).
+     */
+    function zpms_clinical_picture_for_page(patientsClass $pat, bool $withAppointments, array $anchors): array {
+        global $kernel;
+        $clinical = zpms_note_clinical_picture(dbConnection::getConnection(), (int)$pat->getid(), $withAppointments, $anchors);
+        if (!empty($clinical['groups'])) {
+            $labels = patientsClassEx::placeLabels($kernel->getCurrentLanguage());
+            foreach ($clinical['groups'] as &$g) {
+                if ($g['place'] !== '') $g['place'] = $labels[$g['place']] ?? $g['place'];
+            }
+            unset($g);
+        }
+        return $clinical;
     }
 
     function patient_edit($params) {
@@ -838,8 +871,7 @@ require_once(__DIR__ . '/zpms_mailer.php');
             'appointment_summary' => $appointmentSummary,
             'patient_history' => zpms_patient_appointment_history_for_display($appointmentIdsForHistory),
             // Clinical tags in the notes: allergy line and «Κλινική εικόνα» (web/note_tags.php).
-            'clinical' => zpms_note_clinical_picture(dbConnection::getConnection(), (int)$pat->getid(),
-                $canEditAppointment || $canViewAppointment, $noteAnchors),
+            'clinical' => zpms_clinical_picture_for_page($pat, $canEditAppointment || $canViewAppointment, $noteAnchors),
             'financials' => $financials,
             'has_financials' => $hasFinancials,
             'can_edit_patient' => $canEditPatient,
@@ -1922,16 +1954,69 @@ require_once(__DIR__ . '/zpms_mailer.php');
             exit();
         }
 
-        $matchedPatient = patientsClassEx::findMatchingPatient(
-            $pending->getpatient_name(),
+        // Patients who may be this person (same AMKA, name, phone, or a rare
+        // name word). The page lists them and asks before saving; a strong
+        // match (AMKA or the full name) is selected to start with.
+        $candidates = zpms_convert_candidates(
+            (string)$pending->getpatient_name(),
             $pending->getpatient_amka(),
             $pending->getpatient_phone()
         );
+        $selected = ($candidates && $candidates[0]['strong']) ? $candidates[0] : null;
 
         return (Renderer::render("pending_appointment_convert.zetem", [
             'pending' => $pending,
-            'matched_patient' => $matchedPatient,
+            'candidates' => $candidates,
+            'candidates_json' => json_encode($candidates, JSON_UNESCAPED_UNICODE),
+            'selected' => $selected,
+            'booking_when' => date('d-m-Y H:i', strtotime((string)$pending->getappointment_datetime())),
         ]));
+    }
+
+    /**
+     * patientsClassEx::findConversionCandidates() with places shown in the
+     * current language and each patient's record address -- what the
+     * convert page and its live check (/convert/candidates) display.
+     */
+    function zpms_convert_candidates(string $name, ?string $amka, ?string $phone): array {
+        global $kernel;
+        $labels = patientsClassEx::placeLabels($kernel->getCurrentLanguage());
+        $why = [
+            'amka' => t('Same AMKA'),
+            'name' => t('Same name'),
+            'phone' => t('Same telephone'),
+            'similar_name' => t('Similar name'),
+        ];
+        $out = [];
+        foreach (patientsClassEx::findConversionCandidates($name, $amka, $phone) as $c) {
+            if ($c['last']) $c['last']['place'] = $labels[$c['last']['place']] ?? $c['last']['place'];
+            $c['reason_labels'] = [];
+            foreach ($c['reasons'] as $r) $c['reason_labels'][$r] = $why[$r] ?? $r;
+            $c['age_label'] = $c['age'] !== null ? t('@age years old', ['age' => (int)$c['age']]) : '';
+            $c['url'] = rel_url('/patient/' . $c['id'] . '/edit');
+            unset($c['guid']);
+            $out[] = $c;
+        }
+        return $out;
+    }
+
+    /** POST /consultation/pending/{id}/convert/candidates -- the convert page's live check as fields change. */
+    function pending_appointment_convert_candidates($params) {
+        header('Content-Type: application/json; charset=utf-8');
+        header('Cache-Control: no-store');
+        if (rbacClass::require(ZPMS_PERM_PATIENTS_NEW_PATIENT) || rbacClass::require(ZPMS_PERM_APPOINTMENT_EDIT)) {
+            http_response_code(401);
+            echo json_encode(['candidates' => []]);
+            exit();
+        }
+        if (!csrfClass::verifyRequest()) {
+            http_response_code(400);
+            echo json_encode(['candidates' => []]);
+            exit();
+        }
+        $str = fn($k, $max) => mb_substr(trim((string)($_POST[$k] ?? '')), 0, $max);
+        echo json_encode(['candidates' => zpms_convert_candidates($str('patient-name', 200), $str('patient-amka', 32), $str('patient-telephone', 32))], JSON_UNESCAPED_UNICODE);
+        exit();
     }
 
     function pending_appointment_convert_post($params) {
@@ -1954,31 +2039,26 @@ require_once(__DIR__ . '/zpms_mailer.php');
         }
 
         $existingPatientId = trim((string)($_POST['existing-patient-id'] ?? ''));
+        $attached = false;
 
         if ($existingPatientId !== '') {
-            // Either the doctor explicitly picked a suggestion (or kept
-            // the page's own auto-selected match -- see
-            // pending_appointment_convert() above) via the hidden
-            // existing-patient-id field.
+            // The doctor chose this existing patient on the convert page and
+            // confirmed it in its dialog (pending_appointment_convert.zetem).
             $pat = zpms_live_patient($existingPatientId);
             if (!$pat) {
                 $kernel->addStatus('error', t('The selected patient was not found.'));
                 header('location: '.rel_url('/consultation/pending/'.$pending->getid().'/convert'));
                 exit();
             }
-        } elseif (($pat = patientsClassEx::findMatchingPatient(
-            (string)($_POST['patient-name'] ?? ''),
-            $_POST['patient-amka'] ?? null,
-            $_POST['patient-telephone'] ?? null
-        )) !== null) {
-            // Safety net, not the primary path: the form should already
-            // arrive with existing-patient-id set whenever this same
-            // check found a match on page load. Re-running it here means
-            // the "attach to the existing record instead of creating a
-            // duplicate" rule holds even if the doctor edited the name/
-            // AMKA/phone fields before submitting (a fresh match against
-            // the *submitted* values, not just the pending row's
-            // original ones), or if JS never ran at all.
+            $attached = true;
+        } elseif (($_POST['confirm-new'] ?? '') !== '1'
+            && zpms_convert_candidates((string)($_POST['patient-name'] ?? ''), $_POST['patient-amka'] ?? null, $_POST['patient-telephone'] ?? null)) {
+            // Possible existing patients and no "this is a new patient"
+            // answer (no JavaScript, or the details were changed): never
+            // guess either way -- back to the page, which lists them.
+            $kernel->addStatus('warning', t('Patients who may be the same person are already on file. Choose one, or confirm that this is a new patient.'));
+            header('location: '.rel_url('/consultation/pending/'.$pending->getid().'/convert'));
+            exit();
         } else {
             $pat = new patientsClass([
                 'id' => null,
@@ -2024,9 +2104,13 @@ require_once(__DIR__ . '/zpms_mailer.php');
         $pending->setconverted_patient_id($pat->getid());
         $pending->setconverted_appointment_id($app->getid());
         $pending->update();
-        zpms_audit('pending_converted', ['patient' => $pat, 'appointment_id' => $app->getid(), 'detail' => 'pending_id=' . (int)$pending->getid()]);
+        zpms_audit('pending_converted', ['patient' => $pat, 'appointment_id' => $app->getid(), 'detail' => 'pending_id=' . (int)$pending->getid() . ($attached ? ' existing_patient' : ' new_patient')]);
 
-        $kernel->addStatus('notice', t('A record and an appointment were created for patient @name.', ['name' => zpms_bold($pat->getpname())]));
+        if ($attached) {
+            $kernel->addStatus('notice', t('The appointment was added to the existing record of patient @name.', ['name' => zpms_bold($pat->getpname())]));
+        } else {
+            $kernel->addStatus('notice', t('A record and an appointment were created for patient @name.', ['name' => zpms_bold($pat->getpname())]));
+        }
 
         header('location: '.rel_url('/patient/'.$pat->getid().'/edit'));
         exit();

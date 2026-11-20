@@ -235,7 +235,10 @@ function zpms_functional_note_fields(TestRunner $runner, string $baseUrl): void 
         assert_true((bool)preg_match('~<section class="clinical-picture"(.*?)</section>~su', $body, $cp), 'no «Κλινική εικόνα» panel');
         $panel = $cp[1];
         assert_contains('id="cp-toggle" aria-expanded="false" aria-controls="cp-grid"', $panel, 'the panel heading is not a collapsed toggle');
-        assert_contains('<div class="cp-grid" id="cp-grid" hidden>', $panel, 'the panel does not start collapsed');
+        assert_contains('<div class="cp-body" id="cp-grid" hidden>', $panel, 'the panel does not start collapsed');
+        assert_contains('data-cp-view="visits" aria-pressed="true"', $panel, 'the by-visit view is not the default');
+        assert_contains('<ol class="cp-visits" data-cp-pane="visits">', $panel, 'no by-visit view');
+        assert_contains('<div class="cp-grid" data-cp-pane="tags" hidden>', $panel, 'no by-category view');
         foreach (['data-tag="alg"', 'data-tag="dx"', 'data-tag="rx"', 'data-tag="proc"', 'data-tag="lvl"'] as $needle) {
             assert_contains($needle, $panel, "panel box missing: $needle");
         }
@@ -256,7 +259,32 @@ function zpms_functional_note_fields(TestRunner $runner, string $baseUrl): void 
         $gone->update();
         zpms_note_fields_hide_appointments($db, [(int)$gone->getid()], '2026-12-25 00:00:00');
         $again = $mk('@δγ Ριζοπάθεια');
-        $pic = zpms_note_clinical_picture($db, $pid, true, []);
+        $both = new appointmentsClass(['guid' => guid(), 'cuser' => 'test', 'cdate' => getDBtime(), 'adate' => '2026-12-28 09:00:00', 'aplace' => 'test-clinic',
+            'anote' => '@επ Ο4-Ο5 πόνος @δγ Στένωση @δγ στένωση', 'atype' => 'operation', 'pguid' => $state['guid']]);
+        $both->insert();
+        zpms_note_fields_sync_appointment($both);
+        $pic = zpms_note_clinical_picture($db, $pid, true, [(int)$both->getid() => '#app-1']);
+
+        // By visit: patient note first, then newest appointment; one visit's
+        // tags together, in tag-file order, a value repeated in one note once.
+        $groups = $pic['groups'];
+        assert_equal('patient', $groups[0]['source'] ?? null, 'the patient note is not the first group');
+        $dates = array_values(array_filter(array_column($groups, 'date')));
+        $sorted = $dates;
+        rsort($sorted);
+        assert_equal($sorted, $dates, 'appointment groups are not newest first');
+        $byDate = array_column($groups, null, 'date');
+        $g = $byDate['2026-12-28 09:00:00'] ?? null;
+        assert_not_null($g, 'the 2026-12-28 visit is not a group');
+        assert_equal('#app-1', $g['link'], 'the visit is not linked to its card');
+        assert_true($g['is_operation'], 'the visit type is lost');
+        assert_equal('test-clinic', $g['place'], 'the visit place is lost');
+        assert_equal(['dx', 'lvl'], array_keys($g['tags']), 'one visit\'s tags are not together in tag-file order');
+        assert_equal(['Στένωση'], array_column($g['tags']['dx']['values'], 'text'), 'a value repeated in one note is listed twice');
+        assert_equal(['Ριζοπάθεια'], array_column($byDate['2026-12-24 10:00:00']['tags']['dx']['values'] ?? [], 'text'), 'the 2026-12-24 visit is missing its diagnosis');
+        foreach ($groups as $g) {
+            foreach ($g['tags']['dx']['values'] ?? [] as $v) assert_true($v['text'] !== 'κρυφή διάγνωση', 'a deleted appointment is a group');
+        }
         $dx = array_column($pic['tags']['dx']['entries'], null, 'text');
         assert_true(!isset($dx['κρυφή διάγνωση']), 'a deleted appointment\'s value is in the summary');
         $rizo = array_values(array_filter($pic['tags']['dx']['entries'], fn($e) => zpms_note_fold($e['text']) === 'ριζοπαθεια'));
@@ -268,7 +296,8 @@ function zpms_functional_note_fields(TestRunner $runner, string $baseUrl): void 
         // A viewer who may not see appointment notes gets the patient note only.
         $own = zpms_note_clinical_picture($db, $pid, false, []);
         assert_true(!isset($own['tags']['dx']) && isset($own['tags']['alg']), 'appointment values reached a viewer without appointment access');
-        foreach ([$gone, $again] as $a) {
+        assert_equal(['patient'], array_column($own['groups'], 'source'), 'appointment groups reached a viewer without appointment access');
+        foreach ([$gone, $again, $both] as $a) {
             $db->prepare('DELETE FROM note_fields WHERE appointment_id = ?')->execute([$a->getid()]);
             $db->prepare('DELETE FROM appointments WHERE id = ?')->execute([$a->getid()]);
         }
@@ -418,7 +447,7 @@ function zpms_functional_note_fields(TestRunner $runner, string $baseUrl): void 
         assert_equal(0, (int)$db->query('SELECT COUNT(*) FROM note_fields WHERE value_text = ' . $db->quote('ακτινογραφία ΟΜΣΣ'))->fetchColumn(), 'a pending note was parsed before conversion');
         $token = zpms_nf_test_token($http, '/consultation/pending/' . $pending->getid() . '/convert');
         $res = $http->post('/consultation/pending/' . $pending->getid() . '/convert', [
-            'csrf_token' => $token, 'patient-name' => 'Ασθενής Από Εκκρεμές', 'patient-telephone' => '2100000777', 'patient-amka' => '', 'patient-email' => '',
+            'csrf_token' => $token, 'patient-name' => 'Ασθενής Από Εκκρεμές', 'patient-telephone' => '2100000777', 'patient-amka' => '', 'patient-email' => '', 'confirm-new' => '1',
         ]);
         assert_equal(302, $res['status'], 'convert POST did not redirect');
         $row = $db->query("SELECT n.tag_key, n.value_text FROM note_fields n JOIN appointments a ON a.id = n.appointment_id

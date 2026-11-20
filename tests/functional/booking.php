@@ -271,7 +271,7 @@ function zpms_booking_functional_tests(TestRunner $runner, string $baseUrl): voi
         $p = zpms_bk_pending_row('Remote Ok');
         $page = $doctor->get('/consultation/pending/' . $p['id'] . '/convert');
         $token = TestHttpClient::extractCsrfToken($page['body']);
-        $res = $doctor->post('/consultation/pending/' . $p['id'] . '/convert', ['csrf_token' => $token, 'patient-name' => 'Remote Ok', 'patient-telephone' => '2100000000', 'patient-amka' => '', 'patient-email' => '']);
+        $res = $doctor->post('/consultation/pending/' . $p['id'] . '/convert', ['csrf_token' => $token, 'patient-name' => 'Remote Ok', 'patient-telephone' => '2100000000', 'patient-amka' => '', 'patient-email' => '', 'confirm-new' => '1']);
         assert_equal(302, $res['status']);
         $st = zpms_bk_db()->prepare('SELECT * FROM appointments WHERE remote_contact = ? ORDER BY id DESC LIMIT 1');
         $st->execute(['https://zoom.example/j/123']);
@@ -280,6 +280,109 @@ function zpms_booking_functional_tests(TestRunner $runner, string $baseUrl): voi
         assert_equal(['zoom', 30], [$ap['remote_platform'], (int)$ap['duration_minutes']]);
         assert_true(zpms_bk_slot_for($p['guid']) === null, 'the pending appointment no longer owns a slot');
         assert_equal('phone', zpms_bk_slot_for($ap['guid'])['location'], 'the appointment does');
+    });
+
+    /* ---- converting a booking: existing patient or new one, always confirmed ---- */
+
+    $mkPatient = function (string $name, string $amka, string $tel): patientsClass {
+        $p = new patientsClass(['guid' => guid(), 'cuser' => 'test-fixture', 'cdate' => getDBtime(), 'pname' => $name,
+            'pdob' => '1958-12-06 00:00:00', 'pamka' => $amka, 'ptel' => $tel, 'paddr' => '', 'pemail' => '', 'pnote' => '']);
+        $p->insert();
+        return $p;
+    };
+    $mkPending = function (string $name, string $amka, string $tel): pendingAppointmentsClass {
+        $p = new pendingAppointmentsClass(['id' => null, 'cuser' => 'test-fixture', 'cdate' => getDBtime(), 'guid' => guid(),
+            'patient_name' => $name, 'patient_phone' => $tel, 'patient_amka' => $amka, 'patient_email' => '',
+            'appointment_datetime' => '2026-12-03 10:00:00', 'location' => 'test-clinic', 'notes' => '']);
+        $p->insert();
+        return $p;
+    };
+    $count = fn(string $sql) => (int)zpms_bk_db()->query($sql)->fetchColumn();
+
+    $runner->add('possible existing patients: same AMKA, phone digits, full name in any order, a rare surname with a typo; not a common first name', function () use ($mkPatient) {
+        TestSchema::assertSafeToMutate();
+        $a = $mkPatient('Ζαχαρόπουλος Ευστάθιος', '06125899991', '2101112233');
+        foreach (['Γεωργίου Νικόλαος', 'Δημητρίου Νικόλαος', 'Ιωάννου Νικόλαος', 'Κωστόπουλος Νικόλαος'] as $n) $mkPatient($n, '', '');
+        $ids = fn(array $c) => array_column($c, 'id');
+
+        $c = patientsClassEx::findConversionCandidates('Άλλο Όνομα', '06125899991', '');
+        assert_true(in_array((int)$a->getid(), $ids($c), true), 'same AMKA not found');
+        assert_true($c[0]['strong'], 'an AMKA match is a strong match');
+
+        $c = patientsClassEx::findConversionCandidates('Άλλο Όνομα', '', '210 111 2233');
+        assert_true(in_array((int)$a->getid(), $ids($c), true), 'same phone (spaces ignored) not found');
+
+        $c = patientsClassEx::findConversionCandidates('ΕΥΣΤΑΘΙΟΣ ΖΑΧΑΡΟΠΟΥΛΟΣ', '', '');
+        assert_equal((int)$a->getid(), $c[0]['id'] ?? null, 'full name in another order, capitals, no accents');
+        assert_true(in_array('name', $c[0]['reasons'], true), 'reason: same name');
+
+        $c = patientsClassEx::findConversionCandidates('Μπαρμπούτης Ζαχαρόπουλο', '', '');
+        assert_true(in_array((int)$a->getid(), $ids($c), true), 'a rare name word one letter off is a similar name');
+        assert_false($c[0]['strong'], 'a similar name is not strong');
+
+        $c = patientsClassEx::findConversionCandidates('Παπαδάκης Νικόλαος', '', '');
+        assert_equal([], $c, 'a first name shared by many patients alone is not a match');
+    });
+
+    $runner->add('converting with a possible match and no answer goes back to the page, which lists it; nothing is created', function () use ($doctor, $mkPatient, $mkPending, $count) {
+        TestSchema::assertSafeToMutate();
+        $existing = $mkPatient('Τριανταφυλλίδης Παντελής', '', '2109998877');
+        $pending = $mkPending('Τριανταφυλλίδης Λάθος', '', '6900000001');
+        $url = '/consultation/pending/' . $pending->getid() . '/convert';
+
+        $page = $doctor->get($url);
+        assert_equal(200, $page['status']);
+        assert_contains('Τριανταφυλλίδης Παντελής', $page['body'], 'the possible existing patient is listed');
+        assert_contains('id="pc-dialog"', $page['body'], 'the confirmation dialog is on the page');
+
+        $patients = $count('SELECT COUNT(*) FROM patients');
+        $token = TestHttpClient::extractCsrfToken($page['body']);
+        $res = $doctor->post($url, ['csrf_token' => $token, 'patient-name' => 'Τριανταφυλλίδης Λάθος', 'patient-telephone' => '6900000001', 'patient-amka' => '', 'patient-email' => '']);
+        assert_equal(302, $res['status']);
+        assert_contains($url, (string)$res['location'], 'sent back to the convert page');
+        assert_equal($patients, $count('SELECT COUNT(*) FROM patients'), 'a patient was created without confirmation');
+        assert_equal(null, zpms_bk_db()->query('SELECT converted_at FROM pending_appointments WHERE id = ' . (int)$pending->getid())->fetchColumn(), 'the booking was converted without confirmation');
+
+        $live = $doctor->post($url . '/candidates', ['csrf_token' => $token, 'patient-name' => 'Παντελής Τριανταφυλλίδης', 'patient-amka' => '', 'patient-telephone' => '']);
+        $data = json_decode($live['body'], true);
+        assert_equal((int)$existing->getid(), $data['candidates'][0]['id'] ?? null, 'the live check finds the patient as the details change');
+    });
+
+    $runner->add('choosing the existing patient adds the appointment to that record and creates no new patient', function () use ($doctor, $mkPatient, $mkPending, $count) {
+        TestSchema::assertSafeToMutate();
+        $existing = $mkPatient('Καλλιγέρης Σπυρίδων', '', '2104445566');
+        $pending = $mkPending('Καλιγέρης Σπύρος', '', '6900000002');
+        $url = '/consultation/pending/' . $pending->getid() . '/convert';
+        $token = TestHttpClient::extractCsrfToken($doctor->get($url)['body']);
+
+        $patients = $count('SELECT COUNT(*) FROM patients');
+        $res = $doctor->post($url, ['csrf_token' => $token, 'existing-patient-id' => (string)$existing->getid(),
+            'patient-name' => 'Καλλιγέρης Σπυρίδων', 'patient-telephone' => '2104445566', 'patient-amka' => '', 'patient-email' => '']);
+        assert_equal(302, $res['status']);
+        assert_equal('/patient/' . $existing->getid() . '/edit', (string)$res['location'], 'goes to the existing record');
+        assert_equal($patients, $count('SELECT COUNT(*) FROM patients'), 'a new patient was created');
+        $st = zpms_bk_db()->prepare('SELECT converted_patient_id, converted_appointment_id FROM pending_appointments WHERE id = ?');
+        $st->execute([$pending->getid()]);
+        $row = $st->fetch(PDO::FETCH_ASSOC);
+        assert_equal((int)$existing->getid(), (int)$row['converted_patient_id'], 'booking linked to the existing patient');
+        $pg = zpms_bk_db()->query('SELECT pguid FROM appointments WHERE id = ' . (int)$row['converted_appointment_id'])->fetchColumn();
+        assert_equal($existing->getguid(), $pg, 'the appointment is on the existing record');
+        assert_equal(1, $count("SELECT COUNT(*) FROM audit_log WHERE event_type = 'pending_converted' AND detail LIKE 'pending_id=" . (int)$pending->getid() . " existing_patient'"), 'audit says existing patient');
+    });
+
+    $runner->add('"new patient" confirmed: a new record is made even though a similar patient exists', function () use ($doctor, $mkPatient, $mkPending, $count) {
+        TestSchema::assertSafeToMutate();
+        $mkPatient('Μαυρογιάννης Ευάγγελος', '', '');
+        $pending = $mkPending('Μαυρογιάννης Θεόδωρος', '', '6900000003');
+        $url = '/consultation/pending/' . $pending->getid() . '/convert';
+        $token = TestHttpClient::extractCsrfToken($doctor->get($url)['body']);
+
+        $patients = $count('SELECT COUNT(*) FROM patients');
+        $res = $doctor->post($url, ['csrf_token' => $token, 'confirm-new' => '1',
+            'patient-name' => 'Μαυρογιάννης Θεόδωρος', 'patient-telephone' => '6900000003', 'patient-amka' => '', 'patient-email' => '']);
+        assert_equal(302, $res['status']);
+        assert_equal($patients + 1, $count('SELECT COUNT(*) FROM patients'), 'no new patient record');
+        assert_equal(1, $count("SELECT COUNT(*) FROM patients WHERE pname = 'Μαυρογιάννης Θεόδωρος' AND deleted IS NULL"), 'the new record has the booking name');
     });
 
     $runner->add('appointments on a patient record are free: no booking block, any date, time and place, no slot', function () use ($doctor, $mon) {

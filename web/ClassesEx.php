@@ -194,6 +194,150 @@ class patientsClassEx extends patientsClass {
         return $rclass;
     }
 
+    /** Lower case, no accents, final sigma as sigma: "Πολύμερος" -> "πολυμεροσ". */
+    static function foldName(string $s): string {
+        $s = mb_strtolower(trim($s));
+        if (class_exists('Normalizer')) {
+            $n = Normalizer::normalize($s, Normalizer::FORM_D);
+            if ($n !== false) $s = preg_replace('/\p{Mn}+/u', '', $n);
+        }
+        return str_replace('ς', 'σ', $s);
+    }
+
+    /** The folded words of a name, letters only, at least 3 characters. */
+    static function nameWords(string $s): array {
+        $words = preg_split('/[^\p{L}]+/u', self::foldName($s), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+        return array_values(array_filter($words, fn($w) => mb_strlen($w) >= 3));
+    }
+
+    /** Edit distance between two words, by character (not byte). */
+    private static function wordDistance(string $a, string $b): int {
+        $a = mb_str_split($a);
+        $b = mb_str_split($b);
+        $prev = range(0, count($b));
+        foreach ($a as $i => $ca) {
+            $cur = [$i + 1];
+            foreach ($b as $j => $cb) {
+                $cur[] = min($prev[$j + 1] + 1, $cur[$j] + 1, $prev[$j] + ($ca === $cb ? 0 : 1));
+            }
+            $prev = $cur;
+        }
+        return end($prev);
+    }
+
+    private static function digits(?string $s): string {
+        return preg_replace('/\D+/', '', (string)$s);
+    }
+
+    /**
+     * Existing patients who may be the person of a pending booking, for the
+     * "create patient record" page (pending_appointment_convert() in
+     * web/index.php), best first. Unlike findMatchingPatient() this is meant
+     * to be *shown* to the doctor, who confirms (or says "new patient"), so
+     * it casts a wider net:
+     *   same AMKA (100), same full name in any word order (90), same phone
+     *   number by its digits (60), and a rare word of the name -- in at most
+     *   3 patients' names, so a surname rather than "Νικόλαος" -- equal or
+     *   one typo away (40 each).
+     * Case and accents never matter. Deleted patients are never returned.
+     * Each entry: id, guid, name, amka, phone, email, dob (d-m-Y or ''), age,
+     * last (['date', 'place', 'is_operation'] or null), appointments (count),
+     * reasons (amka|name|phone|similar_name), score, strong (AMKA or full name).
+     */
+    static function findConversionCandidates(string $name, ?string $amka, ?string $phone, int $limit = 5): array {
+        $db = dbConnection::getConnection();
+        $rows = $db->query("SELECT id, guid, pname, pamka, ptel, pemail, pdob FROM patients WHERE deleted IS NULL")->fetchAll(PDO::FETCH_ASSOC);
+
+        $amka = self::digits($amka);
+        $phone = substr(self::digits($phone), -10);
+        $want = self::nameWords($name);
+        $wantSorted = $want;
+        sort($wantSorted);
+
+        // How many patients carry each name word: a word in many names is a
+        // first name and says little on its own.
+        $df = [];
+        $words = [];
+        foreach ($rows as $i => $r) {
+            $words[$i] = array_values(array_unique(self::nameWords((string)$r['pname'])));
+            foreach ($words[$i] as $w) $df[$w] = ($df[$w] ?? 0) + 1;
+        }
+
+        $found = [];
+        foreach ($rows as $i => $r) {
+            $score = 0;
+            $reasons = [];
+            if (strlen($amka) >= 9 && self::digits($r['pamka']) === $amka) {
+                $score += 100; $reasons[] = 'amka';
+            }
+            $have = $words[$i];
+            $haveSorted = $have;
+            sort($haveSorted);
+            if ($want && $haveSorted === $wantSorted) {
+                $score += 90; $reasons[] = 'name';
+            } elseif ($want) {
+                $similar = 0;
+                foreach ($want as $w) {
+                    foreach ($have as $h) {
+                        if (($df[$h] ?? 0) > 3) continue;
+                        if ($w === $h || (mb_strlen($w) >= 5 && mb_strlen($h) >= 5 && self::wordDistance($w, $h) <= 1)) {
+                            $similar++;
+                            break;
+                        }
+                    }
+                }
+                if ($similar > 0) { $score += 40 * $similar; $reasons[] = 'similar_name'; }
+            }
+            if (strlen($phone) >= 8 && substr(self::digits($r['ptel']), -10) === $phone) {
+                $score += 60; $reasons[] = 'phone';
+            }
+            if ($score > 0) $found[] = ['row' => $r, 'score' => $score, 'reasons' => $reasons];
+        }
+
+        usort($found, fn($a, $b) => [$b['score'], $a['row']['pname']] <=> [$a['score'], $b['row']['pname']]);
+        $found = array_slice($found, 0, $limit);
+        if (!$found) return [];
+
+        // Last appointment and number of appointments, to recognise the person.
+        $guids = array_map(fn($f) => $f['row']['guid'], $found);
+        $in = implode(',', array_fill(0, count($guids), '?'));
+        $st = $db->prepare("SELECT pguid, adate, aplace, atype, COUNT(*) OVER (PARTITION BY pguid) AS n,
+                                   ROW_NUMBER() OVER (PARTITION BY pguid ORDER BY adate DESC, id DESC) AS rn
+                            FROM appointments WHERE deleted IS NULL AND pguid IN ($in)");
+        $st->execute($guids);
+        $last = [];
+        foreach ($st->fetchAll(PDO::FETCH_ASSOC) as $a) {
+            if ((int)$a['rn'] === 1) $last[$a['pguid']] = $a;
+        }
+
+        $out = [];
+        foreach ($found as $f) {
+            $r = $f['row'];
+            $dob = $r['pdob'] ? date_create((string)$r['pdob']) : false;
+            $now = new DateTime('now');
+            // Records made from a booking get "now" as their date of birth
+            // (pending_appointment_convert_post()); under a year old = unknown.
+            $validDob = $dob && $dob < $now && (int)$dob->format('Y') > 1900 && $dob->diff($now)->y >= 1;
+            $a = $last[$r['guid']] ?? null;
+            $out[] = [
+                'id' => (int)$r['id'],
+                'guid' => (string)$r['guid'],
+                'name' => trim((string)$r['pname']),
+                'amka' => (string)$r['pamka'],
+                'phone' => (string)$r['ptel'],
+                'email' => (string)$r['pemail'],
+                'dob' => $validDob ? $dob->format('d-m-Y') : '',
+                'age' => $validDob ? $dob->diff($now)->y : null,
+                'last' => $a ? ['date' => date('d-m-Y', strtotime($a['adate'])), 'place' => (string)$a['aplace'], 'is_operation' => $a['atype'] === 'operation'] : null,
+                'appointments' => $a ? (int)$a['n'] : 0,
+                'reasons' => $f['reasons'],
+                'score' => $f['score'],
+                'strong' => in_array('amka', $f['reasons'], true) || in_array('name', $f['reasons'], true),
+            ];
+        }
+        return $out;
+    }
+
     static function getPatientsByLastAppointment($order) {
         // Concatenated directly into the SQL string below (ORDER BY takes
         // no bind parameter in any DB driver) -- the one caller today
